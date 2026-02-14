@@ -308,7 +308,7 @@ export default function Home() {
                     
                     {/* Weather Intel - Auto-expands on scroll */}
                     <div 
-                      className={`absolute left-3 right-3 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
+                      className={`absolute left-6 right-6 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
                         visibleIntel.has(i) 
                           ? 'opacity-100 scale-100' 
                           : 'opacity-0 scale-95 pointer-events-none'
