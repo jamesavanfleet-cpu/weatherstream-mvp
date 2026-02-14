@@ -70,6 +70,17 @@ const CRUISE_ROUTES = [
     status: "Very Good",
     gradient: "from-blue-500/20 to-purple-500/20",
     intel: "Cold front passed through yesterday—cooler temps but crystal-clear visibility. Seas building slightly on the Atlantic side, but western anchorages (Nassau, Freeport) remain protected. Great conditions for snorkeling and diving with 100+ ft visibility."
+  },
+  {
+    name: "Southern Caribbean",
+    image: "https://files.manuscdn.com/user_upload_by_module/session_file/110462184/INhsBOFIHROpOBep.jpg",
+    temp: 85,
+    seas: "2-4 ft",
+    wind: "12-16 kt",
+    rain: "3%",
+    status: "Excellent",
+    gradient: "from-teal-500/20 to-emerald-500/20",
+    intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curaçao enjoying persistent easterlies—perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
   }
 ];
 
@@ -273,7 +284,7 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1600px] mx-auto">
             {CRUISE_ROUTES.map((route, i) => (
               <div 
                 key={route.name}
