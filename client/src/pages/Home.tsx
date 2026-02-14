@@ -126,8 +126,8 @@ export default function Home() {
               <Cloud className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">WeatherStream</h1>
-              <p className="text-xs text-white/60">Weather Intelligence by James Van Fleet</p>
+              <h1 className="text-xl font-bold text-white">VanFleet Wx</h1>
+              <p className="text-xs text-white/60">Weather Intelligence</p>
             </div>
           </div>
           
@@ -161,7 +161,7 @@ export default function Home() {
             
             <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-none">
               <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
-                Weather<br />Intelligence
+                VanFleet<br />Weather Intelligence
               </span>
             </h2>
             
@@ -200,7 +200,7 @@ export default function Home() {
               
               {/* Video Info */}
               <div className="p-6 glass-dark border-t border-white/5">
-                <h3 className="text-white font-bold text-lg mb-2">Arctic Blast Sweeps Midwest, Caribbean Calm</h3>
+                <h3 className="text-white font-bold text-lg mb-2">Arctic Blast Sweeps Midwest, Caribbean Perfect</h3>
                 <p className="text-white/60 text-sm">Dangerous wind chills hit the central U.S. while Caribbean cruise routes enjoy perfect conditions.</p>
               </div>
             </div>
@@ -357,10 +357,9 @@ export default function Home() {
                 <span className="text-white text-sm font-semibold">Join 8,500+ Subscribers</span>
               </div>
               
-              <h3 className="text-4xl font-black text-white">
-                Never Miss a Forecast
-              </h3>
-              
+              <h3 className="text-4xl font-black text-white mb-4 tracking-tight">
+                Get VanFleet Intel Daily
+              </h3>            
               <p className="text-lg text-white/70 max-w-xl mx-auto">
                 Get James's daily video briefings and weekly cruise forecasts delivered to your inbox. 
                 <strong className="text-white block mt-2">No spam. No hype. Just weather you can trust.</strong>
@@ -415,13 +414,13 @@ export default function Home() {
                 <Cloud className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-white font-bold text-sm">WeatherStream</p>
+                <p className="text-white font-bold text-sm">VanFleet Wx</p>
                 <p className="text-white/60 text-xs">Weather Intelligence by James Van Fleet</p>
               </div>
             </div>
             
             <p className="text-white/40 text-xs">
-              © 2026 WeatherStream. Weather Intelligence by James Van Fleet.
+              © 2026 VanFleet Wx. Weather Intelligence by James Van Fleet.
             </p>
           </div>
         </div>
