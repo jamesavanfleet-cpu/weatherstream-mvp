@@ -163,15 +163,20 @@ export default function Home() {
               30+ Years | Royal Caribbean Chief Met
             </Badge>
             
-            <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-none">
-              <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
-                VanFleet<br />Weather Intelligence
-              </span>
-            </h2>
+            <div className="space-y-3">
+              <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-none">
+                <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
+                  Weather Intelligence
+                </span>
+              </h2>
+              <p className="text-2xl text-white/70 font-light">
+                By James Van Fleet
+              </p>
+            </div>
             
             <p className="text-xl text-white/80 leading-relaxed max-w-xl">
               Daily video briefings, live Caribbean cruise forecasts, and breaking storm analysis 
-              from <span className="text-white font-semibold">James Van Fleet</span>, former Royal Caribbean Chief Meteorologist.
+              from a former Royal Caribbean Chief Meteorologist with 30+ years of experience.
             </p>
             
             <div className="flex gap-3">
