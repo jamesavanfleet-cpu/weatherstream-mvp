@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 /**
@@ -76,6 +76,31 @@ const CRUISE_ROUTES = [
 export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [visibleIntel, setVisibleIntel] = useState<number | null>(null);
+  const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Scroll-triggered intel expansion
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const index = cruiseRefs.current.indexOf(entry.target as HTMLDivElement);
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            setVisibleIntel(index);
+          } else if (!entry.isIntersecting && visibleIntel === index) {
+            setVisibleIntel(null);
+          }
+        });
+      },
+      { threshold: [0.5, 0.6, 0.7] }
+    );
+
+    cruiseRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [visibleIntel]);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,6 +262,7 @@ export default function Home() {
             {CRUISE_ROUTES.map((route, i) => (
               <div 
                 key={route.name}
+                ref={(el) => { cruiseRefs.current[i] = el; }}
                 className="group cursor-pointer"
                 style={{ animationDelay: `${i * 150}ms` }}
               >
@@ -250,25 +276,26 @@ export default function Home() {
                     />
                     <div className={`absolute inset-0 bg-gradient-to-t ${route.gradient} to-transparent`} />
                     
-                    {/* Weather Intel Tooltip */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button className="absolute top-4 left-4 glass-dark p-3 rounded-full hover:bg-white/20 transition-all duration-300 glow group/intel">
-                          <Info className="w-5 h-5 text-white group-hover/intel:scale-110 transition-transform" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-sm glass-dark border-white/20 p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                              <Sparkles className="w-4 h-4 text-white" />
-                            </div>
-                            <p className="text-white font-bold text-sm">James's Intel</p>
+                    {/* Weather Intel - Auto-expands on scroll */}
+                    <div 
+                      className={`absolute inset-x-4 bottom-20 transition-all duration-500 ${
+                        visibleIntel === i 
+                          ? 'opacity-100 translate-y-0' 
+                          : 'opacity-0 translate-y-4 pointer-events-none'
+                      }`}
+                    >
+                      <div className="bg-slate-950/95 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Sparkles className="w-4 h-4 text-white" />
                           </div>
-                          <p className="text-white/90 text-sm leading-relaxed">{route.intel}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-bold text-sm mb-1.5">James's Intel</p>
+                            <p className="text-white text-xs leading-relaxed">{route.intel}</p>
+                          </div>
                         </div>
-                      </TooltipContent>
-                    </Tooltip>
+                      </div>
+                    </div>
                     
                     {/* Floating Status Badge */}
                     <div className="absolute top-4 right-4 glass px-4 py-2 rounded-full">
