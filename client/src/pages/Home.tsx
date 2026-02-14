@@ -121,12 +121,13 @@ export default function Home() {
       {/* Floating Header with Glassmorphism */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-dark border-b border-white/5">
         <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 flex items-center justify-center">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 flex items-center justify-center">
               <img 
                 src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/rPCxuLgXDbgLPuSd.jpg" 
                 alt="VanFleet Wx Logo" 
-                className="w-11 h-11 object-contain"
+                className="w-16 h-16 object-contain"
+                style={{ filter: 'invert(1) brightness(2)' }}
               />
             </div>
             <div>
@@ -414,11 +415,12 @@ export default function Home() {
         <div className="container">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center">
+              <div className="w-14 h-14 flex items-center justify-center">
                 <img 
                   src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/rPCxuLgXDbgLPuSd.jpg" 
                   alt="VanFleet Wx Logo" 
-                  className="w-10 h-10 object-contain"
+                  className="w-14 h-14 object-contain"
+                  style={{ filter: 'invert(1) brightness(2)' }}
                 />
               </div>
               <div>
