@@ -100,7 +100,8 @@ export default function Home() {
           
           setVisibleIntel(prev => {
             const newSet = new Set(prev);
-            if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            // Only show tooltip when card is prominently in view (70%+ visible)
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
               newSet.add(index);
             } else {
               newSet.delete(index);
@@ -109,7 +110,10 @@ export default function Home() {
           });
         });
       },
-      { threshold: [0.3, 0.5, 0.7], rootMargin: '-10% 0px -10% 0px' }
+      { 
+        threshold: [0, 0.3, 0.5, 0.7, 0.9],
+        rootMargin: '-20% 0px -20% 0px' // Stricter - only show when card is centered
+      }
     );
 
     cruiseRefs.current.forEach((ref) => {
