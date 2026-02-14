@@ -120,17 +120,17 @@ export default function Home() {
     <div className="min-h-screen gradient-animate">
       {/* Floating Header with Glassmorphism */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-dark border-b border-white/5">
-        <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 flex items-center justify-center rounded-2xl overflow-hidden">
+        <div className="container py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 flex items-center justify-center rounded-xl overflow-hidden">
               <img 
                 src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/vIcLAlFQYCjrGjIM.png" 
                 alt="VanFleet Wx Logo" 
-                className="w-16 h-16 object-contain rounded-2xl"
+                className="w-12 h-12 object-contain rounded-xl"
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">VanFleet Wx</h1>
+              <h1 className="text-lg font-bold text-white">VanFleet Wx</h1>
               <p className="text-xs text-white/60">Weather Intelligence</p>
             </div>
           </div>
