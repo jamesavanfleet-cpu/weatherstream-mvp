@@ -76,23 +76,29 @@ const CRUISE_ROUTES = [
 export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [visibleIntel, setVisibleIntel] = useState<number | null>(null);
+  const [visibleIntel, setVisibleIntel] = useState<Set<number>>(new Set());
   const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Scroll-triggered intel expansion
+  // Scroll-triggered intel expansion - each card independently
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const index = cruiseRefs.current.indexOf(entry.target as HTMLDivElement);
-          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-            setVisibleIntel(index);
-          } else if (!entry.isIntersecting && visibleIntel === index) {
-            setVisibleIntel(null);
-          }
+          if (index === -1) return;
+          
+          setVisibleIntel(prev => {
+            const newSet = new Set(prev);
+            if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+              newSet.add(index);
+            } else {
+              newSet.delete(index);
+            }
+            return newSet;
+          });
         });
       },
-      { threshold: [0.5, 0.6, 0.7] }
+      { threshold: [0.3, 0.5, 0.7], rootMargin: '-10% 0px -10% 0px' }
     );
 
     cruiseRefs.current.forEach((ref) => {
@@ -100,7 +106,7 @@ export default function Home() {
     });
 
     return () => observer.disconnect();
-  }, [visibleIntel]);
+  }, []);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,7 +294,7 @@ export default function Home() {
                     {/* Weather Intel - Auto-expands on scroll */}
                     <div 
                       className={`absolute inset-x-4 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
-                        visibleIntel === i 
+                        visibleIntel.has(i) 
                           ? 'opacity-100 scale-100' 
                           : 'opacity-0 scale-95 pointer-events-none'
                       }`}
