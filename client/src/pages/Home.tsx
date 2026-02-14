@@ -124,10 +124,9 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 flex items-center justify-center">
               <img 
-                src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/rPCxuLgXDbgLPuSd.jpg" 
+                src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/vIcLAlFQYCjrGjIM.png" 
                 alt="VanFleet Wx Logo" 
                 className="w-16 h-16 object-contain"
-                style={{ filter: 'invert(1) brightness(2)' }}
               />
             </div>
             <div>
@@ -417,10 +416,9 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 flex items-center justify-center">
                 <img 
-                  src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/rPCxuLgXDbgLPuSd.jpg" 
+                  src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/vIcLAlFQYCjrGjIM.png" 
                   alt="VanFleet Wx Logo" 
                   className="w-14 h-14 object-contain"
-                  style={{ filter: 'invert(1) brightness(2)' }}
                 />
               </div>
               <div>
