@@ -94,7 +94,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">WeatherStream</h1>
-              <p className="text-xs text-white/60">by James Van Fleet</p>
+              <p className="text-xs text-white/60">Weather Intelligence by James Van Fleet</p>
             </div>
           </div>
           
@@ -134,7 +134,7 @@ export default function Home() {
             
             <p className="text-xl text-white/80 leading-relaxed max-w-xl">
               Daily video briefings, live Caribbean cruise forecasts, and breaking storm analysis 
-              from <span className="text-white font-semibold">James Van Fleet</span>—former Royal Caribbean Chief Meteorologist.
+              from <span className="text-white font-semibold">James Van Fleet</span>, former Royal Caribbean Chief Meteorologist.
             </p>
             
             <div className="flex gap-3">
@@ -361,12 +361,12 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-white font-bold text-sm">WeatherStream</p>
-                <p className="text-white/60 text-xs">by James Van Fleet</p>
+                <p className="text-white/60 text-xs">Weather Intelligence by James Van Fleet</p>
               </div>
             </div>
             
             <p className="text-white/40 text-xs">
-              © 2026 WeatherStream. Professional weather intelligence.
+              © 2026 WeatherStream. Weather Intelligence by James Van Fleet.
             </p>
           </div>
         </div>
