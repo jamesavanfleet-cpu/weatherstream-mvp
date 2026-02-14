@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { 
-  Anchor, ArrowRight, Calendar, Cloud, CloudRain, Droplets, 
+  Anchor, ArrowRight, Calendar, Cloud, CloudRain, Droplets, Info,
   MapPin, Play, Ship, Sparkles, ThermometerSun, TrendingUp, 
   Wind, Zap 
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -41,7 +46,8 @@ const CRUISE_ROUTES = [
     wind: "10-15 kt",
     rain: "5%",
     status: "Perfect",
-    gradient: "from-emerald-500/20 to-cyan-500/20"
+    gradient: "from-emerald-500/20 to-cyan-500/20",
+    intel: "High pressure dominating the region through the weekend. Expect light trade winds and calm seas—ideal for tender operations in St. Thomas and St. Maarten. UV index will be extreme, so remind passengers about sun protection."
   },
   {
     name: "Western Caribbean",
@@ -51,7 +57,8 @@ const CRUISE_ROUTES = [
     wind: "12-18 kt",
     rain: "10%",
     status: "Excellent",
-    gradient: "from-orange-500/20 to-pink-500/20"
+    gradient: "from-orange-500/20 to-pink-500/20",
+    intel: "Typical February pattern with easterly flow. Cozumel and Grand Cayman will see afternoon sea breezes—perfect beach weather. Watch for isolated showers near Jamaica's Blue Mountains in the late afternoon, but they'll stay inland."
   },
   {
     name: "Bahamas",
@@ -61,7 +68,8 @@ const CRUISE_ROUTES = [
     wind: "15-20 kt",
     rain: "20%",
     status: "Very Good",
-    gradient: "from-blue-500/20 to-purple-500/20"
+    gradient: "from-blue-500/20 to-purple-500/20",
+    intel: "Cold front passed through yesterday—cooler temps but crystal-clear visibility. Seas building slightly on the Atlantic side, but western anchorages (Nassau, Freeport) remain protected. Great conditions for snorkeling and diving with 100+ ft visibility."
   }
 ];
 
@@ -241,6 +249,26 @@ export default function Home() {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     <div className={`absolute inset-0 bg-gradient-to-t ${route.gradient} to-transparent`} />
+                    
+                    {/* Weather Intel Tooltip */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="absolute top-4 left-4 glass-dark p-3 rounded-full hover:bg-white/20 transition-all duration-300 glow group/intel">
+                          <Info className="w-5 h-5 text-white group-hover/intel:scale-110 transition-transform" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-sm glass-dark border-white/20 p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                              <Sparkles className="w-4 h-4 text-white" />
+                            </div>
+                            <p className="text-white font-bold text-sm">James's Intel</p>
+                          </div>
+                          <p className="text-white/90 text-sm leading-relaxed">{route.intel}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                     
                     {/* Floating Status Badge */}
                     <div className="absolute top-4 right-4 glass px-4 py-2 rounded-full">
