@@ -151,10 +151,10 @@ export default function Home() {
         {/* Content */}
         <div className="container relative z-10">
           <div className="max-w-3xl">
-            <Badge variant="secondary" className="mb-4 shadow-lg">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              20 Years of Broadcast Experience
-            </Badge>
+              <Badge variant="secondary" className="mb-4 shadow-lg">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                30+ Years of Broadcast Experience
+              </Badge>
             
             <h2 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
               Weather Forecasts<br />
@@ -162,8 +162,9 @@ export default function Home() {
             </h2>
             
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Former Caribbean chief meteorologist <strong className="text-foreground">James Van Fleet</strong> delivers 
-              daily weather briefings, breaking storm analysis, and expert cruise forecasts—straight talk, no hype.
+              <strong className="text-foreground">James Van Fleet</strong>, former Chief Meteorologist at Royal Caribbean (6+ years) 
+              and veteran of CBS, FOX, and ABC, delivers daily weather briefings, breaking storm analysis, 
+              and expert cruise forecasts—straight talk, no hype.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -455,8 +456,8 @@ export default function Home() {
                   />
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground p-6 rounded-xl shadow-xl">
-                  <p className="text-4xl font-bold">20</p>
-                  <p className="text-sm">Years on TV</p>
+                  <p className="text-4xl font-bold">30+</p>
+                  <p className="text-sm">Years Experience</p>
                 </div>
               </div>
               
@@ -464,17 +465,20 @@ export default function Home() {
                 <h3 className="text-3xl font-bold">About James Van Fleet</h3>
                 <div className="space-y-4 text-muted-foreground leading-relaxed">
                   <p>
-                    James Van Fleet is a professional meteorologist with <strong className="text-foreground">20 years of broadcast experience</strong>, 
-                    including serving as chief meteorologist for Caribbean television. He's forecasted hundreds of tropical systems, 
-                    winter storms, and severe weather events across North America and the Caribbean.
+                    James Van Fleet is a highly seasoned broadcast and operational meteorologist with <strong className="text-foreground">over 30 years of experience</strong> 
+                    delivering life-saving, data-driven weather intelligence. He served as <strong className="text-foreground">Chief Meteorologist at Royal Caribbean International</strong> for 
+                    6+ years (2017-2023), where he was credited with protecting lives and multi-billion-dollar assets through precise hurricane routing and real-time decision support.
                   </p>
                   <p>
-                    After being laid off twice as traditional TV weather declined, James created <strong className="text-foreground">WeatherStream</strong> to 
-                    bring his expertise directly to people who need clear, trustworthy weather information—especially travelers planning cruises 
-                    and vacations in weather-sensitive destinations.
+                    Before Royal Caribbean, James spent nearly 20 years as a trusted on-air meteorologist at major networks including <strong className="text-foreground">CBS (WTSP-TV)</strong> and 
+                    <strong className="text-foreground"> FOX (WOFL Orlando)</strong>. He holds the NWA Television Seal of Approval and is a sought-after expert witness in meteorology for trials.
+                  </p>
+                  <p>
+                    Now, through <strong className="text-foreground">WeatherStream</strong> and his YouTube channel <strong className="text-foreground">@TravelingWeather</strong>, 
+                    James brings his unparalleled cruise and maritime weather expertise directly to travelers who need clear, trustworthy forecasts.
                   </p>
                   <p className="text-base">
-                    <strong className="text-foreground text-lg">No clickbait. No fear-mongering. Just honest forecasts from someone who's been doing this for two decades.</strong>
+                    <strong className="text-foreground text-lg">No clickbait. No fear-mongering. Just honest forecasts from someone who's been doing this for three decades.</strong>
                   </p>
                 </div>
               </div>
