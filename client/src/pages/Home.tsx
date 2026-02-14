@@ -308,13 +308,13 @@ export default function Home() {
                     
                     {/* Weather Intel - Auto-expands on scroll */}
                     <div 
-                      className={`absolute inset-x-4 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
+                      className={`absolute left-3 right-3 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
                         visibleIntel.has(i) 
                           ? 'opacity-100 scale-100' 
                           : 'opacity-0 scale-95 pointer-events-none'
                       }`}
                     >
-                      <div className="bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-2xl">
+                      <div className="bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 shadow-2xl">
                         <div className="flex items-start gap-3">
                           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
                             <Sparkles className="w-5 h-5 text-white" />
