@@ -287,20 +287,20 @@ export default function Home() {
                     
                     {/* Weather Intel - Auto-expands on scroll */}
                     <div 
-                      className={`absolute inset-x-4 top-16 transition-all duration-500 ${
+                      className={`absolute inset-x-4 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
                         visibleIntel === i 
-                          ? 'opacity-100 translate-y-0' 
-                          : 'opacity-0 -translate-y-4 pointer-events-none'
+                          ? 'opacity-100 scale-100' 
+                          : 'opacity-0 scale-95 pointer-events-none'
                       }`}
                     >
-                      <div className="bg-slate-950/95 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
+                      <div className="bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-5 shadow-2xl">
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Sparkles className="w-4 h-4 text-white" />
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <Sparkles className="w-5 h-5 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-bold text-sm mb-1.5">James's Intel</p>
-                            <p className="text-white text-xs leading-relaxed">{route.intel}</p>
+                            <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel</p>
+                            <p className="text-white/90 text-sm leading-relaxed">{route.intel}</p>
                           </div>
                         </div>
                       </div>
