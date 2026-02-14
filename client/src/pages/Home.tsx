@@ -278,10 +278,10 @@ export default function Home() {
                     
                     {/* Weather Intel - Auto-expands on scroll */}
                     <div 
-                      className={`absolute inset-x-4 bottom-20 transition-all duration-500 ${
+                      className={`absolute inset-x-4 top-16 transition-all duration-500 ${
                         visibleIntel === i 
                           ? 'opacity-100 translate-y-0' 
-                          : 'opacity-0 translate-y-4 pointer-events-none'
+                          : 'opacity-0 -translate-y-4 pointer-events-none'
                       }`}
                     >
                       <div className="bg-slate-950/95 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-2xl">
