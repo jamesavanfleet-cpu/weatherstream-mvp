@@ -2,103 +2,95 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Cloud, ExternalLink, Star, Users, Zap } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Anchor, Calendar, Cloud, MapPin, Ship, ThermometerSun, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 /**
- * WeatherStream MVP - Zero-to-One Launch
+ * WeatherStream MVP - James Van Fleet's Weather Platform
  * 
- * Design Philosophy: Clean, Trustworthy, Professional
- * - Deep blue primary (trust & authority)
- * - Ample whitespace (clarity)
- * - Subtle shadows (depth without distraction)
- * - Clear hierarchy (James's expertise first, streamers second)
+ * Design Philosophy: Expert Authority + Helpful Service
+ * - James is the primary content creator, not a curator
+ * - Focus on travel/cruise weather (his specialty)
+ * - Daily briefings and breaking weather stories
+ * - Clean, trustworthy, professional design
  */
 
-// Sample data - James will replace with real streamers
-const FEATURED_PICK = {
-  name: "Ryan Hall, Y'all",
-  channel: "https://youtube.com/@RyanHallYall",
-  specialty: "Severe Weather",
-  subscribers: "3M+",
-  description: "Excellent coverage of the developing winter storm in the Midwest with detailed model analysis and real-time updates.",
-  reason: "Ryan's calm, data-driven approach makes complex weather accessible. His live streams during severe events are must-watch.",
-  thumbnail: "https://images.unsplash.com/photo-1527482797697-8795b05a13fe?w=400&h=300&fit=crop"
+// Sample content - James will replace with his actual forecasts
+const TODAY_BRIEFING = {
+  date: "February 14, 2026",
+  title: "Arctic Blast Sweeps Across Midwest, Caribbean Remains Calm",
+  summary: "A powerful cold front is bringing dangerous wind chills to the central U.S., while the Caribbean enjoys perfect cruise weather with calm seas and sunny skies. Here's what you need to know.",
+  highlights: [
+    "Midwest: Wind chills -20°F to -40°F through Sunday",
+    "Caribbean: Ideal conditions for cruising, light winds, 82-85°F",
+    "Gulf Coast: Watching potential development next week"
+  ],
+  videoUrl: null // Will be YouTube embed when James records
 };
 
-const STREAMERS = [
+const TRAVEL_FORECAST = {
+  title: "Caribbean Cruise Weather Outlook",
+  period: "Next 7 Days",
+  summary: "Excellent conditions across all major cruise routes. Seas 2-4 feet, winds 10-15 knots, zero tropical activity.",
+  destinations: [
+    {
+      name: "Eastern Caribbean",
+      icon: Ship,
+      conditions: "Perfect",
+      temp: "82-85°F",
+      seas: "2-3 ft",
+      confidence: "High",
+      details: "Sunny skies, light winds. Ideal for all ports including St. Thomas, St. Maarten, and San Juan."
+    },
+    {
+      name: "Western Caribbean",
+      icon: Anchor,
+      conditions: "Excellent",
+      temp: "84-87°F",
+      seas: "3-4 ft",
+      confidence: "High",
+      details: "Warm and calm. Cozumel, Grand Cayman, and Jamaica all looking great for shore excursions."
+    },
+    {
+      name: "Bahamas",
+      icon: MapPin,
+      conditions: "Very Good",
+      temp: "76-79°F",
+      seas: "3-5 ft",
+      confidence: "Medium",
+      details: "Slightly cooler with brief showers possible Tuesday. Still excellent overall conditions."
+    }
+  ]
+};
+
+const WEATHER_STORIES = [
   {
-    name: "Ryan Hall, Y'all",
-    channel: "https://youtube.com/@RyanHallYall",
-    specialty: "Severe Weather",
-    subscribers: "3M+",
-    verified: true,
-    thumbnail: "https://images.unsplash.com/photo-1527482797697-8795b05a13fe?w=300&h=200&fit=crop"
+    title: "Why This Week's Arctic Outbreak Is Different",
+    date: "Feb 13, 2026",
+    category: "Analysis",
+    excerpt: "The polar vortex has split, sending unprecedented cold into regions that rarely see these temperatures. I break down the atmospheric setup and what it means for the next two weeks.",
+    image: "https://images.unsplash.com/photo-1483664852095-d6cc6870702d?w=600&h=400&fit=crop"
   },
   {
-    name: "Max Velocity",
-    channel: "https://youtube.com/@MaxVelocityWX",
-    specialty: "Severe Weather",
-    subscribers: "1.66M",
-    verified: true,
-    thumbnail: "https://images.unsplash.com/photo-1601134467661-3d775b999c8b?w=300&h=200&fit=crop"
+    title: "Hurricane Season 2026: Early Outlook",
+    date: "Feb 10, 2026",
+    category: "Forecast",
+    excerpt: "NOAA's preliminary models suggest another active Atlantic season. Here's what the El Niño transition means for the Caribbean and Gulf Coast.",
+    image: "https://images.unsplash.com/photo-1527482797697-8795b05a13fe?w=600&h=400&fit=crop"
   },
   {
-    name: "Reed Timmer",
-    channel: "https://youtube.com/@ReedTimmerWx",
-    specialty: "Storm Chasing",
-    subscribers: "1.5M",
-    verified: true,
-    thumbnail: "https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=300&h=200&fit=crop"
-  },
-  {
-    name: "Pecos Hank",
-    channel: "https://youtube.com/@PecosHank",
-    specialty: "Storm Chasing",
-    subscribers: "1.2M",
-    verified: true,
-    thumbnail: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=300&h=200&fit=crop"
-  },
-  {
-    name: "Live Storms Media",
-    channel: "https://youtube.com/@LiveStormsMedia",
-    specialty: "Severe Weather",
-    subscribers: "401K",
-    verified: false,
-    thumbnail: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=300&h=200&fit=crop"
-  },
-  {
-    name: "Texas Storm Chasers",
-    channel: "https://youtube.com/@TexasStormChasers",
-    specialty: "Regional Coverage",
-    subscribers: "234K",
-    verified: false,
-    thumbnail: "https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?w=300&h=200&fit=crop"
-  },
-  {
-    name: "Skip Talbot",
-    channel: "https://youtube.com/@SkipTalbot",
-    specialty: "Storm Chasing",
-    subscribers: "86K",
-    verified: false,
-    thumbnail: "https://images.unsplash.com/photo-1603575448878-868a20723f5d?w=300&h=200&fit=crop"
-  },
-  {
-    name: "Basehunters Chasing",
-    channel: "https://youtube.com/@BasehuntersChasing",
-    specialty: "Meteorology",
-    subscribers: "82K",
-    verified: false,
-    thumbnail: "https://images.unsplash.com/photo-1558486012-817176f84c6d?w=300&h=200&fit=crop"
+    title: "Best Months to Book a Caribbean Cruise",
+    date: "Feb 7, 2026",
+    category: "Travel",
+    excerpt: "After 20 years forecasting Caribbean weather, I reveal the sweet spots when you'll get perfect conditions and avoid the crowds.",
+    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop"
   }
 ];
 
-const CATEGORIES = ["All", "Hurricanes", "Tornadoes", "Winter", "Regional"];
-
 export default function Home() {
   const [email, setEmail] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -109,9 +101,8 @@ export default function Home() {
     }
     
     setIsSubmitting(true);
-    // Simulate API call - in real version, this would go to Mailchimp/ConvertKit
     await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success("Thanks for signing up! Check your inbox for James's first weather pick.");
+    toast.success("Welcome! Check your inbox for tomorrow's forecast.");
     setEmail("");
     setIsSubmitting(false);
   };
@@ -127,52 +118,64 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">WeatherStream</h1>
-              <p className="text-xs text-muted-foreground">Curated by James Van Fleet</p>
+              <p className="text-xs text-muted-foreground">by James Van Fleet</p>
             </div>
           </div>
           
           <Button variant="outline" size="sm" asChild>
-            <a href="#signup">Get Daily Picks</a>
+            <a href="#subscribe">Subscribe</a>
           </Button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary/5 to-background py-16 md:py-24">
+      <section className="bg-gradient-to-br from-primary/10 via-accent/5 to-background py-16 md:py-20">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <Badge variant="secondary" className="mb-2">
-              <Star className="w-3 h-3 mr-1" />
-              Curated by a 20-Year Veteran Meteorologist
-            </Badge>
-            
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Discover the Best Weather Streamers, <span className="text-primary">Handpicked by an Expert</span>
-            </h2>
-            
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              James Van Fleet, former Caribbean chief meteorologist with 20 years of broadcast experience, 
-              curates the most credible and engaging weather content creators so you don't have to search.
-            </p>
-            
-            <div className="flex flex-wrap gap-6 justify-center pt-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold">Verified Experts</p>
-                  <p className="text-xs text-muted-foreground">Degreed meteorologists</p>
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="space-y-6">
+                <Badge variant="secondary" className="mb-2">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  20 Years of Broadcast Experience
+                </Badge>
+                
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  Weather Forecasts You Can <span className="text-primary">Actually Trust</span>
+                </h2>
+                
+                <p className="text-lg text-muted-foreground">
+                  Former Caribbean chief meteorologist James Van Fleet delivers daily weather briefings, 
+                  breaking storm analysis, and expert cruise weather forecasts—straight talk, no hype.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button size="lg" asChild>
+                    <a href="#briefing">Today's Briefing</a>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <a href="#travel">Cruise Weather</a>
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-accent" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold">Live Coverage</p>
-                  <p className="text-xs text-muted-foreground">Real-time weather events</p>
+              <div className="relative">
+                <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 p-8 flex flex-col justify-center items-center text-center shadow-xl">
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <Cloud className="w-12 h-12 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">James Van Fleet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Chief Meteorologist</p>
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <p className="font-bold text-2xl text-primary">20</p>
+                      <p className="text-xs text-muted-foreground">Years on TV</p>
+                    </div>
+                    <Separator orientation="vertical" className="h-12" />
+                    <div>
+                      <p className="font-bold text-2xl text-accent">1000+</p>
+                      <p className="text-xs text-muted-foreground">Forecasts</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,114 +183,171 @@ export default function Home() {
         </div>
       </section>
 
-      {/* James's Pick of the Day */}
-      <section className="py-12 bg-card/30">
+      {/* Today's Briefing */}
+      <section id="briefing" className="py-16 bg-card/30">
         <div className="container">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-2 mb-6">
-              <Star className="w-6 h-6 text-primary fill-primary" />
-              <h3 className="text-2xl font-bold">James's Pick of the Day</h3>
+              <Calendar className="w-6 h-6 text-primary" />
+              <div>
+                <h3 className="text-2xl font-bold">Today's Weather Briefing</h3>
+                <p className="text-sm text-muted-foreground">{TODAY_BRIEFING.date}</p>
+              </div>
             </div>
             
-            <Card className="overflow-hidden shadow-lg border-2 border-primary/20">
-              <div className="md:flex">
-                <div className="md:w-2/5">
-                  <img 
-                    src={FEATURED_PICK.thumbnail} 
-                    alt={FEATURED_PICK.name}
-                    className="w-full h-64 md:h-full object-cover"
-                  />
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-2xl">{TODAY_BRIEFING.title}</CardTitle>
+                <CardDescription className="text-base mt-2">{TODAY_BRIEFING.summary}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-primary/5 p-4 rounded-lg">
+                  <p className="font-semibold mb-3 text-primary">Key Points:</p>
+                  <ul className="space-y-2">
+                    {TODAY_BRIEFING.highlights.map((highlight, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span className="text-sm">{highlight}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="md:w-3/5">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <CardTitle className="text-2xl mb-2">{FEATURED_PICK.name}</CardTitle>
-                        <div className="flex gap-2 flex-wrap">
-                          <Badge variant="secondary">{FEATURED_PICK.specialty}</Badge>
-                          <Badge variant="outline">{FEATURED_PICK.subscribers} subscribers</Badge>
-                        </div>
-                      </div>
+                
+                {TODAY_BRIEFING.videoUrl ? (
+                  <div className="aspect-video bg-muted rounded-lg">
+                    {/* YouTube embed will go here */}
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      Video Player
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm font-semibold text-muted-foreground mb-1">Today's Coverage:</p>
-                      <p className="text-foreground">{FEATURED_PICK.description}</p>
-                    </div>
-                    
-                    <div className="bg-primary/5 p-4 rounded-lg border-l-4 border-primary">
-                      <p className="text-sm font-semibold text-primary mb-1">Why James Recommends:</p>
-                      <p className="text-sm text-foreground">{FEATURED_PICK.reason}</p>
-                    </div>
-                    
-                    <Button className="w-full sm:w-auto" asChild>
-                      <a href={FEATURED_PICK.channel} target="_blank" rel="noopener noreferrer">
-                        Watch on YouTube <ExternalLink className="w-4 h-4 ml-2" />
-                      </a>
-                    </Button>
-                  </CardContent>
-                </div>
-              </div>
+                  </div>
+                ) : (
+                  <div className="bg-muted/50 p-6 rounded-lg border-2 border-dashed border-border text-center">
+                    <Cloud className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Video briefing coming soon. Subscribe to get notified when James posts his daily video analysis.
+                    </p>
+                  </div>
+                )}
+                
+                <Button className="w-full sm:w-auto" asChild>
+                  <a href="#subscribe">Get Daily Briefings in Your Inbox</a>
+                </Button>
+              </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Streamer Directory */}
+      {/* Travel & Cruise Weather - FEATURED */}
+      <section id="travel" className="py-16 bg-gradient-to-b from-accent/5 to-background">
+        <div className="container">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <Badge variant="secondary" className="mb-3">
+                <Ship className="w-3 h-3 mr-1" />
+                James's Specialty
+              </Badge>
+              <h3 className="text-3xl font-bold mb-3">{TRAVEL_FORECAST.title}</h3>
+              <p className="text-lg text-muted-foreground">
+                Expert Caribbean forecasts from a meteorologist who knows these waters inside and out
+              </p>
+            </div>
+            
+            <Card className="shadow-xl mb-6">
+              <CardHeader className="bg-accent/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">7-Day Outlook</CardTitle>
+                    <CardDescription className="mt-1">{TRAVEL_FORECAST.summary}</CardDescription>
+                  </div>
+                  <ThermometerSun className="w-8 h-8 text-accent" />
+                </div>
+              </CardHeader>
+            </Card>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {TRAVEL_FORECAST.destinations.map((dest) => (
+                <Card key={dest.name} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                        <dest.icon className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{dest.name}</CardTitle>
+                        <Badge variant="outline" className="mt-1 text-xs">
+                          {dest.conditions}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Temperature</p>
+                        <p className="font-semibold">{dest.temp}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Sea State</p>
+                        <p className="font-semibold">{dest.seas}</p>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <p className="text-sm text-muted-foreground">{dest.details}</p>
+                    
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground">Confidence:</span>
+                      <Badge variant="secondary" className="text-xs">{dest.confidence}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="mt-8 text-center">
+              <Button variant="outline" asChild>
+                <a href="#subscribe">Get Weekly Cruise Weather Updates</a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Weather Stories */}
       <section className="py-16">
         <div className="container">
           <div className="mb-8">
-            <h3 className="text-3xl font-bold mb-2">Curated Weather Streamers</h3>
-            <p className="text-muted-foreground">Browse by specialty to find the coverage you need</p>
+            <h3 className="text-3xl font-bold mb-2">Recent Weather Stories</h3>
+            <p className="text-muted-foreground">Expert analysis and forecasts from James</p>
           </div>
           
-          {/* Category Filters */}
-          <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-            {CATEGORIES.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="whitespace-nowrap"
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
-          
-          {/* Streamer Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {STREAMERS.map((streamer) => (
-              <Card key={streamer.name} className="overflow-hidden hover:shadow-lg transition-shadow group">
-                <div className="relative">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl">
+            {WEATHER_STORIES.map((story) => (
+              <Card key={story.title} className="overflow-hidden hover:shadow-lg transition-shadow group">
+                <div className="relative h-48 overflow-hidden">
                   <img 
-                    src={streamer.thumbnail} 
-                    alt={streamer.name}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    src={story.image} 
+                    alt={story.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  {streamer.verified && (
-                    <Badge className="absolute top-2 right-2 bg-primary">
-                      <Star className="w-3 h-3 mr-1 fill-current" />
-                      Van Fleet Verified
-                    </Badge>
-                  )}
+                  <Badge className="absolute top-3 left-3 bg-primary">
+                    {story.category}
+                  </Badge>
                 </div>
                 
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{streamer.name}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary" className="text-xs">{streamer.specialty}</Badge>
-                    <span className="text-xs">{streamer.subscribers} subs</span>
-                  </CardDescription>
+                <CardHeader>
+                  <CardTitle className="text-lg line-clamp-2">{story.title}</CardTitle>
+                  <CardDescription className="text-xs">{story.date}</CardDescription>
                 </CardHeader>
                 
                 <CardContent>
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <a href={streamer.channel} target="_blank" rel="noopener noreferrer">
-                      View Channel <ExternalLink className="w-3 h-3 ml-2" />
-                    </a>
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                    {story.excerpt}
+                  </p>
+                  <Button variant="ghost" size="sm" className="w-full">
+                    Read More →
                   </Button>
                 </CardContent>
               </Card>
@@ -297,32 +357,46 @@ export default function Home() {
       </section>
 
       {/* Email Signup CTA */}
-      <section id="signup" className="py-16 bg-gradient-to-b from-primary/5 to-background">
+      <section id="subscribe" className="py-16 bg-gradient-to-b from-primary/5 to-background">
         <div className="container">
           <Card className="max-w-2xl mx-auto shadow-xl">
             <CardHeader className="text-center">
-              <CardTitle className="text-3xl mb-2">Get James's Daily Weather Picks</CardTitle>
+              <CardTitle className="text-3xl mb-2">Never Miss a Forecast</CardTitle>
               <CardDescription className="text-base">
-                Every morning, James selects the best live coverage and explains why it's worth watching. 
-                Join 500+ weather enthusiasts who trust his expertise.
+                Get James's daily weather briefing and weekly cruise forecasts delivered to your inbox. 
+                No spam, no hype—just the weather insights you need.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleEmailSignup} className="flex flex-col sm:flex-row gap-3">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1"
-                  required
-                />
-                <Button type="submit" disabled={isSubmitting} className="sm:w-auto">
-                  {isSubmitting ? "Subscribing..." : "Subscribe Free"}
-                </Button>
+              <form onSubmit={handleEmailSignup} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="flex-1"
+                    required
+                  />
+                  <Button type="submit" disabled={isSubmitting} className="sm:w-auto">
+                    {isSubmitting ? "Subscribing..." : "Subscribe Free"}
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <span className="text-primary">✓</span> Daily briefings
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-primary">✓</span> Cruise forecasts
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-primary">✓</span> Storm alerts
+                  </div>
+                </div>
               </form>
               <p className="text-xs text-muted-foreground text-center mt-4">
-                No spam. Unsubscribe anytime. Your email stays private.
+                Free forever. Unsubscribe anytime. Your email stays private.
               </p>
             </CardContent>
           </Card>
@@ -333,21 +407,20 @@ export default function Home() {
       <section className="py-16 border-t">
         <div className="container">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h3 className="text-2xl font-bold">About WeatherStream</h3>
+            <h3 className="text-2xl font-bold">About James Van Fleet</h3>
             <div className="prose prose-lg mx-auto text-muted-foreground">
               <p>
-                <strong className="text-foreground">WeatherStream</strong> was created by <strong className="text-foreground">James Van Fleet</strong>, 
-                a meteorologist with 20 years of broadcast experience, including serving as chief meteorologist for Caribbean television. 
-                After being laid off twice as traditional TV weather declined, James recognized a critical need in the digital weather space.
+                James Van Fleet is a professional meteorologist with 20 years of broadcast experience, 
+                including serving as <strong className="text-foreground">chief meteorologist for Caribbean television</strong>. 
+                He's forecasted hundreds of tropical systems, winter storms, and severe weather events across North America and the Caribbean.
               </p>
               <p>
-                While millions now watch weather content on YouTube, there's no trusted guide to help people find credible sources. 
-                James curates the best streamers—from degreed meteorologists to experienced storm chasers—so you can trust what you're watching 
-                when severe weather strikes.
+                After being laid off twice as traditional TV weather declined, James created <strong className="text-foreground">WeatherStream</strong> to 
+                bring his expertise directly to people who need clear, trustworthy weather information—especially travelers planning cruises 
+                and vacations in weather-sensitive destinations.
               </p>
               <p className="text-sm">
-                This is a zero-to-one MVP. Features like embedded video players, multi-stream viewing, and AI recommendations are coming soon. 
-                For now, James is focused on one thing: helping you find the best weather coverage, every single day.
+                <strong className="text-foreground">No clickbait. No fear-mongering. Just honest forecasts from someone who's been doing this for two decades.</strong>
               </p>
             </div>
           </div>
@@ -360,7 +433,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-center md:text-left">
               <p className="text-sm font-semibold">WeatherStream</p>
-              <p className="text-xs text-muted-foreground">Curated by James Van Fleet</p>
+              <p className="text-xs text-muted-foreground">Professional Weather Forecasts by James Van Fleet</p>
             </div>
             
             <p className="text-xs text-muted-foreground">
