@@ -88,6 +88,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visibleIntel, setVisibleIntel] = useState<Set<number>>(new Set());
+  const [hoveredIntel, setHoveredIntel] = useState<number | null>(null);
   const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Scroll-triggered intel expansion - each card independently
@@ -298,7 +299,11 @@ export default function Home() {
               >
                 <div className="glass-dark rounded-3xl overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-500 hover:scale-105 hover:shadow-2xl">
                   {/* Image with Gradient Overlay */}
-                  <div className="relative h-64 overflow-hidden">
+                  <div 
+                    className="relative h-64 overflow-hidden"
+                    onMouseEnter={() => setHoveredIntel(i)}
+                    onMouseLeave={() => setHoveredIntel(null)}
+                  >
                     <img 
                       src={route.image} 
                       alt={route.name}
@@ -306,22 +311,30 @@ export default function Home() {
                     />
                     <div className={`absolute inset-0 bg-gradient-to-t ${route.gradient} to-transparent`} />
                     
-                    {/* Weather Intel - Auto-expands on scroll */}
+                    {/* Weather Intel - Two-stage reveal: peek on scroll, expand on hover */}
                     <div 
-                      className={`absolute left-8 right-8 top-1/2 -translate-y-1/2 transition-all duration-500 z-20 ${
+                      className={`absolute left-8 right-8 top-8 bottom-8 flex items-center justify-center transition-all duration-500 z-20 ${
                         visibleIntel.has(i) 
                           ? 'opacity-100 scale-100' 
                           : 'opacity-0 scale-95 pointer-events-none'
                       }`}
                     >
-                      <div className="bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 shadow-2xl">
+                      <div className={`bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl transition-all duration-300 ${
+                        hoveredIntel === i ? 'p-4 max-h-full' : 'p-3 max-h-16'
+                      } overflow-hidden`}>
                         <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                            <Sparkles className="w-5 h-5 text-white" />
+                          <div className={`rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                            hoveredIntel === i ? 'w-9 h-9' : 'w-8 h-8'
+                          }`}>
+                            <Sparkles className={`text-white transition-all duration-300 ${
+                              hoveredIntel === i ? 'w-5 h-5' : 'w-4 h-4'
+                            }`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel</p>
-                            <p className="text-white/90 text-sm leading-relaxed">{route.intel}</p>
+                            <p className={`text-white/90 text-sm leading-relaxed transition-all duration-300 ${
+                              hoveredIntel === i ? 'opacity-100' : 'opacity-0 h-0'
+                            }`}>{route.intel}</p>
                           </div>
                         </div>
                       </div>
