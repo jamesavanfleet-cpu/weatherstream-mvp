@@ -319,9 +319,9 @@ export default function Home() {
                           : 'opacity-0 scale-95 pointer-events-none'
                       }`}
                     >
-                      <div className={`bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl transition-all duration-300 ${
-                        hoveredIntel === i ? 'p-4 max-h-full' : 'p-3 max-h-16'
-                      } overflow-hidden`}>
+                      <div className={`bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl transition-all duration-300 w-full ${
+                        hoveredIntel === i ? 'p-4' : 'p-3 max-h-16 overflow-hidden'
+                      }`}>
                         <div className="flex items-start gap-3">
                           <div className={`rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
                             hoveredIntel === i ? 'w-9 h-9' : 'w-8 h-8'
@@ -333,7 +333,7 @@ export default function Home() {
                           <div className="flex-1 min-w-0">
                             <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel</p>
                             <p className={`text-white/90 text-sm leading-relaxed transition-all duration-300 ${
-                              hoveredIntel === i ? 'opacity-100' : 'opacity-0 h-0'
+                              hoveredIntel === i ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'
                             }`}>{route.intel}</p>
                           </div>
                         </div>
