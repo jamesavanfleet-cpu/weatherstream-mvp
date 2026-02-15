@@ -212,13 +212,15 @@ export default function Home() {
           {/* Right: Video Player */}
           <div className="relative">
             <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10">
-              <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 relative group">
+              <div className="aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative group">
                 {/* Actual Video */}
                 <video 
                   className="w-full h-full object-cover"
-                  controls
-                  preload="metadata"
-                  poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%230f172a' width='1920' height='1080'/%3E%3C/svg%3E"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
                 >
                   <source src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/ZjZxBJiirimaafnf.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
