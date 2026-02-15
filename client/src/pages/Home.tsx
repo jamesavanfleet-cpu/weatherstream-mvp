@@ -212,18 +212,20 @@ export default function Home() {
           {/* Right: Video Player */}
           <div className="relative">
             <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10">
-              <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 relative group cursor-pointer">
-                {/* Video Placeholder */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="w-24 h-24 rounded-full glass flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 glow">
-                    <Play className="w-12 h-12 text-white ml-1" />
-                  </div>
-                  <p className="text-white font-semibold text-lg">Today's Weather Briefing</p>
-                  <p className="text-white/60 text-sm">February 14, 2026 • 4:32</p>
-                </div>
+              <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 relative group">
+                {/* Actual Video */}
+                <video 
+                  className="w-full h-full object-cover"
+                  controls
+                  preload="metadata"
+                  poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%230f172a' width='1920' height='1080'/%3E%3C/svg%3E"
+                >
+                  <source src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/ZjZxBJiirimaafnf.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
                 
                 {/* Live Badge */}
-                <div className="absolute top-4 right-4 glass-dark px-3 py-1.5 rounded-full flex items-center gap-2">
+                <div className="absolute top-4 right-4 glass-dark px-3 py-1.5 rounded-full flex items-center gap-2 z-10">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                   <span className="text-white text-xs font-semibold">NEW</span>
                 </div>
