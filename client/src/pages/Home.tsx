@@ -390,7 +390,7 @@ export default function Home() {
       </header>
 
       {/* Full-Screen Video Hero */}
-      <section className="relative flex items-center justify-center overflow-hidden pt-20 pb-8" style={{minHeight: '85vh'}}>
+      <section className="relative flex items-center justify-center overflow-hidden pt-16 pb-4" style={{minHeight: '78vh'}}>
         <div className="absolute inset-0">
           <img
             src={HERO_BG}
@@ -426,9 +426,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 relative group" style={{height: '280px'}}>
+          <div className="relative flex justify-center">
+            <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10" style={{maxWidth: '380px', width: '100%'}}>
+              <div className="aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative group">
                 <video
                   className="w-full h-full object-cover"
                   autoPlay
@@ -455,7 +455,7 @@ export default function Home() {
       </section>
 
       {/* Live Conditions - Expanded Caribbean Ports */}
-      <section className="py-12 relative">
+      <section className="py-8 relative">
         <div className="container">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50" />
