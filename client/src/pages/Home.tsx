@@ -390,7 +390,7 @@ export default function Home() {
       </header>
 
       {/* Full-Screen Video Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      <section className="relative flex items-center justify-center overflow-hidden pt-20 pb-8" style={{minHeight: '85vh'}}>
         <div className="absolute inset-0">
           <img
             src={HERO_BG}
@@ -428,7 +428,7 @@ export default function Home() {
 
           <div className="relative">
             <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10">
-              <div className="aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative group">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 relative group" style={{height: '280px'}}>
                 <video
                   className="w-full h-full object-cover"
                   autoPlay
