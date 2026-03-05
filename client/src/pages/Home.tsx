@@ -390,7 +390,7 @@ export default function Home() {
       </header>
 
       {/* Full-Screen Video Hero */}
-      <section className="relative flex items-center justify-center overflow-hidden pt-16 pb-4" style={{minHeight: '78vh'}}>
+      <section className="relative flex items-center justify-center overflow-hidden pt-16 pb-0" style={{minHeight: '72vh'}}>
         <div className="absolute inset-0">
           <img
             src={HERO_BG}
@@ -416,7 +416,7 @@ export default function Home() {
             </div>
             <p className="text-xl text-white/80 leading-relaxed max-w-xl">
               Daily video briefings, live Caribbean cruise forecasts, and breaking storm analysis
-              from a former Royal Caribbean Chief Meteorologist with 30+ years of experience.
+              from the former Royal Caribbean Chief Meteorologist with 30+ years of experience.
             </p>
             <div className="flex gap-3">
               <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent">
