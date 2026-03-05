@@ -408,7 +408,7 @@ export default function Home() {
             </Badge>
             <div className="space-y-3">
               <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-none">
-                <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-500 via-cyan-300 to-white bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(56,189,248,0.6)]">
                   Weather Intelligence
                 </span>
               </h2>
