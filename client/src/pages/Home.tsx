@@ -104,8 +104,8 @@ const CRUISE_ROUTES = [
     intel: "Roatan and the Bay Islands are sitting in a sweet spot between the trade wind belt and the ITCZ. Calm anchorages on the leeward side. Belize barrier reef conditions are outstanding—visibility 80+ ft. Slight swell on the windward shores of Cayman."
   },
   {
-    name: "Greater Antilles",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
+    name: "Lesser Antilles",
+    image: "/weatherstream-mvp/locations/barbados.jpg",
     temp: 83,
     seas: "3-5 ft",
     wind: "14-20 kt",
@@ -119,7 +119,7 @@ const CRUISE_ROUTES = [
 // --- Eastern Pacific Routes ---
 const PACIFIC_ROUTES = [
   {
-    name: "Los Angeles / San Pedro",
+    name: "Los Angeles",
     image: "/weatherstream-mvp/locations/la-san-pedro.jpg",
     temp: 68,
     seas: "3-5 ft",
