@@ -120,7 +120,7 @@ const CRUISE_ROUTES = [
 const PACIFIC_ROUTES = [
   {
     name: "Los Angeles / San Pedro",
-    image: "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&h=600&fit=crop",
+    image: "/weatherstream-mvp/locations/la-san-pedro.jpg",
     temp: 68,
     seas: "3-5 ft",
     wind: "12-18 kt",
@@ -131,7 +131,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Ensenada",
-    image: "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=800&h=600&fit=crop",
+    image: "/weatherstream-mvp/locations/ensenada.jpg",
     temp: 65,
     seas: "4-6 ft",
     wind: "15-22 kt",
@@ -142,7 +142,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Cabo San Lucas",
-    image: "https://images.unsplash.com/photo-1512813195386-6cf811ad3542?w=800&h=600&fit=crop",
+    image: "/weatherstream-mvp/locations/cabo-san-lucas.jpg",
     temp: 78,
     seas: "2-4 ft",
     wind: "10-15 kt",
@@ -153,7 +153,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Mazatlan",
-    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop",
+    image: "/weatherstream-mvp/locations/mazatlan.jpg",
     temp: 82,
     seas: "2-3 ft",
     wind: "8-12 kt",
@@ -164,7 +164,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Puerto Vallarta",
-    image: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&h=600&fit=crop",
+    image: "/weatherstream-mvp/locations/puerto-vallarta.jpg",
     temp: 84,
     seas: "2-4 ft",
     wind: "10-16 kt",
