@@ -416,7 +416,7 @@ export default function Home() {
             </div>
             <p className="text-xl text-white/80 leading-relaxed max-w-xl">
               Daily video briefings, live Caribbean cruise forecasts, and breaking storm analysis
-              from the former Royal Caribbean Chief Meteorologist with 30+ years of experience.
+              with the former Chief Meteorologist of Royal Caribbean, with 30+ years of experience.
             </p>
             <div className="flex gap-3">
               <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent">
