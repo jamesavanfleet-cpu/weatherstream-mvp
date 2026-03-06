@@ -246,25 +246,25 @@ function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave, isMetric 
 
               {/* 5-day forecast strip */}
               <div>
-                <p className="text-white/40 text-base font-semibold uppercase tracking-wider mb-3">5-Day Forecast</p>
+                <p className="text-white/50 text-lg font-bold uppercase tracking-wider mb-4">5-Day Forecast</p>
                 <div className="grid grid-cols-5 gap-3">
                   {pw.forecast.slice(0, 5).map((day) => {
                     const d = new Date(day.date + "T12:00:00");
                     const hasWave = day.swellHeightFt != null;
                     return (
                       <div key={day.date} className="text-center">
-                        <p className="text-white/50 text-sm mb-1 font-bold">{DAY_NAMES[d.getDay()]}</p>
-                        <p className="text-white text-lg font-bold">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
-                        <p className="text-white/50 text-sm">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
-                        <p className="text-cyan-400 text-sm mt-1 font-semibold">{day.windDir}</p>
-                        <p className="text-white/70 text-sm">{day.windKt}kt</p>
-                        <p className="text-purple-400 text-sm font-semibold">{day.rainChance}%</p>
+                        <p className="text-white/60 text-base mb-1 font-extrabold">{DAY_NAMES[d.getDay()]}</p>
+                        <p className="text-white text-xl font-extrabold">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
+                        <p className="text-white/60 text-base font-bold">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
+                        <p className="text-cyan-300 text-base mt-1 font-extrabold">{day.windDir}</p>
+                        <p className="text-white/80 text-base font-bold">{day.windKt}kt</p>
+                        <p className="text-purple-300 text-base font-extrabold">{day.rainChance}%</p>
                         {hasWave && (
                           <>
-                            <div className="border-t border-white/10 my-2" />
-                            <p className="text-blue-400 text-sm font-bold leading-snug">{isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}</p>
-                            <p className="text-teal-400 text-sm leading-snug font-semibold">{day.swellDir}</p>
-                            <p className="text-white/60 text-sm leading-snug">{day.swellPeriod}s</p>
+                            <div className="border-t border-white/15 my-2" />
+                            <p className="text-blue-300 text-base font-extrabold leading-snug">{isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}</p>
+                            <p className="text-teal-300 text-base leading-snug font-extrabold">{day.swellDir}</p>
+                            <p className="text-white/70 text-base leading-snug font-bold">{day.swellPeriod}s</p>
                           </>
                         )}
                       </div>
@@ -272,10 +272,10 @@ function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave, isMetric 
                   })}
                 </div>
                 {pw.forecast.some(d => d.swellHeightFt != null) && (
-                  <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/5">
-                    <span className="text-blue-400 text-sm">ft = swell ht</span>
-                    <span className="text-teal-400 text-sm">dir = swell dir</span>
-                    <span className="text-white/50 text-sm">s = period</span>
+                  <div className="flex items-center gap-4 mt-4 pt-3 border-t border-white/10">
+                    <span className="text-blue-300 text-sm font-bold">ft = swell ht</span>
+                    <span className="text-teal-300 text-sm font-bold">dir = swell dir</span>
+                    <span className="text-white/60 text-sm font-bold">s = period</span>
                   </div>
                 )}
               </div>
