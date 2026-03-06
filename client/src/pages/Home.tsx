@@ -806,62 +806,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Email Signup - Premium CTA */}
-      <section className="py-8 relative">
-        <div className="container">
-          <div className="max-w-3xl mx-auto glass-dark rounded-3xl p-12 border border-white/10 shadow-2xl glow-accent relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
-            <div className="relative z-10 text-center space-y-6">
-              <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full border border-white/20 mb-4">
-                <Zap className="w-4 h-4 text-yellow-400" />
-                <span className="text-white text-sm font-semibold">Join 8,500+ Subscribers</span>
-              </div>
-              <h3 className="text-4xl font-black text-white mb-4 tracking-tight">
-                Get VanFleet Intel Daily
-              </h3>
-              <p className="text-lg text-white/70 max-w-xl mx-auto">
-                Get James's daily video briefings and weekly cruise forecasts delivered to your inbox.
-                <strong className="text-white block mt-2">No spam. No hype. Just weather you can trust.</strong>
-              </p>
-              <form onSubmit={handleEmailSignup} className="max-w-md mx-auto">
-                <div className="flex gap-3">
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="flex-1 h-14 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 rounded-xl"
-                    required
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    size="lg"
-                    className="bg-gradient-to-r from-primary to-accent hover:opacity-90 border-0 shadow-xl glow-accent px-8"
-                  >
-                    {isSubmitting ? "..." : <ArrowRight className="w-5 h-5" />}
-                  </Button>
-                </div>
-              </form>
-              <div className="flex items-center justify-center gap-6 text-sm text-white/60">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>Daily briefings</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Ship className="w-4 h-4" />
-                  <span>Cruise forecasts</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  <span>Storm alerts</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 glass-dark">
