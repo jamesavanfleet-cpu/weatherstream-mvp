@@ -545,7 +545,7 @@ export default function Home() {
           src="/weatherstream-mvp/locations/bridge-banner.jpg"
           alt="Ship bridge at sunrise returning to Miami"
           className="w-full h-full object-cover object-center"
-          style={{objectPosition: 'center 40%'}}
+          style={{objectPosition: 'center 65%'}}
         />
       </div>
 
