@@ -49,10 +49,12 @@ export default function BookBriefing() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await fetch("https://formspree.io/f/jamesavanfleet@gmail.com", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
+          access_key: "51c4f3bf-d871-44ee-8d51-388f783c998a",
+          subject: "New Briefing Request from " + form.name,
           name: form.name,
           title: form.title,
           email: form.email,
@@ -65,12 +67,12 @@ export default function BookBriefing() {
           platform: form.platform,
         }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        const data = await res.json();
-        toast.error(data?.errors?.[0]?.message ?? "Submission failed. Please try again.");
+        toast.error(data?.message ?? "Submission failed. Please try again.");
       }
     } catch {
       toast.error("Network error. Please check your connection and try again.");
@@ -155,9 +157,9 @@ export default function BookBriefing() {
                 <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/40 rounded-full px-4 py-1.5">
                   <span className="text-amber-400 text-xs font-bold uppercase tracking-widest">Limited Offer</span>
                 </div>
-                <div>
-                  <p className="text-2xl font-black text-amber-400 leading-tight">First Briefing</p>
-                  <p className="text-4xl font-black text-white leading-tight">75% Off</p>
+                <div className="space-y-1">
+                  <p className="text-white/50 text-xs uppercase tracking-widest">First Briefing</p>
+                  <p className="text-5xl font-black text-amber-400 leading-tight">$50</p>
                 </div>
                 <div className="border-t border-white/10 pt-3">
                   <p className="text-white/40 text-xs uppercase tracking-widest mb-0.5">Then</p>
