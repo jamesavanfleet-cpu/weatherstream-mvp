@@ -127,8 +127,9 @@ export default function BookBriefing() {
             {/* Pricing Card */}
             <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 rounded-2xl p-6">
               <div className="text-center mb-4">
+                <p className="text-amber-400 text-sm font-semibold tracking-wide mb-2">First briefing is free</p>
                 <p className="text-white/60 text-sm uppercase tracking-widest mb-1">Briefing Fee</p>
-                <p className="text-5xl font-black text-white">$150</p>
+                <p className="text-3xl font-bold text-white">$150</p>
                 <p className="text-white/50 text-sm mt-1">per 20-minute session</p>
               </div>
               <div className="border-t border-white/10 pt-4 space-y-3">
@@ -146,7 +147,7 @@ export default function BookBriefing() {
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                  <p className="text-white/70 text-sm">The same decision support James provided for Royal Caribbean's fleet</p>
+                  <p className="text-white/70 text-sm">The same decision support James provided for Royal Caribbean's fleet of captains and bridge officers, as well as the CEO, Chairman, and the entire C-suite of Royal Caribbean Group</p>
                 </div>
               </div>
             </div>
