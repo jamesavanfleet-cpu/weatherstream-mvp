@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { 
-  Anchor, ArrowRight, Calendar, Cloud, CloudRain, Droplets, Info,
+  Anchor, ArrowRight, Calendar, Cloud, Waves, Droplets, Info,
   MapPin, Play, Ship, Sparkles, ThermometerSun, TrendingUp, 
   Wind, Zap, Clock, Users, Navigation, AlertTriangle
 } from "lucide-react";
@@ -344,7 +344,7 @@ export default function Home() {
               <p className="text-xs text-white/60">Temperature</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
-              <CloudRain className="w-5 h-5 mx-auto mb-2 text-blue-400" />
+              <Waves className="w-5 h-5 mx-auto mb-2 text-blue-400" />
               <p className="text-2xl font-bold text-white">{route.seas}</p>
               <p className="text-xs text-white/60">Sea State</p>
             </div>
