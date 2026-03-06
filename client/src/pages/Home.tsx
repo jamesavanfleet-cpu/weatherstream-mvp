@@ -539,31 +539,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen gradient-animate">
-      {/* Floating Header with Glassmorphism */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass-dark border-b border-white/5">
-        <div className="container py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 flex items-center justify-center rounded-xl overflow-hidden">
-              <img
-                src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/vIcLAlFQYCjrGjIM.png"
-                alt="VanFleet Wx Logo"
-                className="w-12 h-12 object-contain rounded-xl"
-              />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white">VanFleet Wx</h1>
-              <p className="text-xs text-white/60">Weather Intelligence</p>
-            </div>
-          </div>
-          <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 border-0 shadow-lg glow">
-            <Sparkles className="w-3 h-3 mr-2" />
-            Subscribe Free
-          </Button>
-        </div>
-      </header>
+      {/* Full-Width Banner Photo */}
+      <div className="w-full" style={{height: '260px', overflow: 'hidden'}}>
+        <img
+          src="/weatherstream-mvp/locations/bridge-banner.jpg"
+          alt="Ship bridge at sunrise returning to Miami"
+          className="w-full h-full object-cover object-center"
+          style={{objectPosition: 'center 40%'}}
+        />
+      </div>
 
       {/* Full-Screen Video Hero */}
-      <section className="relative flex items-center justify-center overflow-hidden pt-16 pb-0" style={{minHeight: '72vh'}}>
+      <section className="relative flex items-center justify-center overflow-hidden pt-0 pb-0" style={{minHeight: '72vh'}}>
         <div className="absolute inset-0">
           <img
             src={HERO_BG}
