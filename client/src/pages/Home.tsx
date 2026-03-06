@@ -155,17 +155,6 @@ const MED_ROUTES = [
 // --- Eastern Pacific Routes ---
 const PACIFIC_ROUTES = [
   {
-    name: "Los Angeles",
-    image: "/weatherstream-mvp/locations/la-san-pedro.jpg",
-    temp: 68,
-    seas: "3-5 ft",
-    wind: "12-18 kt",
-    rain: "5%",
-    status: "Good",
-    gradient: "from-blue-600/20 to-slate-500/20",
-    intel: "Typical Southern California pattern with morning marine layer burning off by 10 AM. Santa Ana wind threat is low this week. Channel Islands crossing is manageable with a 3-5 ft NW swell. Catalina anchorages on the leeward side are calm."
-  },
-  {
     name: "Ensenada",
     image: "/weatherstream-mvp/locations/ensenada.jpg",
     temp: 65,
@@ -242,7 +231,6 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Western Caribbean":  { lat: 19.3,   lon: -81.4  },
   "Bahamas":            { lat: 25.0,   lon: -77.4  },
   "Southern Caribbean": { lat: 12.5,   lon: -70.0  },
-  "Los Angeles":        { lat: 33.73,  lon: -118.26 },
   "Ensenada":           { lat: 31.87,  lon: -116.6  },
   "Cabo San Lucas":     { lat: 22.89,  lon: -109.91 },
   "Mazatlan":           { lat: 23.22,  lon: -106.42 },

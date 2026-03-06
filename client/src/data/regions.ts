@@ -148,7 +148,6 @@ export const REGIONS: Region[] = [
       { name: "Cabo San Lucas",    lat: 22.89, lon: -109.91 },
       { name: "Ensenada",          lat: 31.87, lon: -116.60 },
       { name: "Huatulco",          lat: 15.74, lon: -96.13 },
-      { name: "Los Angeles",       lat: 33.74, lon: -118.26 },
       { name: "Manzanillo",        lat: 19.05, lon: -104.32 },
       { name: "Mazatlan",          lat: 23.24, lon: -106.41 },
       { name: "Puerto Vallarta",   lat: 20.65, lon: -105.22 },
