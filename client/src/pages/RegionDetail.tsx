@@ -137,19 +137,21 @@ export default function RegionDetail() {
     });
   }, [region]);
 
-  // Fetch daily AI intel from Cloudflare Worker
+  // Fetch daily AI intel from intel.json (updated by GitHub Actions each morning)
   useEffect(() => {
     if (!region) return;
     setIntelLoading(true);
-    const workerUrl = `https://weatherstream-intel.jamesavanfleet-cpu.workers.dev/intel?region=${encodeURIComponent(region.name)}`;
-    fetch(workerUrl)
+    const base = import.meta.env.BASE_URL || "/";
+    fetch(`${base}intel.json?v=${new Date().toISOString().slice(0, 10)}`)
       .then(r => r.json())
-      .then((data: { intel?: string }) => {
-        setIntel(data.intel ?? "");
+      .then((data: { regions?: Record<string, string> }) => {
+        const key = region.slug;
+        const text = data.regions?.[key] ?? "";
+        setIntel(text || region.intel);
         setIntelLoading(false);
       })
       .catch(() => {
-        setIntel("");
+        setIntel(region.intel);
         setIntelLoading(false);
       });
   }, [region]);
