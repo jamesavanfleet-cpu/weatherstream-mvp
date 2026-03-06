@@ -136,6 +136,43 @@ const CRUISE_ROUTES = [
   },
 ];
 
+// --- Mediterranean Routes ---
+const MED_ROUTES = [
+  {
+    name: "Western Mediterranean",
+    image: "/weatherstream-mvp/locations/western-mediterranean.jpg",
+    temp: 62,
+    seas: "2-4 ft",
+    wind: "12-20 kt",
+    rain: "15%",
+    status: "Good",
+    gradient: "from-blue-500/20 to-indigo-500/20",
+    intel: "Mistral threat low this week. Barcelona and the Balearics enjoying light E-SE sea breezes 10-15 kt. Strait of Gibraltar Levante winds calm. Lisbon and the Portuguese coast seeing NW 15-20 kt with 3-5 ft Atlantic swell on the approach."
+  },
+  {
+    name: "Central Mediterranean",
+    image: "/weatherstream-mvp/locations/central-mediterranean.jpg",
+    temp: 58,
+    seas: "2-5 ft",
+    wind: "10-18 kt",
+    rain: "20%",
+    status: "Good",
+    gradient: "from-cyan-500/20 to-teal-500/20",
+    intel: "Ligurian Sea calm with light variable winds. Tyrrhenian Sea 2-3 ft with NW 10-15 kt. Adriatic watching for Bora development — current forecast shows no significant event this week. Naples and Civitavecchia conditions favorable for cruise operations."
+  },
+  {
+    name: "Eastern Mediterranean",
+    image: "/weatherstream-mvp/locations/eastern-mediterranean.jpg",
+    temp: 65,
+    seas: "2-4 ft",
+    wind: "15-25 kt",
+    rain: "8%",
+    status: "Very Good",
+    gradient: "from-indigo-500/20 to-violet-500/20",
+    intel: "Aegean Meltemi winds running 20-25 kt N-NW. Santorini and Mykonos exposed on northern approaches — use leeward anchorages. Ionian Sea calm. Turkish coast thermal winds building to 15-20 kt by afternoon. Levantine coast light NW 10-15 kt with excellent visibility."
+  },
+];
+
 // --- Eastern Pacific Routes ---
 const PACIFIC_ROUTES = [
   {
@@ -233,6 +270,9 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Cabo San Lucas":     { lat: 22.89,  lon: -109.91 },
   "Mazatlan":           { lat: 23.22,  lon: -106.42 },
   "Puerto Vallarta":    { lat: 20.65,  lon: -105.22 },
+  "Western Mediterranean": { lat: 39.57, lon: 2.65 },
+  "Central Mediterranean":  { lat: 43.30, lon: 5.37 },
+  "Eastern Mediterranean":  { lat: 37.45, lon: 25.33 },
 };
 
 function degToCompass(deg: number): string {
@@ -247,8 +287,11 @@ export default function Home() {
   const [hoveredIntel, setHoveredIntel] = useState<number | null>(null);
   const [visiblePacific, setVisiblePacific] = useState<Set<number>>(new Set());
   const [hoveredPacific, setHoveredPacific] = useState<number | null>(null);
+  const [visibleMed, setVisibleMed] = useState<Set<number>>(new Set());
+  const [hoveredMed, setHoveredMed] = useState<number | null>(null);
   const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pacificRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const medRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
   const [liveOffset, setLiveOffset] = useState(0);
   const [liveExiting, setLiveExiting] = useState(false);
@@ -344,6 +387,30 @@ export default function Home() {
       { threshold: [0, 0.3, 0.5, 0.7, 0.9], rootMargin: '-20% 0px -20% 0px' }
     );
     pacificRefs.current.forEach((ref) => { if (ref) observer.observe(ref); });
+    return () => observer.disconnect();
+  }, []);
+
+  // Scroll-triggered intel expansion for Mediterranean cards
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const index = medRefs.current.indexOf(entry.target as HTMLDivElement);
+          if (index === -1) return;
+          setVisibleMed(prev => {
+            const newSet = new Set(prev);
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
+              newSet.add(index);
+            } else {
+              newSet.delete(index);
+            }
+            return newSet;
+          });
+        });
+      },
+      { threshold: [0, 0.3, 0.5, 0.7, 0.9], rootMargin: '-20% 0px -20% 0px' }
+    );
+    medRefs.current.forEach((ref) => { if (ref) observer.observe(ref); });
     return () => observer.disconnect();
   }, []);
 
@@ -608,6 +675,37 @@ export default function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
             {CRUISE_ROUTES.map((route, i) =>
               renderRouteCard(route, i, cruiseRefs, visibleIntel, hoveredIntel, setHoveredIntel)
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Mediterranean Section */}
+      <section className="py-20 relative overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl opacity-30" />
+        <div className="container relative z-10">
+          <div className="text-center mb-12">
+            <Badge className="glass border-white/20 text-white backdrop-blur-xl mb-4">
+              <Anchor className="w-4 h-4 mr-1" />
+              Mediterranean Coverage
+            </Badge>
+            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
+              Mediterranean Weather
+            </h3>
+            <p className="text-xl text-white/70 max-w-2xl mx-auto">
+              Western, Central, and Eastern Mediterranean — complete port and passage forecasts
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
+            {MED_ROUTES.map((route, i) =>
+              renderRouteCard(
+                route as typeof CRUISE_ROUTES[0],
+                i,
+                medRefs,
+                visibleMed,
+                hoveredMed,
+                setHoveredMed
+              )
             )}
           </div>
         </div>
