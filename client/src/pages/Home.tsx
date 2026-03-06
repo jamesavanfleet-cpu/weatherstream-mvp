@@ -849,6 +849,52 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Biography Section */}
+      <section className="py-20 relative border-t border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/10" />
+        <div className="container relative z-10">
+          <div className="max-w-5xl mx-auto glass-dark rounded-3xl p-8 md:p-12 border border-white/10 shadow-2xl">
+            <div className="flex flex-col md:flex-row gap-10 items-center md:items-start">
+              <div className="w-full md:w-1/3 flex-shrink-0">
+                <div className="relative rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl aspect-[3/4] md:aspect-auto">
+                  <img 
+                    src={`${import.meta.env.VITE_BASE_PATH || '/'}james-headshot.png`} 
+                    alt="James Van Fleet" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <p className="text-white font-bold text-lg">James Van Fleet</p>
+                    <p className="text-blue-400 text-sm font-medium">Chief Meteorologist</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="w-full md:w-2/3 space-y-6 text-white/80 leading-relaxed">
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-6">About James</h2>
+                
+                <p>
+                  With over 30 years of experience as a trailblazing broadcast and operational meteorologist, James Van Fleet has built a career on delivering life-saving, data-driven weather intelligence. He is a trusted media spokesperson and crisis-tested leader credited with protecting lives and multi-billion-dollar assets through precise hurricane routing and real-time decision support.
+                </p>
+                
+                <p>
+                  As the first-ever Chief Meteorologist for Royal Caribbean International (2016-2023), James forecasted and routed the entire global fleet, ensuring the safety of millions of passengers and crew. His critical decisions included ordering the evacuation of Perfect Day at CocoCay ahead of Category 5 Hurricane Dorian, and diverting vessels out of the direct paths of Category 5 Hurricanes Maria and Irma. He also coordinated post-storm relief missions and advised on volcanic eruptions to protect ships from ash and reduced visibility.
+                </p>
+                
+                <p>
+                  Before his groundbreaking role in the cruise industry, James spent decades as a Chief Meteorologist in major television markets including Tampa (WTSP-TV CBS), Orlando (WOFL-TV FOX), and Dallas (WFAA-TV ABC). His broadcast career is marked by high-stakes moments: he was the first on-air to call Hurricane Charley's unexpected turn toward Orlando, and he led overnight wall-to-wall coverage of a deadly Sarasota tornado outbreak that saved hundreds of lives. He even flew with the NOAA Hurricane Hunters directly into Category 5 Hurricane Isabel to gather live data.
+                </p>
+                
+                <p>
+                  Most recently, James served as a Meteorologist for Spire Global, a pioneering satellite-powered climate-data company, where he produced daily social-media weather videos for a global audience and facilitated commercial deals utilizing proprietary weather data.
+                </p>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 glass-dark">
         <div className="container">
