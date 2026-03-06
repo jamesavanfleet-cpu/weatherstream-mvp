@@ -219,6 +219,17 @@ const PACIFIC_ROUTES = [
     gradient: "from-yellow-500/20 to-amber-500/20",
     intel: "Mazatlan is enjoying classic Sea of Cortez winter conditions. Light winds, minimal swell, and outstanding visibility. The Stone Island anchorage is perfectly calm. Excellent conditions for the crossing to La Paz or heading north toward the Tres Marias Islands."
   },
+  {
+    name: "Puerto Vallarta",
+    image: "/weatherstream-mvp/locations/puerto-vallarta.jpg",
+    temp: 84,
+    seas: "2-4 ft",
+    wind: "10-16 kt",
+    rain: "5%",
+    status: "Excellent",
+    gradient: "from-emerald-500/20 to-teal-500/20",
+    intel: "Banderas Bay is one of the most protected anchorages on the Pacific coast of Mexico. Afternoon sea breeze is building to 15 kt by 2 PM, ideal for sailing. Yelapa and the southern bay anchorages are calm. Chacala and Punta Mita are excellent day-trip destinations this week."
+  },
 ];
 
 // --- Briefing Client Types ---
@@ -258,6 +269,7 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Ensenada":           { lat: 31.87,  lon: -116.6  },
   "Cabo San Lucas":     { lat: 22.89,  lon: -109.91 },
   "Mazatlan":           { lat: 23.22,  lon: -106.42 },
+  "Puerto Vallarta":    { lat: 20.65,  lon: -105.22 },
   "Western Mediterranean": { lat: 39.57, lon: 2.65 },
   "Central Mediterranean":  { lat: 43.30, lon: 5.37 },
   "Eastern Mediterranean":  { lat: 37.45, lon: 25.33 },

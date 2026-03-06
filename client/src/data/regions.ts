@@ -215,4 +215,17 @@ export const REGIONS: Region[] = [
       { name: "Topolobampo",       lat: 25.60, lon: -109.05 },
     ],
   },
+  {
+    slug: "puerto-vallarta",
+    name: "Puerto Vallarta",
+    intel: "Banderas Bay is one of the largest bays on the Pacific coast of Mexico, offering excellent protection from ocean swell. Marina Vallarta and the old town anchorage are well-sheltered. Afternoon sea breeze 10-15 kt from the W-SW is typical. Punta Mita on the north point of the bay is more exposed to Pacific swell, good surf but challenging for anchoring. Summer and fall bring the Mexican Monsoon with daily afternoon convective storms building over the Sierra Madre. Hurricane season requires vigilance June through November.",
+    image: "/weatherstream-mvp/locations/puerto-vallarta.jpg",
+    gradient: "from-emerald-500/20 to-teal-500/20",
+    ports: [
+      { name: "Chacala",           lat: 21.17, lon: -105.23 },
+      { name: "Puerto Vallarta",   lat: 20.65, lon: -105.22 },
+      { name: "Punta Mita",        lat: 20.77, lon: -105.53 },
+      { name: "Yelapa",            lat: 20.50, lon: -105.43 },
+    ],
+  },
 ];
