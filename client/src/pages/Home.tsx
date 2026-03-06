@@ -131,7 +131,7 @@ const CRUISE_ROUTES = [
     rain: "15%",
     status: "Good",
     gradient: "from-violet-500/20 to-blue-500/20",
-    intel: "Cuba's north coast is well-protected from the prevailing easterly swell. Hispaniola's mountain ranges are generating afternoon convection—plan arrivals before noon. Puerto Rico's south coast anchorages are calm; north coast building to 4-5 ft by afternoon."
+    intel: "Barbados sits fully exposed to the open Atlantic on its windward east coast, with trade winds running a steady ENE 15-20 kt and a 3-5 ft easterly swell. The leeward west coast anchorages at Carlisle Bay and Bridgetown are well-protected and calm. St. Lucia, Martinique, and Dominica are seeing typical trade wind conditions with afternoon squalls on the windward sides of the volcanic peaks. St. Vincent and the Grenadines offer excellent protected anchorages on the leeward sides. Visibility is outstanding throughout the chain at 80+ ft for diving."
   },
 ];
 
