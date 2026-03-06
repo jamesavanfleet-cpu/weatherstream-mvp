@@ -5,6 +5,7 @@ import { Route, Router as WouterRouter, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import RegionDetail from "./pages/RegionDetail";
 
 // Strip trailing slash from Vite's BASE_URL for wouter base path compatibility
 const basePath = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
@@ -14,6 +15,7 @@ function Router() {
     <WouterRouter base={basePath}>
       <Switch>
         <Route path={"/"} component={Home} />
+        <Route path={"/region/:slug"} component={RegionDetail} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

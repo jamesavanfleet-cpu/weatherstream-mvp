@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 
 /**
@@ -251,6 +252,18 @@ export default function Home() {
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
   const [liveOffset, setLiveOffset] = useState(0);
   const [liveExiting, setLiveExiting] = useState(false);
+  const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
+  const [, navigate] = useLocation();
+
+  // Fetch daily AI intel from intel.json (committed to gh-pages by GitHub Actions)
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}intel.json`)
+      .then(r => r.json())
+      .then((data: { regions?: Record<string, string> }) => {
+        if (data.regions) setRegionIntel(data.regions);
+      })
+      .catch(() => { /* silently fail — static intel text still shown */ });
+  }, []);
 
   // Rotate Live Conditions every 5 seconds: shift 3 cards from the left
   useEffect(() => {
@@ -357,12 +370,16 @@ export default function Home() {
     setHovered: (v: number | null) => void
   ) => {
     const dir = windDirs[route.name];
+    // Derive slug from region name to match REGIONS data
+    const slug = route.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const liveIntel = regionIntel[slug];
     return (
     <div
       key={route.name}
       ref={(el) => { refs.current[i] = el; }}
       className="group cursor-pointer"
       style={{ animationDelay: `${i * 150}ms` }}
+      onClick={() => navigate(`/region/${slug}`)}
     >
       <div className="glass-dark rounded-3xl overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-500 hover:scale-105 hover:shadow-2xl">
         <div
@@ -396,7 +413,7 @@ export default function Home() {
                   <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel</p>
                   <p className={`text-white/90 text-sm leading-relaxed transition-all duration-300 ${
                     hovered === i ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'
-                  }`}>{route.intel}</p>
+                  }`}>{liveIntel || route.intel}</p>
                 </div>
               </div>
             </div>
