@@ -131,14 +131,18 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
 }
 
 // ---- Port Row (hover to expand) ----
-function PortRow({ pw, gradient }: { pw: PortWeather; gradient: string }) {
-  const [hovered, setHovered] = useState(false);
-
+function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave }: {
+  pw: PortWeather;
+  gradient: string;
+  expanded: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
   return (
     <div
       className="glass-dark rounded-2xl border border-white/10 overflow-hidden transition-all duration-300"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* Port name tab -- always visible */}
       <div className={`bg-gradient-to-r ${gradient} px-5 py-4 flex items-center justify-between cursor-default`}>
@@ -149,14 +153,14 @@ function PortRow({ pw, gradient }: { pw: PortWeather; gradient: string }) {
           )}
         </div>
         <ChevronDown
-          className={`w-5 h-5 text-white/50 transition-transform duration-300 ${hovered ? "rotate-180" : ""}`}
+          className={`w-5 h-5 text-white/50 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
         />
       </div>
 
       {/* Expandable forecast panel */}
           <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          hovered ? "max-h-[900px] opacity-100" : "max-h-0 opacity-0"
+          expanded ? "max-h-[900px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="p-5">
@@ -305,6 +309,8 @@ export default function RegionDetail() {
     );
   }
 
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+
   return (
     <div className="min-h-screen gradient-animate">
       {/* Header */}
@@ -365,9 +371,19 @@ export default function RegionDetail() {
           <h2 className="text-2xl font-black text-white mb-2">Port Conditions and Forecasts</h2>
           <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 7-day forecast.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {portWeather.map((pw) => (
-              <PortRow key={pw.port.name} pw={pw} gradient={region.gradient} />
-            ))}
+            {portWeather.map((pw, i) => {
+              const rowIndex = Math.floor(i / 3);
+              return (
+                <PortRow
+                  key={pw.port.name}
+                  pw={pw}
+                  gradient={region.gradient}
+                  expanded={hoveredRow === rowIndex}
+                  onMouseEnter={() => setHoveredRow(rowIndex)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                />
+              );
+            })}
           </div>
         </div>
 
