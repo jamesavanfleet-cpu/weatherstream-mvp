@@ -9,6 +9,34 @@
     <title>VanFleet Wx - Weather Intelligence by James Van Fleet</title>
     <meta name="description" content="Daily weather briefings, Caribbean cruise forecasts, and storm analysis from James Van Fleet, former Royal Caribbean Chief Meteorologist with 30+ years experience." />
     
+    <!-- GitHub Pages SPA routing: handle redirected paths from 404.html -->
+    <script>
+      (function(){
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+        // Also handle ?p= query param from 404.html redirect
+        var l = window.location;
+        if (l.search) {
+          var q = {};
+          l.search.slice(1).split('&').forEach(function(v) {
+            var a = v.split('=');
+            q[a[0]] = a.slice(1).join('=').replace(/~and~/g, '&');
+          });
+          if (q.p !== undefined) {
+            window.history.replaceState(
+              null, null,
+              l.pathname.split('/').slice(0, 2).join('/') + (q.p || '') +
+              (q.q ? ('?' + q.q) : '') +
+              l.hash
+            );
+          }
+        }
+      })();
+    </script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
