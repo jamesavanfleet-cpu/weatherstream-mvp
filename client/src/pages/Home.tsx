@@ -687,10 +687,10 @@ export default function Home() {
           <div className="text-center mb-12">
             <Badge className="glass border-white/20 text-white backdrop-blur-xl mb-4">
               <Anchor className="w-4 h-4 mr-1" />
-              Mediterranean Coverage
+              Mediterranean Cruise Coverage
             </Badge>
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Mediterranean Weather
+              Mediterranean Cruise Weather
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
               Western, Central, and Eastern Mediterranean — complete port and passage forecasts
@@ -718,10 +718,10 @@ export default function Home() {
           <div className="text-center mb-12">
             <Badge className="glass border-white/20 text-white backdrop-blur-xl mb-4">
               <Navigation className="w-4 h-4 mr-1" />
-              Eastern Pacific Coverage
+              Eastern Pacific Cruise Coverage
             </Badge>
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Eastern Pacific Weather
+              Eastern Pacific Cruise Weather
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
               From Los Angeles to Cabo San Lucas — complete Pacific Mexico coastal and offshore forecasts
