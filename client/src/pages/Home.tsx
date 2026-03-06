@@ -395,7 +395,7 @@ export default function Home() {
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Wind className="w-5 h-5 mx-auto mb-2 text-cyan-400" />
-              <p className="text-2xl font-bold text-white">{route.wind}{dir ? <span className="text-lg"> {dir}</span> : null}</p>
+              <p className="text-2xl font-bold text-white">{dir ? <span>{dir} </span> : null}{route.wind}</p>
               <p className="text-xs text-white/60">Wind</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
