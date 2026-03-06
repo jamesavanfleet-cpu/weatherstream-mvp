@@ -132,7 +132,7 @@ const CRUISE_ROUTES = [
     rain: "15%",
     status: "Good",
     gradient: "from-violet-500/20 to-blue-500/20",
-    intel: "ENE trades 15-20 kt with 3-5 ft easterly swell. Barbados west coast anchorages calm; windward coasts of St. Lucia, Martinique, and Dominica seeing afternoon squalls on the volcanic peaks. Leeward anchorages throughout the chain well-protected. Visibility 80+ ft."
+    intel: "ENE trades 15-20 kt with a 3-5 ft easterly swell across the chain. Barbados windward east coast fully exposed; Carlisle Bay and Bridgetown on the leeward west coast are calm and well-protected. St. Lucia, Martinique, and Dominica seeing afternoon squalls on the windward volcanic peaks — plan arrivals before noon. St. Vincent and the Grenadines offer excellent leeward anchorages. Visibility outstanding at 80+ ft throughout."
   },
 ];
 
