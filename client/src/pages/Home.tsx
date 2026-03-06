@@ -658,10 +658,10 @@ export default function Home() {
       </section>
 
       {/* Caribbean Cruise Weather */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
         <div className="container relative z-10">
-          <div className="text-center mb-12">
+          <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Caribbean Cruise Weather
             </h3>
@@ -678,10 +678,10 @@ export default function Home() {
       </section>
 
       {/* Mediterranean Section */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl opacity-30" />
         <div className="container relative z-10">
-          <div className="text-center mb-12">
+          <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Mediterranean Cruise Weather
             </h3>
@@ -705,10 +705,10 @@ export default function Home() {
       </section>
 
       {/* Eastern Pacific Section */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl opacity-30" />
         <div className="container relative z-10">
-          <div className="text-center mb-12">
+          <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Eastern Pacific Cruise Weather
             </h3>
@@ -776,7 +776,7 @@ export default function Home() {
           </div>
 
           {/* Tropical / Hurricane Decision Callout */}
-          <div className="max-w-[900px] mx-auto glass-dark rounded-3xl p-10 border border-amber-500/20 shadow-2xl mb-12 relative overflow-hidden">
+          <div className="max-w-[900px] mx-auto glass-dark rounded-3xl p-10 border border-amber-500/20 shadow-2xl mb-5 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl" />
             <div className="relative z-10 flex flex-col md:flex-row items-start gap-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center flex-shrink-0 shadow-lg">
@@ -811,7 +811,7 @@ export default function Home() {
       </section>
 
       {/* Email Signup - Premium CTA */}
-      <section className="py-20 relative">
+      <section className="py-8 relative">
         <div className="container">
           <div className="max-w-3xl mx-auto glass-dark rounded-3xl p-12 border border-white/10 shadow-2xl glow-accent relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
