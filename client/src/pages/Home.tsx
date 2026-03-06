@@ -200,6 +200,26 @@ const BRIEFING_CLIENTS = [
   },
 ];
 
+// Coordinates for each route card — used to fetch live wind direction
+const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
+  "Eastern Caribbean":  { lat: 18.0,   lon: -63.0  },
+  "Western Caribbean":  { lat: 19.3,   lon: -81.4  },
+  "Bahamas":            { lat: 25.0,   lon: -77.4  },
+  "Southern Caribbean": { lat: 12.5,   lon: -70.0  },
+  "Central Caribbean":  { lat: 16.3,   lon: -86.5  },
+  "Lesser Antilles":    { lat: 13.1,   lon: -59.6  },
+  "Los Angeles":        { lat: 33.73,  lon: -118.26 },
+  "Ensenada":           { lat: 31.87,  lon: -116.6  },
+  "Cabo San Lucas":     { lat: 22.89,  lon: -109.91 },
+  "Mazatlan":           { lat: 23.22,  lon: -106.42 },
+  "Puerto Vallarta":    { lat: 20.65,  lon: -105.22 },
+};
+
+function degToCompass(deg: number): string {
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -209,6 +229,29 @@ export default function Home() {
   const [hoveredPacific, setHoveredPacific] = useState<number | null>(null);
   const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pacificRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [windDirs, setWindDirs] = useState<Record<string, string>>({});
+
+  // Fetch live wind direction for all route cards from Open-Meteo
+  useEffect(() => {
+    const entries = Object.entries(ROUTE_COORDS);
+    const lats = entries.map(([, c]) => c.lat).join(",");
+    const lons = entries.map(([, c]) => c.lon).join(",");
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=wind_direction_10m&wind_speed_unit=kn&timezone=auto`
+    )
+      .then(r => r.json())
+      .then((data: unknown) => {
+        const results: Record<string, string> = {};
+        const arr = Array.isArray(data) ? data : [data];
+        arr.forEach((item: { current?: { wind_direction_10m?: number } }, idx: number) => {
+          const name = entries[idx][0];
+          const deg = item?.current?.wind_direction_10m;
+          if (deg !== undefined) results[name] = degToCompass(deg);
+        });
+        setWindDirs(results);
+      })
+      .catch(() => { /* silently fail — static wind speed still shown */ });
+  }, []);
 
   // Scroll-triggered intel expansion for Caribbean cards
   useEffect(() => {
@@ -279,7 +322,9 @@ export default function Home() {
     visible: Set<number>,
     hovered: number | null,
     setHovered: (v: number | null) => void
-  ) => (
+  ) => {
+    const dir = windDirs[route.name];
+    return (
     <div
       key={route.name}
       ref={(el) => { refs.current[i] = el; }}
@@ -350,7 +395,7 @@ export default function Home() {
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Wind className="w-5 h-5 mx-auto mb-2 text-cyan-400" />
-              <p className="text-2xl font-bold text-white">{route.wind}</p>
+              <p className="text-2xl font-bold text-white">{route.wind}{dir ? <span className="text-lg"> {dir}</span> : null}</p>
               <p className="text-xs text-white/60">Wind</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
@@ -362,7 +407,8 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen gradient-animate">
