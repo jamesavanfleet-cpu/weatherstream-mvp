@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { REGIONS, type Port } from "@/data/regions";
 import {
-  ArrowLeft, ThermometerSun, Waves, Wind, Droplets, Sparkles, AlertTriangle
+  ArrowLeft, ThermometerSun, Waves, Wind, Droplets, Sparkles, AlertTriangle, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -52,7 +52,6 @@ interface DayForecast {
   windDir: string;
   rainChance: number;
   condition: string;
-  // wave / swell
   waveHeightFt: number | null;
   swellHeightFt: number | null;
   swellDir: string | null;
@@ -75,7 +74,6 @@ interface PortWeather {
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | "loading" | "error">> {
-  // Fetch weather + marine in parallel
   const weatherUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
@@ -114,10 +112,10 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
       windDir: degToCompass(d.wind_direction_10m_dominant[i]),
       rainChance: d.precipitation_probability_max[i] ?? 0,
       condition: wmoToCondition(d.weathercode[i]),
-      waveHeightFt:  md?.wave_height_max?.[i]           != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
-      swellHeightFt: md?.swell_wave_height_max?.[i]     != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
+      waveHeightFt:  md?.wave_height_max?.[i]       != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
+      swellHeightFt: md?.swell_wave_height_max?.[i] != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
       swellDir:      swellDeg != null ? degToCompass(swellDeg) : null,
-      swellPeriod:   md?.swell_wave_period_max?.[i]     != null ? Math.round(md.swell_wave_period_max[i]) : null,
+      swellPeriod:   md?.swell_wave_period_max?.[i] != null ? Math.round(md.swell_wave_period_max[i]) : null,
     };
   });
 
@@ -132,7 +130,118 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
   };
 }
 
-// ---- Component ----
+// ---- Port Row (hover to expand) ----
+function PortRow({ pw, gradient }: { pw: PortWeather; gradient: string }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="glass-dark rounded-2xl border border-white/10 overflow-hidden transition-all duration-300"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Port name tab -- always visible */}
+      <div className={`bg-gradient-to-r ${gradient} px-5 py-4 flex items-center justify-between cursor-default`}>
+        <div>
+          <p className="text-white font-bold text-lg leading-tight">{pw.port.name}</p>
+          {pw.port.sublabel && (
+            <p className="text-white/50 text-xs mt-0.5">{pw.port.sublabel}</p>
+          )}
+        </div>
+        <ChevronDown
+          className={`w-5 h-5 text-white/50 transition-transform duration-300 ${hovered ? "rotate-180" : ""}`}
+        />
+      </div>
+
+      {/* Expandable forecast panel */}
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          hovered ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="p-5">
+          {pw.loading ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[0,1,2,3].map(i => (
+                <div key={i} className="glass rounded-xl p-3 text-center">
+                  <div className="h-5 w-5 bg-white/10 rounded-full mx-auto mb-2 animate-pulse" />
+                  <div className="h-6 bg-white/10 rounded animate-pulse mb-1" />
+                  <div className="h-3 bg-white/10 rounded animate-pulse w-2/3 mx-auto" />
+                </div>
+              ))}
+            </div>
+          ) : pw.error ? (
+            <p className="text-white/40 text-sm text-center py-4">Data temporarily unavailable</p>
+          ) : (
+            <>
+              {/* Current conditions grid */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="glass rounded-xl p-3 text-center">
+                  <ThermometerSun className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+                  <p className="text-xl font-bold text-white">{pw.tempF}&deg;</p>
+                  <p className="text-xs text-white/50">Temperature</p>
+                </div>
+                <div className="glass rounded-xl p-3 text-center">
+                  <Waves className="w-5 h-5 mx-auto mb-1 text-blue-400" />
+                  <p className="text-xl font-bold text-white">{pw.seas}</p>
+                  <p className="text-xs text-white/50">Sea State</p>
+                </div>
+                <div className="glass rounded-xl p-3 text-center">
+                  <Wind className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
+                  <p className="text-xl font-bold text-white">{pw.windDir} {pw.windKt} kt</p>
+                  <p className="text-xs text-white/50">Wind</p>
+                </div>
+                <div className="glass rounded-xl p-3 text-center">
+                  <Droplets className="w-5 h-5 mx-auto mb-1 text-purple-400" />
+                  <p className="text-xl font-bold text-white">{pw.rainChance}%</p>
+                  <p className="text-xs text-white/50">Rain Chance</p>
+                </div>
+              </div>
+
+              {/* 3-day forecast strip */}
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">3-Day Forecast</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {pw.forecast.slice(0, 3).map((day) => {
+                    const d = new Date(day.date + "T12:00:00");
+                    const hasWave = day.swellHeightFt != null;
+                    return (
+                      <div key={day.date} className="text-center">
+                        <p className="text-white/40 text-[10px] mb-1 font-semibold">{DAY_NAMES[d.getDay()]}</p>
+                        <p className="text-white text-xs font-bold">{day.maxF}&deg;</p>
+                        <p className="text-white/40 text-[10px]">{day.minF}&deg;</p>
+                        <p className="text-cyan-400 text-[10px] mt-1">{day.windDir}</p>
+                        <p className="text-white/60 text-[10px]">{day.windKt}kt</p>
+                        <p className="text-purple-400 text-[10px]">{day.rainChance}%</p>
+                        {hasWave && (
+                          <>
+                            <div className="border-t border-white/10 my-1.5" />
+                            <p className="text-blue-400 text-[10px] font-bold leading-tight">{day.swellHeightFt}ft</p>
+                            <p className="text-teal-400 text-[10px] leading-tight">{day.swellDir}</p>
+                            <p className="text-white/50 text-[10px] leading-tight">{day.swellPeriod}s</p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {pw.forecast.some(d => d.swellHeightFt != null) && (
+                  <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/5">
+                    <span className="text-blue-400 text-[10px]">ft = swell ht</span>
+                    <span className="text-teal-400 text-[10px]">dir = swell dir</span>
+                    <span className="text-white/40 text-[10px]">s = period</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Main Component ----
 export default function RegionDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [, navigate] = useLocation();
@@ -141,7 +250,6 @@ export default function RegionDetail() {
   const [intel, setIntel] = useState<string>("");
   const [intelLoading, setIntelLoading] = useState(true);
 
-  // Fetch live weather for all ports
   useEffect(() => {
     if (!region) return;
     const initial: PortWeather[] = region.ports.map(p => ({
@@ -168,7 +276,6 @@ export default function RegionDetail() {
     });
   }, [region]);
 
-  // Fetch daily AI intel from intel.json
   useEffect(() => {
     if (!region) return;
     setIntelLoading(true);
@@ -213,7 +320,7 @@ export default function RegionDetail() {
           <div className="h-5 w-px bg-white/20" />
           <div>
             <p className="text-white font-bold text-sm">{region.name}</p>
-            <p className="text-white/40 text-xs">Live Conditions and 7-Day Forecast</p>
+            <p className="text-white/40 text-xs">Live Conditions and 3-Day Forecast</p>
           </div>
         </div>
       </header>
@@ -237,7 +344,7 @@ export default function RegionDetail() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel — Updated Daily</p>
+              <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel -- Updated Daily</p>
               {intelLoading ? (
                 <div className="space-y-2">
                   <div className="h-3 bg-white/10 rounded animate-pulse w-full" />
@@ -253,110 +360,17 @@ export default function RegionDetail() {
           </div>
         </div>
 
-        {/* Port cards */}
+        {/* Port list */}
         <div>
-          <h2 className="text-2xl font-black text-white mb-6">Port Conditions and Forecasts</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <h2 className="text-2xl font-black text-white mb-2">Port Conditions and Forecasts</h2>
+          <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 3-day forecast.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {portWeather.map((pw) => (
-              <div key={pw.port.name} className="glass-dark rounded-2xl border border-white/10 overflow-hidden">
-                {/* Port header */}
-                <div className={`bg-gradient-to-r ${region.gradient} border-b border-white/10 px-5 py-4`}>
-                  <p className="text-white font-bold text-lg leading-tight">{pw.port.name}</p>
-                  {pw.port.sublabel && (
-                    <p className="text-white/50 text-xs mt-0.5">{pw.port.sublabel}</p>
-                  )}
-                </div>
-
-                {/* Current conditions */}
-                <div className="p-5">
-                  {pw.loading ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {[0,1,2,3].map(i => (
-                        <div key={i} className="glass rounded-xl p-3 text-center">
-                          <div className="h-5 w-5 bg-white/10 rounded-full mx-auto mb-2 animate-pulse" />
-                          <div className="h-6 bg-white/10 rounded animate-pulse mb-1" />
-                          <div className="h-3 bg-white/10 rounded animate-pulse w-2/3 mx-auto" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : pw.error ? (
-                    <p className="text-white/40 text-sm text-center py-4">Data temporarily unavailable</p>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-3 mb-5">
-                        <div className="glass rounded-xl p-3 text-center">
-                          <ThermometerSun className="w-5 h-5 mx-auto mb-1 text-orange-400" />
-                          <p className="text-xl font-bold text-white">{pw.tempF}°</p>
-                          <p className="text-xs text-white/50">Temperature</p>
-                        </div>
-                        <div className="glass rounded-xl p-3 text-center">
-                          <Waves className="w-5 h-5 mx-auto mb-1 text-blue-400" />
-                          <p className="text-xl font-bold text-white">{pw.seas}</p>
-                          <p className="text-xs text-white/50">Sea State</p>
-                        </div>
-                        <div className="glass rounded-xl p-3 text-center">
-                          <Wind className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
-                          <p className="text-xl font-bold text-white">{pw.windDir} {pw.windKt} kt</p>
-                          <p className="text-xs text-white/50">Wind</p>
-                        </div>
-                        <div className="glass rounded-xl p-3 text-center">
-                          <Droplets className="w-5 h-5 mx-auto mb-1 text-purple-400" />
-                          <p className="text-xl font-bold text-white">{pw.rainChance}%</p>
-                          <p className="text-xs text-white/50">Rain Chance</p>
-                        </div>
-                      </div>
-
-                      {/* 3-day forecast strip */}
-                      <div>
-                        <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">3-Day Forecast</p>
-                        <div className="grid grid-cols-3 gap-1">
-                          {pw.forecast.slice(0, 3).map((day) => {
-                            const d = new Date(day.date + "T12:00:00");
-                            const hasWave = day.swellHeightFt != null;
-                            return (
-                              <div key={day.date} className="text-center">
-                                {/* Day label */}
-                                <p className="text-white/40 text-[10px] mb-1 font-semibold">{DAY_NAMES[d.getDay()]}</p>
-                                {/* Temp */}
-                                <p className="text-white text-xs font-bold">{day.maxF}°</p>
-                                <p className="text-white/40 text-[10px]">{day.minF}°</p>
-                                {/* Wind */}
-                                <p className="text-cyan-400 text-[10px] mt-1">{day.windDir}</p>
-                                <p className="text-white/60 text-[10px]">{day.windKt}kt</p>
-                                {/* Rain */}
-                                <p className="text-purple-400 text-[10px]">{day.rainChance}%</p>
-                                {/* Swell divider */}
-                                {hasWave && (
-                                  <>
-                                    <div className="border-t border-white/10 my-1.5" />
-                                    {/* Wave height */}
-                                    <p className="text-blue-400 text-[10px] font-bold leading-tight">{day.swellHeightFt}ft</p>
-                                    {/* Swell direction */}
-                                    <p className="text-teal-400 text-[10px] leading-tight">{day.swellDir}</p>
-                                    {/* Swell period */}
-                                    <p className="text-white/50 text-[10px] leading-tight">{day.swellPeriod}s</p>
-                                  </>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {/* Legend */}
-                        {pw.forecast.some(d => d.swellHeightFt != null) && (
-                          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/5">
-                            <span className="text-blue-400 text-[10px]">ft = swell ht</span>
-                            <span className="text-teal-400 text-[10px]">dir = swell dir</span>
-                            <span className="text-white/40 text-[10px]">s = period</span>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+              <PortRow key={pw.port.name} pw={pw} gradient={region.gradient} />
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
