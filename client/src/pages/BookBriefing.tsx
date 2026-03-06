@@ -150,11 +150,20 @@ export default function BookBriefing() {
           <div className="md:col-span-2 space-y-6">
             {/* Pricing Card */}
             <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 rounded-2xl p-6">
-              <div className="text-center mb-4">
-                <p className="text-amber-400 text-sm font-semibold tracking-wide mb-2">First briefing is free</p>
-                <p className="text-white/60 text-sm uppercase tracking-widest mb-1">Briefing Fee</p>
-                <p className="text-3xl font-bold text-white">$150</p>
-                <p className="text-white/50 text-sm mt-1">per 20-minute session</p>
+              <div className="text-center mb-4 space-y-3">
+                {/* First briefing offer */}
+                <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/40 rounded-full px-4 py-1.5">
+                  <span className="text-amber-400 text-xs font-bold uppercase tracking-widest">Limited Offer</span>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-amber-400 leading-tight">First Briefing</p>
+                  <p className="text-4xl font-black text-white leading-tight">75% Off</p>
+                </div>
+                <div className="border-t border-white/10 pt-3">
+                  <p className="text-white/40 text-xs uppercase tracking-widest mb-0.5">Then</p>
+                  <p className="text-white/80 text-xl font-bold">$150</p>
+                  <p className="text-white/40 text-xs mt-0.5">per 20-minute briefing</p>
+                </div>
               </div>
               <div className="border-t border-white/10 pt-4 space-y-3">
                 <div className="flex items-start gap-3">
