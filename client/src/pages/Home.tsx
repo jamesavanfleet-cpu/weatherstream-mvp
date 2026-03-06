@@ -297,6 +297,16 @@ export default function Home() {
   const [liveExiting, setLiveExiting] = useState(false);
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
   const [, navigate] = useLocation();
+  const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
+
+  // Fetch daily top story from top_story.json
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL || "/";
+    fetch(`${base}top_story.json?v=${new Date().toISOString().slice(0, 10)}`)
+      .then(r => r.json())
+      .then((d: { headline: string; paragraph: string }) => setTopStory(d))
+      .catch(() => {});
+  }, []);
 
   // Fetch daily AI intel from intel.json (committed to gh-pages by GitHub Actions)
   useEffect(() => {
@@ -610,8 +620,12 @@ export default function Home() {
                 </div>
               </div>
               <div className="p-6 glass-dark border-t border-white/5">
-                <h3 className="text-white font-bold text-lg mb-2">Arctic Blast Sweeps Midwest, Caribbean Perfect</h3>
-                <p className="text-white/60 text-sm">Dangerous wind chills hit the central U.S. while Caribbean cruise routes enjoy perfect conditions.</p>
+                <h3 className="text-white font-bold text-lg mb-2">
+                  {topStory ? topStory.headline : "Arctic Blast Sweeps Midwest, Caribbean Perfect"}
+                </h3>
+                <p className="text-white/60 text-sm">
+                  {topStory ? topStory.paragraph : "Dangerous wind chills hit the central U.S. while Caribbean cruise routes enjoy perfect conditions."}
+                </p>
               </div>
             </div>
           </div>
