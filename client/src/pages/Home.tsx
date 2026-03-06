@@ -662,10 +662,6 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
         <div className="container relative z-10">
           <div className="text-center mb-12">
-            <Badge className="glass border-white/20 text-white backdrop-blur-xl mb-4">
-              <Ship className="w-4 h-4 mr-1" />
-              James's Specialty
-            </Badge>
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Caribbean Cruise Weather
             </h3>
@@ -686,10 +682,6 @@ export default function Home() {
         <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl opacity-30" />
         <div className="container relative z-10">
           <div className="text-center mb-12">
-            <Badge className="glass border-white/20 text-white backdrop-blur-xl mb-4">
-              <Anchor className="w-4 h-4 mr-1" />
-              Mediterranean Cruise Coverage
-            </Badge>
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Mediterranean Cruise Weather
             </h3>
@@ -717,10 +709,6 @@ export default function Home() {
         <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl opacity-30" />
         <div className="container relative z-10">
           <div className="text-center mb-12">
-            <Badge className="glass border-white/20 text-white backdrop-blur-xl mb-4">
-              <Navigation className="w-4 h-4 mr-1" />
-              Eastern Pacific Cruise Coverage
-            </Badge>
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Eastern Pacific Cruise Weather
             </h3>
