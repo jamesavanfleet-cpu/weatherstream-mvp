@@ -882,11 +882,16 @@ export default function Home() {
                 </p>
                 
                 <p>
-                  Before his groundbreaking role in the cruise industry, James spent decades as a Chief Meteorologist in major television markets including Tampa (WTSP-TV CBS), Orlando (WOFL-TV FOX), and Dallas (WFAA-TV ABC). His broadcast career is marked by high-stakes moments: he was the first on-air to call Hurricane Charley's unexpected turn toward Orlando, and he led overnight wall-to-wall coverage of a deadly Sarasota tornado outbreak that saved hundreds of lives. He even flew with the NOAA Hurricane Hunters directly into Category 5 Hurricane Isabel to gather live data.
-                </p>
-                
-                <p>
-                  Most recently, James served as a Meteorologist for Spire Global, a pioneering satellite-powered climate-data company, where he produced daily social-media weather videos for a global audience and facilitated commercial deals utilizing proprietary weather data.
+                  Before his groundbreaking role in the cruise industry, James spent decades as a Chief Meteorologist in major television markets including Tampa (WTSP-TV CBS), Orlando (WOFL-TV FOX), and Dallas (WFAA-TV ABC). His broadcast career is marked by high-stakes moments: he was the first on-air to call Hurricane Charley's unexpected turn toward Orlando, and he led overnight wall-to-wall coverage of a deadly Sarasota tornado outbreak that saved hundreds of lives. He even flew with the NOAA Hurricane Hunters directly into Category 5 Hurricane Isabel to gather live data.{" "}
+                  <a
+                    href="https://youtu.be/6ofPB-p7Sfo?si=sLjNUJQeKxVdYAlY"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-red-400 hover:text-red-300 font-semibold underline underline-offset-2 transition-colors"
+                  >
+                    <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    Watch: Flying into Hurricane Isabel
+                  </a>
                 </p>
                 
               </div>
