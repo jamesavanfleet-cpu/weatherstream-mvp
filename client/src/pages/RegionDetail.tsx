@@ -7,6 +7,24 @@ import {
 import { Button } from "@/components/ui/button";
 
 // ---- Conversion helpers ----
+function fToCStr(f: number): string {
+  return Math.round((f - 32) * 5 / 9) + "\u00b0C";
+}
+
+function seaFtToMStr(seas: string): string {
+  const range = seas.match(/([\d.]+)(?:-([\d.]+))?\s*ft/);
+  if (!range) return seas;
+  const lo = parseFloat(range[1]);
+  const hi = range[2] ? parseFloat(range[2]) : null;
+  const toM = (ft: number) => (ft * 0.3048).toFixed(1);
+  return hi ? `${toM(lo)}-${toM(hi)} m` : `${toM(lo)} m`;
+}
+
+function swellFtToM(ft: number | null): string | null {
+  if (ft == null) return null;
+  return (ft * 0.3048).toFixed(1) + "m";
+}
+
 function degToCompass(deg: number): string {
   const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return dirs[Math.round(deg / 22.5) % 16];
@@ -130,13 +148,37 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
   };
 }
 
+// ---- Toggle button component ----
+function UnitsToggle({ isMetric, onToggle }: { isMetric: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none"
+      aria-label="Toggle units"
+    >
+      <span
+        className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
+          isMetric ? 'left-[calc(50%+2px)]' : 'left-1'
+        }`}
+      />
+      <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+        !isMetric ? 'text-white' : 'text-white/50'
+      }`}>US Standard</span>
+      <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+        isMetric ? 'text-white' : 'text-white/50'
+      }`}>Metric</span>
+    </button>
+  );
+}
+
 // ---- Port Row (hover to expand) ----
-function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave }: {
+function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave, isMetric }: {
   pw: PortWeather;
   gradient: string;
   expanded: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  isMetric: boolean;
 }) {
   return (
     <div
@@ -182,12 +224,12 @@ function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave }: {
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div className="glass rounded-xl p-3 text-center">
                   <ThermometerSun className="w-5 h-5 mx-auto mb-1 text-orange-400" />
-                  <p className="text-xl font-bold text-white">{pw.tempF}&deg;</p>
+                  <p className="text-xl font-bold text-white">{isMetric ? fToCStr(pw.tempF) : `${pw.tempF}\u00b0`}</p>
                   <p className="text-xs text-white/50">Temperature</p>
                 </div>
                 <div className="glass rounded-xl p-3 text-center">
                   <Waves className="w-5 h-5 mx-auto mb-1 text-blue-400" />
-                  <p className="text-xl font-bold text-white">{pw.seas}</p>
+                  <p className="text-xl font-bold text-white">{isMetric ? seaFtToMStr(pw.seas) : pw.seas}</p>
                   <p className="text-xs text-white/50">Sea State</p>
                 </div>
                 <div className="glass rounded-xl p-3 text-center">
@@ -212,15 +254,15 @@ function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave }: {
                     return (
                       <div key={day.date} className="text-center">
                         <p className="text-white/40 text-[10px] mb-1 font-semibold">{DAY_NAMES[d.getDay()]}</p>
-                        <p className="text-white text-xs font-bold">{day.maxF}&deg;</p>
-                        <p className="text-white/40 text-[10px]">{day.minF}&deg;</p>
+                        <p className="text-white text-xs font-bold">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
+                        <p className="text-white/40 text-[10px]">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
                         <p className="text-cyan-400 text-[10px] mt-1">{day.windDir}</p>
                         <p className="text-white/60 text-[10px]">{day.windKt}kt</p>
                         <p className="text-purple-400 text-[10px]">{day.rainChance}%</p>
                         {hasWave && (
                           <>
                             <div className="border-t border-white/10 my-1.5" />
-                            <p className="text-blue-400 text-[10px] font-bold leading-tight">{day.swellHeightFt}ft</p>
+                            <p className="text-blue-400 text-[10px] font-bold leading-tight">{isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}</p>
                             <p className="text-teal-400 text-[10px] leading-tight">{day.swellDir}</p>
                             <p className="text-white/50 text-[10px] leading-tight">{day.swellPeriod}s</p>
                           </>
@@ -253,6 +295,7 @@ export default function RegionDetail() {
   const [portWeather, setPortWeather] = useState<PortWeather[]>([]);
   const [intel, setIntel] = useState<string>("");
   const [intelLoading, setIntelLoading] = useState(true);
+  const [isMetric, setIsMetric] = useState(false);
 
   useEffect(() => {
     if (!region) return;
@@ -368,7 +411,10 @@ export default function RegionDetail() {
 
         {/* Port list */}
         <div>
-          <h2 className="text-2xl font-black text-white mb-2">Port Conditions and Forecasts</h2>
+          <div className="flex items-end justify-between mb-2">
+            <h2 className="text-2xl font-black text-white">Port Conditions and Forecasts</h2>
+            <UnitsToggle isMetric={isMetric} onToggle={() => setIsMetric(m => !m)} />
+          </div>
           <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 7-day forecast.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {portWeather.map((pw, i) => {
@@ -381,6 +427,7 @@ export default function RegionDetail() {
                   expanded={hoveredRow === rowIndex}
                   onMouseEnter={() => setHoveredRow(rowIndex)}
                   onMouseLeave={() => setHoveredRow(null)}
+                  isMetric={isMetric}
                 />
               );
             })}

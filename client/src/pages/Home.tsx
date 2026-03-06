@@ -686,6 +686,26 @@ export default function Home() {
       <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl opacity-30" />
         <div className="container relative z-10">
+          {/* Units Toggle */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setIsMetric(m => !m)}
+              className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none"
+              aria-label="Toggle units"
+            >
+              <span
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
+                  isMetric ? 'left-[calc(50%+2px)]' : 'left-1'
+                }`}
+              />
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                !isMetric ? 'text-white' : 'text-white/50'
+              }`}>US Standard</span>
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                isMetric ? 'text-white' : 'text-white/50'
+              }`}>Metric</span>
+            </button>
+          </div>
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Mediterranean Cruise Weather
@@ -713,6 +733,26 @@ export default function Home() {
       <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl opacity-30" />
         <div className="container relative z-10">
+          {/* Units Toggle */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setIsMetric(m => !m)}
+              className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none"
+              aria-label="Toggle units"
+            >
+              <span
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
+                  isMetric ? 'left-[calc(50%+2px)]' : 'left-1'
+                }`}
+              />
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                !isMetric ? 'text-white' : 'text-white/50'
+              }`}>US Standard</span>
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                isMetric ? 'text-white' : 'text-white/50'
+              }`}>Metric</span>
+            </button>
+          </div>
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Eastern Pacific Cruise Weather
