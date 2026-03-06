@@ -240,6 +240,22 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Eastern Mediterranean":  { lat: 37.45, lon: 25.33 },
 };
 
+// Convert Fahrenheit integer to Celsius string
+function fToC(f: number): string {
+  return Math.round((f - 32) * 5 / 9) + "°C";
+}
+
+// Convert a seas string like "2-3 ft" or "3-5 ft" to metres
+function seaFtToM(seas: string): string {
+  // Match patterns like "2-3 ft" or "4 ft"
+  const range = seas.match(/([\d.]+)(?:-([\d.]+))?\s*ft/);
+  if (!range) return seas;
+  const lo = parseFloat(range[1]);
+  const hi = range[2] ? parseFloat(range[2]) : null;
+  const toM = (ft: number) => (ft * 0.3048).toFixed(1);
+  return hi ? `${toM(lo)}-${toM(hi)} m` : `${toM(lo)} m`;
+}
+
 function degToCompass(deg: number): string {
   const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return dirs[Math.round(deg / 22.5) % 16];
@@ -263,6 +279,7 @@ export default function Home() {
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
   const [, navigate] = useLocation();
   const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
+  const [isMetric, setIsMetric] = useState(false);
 
   // Fetch daily top story from top_story.json
   useEffect(() => {
@@ -415,6 +432,8 @@ export default function Home() {
     // Derive slug from region name to match REGIONS data
     const slug = route.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const liveIntel = regionIntel[slug];
+    const displayTemp = isMetric ? fToC(route.temp) : `${route.temp}°`;
+    const displaySeas = isMetric ? seaFtToM(route.seas) : route.seas;
     return (
     <div
       key={route.name}
@@ -477,12 +496,12 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-4">
             <div className="glass rounded-xl p-3 text-center">
               <ThermometerSun className="w-5 h-5 mx-auto mb-2 text-orange-400" />
-              <p className="text-2xl font-bold text-white">{route.temp}°</p>
+              <p className="text-2xl font-bold text-white">{displayTemp}</p>
               <p className="text-xs text-white/60">Temperature</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Waves className="w-5 h-5 mx-auto mb-2 text-blue-400" />
-              <p className="text-2xl font-bold text-white">{route.seas}</p>
+              <p className="text-2xl font-bold text-white">{displaySeas}</p>
               <p className="text-xs text-white/60">Sea State</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
@@ -626,6 +645,27 @@ export default function Home() {
       <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
         <div className="container relative z-10">
+          {/* Units Toggle */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => setIsMetric(m => !m)}
+              className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none"
+              aria-label="Toggle units"
+            >
+              {/* Sliding pill */}
+              <span
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
+                  isMetric ? 'left-[calc(50%+2px)]' : 'left-1'
+                }`}
+              />
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                !isMetric ? 'text-white' : 'text-white/50'
+              }`}>US Standard</span>
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                isMetric ? 'text-white' : 'text-white/50'
+              }`}>Metric</span>
+            </button>
+          </div>
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
               Caribbean Cruise Weather
