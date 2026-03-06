@@ -80,12 +80,12 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
-    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
+    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3`;
 
   const marineUrl =
     `https://marine-api.open-meteo.com/v1/marine?latitude=${port.lat}&longitude=${port.lon}` +
     `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
-    `&length_unit=imperial&timezone=auto&forecast_days=7`;
+    `&length_unit=imperial&timezone=auto&forecast_days=3`;
 
   const [weatherRes, marineRes] = await Promise.allSettled([
     fetch(weatherUrl).then(r => r.json()),
@@ -306,11 +306,11 @@ export default function RegionDetail() {
                         </div>
                       </div>
 
-                      {/* 7-day forecast strip */}
+                      {/* 3-day forecast strip */}
                       <div>
-                        <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">7-Day Forecast</p>
-                        <div className="grid grid-cols-7 gap-1">
-                          {pw.forecast.map((day) => {
+                        <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">3-Day Forecast</p>
+                        <div className="grid grid-cols-3 gap-1">
+                          {pw.forecast.slice(0, 3).map((day) => {
                             const d = new Date(day.date + "T12:00:00");
                             const hasWave = day.swellHeightFt != null;
                             return (
