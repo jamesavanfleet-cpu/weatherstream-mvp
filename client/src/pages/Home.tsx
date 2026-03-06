@@ -657,80 +657,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Caribbean Cruise Weather */}
-      <section className="py-8 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
-        <div className="container relative z-10">
-          <div className="text-center mb-5">
-            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Caribbean Cruise Weather
-            </h3>
-            <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              7-day forecasts from the meteorologist who protected Royal Caribbean's fleet for 6+ years
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
-            {CRUISE_ROUTES.map((route, i) =>
-              renderRouteCard(route, i, cruiseRefs, visibleIntel, hoveredIntel, setHoveredIntel)
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Mediterranean Section */}
-      <section className="py-8 relative overflow-hidden">
-        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl opacity-30" />
-        <div className="container relative z-10">
-          <div className="text-center mb-5">
-            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Mediterranean Cruise Weather
-            </h3>
-            <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              Western, Central, and Eastern Mediterranean — complete port and passage forecasts
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
-            {MED_ROUTES.map((route, i) =>
-              renderRouteCard(
-                route as typeof CRUISE_ROUTES[0],
-                i,
-                medRefs,
-                visibleMed,
-                hoveredMed,
-                setHoveredMed
-              )
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Eastern Pacific Section */}
-      <section className="py-8 relative overflow-hidden">
-        <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl opacity-30" />
-        <div className="container relative z-10">
-          <div className="text-center mb-5">
-            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Eastern Pacific Cruise Weather
-            </h3>
-            <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              From Los Angeles to Cabo San Lucas — complete Pacific Mexico coastal and offshore forecasts
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
-            {PACIFIC_ROUTES.map((route, i) =>
-              renderRouteCard(
-                route as typeof CRUISE_ROUTES[0],
-                i,
-                pacificRefs,
-                visiblePacific,
-                hoveredPacific,
-                setHoveredPacific
-              )
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* Weather Decision Briefing - Booking Section */}
       <section className="py-8 relative overflow-hidden">
         {/* Background glow */}
@@ -802,6 +728,80 @@ export default function Home() {
                 Limited availability. Subscribe below to be notified when booking opens.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Caribbean Cruise Weather */}
+      <section className="py-8 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
+        <div className="container relative z-10">
+          <div className="text-center mb-5">
+            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
+              Caribbean Cruise Weather
+            </h3>
+            <p className="text-xl text-white/70 max-w-2xl mx-auto">
+              7-day forecasts from the meteorologist who protected Royal Caribbean's fleet for 6+ years
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
+            {CRUISE_ROUTES.map((route, i) =>
+              renderRouteCard(route, i, cruiseRefs, visibleIntel, hoveredIntel, setHoveredIntel)
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Mediterranean Section */}
+      <section className="py-8 relative overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl opacity-30" />
+        <div className="container relative z-10">
+          <div className="text-center mb-5">
+            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
+              Mediterranean Cruise Weather
+            </h3>
+            <p className="text-xl text-white/70 max-w-2xl mx-auto">
+              Western, Central, and Eastern Mediterranean — complete port and passage forecasts
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
+            {MED_ROUTES.map((route, i) =>
+              renderRouteCard(
+                route as typeof CRUISE_ROUTES[0],
+                i,
+                medRefs,
+                visibleMed,
+                hoveredMed,
+                setHoveredMed
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Eastern Pacific Section */}
+      <section className="py-8 relative overflow-hidden">
+        <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl opacity-30" />
+        <div className="container relative z-10">
+          <div className="text-center mb-5">
+            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
+              Eastern Pacific Cruise Weather
+            </h3>
+            <p className="text-xl text-white/70 max-w-2xl mx-auto">
+              From Los Angeles to Cabo San Lucas — complete Pacific Mexico coastal and offshore forecasts
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
+            {PACIFIC_ROUTES.map((route, i) =>
+              renderRouteCard(
+                route as typeof CRUISE_ROUTES[0],
+                i,
+                pacificRefs,
+                visiblePacific,
+                hoveredPacific,
+                setHoveredPacific
+              )
+            )}
           </div>
         </div>
       </section>
