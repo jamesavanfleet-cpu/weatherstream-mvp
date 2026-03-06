@@ -732,17 +732,13 @@ export default function Home() {
       </section>
 
       {/* Weather Decision Briefing - Booking Section */}
-      <section className="py-24 relative overflow-hidden">
+      <section className="py-8 relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/10 rounded-full blur-3xl opacity-40" />
 
         <div className="container relative z-10">
-          <div className="text-center mb-16">
-            <Badge className="glass border-amber-400/30 text-amber-300 backdrop-blur-xl mb-4">
-              <Clock className="w-4 h-4 mr-1" />
-              Private Briefings Available
-            </Badge>
+          <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-6 tracking-tight">
               Schedule a Weather Decision Briefing
             </h3>
