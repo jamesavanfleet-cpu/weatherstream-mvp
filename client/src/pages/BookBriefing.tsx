@@ -48,11 +48,35 @@ export default function BookBriefing() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate submission delay
-    await new Promise((r) => setTimeout(r, 1200));
-    setIsSubmitting(false);
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      const res = await fetch("https://formspree.io/f/jamesavanfleet@gmail.com", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          title: form.title,
+          email: form.email,
+          phone: form.phone,
+          vessel_name: form.vesselName,
+          marina: form.marina,
+          weather_concern: form.concern,
+          preferred_date: form.preferredDate,
+          preferred_time: form.preferredTime,
+          platform: form.platform,
+        }),
+      });
+      if (res.ok) {
+        setSubmitted(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        const data = await res.json();
+        toast.error(data?.errors?.[0]?.message ?? "Submission failed. Please try again.");
+      }
+    } catch {
+      toast.error("Network error. Please check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -135,7 +159,7 @@ export default function BookBriefing() {
               <div className="border-t border-white/10 pt-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                  <p className="text-white/70 text-sm">Live Zoom or WebEx call with James directly</p>
+                  <p className="text-white/70 text-sm">Live Zoom, WebEx, Google Meet, or other platform -- your choice</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
@@ -326,6 +350,8 @@ export default function BookBriefing() {
                   >
                     <option value="Zoom" className="bg-[#0a1628]">Zoom</option>
                     <option value="WebEx" className="bg-[#0a1628]">WebEx</option>
+                    <option value="Google Meet" className="bg-[#0a1628]">Google Meet</option>
+                    <option value="Other" className="bg-[#0a1628]">Other</option>
                   </select>
                 </div>
               </div>
