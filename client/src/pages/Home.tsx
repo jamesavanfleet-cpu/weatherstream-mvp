@@ -112,29 +112,8 @@ const CRUISE_ROUTES = [
     gradient: "from-teal-500/20 to-emerald-500/20",
     intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curacao enjoying persistent easterlies—perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
   },
-  {
-    name: "Central Caribbean",
-    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-    temp: 85,
-    seas: "2-4 ft",
-    wind: "10-14 kt",
-    rain: "8%",
-    status: "Excellent",
-    gradient: "from-cyan-500/20 to-blue-500/20",
-    intel: "Roatan and the Bay Islands are sitting in a sweet spot between the trade wind belt and the ITCZ. Calm anchorages on the leeward side. Belize barrier reef conditions are outstanding—visibility 80+ ft. Slight swell on the windward shores of Cayman."
-  },
-  {
-    name: "Lesser Antilles",
-    image: "/weatherstream-mvp/locations/barbados.jpg",
-    temp: 83,
-    seas: "3-5 ft",
-    wind: "14-20 kt",
-    rain: "15%",
-    status: "Good",
-    gradient: "from-violet-500/20 to-blue-500/20",
-    intel: "ENE trades 15-20 kt with a 3-5 ft easterly swell across the chain. Barbados windward east coast fully exposed; Carlisle Bay and Bridgetown on the leeward west coast are calm and well-protected. St. Lucia, Martinique, and Dominica seeing afternoon squalls on the windward volcanic peaks — plan arrivals before noon. St. Vincent and the Grenadines offer excellent leeward anchorages. Visibility outstanding at 80+ ft throughout."
-  },
 ];
+
 
 // --- Mediterranean Routes ---
 const MED_ROUTES = [
@@ -263,8 +242,6 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Western Caribbean":  { lat: 19.3,   lon: -81.4  },
   "Bahamas":            { lat: 25.0,   lon: -77.4  },
   "Southern Caribbean": { lat: 12.5,   lon: -70.0  },
-  "Central Caribbean":  { lat: 16.3,   lon: -86.5  },
-  "Lesser Antilles":    { lat: 13.1,   lon: -59.6  },
   "Los Angeles":        { lat: 33.73,  lon: -118.26 },
   "Ensenada":           { lat: 31.87,  lon: -116.6  },
   "Cabo San Lucas":     { lat: 22.89,  lon: -109.91 },
