@@ -719,7 +719,7 @@ export default function Home() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white border-0 shadow-2xl text-lg px-12 py-6 h-auto rounded-2xl"
-                onClick={() => setLocation("/book-briefing")}
+                onClick={() => navigate("/book-briefing")}
               >
                 <Clock className="w-5 h-5 mr-3" />
                 Book a 20-Minute Briefing
