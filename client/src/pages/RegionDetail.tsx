@@ -78,12 +78,12 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
-    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3`;
+    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
 
   const marineUrl =
     `https://marine-api.open-meteo.com/v1/marine?latitude=${port.lat}&longitude=${port.lon}` +
     `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
-    `&length_unit=imperial&timezone=auto&forecast_days=3`;
+    `&length_unit=imperial&timezone=auto&forecast_days=7`;
 
   const [weatherRes, marineRes] = await Promise.allSettled([
     fetch(weatherUrl).then(r => r.json()),
@@ -154,9 +154,9 @@ function PortRow({ pw, gradient }: { pw: PortWeather; gradient: string }) {
       </div>
 
       {/* Expandable forecast panel */}
-      <div
+          <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          hovered ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+          hovered ? "max-h-[900px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="p-5">
@@ -198,11 +198,11 @@ function PortRow({ pw, gradient }: { pw: PortWeather; gradient: string }) {
                 </div>
               </div>
 
-              {/* 3-day forecast strip */}
+              {/* 7-day forecast strip */}
               <div>
-                <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">3-Day Forecast</p>
-                <div className="grid grid-cols-3 gap-1">
-                  {pw.forecast.slice(0, 3).map((day) => {
+                <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">7-Day Forecast</p>
+                <div className="grid grid-cols-7 gap-1">
+                  {pw.forecast.slice(0, 7).map((day) => {
                     const d = new Date(day.date + "T12:00:00");
                     const hasWave = day.swellHeightFt != null;
                     return (
@@ -320,7 +320,7 @@ export default function RegionDetail() {
           <div className="h-5 w-px bg-white/20" />
           <div>
             <p className="text-white font-bold text-sm">{region.name}</p>
-            <p className="text-white/40 text-xs">Live Conditions and 3-Day Forecast</p>
+            <p className="text-white/40 text-xs">Live Conditions and 7-Day Forecast</p>
           </div>
         </div>
       </header>
@@ -363,7 +363,7 @@ export default function RegionDetail() {
         {/* Port list */}
         <div>
           <h2 className="text-2xl font-black text-white mb-2">Port Conditions and Forecasts</h2>
-          <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 3-day forecast.</p>
+          <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 7-day forecast.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {portWeather.map((pw) => (
               <PortRow key={pw.port.name} pw={pw} gradient={region.gradient} />
