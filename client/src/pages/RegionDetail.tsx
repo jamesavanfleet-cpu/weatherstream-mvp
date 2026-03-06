@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// ---- Open-Meteo helpers ----
+// ---- Conversion helpers ----
 function degToCompass(deg: number): string {
   const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return dirs[Math.round(deg / 22.5) % 16];
@@ -43,6 +43,22 @@ function seaStateFromWind(ktSpeed: number): string {
   return "9+ ft";
 }
 
+// ---- Interfaces ----
+interface DayForecast {
+  date: string;
+  maxF: number;
+  minF: number;
+  windKt: number;
+  windDir: string;
+  rainChance: number;
+  condition: string;
+  // wave / swell
+  waveHeightFt: number | null;
+  swellHeightFt: number | null;
+  swellDir: string | null;
+  swellPeriod: number | null;
+}
+
 interface PortWeather {
   port: Port;
   tempF: number;
@@ -56,30 +72,40 @@ interface PortWeather {
   forecast: DayForecast[];
 }
 
-interface DayForecast {
-  date: string;
-  maxF: number;
-  minF: number;
-  windKt: number;
-  windDir: string;
-  rainChance: number;
-  condition: string;
-}
-
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | "loading" | "error">> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
+  // Fetch weather + marine in parallel
+  const weatherUrl =
+    `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
     `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
-  const res = await fetch(url);
-  const data = await res.json();
-  const c = data.current;
-  const d = data.daily;
+
+  const marineUrl =
+    `https://marine-api.open-meteo.com/v1/marine?latitude=${port.lat}&longitude=${port.lon}` +
+    `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
+    `&length_unit=imperial&timezone=auto&forecast_days=7`;
+
+  const [weatherRes, marineRes] = await Promise.allSettled([
+    fetch(weatherUrl).then(r => r.json()),
+    fetch(marineUrl).then(r => r.json()),
+  ]);
+
+  const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
+  const marine  = marineRes.status  === "fulfilled" ? marineRes.value  : null;
+
+  if (!weather) throw new Error("Weather fetch failed");
+
+  const c = weather.current;
+  const d = weather.daily;
+  const md = marine?.daily ?? null;
+
   const windKt = msToKt(c.wind_speed_10m);
+
   const forecast: DayForecast[] = (d.time as string[]).map((dateStr: string, i: number) => {
     const wKt = msToKt(d.wind_speed_10m_max[i]);
+    const swellDeg = md?.swell_wave_direction_dominant?.[i];
     return {
       date: dateStr,
       maxF: cToF(d.temperature_2m_max[i]),
@@ -88,8 +114,13 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
       windDir: degToCompass(d.wind_direction_10m_dominant[i]),
       rainChance: d.precipitation_probability_max[i] ?? 0,
       condition: wmoToCondition(d.weathercode[i]),
+      waveHeightFt:  md?.wave_height_max?.[i]           != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
+      swellHeightFt: md?.swell_wave_height_max?.[i]     != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
+      swellDir:      swellDeg != null ? degToCompass(swellDeg) : null,
+      swellPeriod:   md?.swell_wave_period_max?.[i]     != null ? Math.round(md.swell_wave_period_max[i]) : null,
     };
   });
+
   return {
     tempF: cToF(c.temperature_2m),
     windKt,
@@ -137,7 +168,7 @@ export default function RegionDetail() {
     });
   }, [region]);
 
-  // Fetch daily AI intel from intel.json (updated by GitHub Actions each morning)
+  // Fetch daily AI intel from intel.json
   useEffect(() => {
     if (!region) return;
     setIntelLoading(true);
@@ -145,8 +176,7 @@ export default function RegionDetail() {
     fetch(`${base}intel.json?v=${new Date().toISOString().slice(0, 10)}`)
       .then(r => r.json())
       .then((data: { regions?: Record<string, string> }) => {
-        const key = region.slug;
-        const text = data.regions?.[key] ?? "";
+        const text = data.regions?.[region.slug] ?? "";
         setIntel(text || region.intel);
         setIntelLoading(false);
       })
@@ -282,18 +312,43 @@ export default function RegionDetail() {
                         <div className="grid grid-cols-7 gap-1">
                           {pw.forecast.map((day) => {
                             const d = new Date(day.date + "T12:00:00");
+                            const hasWave = day.swellHeightFt != null;
                             return (
                               <div key={day.date} className="text-center">
-                                <p className="text-white/40 text-[10px] mb-1">{DAY_NAMES[d.getDay()]}</p>
+                                {/* Day label */}
+                                <p className="text-white/40 text-[10px] mb-1 font-semibold">{DAY_NAMES[d.getDay()]}</p>
+                                {/* Temp */}
                                 <p className="text-white text-xs font-bold">{day.maxF}°</p>
                                 <p className="text-white/40 text-[10px]">{day.minF}°</p>
+                                {/* Wind */}
                                 <p className="text-cyan-400 text-[10px] mt-1">{day.windDir}</p>
                                 <p className="text-white/60 text-[10px]">{day.windKt}kt</p>
+                                {/* Rain */}
                                 <p className="text-purple-400 text-[10px]">{day.rainChance}%</p>
+                                {/* Swell divider */}
+                                {hasWave && (
+                                  <>
+                                    <div className="border-t border-white/10 my-1.5" />
+                                    {/* Wave height */}
+                                    <p className="text-blue-400 text-[10px] font-bold leading-tight">{day.swellHeightFt}ft</p>
+                                    {/* Swell direction */}
+                                    <p className="text-teal-400 text-[10px] leading-tight">{day.swellDir}</p>
+                                    {/* Swell period */}
+                                    <p className="text-white/50 text-[10px] leading-tight">{day.swellPeriod}s</p>
+                                  </>
+                                )}
                               </div>
                             );
                           })}
                         </div>
+                        {/* Legend */}
+                        {pw.forecast.some(d => d.swellHeightFt != null) && (
+                          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/5">
+                            <span className="text-blue-400 text-[10px]">ft = swell ht</span>
+                            <span className="text-teal-400 text-[10px]">dir = swell dir</span>
+                            <span className="text-white/40 text-[10px]">s = period</span>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
