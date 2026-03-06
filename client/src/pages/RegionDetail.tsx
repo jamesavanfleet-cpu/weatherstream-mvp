@@ -255,7 +255,7 @@ export default function RegionDetail() {
 
         {/* Port cards */}
         <div>
-          <h2 className="text-2xl font-black text-white mb-6">Port Conditions</h2>
+          <h2 className="text-2xl font-black text-white mb-6">Port Conditions and Forecasts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {portWeather.map((pw) => (
               <div key={pw.port.name} className="glass-dark rounded-2xl border border-white/10 overflow-hidden">
