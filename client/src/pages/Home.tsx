@@ -467,7 +467,7 @@ export default function Home() {
           <img
             src={route.image}
             alt={route.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
           <div className={`absolute inset-0 bg-gradient-to-t ${route.gradient} to-transparent`} />
 
