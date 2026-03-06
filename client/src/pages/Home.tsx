@@ -32,18 +32,37 @@ const TROPICAL_BEACH = "https://private-us-east-1.manuscdn.com/sessionFile/XOLEd
 
 // --- Live Conditions Data ---
 const LIVE_DATA = [
-  { location: "Miami", temp: 78, condition: "Sunny", icon: ThermometerSun, color: "from-orange-500 to-yellow-500" },
-  { location: "Key West", temp: 80, condition: "Clear", icon: Sparkles, color: "from-yellow-400 to-orange-400" },
-  { location: "Nassau", temp: 77, condition: "Breezy", icon: Wind, color: "from-cyan-400 to-blue-500" },
-  { location: "San Juan", temp: 84, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-400 to-cyan-400" },
-  { location: "St. Thomas", temp: 83, condition: "Sunny", icon: ThermometerSun, color: "from-orange-400 to-yellow-400" },
-  { location: "Cozumel", temp: 86, condition: "Clear", icon: Sparkles, color: "from-emerald-400 to-cyan-400" },
-  { location: "Roatan", temp: 85, condition: "Partly Cloudy", icon: Cloud, color: "from-teal-400 to-blue-400" },
-  { location: "Cartagena", temp: 88, condition: "Sunny", icon: ThermometerSun, color: "from-amber-500 to-orange-500" },
-  { location: "Aruba", temp: 87, condition: "Clear", icon: Sparkles, color: "from-yellow-500 to-amber-400" },
-  { location: "Barbados", temp: 82, condition: "Trade Winds", icon: Wind, color: "from-blue-500 to-indigo-500" },
-  { location: "St. Maarten", temp: 83, condition: "Sunny", icon: ThermometerSun, color: "from-orange-500 to-red-400" },
-  { location: "Belize City", temp: 84, condition: "Partly Cloudy", icon: Cloud, color: "from-green-500 to-teal-500" },
+  { location: "Miami",         sublabel: null,                              temp: 78, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-yellow-500" },
+  { location: "Key West",      sublabel: null,                              temp: 80, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
+  { location: "Nassau",        sublabel: null,                              temp: 77, condition: "Breezy",        icon: Wind,           color: "from-cyan-400 to-blue-500" },
+  { location: "Bimini",        sublabel: null,                              temp: 76, condition: "Clear",         icon: Sparkles,       color: "from-sky-400 to-cyan-400" },
+  { location: "Freeport",      sublabel: null,                              temp: 75, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-sky-400" },
+  { location: "Berry Islands", sublabel: "Cruise Lines' Private Islands",   temp: 77, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
+  { location: "San Juan",      sublabel: null,                              temp: 84, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-cyan-400" },
+  { location: "St. Thomas",    sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-400" },
+  { location: "St. Croix",     sublabel: null,                              temp: 82, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-orange-400" },
+  { location: "St. Kitts",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-400" },
+  { location: "St. Maarten",   sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-red-400" },
+  { location: "Antigua",       sublabel: null,                              temp: 82, condition: "Trade Winds",   icon: Wind,           color: "from-cyan-500 to-blue-500" },
+  { location: "Dominica",      sublabel: null,                              temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
+  { location: "St. Lucia",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-amber-500" },
+  { location: "Barbados",      sublabel: null,                              temp: 82, condition: "Trade Winds",   icon: Wind,           color: "from-blue-500 to-indigo-500" },
+  { location: "Turks & Caicos",sublabel: null,                              temp: 79, condition: "Clear",         icon: Sparkles,       color: "from-sky-500 to-cyan-400" },
+  { location: "Grand Cayman",  sublabel: null,                              temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
+  { location: "Cozumel",       sublabel: null,                              temp: 86, condition: "Clear",         icon: Sparkles,       color: "from-emerald-400 to-cyan-400" },
+  { location: "Costa Maya",    sublabel: "Mahahual",                        temp: 85, condition: "Sunny",         icon: ThermometerSun, color: "from-teal-500 to-emerald-500" },
+  { location: "Roatan",        sublabel: null,                              temp: 85, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
+  { location: "Belize City",   sublabel: null,                              temp: 84, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
+  { location: "Cartagena",     sublabel: null,                              temp: 88, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-orange-500" },
+  { location: "Aruba",         sublabel: null,                              temp: 87, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-amber-400" },
+  { location: "Curacao",       sublabel: null,                              temp: 86, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
+  { location: "Bonaire",       sublabel: null,                              temp: 85, condition: "Clear",         icon: Sparkles,       color: "from-cyan-400 to-teal-400" },
+  { location: "Ocho Rios",     sublabel: null,                              temp: 86, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-400 to-emerald-400" },
+  { location: "Falmouth",      sublabel: null,                              temp: 85, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-400 to-orange-400" },
+  { location: "Puerto Plata",  sublabel: null,                              temp: 82, condition: "Breezy",        icon: Wind,           color: "from-blue-400 to-cyan-500" },
+  { location: "La Romana",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-500" },
+  { location: "Samana",        sublabel: null,                              temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
+  { location: "Santo Domingo", sublabel: null,                              temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-400" },
 ];
 
 // --- Caribbean Cruise Routes ---
@@ -230,6 +249,20 @@ export default function Home() {
   const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pacificRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
+  const [liveOffset, setLiveOffset] = useState(0);
+  const [liveExiting, setLiveExiting] = useState(false);
+
+  // Rotate Live Conditions every 5 seconds: shift 3 cards from the left
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLiveExiting(true);
+      setTimeout(() => {
+        setLiveOffset(prev => (prev + 3) % LIVE_DATA.length);
+        setLiveExiting(false);
+      }, 400);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   // Fetch live wind direction for all route cards from Open-Meteo
   useEffect(() => {
@@ -500,32 +533,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Live Conditions - Expanded Caribbean Ports */}
+      {/* Live Conditions - Rotating 6-card display */}
       <section className="py-8 relative">
         <div className="container">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50" />
             <h3 className="text-2xl font-bold text-white">Live Conditions</h3>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {LIVE_DATA.map((loc, i) => (
-              <div
-                key={loc.location}
-                className="glass-dark rounded-2xl p-5 hover:scale-105 transition-all duration-300 cursor-pointer group border border-white/5 hover:border-white/20"
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-white/60 text-xs mb-1">{loc.location}</p>
-                    <p className="text-3xl font-black text-white">{loc.temp}°</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 overflow-hidden">
+            {Array.from({ length: 6 }, (_, i) => {
+              const loc = LIVE_DATA[(liveOffset + i) % LIVE_DATA.length];
+              return (
+                <div
+                  key={`${liveOffset}-${i}`}
+                  className={`glass-dark rounded-2xl p-5 cursor-pointer group border border-white/5 hover:border-white/20 transition-all duration-400 ${
+                    liveExiting && i < 3 ? 'opacity-0 -translate-x-4' : 'opacity-100 translate-x-0'
+                  }`}
+                  style={{ transition: 'opacity 0.4s ease, transform 0.4s ease', transitionDelay: `${i * 40}ms` }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="text-white font-bold text-sm leading-tight truncate">{loc.location}</p>
+                      {loc.sublabel && (
+                        <p className="text-white/40 text-[10px] leading-tight mt-0.5 truncate">{loc.sublabel}</p>
+                      )}
+                      <p className="text-3xl font-black text-white mt-1">{loc.temp}°</p>
+                    </div>
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${loc.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                      <loc.icon className="w-5 h-5 text-white" />
+                    </div>
                   </div>
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${loc.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <loc.icon className="w-5 h-5 text-white" />
-                  </div>
+                  <p className="text-white/70 text-xs font-medium">{loc.condition}</p>
                 </div>
-                <p className="text-white/80 text-xs font-medium">{loc.condition}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
