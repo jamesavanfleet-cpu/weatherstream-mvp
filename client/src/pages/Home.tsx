@@ -132,7 +132,7 @@ const CRUISE_ROUTES = [
     rain: "15%",
     status: "Good",
     gradient: "from-violet-500/20 to-blue-500/20",
-    intel: "Barbados sits fully exposed to the open Atlantic on its windward east coast, with trade winds running a steady ENE 15-20 kt and a 3-5 ft easterly swell. The leeward west coast anchorages at Carlisle Bay and Bridgetown are well-protected and calm. St. Lucia, Martinique, and Dominica are seeing typical trade wind conditions with afternoon squalls on the windward sides of the volcanic peaks. St. Vincent and the Grenadines offer excellent protected anchorages on the leeward sides. Visibility is outstanding throughout the chain at 80+ ft for diving."
+    intel: "ENE trades 15-20 kt with 3-5 ft easterly swell. Barbados west coast anchorages calm; windward coasts of St. Lucia, Martinique, and Dominica seeing afternoon squalls on the volcanic peaks. Leeward anchorages throughout the chain well-protected. Visibility 80+ ft."
   },
 ];
 
@@ -400,8 +400,8 @@ export default function Home() {
               visible.has(i) ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
             }`}
           >
-            <div className={`bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl transition-all duration-300 w-full ${
-              hovered === i ? 'p-4' : 'p-3 max-h-16 overflow-hidden'
+            <div className={`bg-slate-950/98 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-2xl transition-all duration-300 w-full overflow-hidden ${
+              hovered === i ? 'p-4 max-h-52' : 'p-3 max-h-16'
             }`}>
               <div className="flex items-start gap-3">
                 <div className={`rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
