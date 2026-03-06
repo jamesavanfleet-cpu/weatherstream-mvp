@@ -244,27 +244,27 @@ function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave, isMetric 
                 </div>
               </div>
 
-              {/* 7-day forecast strip */}
+              {/* 5-day forecast strip */}
               <div>
-                <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">7-Day Forecast</p>
-                <div className="grid grid-cols-7 gap-1">
-                  {pw.forecast.slice(0, 7).map((day) => {
+                <p className="text-white/40 text-sm font-semibold uppercase tracking-wider mb-3">5-Day Forecast</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {pw.forecast.slice(0, 5).map((day) => {
                     const d = new Date(day.date + "T12:00:00");
                     const hasWave = day.swellHeightFt != null;
                     return (
                       <div key={day.date} className="text-center">
-                        <p className="text-white/40 text-[10px] mb-1 font-semibold">{DAY_NAMES[d.getDay()]}</p>
-                        <p className="text-white text-xs font-bold">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
-                        <p className="text-white/40 text-[10px]">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
-                        <p className="text-cyan-400 text-[10px] mt-1">{day.windDir}</p>
-                        <p className="text-white/60 text-[10px]">{day.windKt}kt</p>
-                        <p className="text-purple-400 text-[10px]">{day.rainChance}%</p>
+                        <p className="text-white/50 text-xs mb-1 font-bold">{DAY_NAMES[d.getDay()]}</p>
+                        <p className="text-white text-sm font-bold">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
+                        <p className="text-white/50 text-xs">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
+                        <p className="text-cyan-400 text-xs mt-1 font-semibold">{day.windDir}</p>
+                        <p className="text-white/70 text-xs">{day.windKt}kt</p>
+                        <p className="text-purple-400 text-xs font-semibold">{day.rainChance}%</p>
                         {hasWave && (
                           <>
                             <div className="border-t border-white/10 my-1.5" />
-                            <p className="text-blue-400 text-[10px] font-bold leading-tight">{isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}</p>
-                            <p className="text-teal-400 text-[10px] leading-tight">{day.swellDir}</p>
-                            <p className="text-white/50 text-[10px] leading-tight">{day.swellPeriod}s</p>
+                            <p className="text-blue-400 text-xs font-bold leading-snug">{isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}</p>
+                            <p className="text-teal-400 text-xs leading-snug font-semibold">{day.swellDir}</p>
+                            <p className="text-white/60 text-xs leading-snug">{day.swellPeriod}s</p>
                           </>
                         )}
                       </div>
@@ -273,9 +273,9 @@ function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave, isMetric 
                 </div>
                 {pw.forecast.some(d => d.swellHeightFt != null) && (
                   <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/5">
-                    <span className="text-blue-400 text-[10px]">ft = swell ht</span>
-                    <span className="text-teal-400 text-[10px]">dir = swell dir</span>
-                    <span className="text-white/40 text-[10px]">s = period</span>
+                    <span className="text-blue-400 text-xs">ft = swell ht</span>
+                    <span className="text-teal-400 text-xs">dir = swell dir</span>
+                    <span className="text-white/50 text-xs">s = period</span>
                   </div>
                 )}
               </div>
@@ -369,7 +369,7 @@ export default function RegionDetail() {
           <div className="h-5 w-px bg-white/20" />
           <div>
             <p className="text-white font-bold text-sm">{region.name}</p>
-            <p className="text-white/40 text-xs">Live Conditions and 7-Day Forecast</p>
+            <p className="text-white/40 text-xs">Live Conditions and 5-Day Forecast</p>
           </div>
         </div>
       </header>
@@ -415,7 +415,7 @@ export default function RegionDetail() {
             <h2 className="text-2xl font-black text-white">Port Conditions and Forecasts</h2>
             <UnitsToggle isMetric={isMetric} onToggle={() => setIsMetric(m => !m)} />
           </div>
-          <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 7-day forecast.</p>
+          <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 5-day forecast.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {portWeather.map((pw, i) => {
               const rowIndex = Math.floor(i / 3);
