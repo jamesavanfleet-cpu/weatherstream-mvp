@@ -340,14 +340,29 @@ export default function BookBriefing() {
                   <label className="text-white/70 text-sm font-medium flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5" /> Preferred Time (EST)
                   </label>
-                  <Input
+                  <select
                     name="preferredTime"
-                    type="time"
                     value={form.preferredTime}
                     onChange={handleChange}
                     required
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-white/40 rounded-xl h-11 [color-scheme:dark]"
-                  />
+                    className="w-full bg-white/10 border border-white/20 text-white focus:border-white/40 rounded-xl h-11 px-3 text-sm appearance-none cursor-pointer [color-scheme:dark]"
+                  >
+                    <option value="" disabled className="bg-[#0d1f35] text-white/50">Select a time...</option>
+                    {Array.from({ length: 48 }, (_, i) => {
+                      const totalMins = i * 15;
+                      const hours24 = Math.floor(totalMins / 60);
+                      const mins = totalMins % 60;
+                      const ampm = hours24 < 12 ? "AM" : "PM";
+                      const hours12 = hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24;
+                      const label = `${hours12}:${mins.toString().padStart(2, "0")} ${ampm} EST`;
+                      const value = `${hours24.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+                      return (
+                        <option key={value} value={value} className="bg-[#0d1f35] text-white">
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-white/70 text-sm font-medium flex items-center gap-2">
