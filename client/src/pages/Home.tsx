@@ -622,78 +622,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Weather Decision Briefing - Booking Section */}
-      <section className="py-8 relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/10 rounded-full blur-3xl opacity-40" />
-
-        <div className="container relative z-10">
-          <div className="text-center mb-5">
-            <h3 className="text-5xl font-black text-white mb-6 tracking-tight">
-              Schedule a Weather Decision Briefing
-            </h3>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-              A focused 20-minute one-on-one session with James. You bring the question—where to go, when to go, whether to stay tied up or move the vessel. James brings 30+ years of professional meteorology and the answers you need before you leave the dock.
-            </p>
-          </div>
-
-          {/* Client Type Cards */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-[1200px] mx-auto">
-            {BRIEFING_CLIENTS.map((client, i) => (
-              <div
-                key={client.title}
-                className="glass-dark rounded-3xl p-8 border border-white/10 hover:border-white/25 transition-all duration-500 hover:scale-105 hover:shadow-2xl group"
-              >
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${client.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
-                  <client.icon className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-2xl font-black text-white mb-4">{client.title}</h4>
-                <p className="text-white/70 leading-relaxed mb-6 text-sm">{client.description}</p>
-                <ul className="space-y-2">
-                  {client.examples.map((ex) => (
-                    <li key={ex} className="flex items-start gap-2 text-sm text-white/60">
-                      <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${client.color} mt-1.5 flex-shrink-0`} />
-                      {ex}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Tropical / Hurricane Decision Callout */}
-          <div className="max-w-[900px] mx-auto glass-dark rounded-3xl p-10 border border-amber-500/20 shadow-2xl mb-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl" />
-            <div className="relative z-10 flex flex-col md:flex-row items-start gap-8">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center flex-shrink-0 shadow-lg">
-                <AlertTriangle className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h4 className="text-2xl font-black text-white mb-3">Tropical Weather and Hurricane Decisions</h4>
-                <p className="text-white/70 leading-relaxed text-base">
-                  When a tropical system is developing or a hurricane is threatening, the decisions get serious fast. Do you stay tied up or move the vessel? If you move, when do you need to leave, and where should you go? James provides clear, direct answers based on the actual forecast data—not the headlines. This is the same level of decision support he provided for Royal Caribbean's fleet, now available to you directly.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Button */}
-          <div className="text-center">
-            <div className="inline-flex flex-col items-center gap-4">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white border-0 shadow-2xl text-lg px-12 py-6 h-auto rounded-2xl"
-                onClick={() => navigate("/book-briefing")}
-              >
-                <Clock className="w-5 h-5 mr-3" />
-                Book a 20-Minute Briefing
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Caribbean Cruise Weather */}
       <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
@@ -768,6 +696,78 @@ export default function Home() {
         </div>
       </section>
 
+
+      {/* Weather Decision Briefing - Booking Section */}
+      <section className="py-8 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/10 rounded-full blur-3xl opacity-40" />
+
+        <div className="container relative z-10">
+          <div className="text-center mb-5">
+            <h3 className="text-5xl font-black text-white mb-6 tracking-tight">
+              Schedule a Weather Decision Briefing
+            </h3>
+            <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+              A focused 20-minute one-on-one session with James. You bring the question—where to go, when to go, whether to stay tied up or move the vessel. James brings 30+ years of professional meteorology and the answers you need before you leave the dock.
+            </p>
+          </div>
+
+          {/* Client Type Cards */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16 max-w-[1200px] mx-auto">
+            {BRIEFING_CLIENTS.map((client, i) => (
+              <div
+                key={client.title}
+                className="glass-dark rounded-3xl p-8 border border-white/10 hover:border-white/25 transition-all duration-500 hover:scale-105 hover:shadow-2xl group"
+              >
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${client.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
+                  <client.icon className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-2xl font-black text-white mb-4">{client.title}</h4>
+                <p className="text-white/70 leading-relaxed mb-6 text-sm">{client.description}</p>
+                <ul className="space-y-2">
+                  {client.examples.map((ex) => (
+                    <li key={ex} className="flex items-start gap-2 text-sm text-white/60">
+                      <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${client.color} mt-1.5 flex-shrink-0`} />
+                      {ex}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Tropical / Hurricane Decision Callout */}
+          <div className="max-w-[900px] mx-auto glass-dark rounded-3xl p-10 border border-amber-500/20 shadow-2xl mb-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl" />
+            <div className="relative z-10 flex flex-col md:flex-row items-start gap-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+                <AlertTriangle className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h4 className="text-2xl font-black text-white mb-3">Tropical Weather and Hurricane Decisions</h4>
+                <p className="text-white/70 leading-relaxed text-base">
+                  When a tropical system is developing or a hurricane is threatening, the decisions get serious fast. Do you stay tied up or move the vessel? If you move, when do you need to leave, and where should you go? James provides clear, direct answers based on the actual forecast data—not the headlines. This is the same level of decision support he provided for Royal Caribbean's fleet, now available to you directly.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <div className="text-center">
+            <div className="inline-flex flex-col items-center gap-4">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white border-0 shadow-2xl text-lg px-12 py-6 h-auto rounded-2xl"
+                onClick={() => navigate("/book-briefing")}
+              >
+                <Clock className="w-5 h-5 mr-3" />
+                Book a 20-Minute Briefing
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 glass-dark">
