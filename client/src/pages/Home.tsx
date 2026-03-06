@@ -411,8 +411,8 @@ export default function Home() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel</p>
-                  <p className={`text-white/90 text-sm leading-relaxed transition-all duration-300 ${
-                    hovered === i ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'
+                  <p className={`text-white/90 text-xs leading-snug transition-all duration-300 line-clamp-6 ${
+                    hovered === i ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 overflow-hidden'
                   }`}>{liveIntel || route.intel}</p>
                 </div>
               </div>
