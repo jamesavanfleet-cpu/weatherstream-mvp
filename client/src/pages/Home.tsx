@@ -16,6 +16,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { GALLERY_IMAGES } from "../galleryImages";
 
 /**
  * WeatherStream - Next-Gen Weather Platform
@@ -1352,8 +1353,46 @@ export default function Home() {
       {/* Biography Section */}
       <section className="py-20 relative border-t border-white/5">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/10" />
-        <div className="container relative z-10">
-          <div className="max-w-5xl mx-auto glass-dark rounded-3xl p-8 md:p-12 border border-white/10 shadow-2xl">
+        {/* Full-width layout: filmstrip | bio card */}
+        <div className="relative z-10 flex flex-col lg:flex-row gap-0 items-stretch min-h-[700px]">
+
+          {/* Auto-scrolling filmstrip column */}
+          <div
+            className="hidden lg:block w-72 xl:w-80 flex-shrink-0 overflow-hidden relative"
+            style={{ maxHeight: '820px' }}
+          >
+            {/* Fade masks top and bottom */}
+            <div className="absolute top-0 left-0 right-0 h-20 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to bottom, #050a1a 0%, transparent 100%)' }} />
+            <div className="absolute bottom-0 left-0 right-0 h-20 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to top, #050a1a 0%, transparent 100%)' }} />
+            <div
+              className="filmstrip-scroll flex flex-col gap-3 px-3"
+              style={{
+                animation: 'filmstripScroll 90s linear infinite',
+              }}
+            >
+              {/* Duplicate the list for seamless loop */}
+              {[...GALLERY_IMAGES, ...GALLERY_IMAGES].map((src, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-xl overflow-hidden border border-white/10 shadow-lg flex-shrink-0"
+                >
+                  <img
+                    src={`${import.meta.env.BASE_URL || '/'}${src}`}
+                    alt={`Gallery photo ${(idx % GALLERY_IMAGES.length) + 1}`}
+                    className="w-full object-cover"
+                    loading="lazy"
+                    style={{ display: 'block' }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bio card */}
+          <div className="flex-1 container lg:pl-8 xl:pl-10 flex items-center">
+          <div className="w-full max-w-4xl glass-dark rounded-3xl p-8 md:p-12 border border-white/10 shadow-2xl">
             <div className="flex flex-col md:flex-row gap-10 items-center md:items-start">
               <div className="w-full md:w-1/3 flex-shrink-0">
                 <div className="relative rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl aspect-[3/4] md:aspect-auto">
@@ -1401,7 +1440,8 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
+          </div>{/* end bio card flex wrapper */}
+        </div>{/* end filmstrip+bio flex row */}
       </section>
 
       {/* Footer */}
