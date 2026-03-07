@@ -11,7 +11,7 @@ import os
 import sys
 import urllib.request
 import urllib.parse
-from datetime import date
+from datetime import date, datetime, timezone
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
@@ -236,7 +236,12 @@ def main():
         print("ERROR: OPENAI_API_KEY not set", file=sys.stderr)
         sys.exit(1)
 
-    output = {"generated": date.today().isoformat(), "regions": {}}
+    now_utc = datetime.now(timezone.utc)
+    output = {
+        "generated": date.today().isoformat(),
+        "generated_utc": now_utc.strftime("%Y-%m-%dT%H:%M UTC"),
+        "regions": {}
+    }
 
     for region in REGIONS:
         print(f"Processing {region['name']}...", file=sys.stderr)

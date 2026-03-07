@@ -670,6 +670,7 @@ export default function Home() {
   const [liveExiting, setLiveExiting] = useState(false);
   const [liveEntering, setLiveEntering] = useState(false);
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
+  const [intelUpdatedAt, setIntelUpdatedAt] = useState<string>('');
   const [, navigate] = useLocation();
   const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
   const [isMetric, setIsMetric] = useState(false);
@@ -705,10 +706,12 @@ export default function Home() {
 
   // Fetch daily AI intel from intel.json (committed to gh-pages by GitHub Actions)
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}intel.json`)
+    fetch(`${import.meta.env.BASE_URL}intel.json?v=${new Date().toISOString().slice(0,13)}`)
       .then(r => r.json())
-      .then((data: { regions?: Record<string, string> }) => {
+      .then((data: { regions?: Record<string, string>; generated?: string; generated_utc?: string }) => {
         if (data.regions) setRegionIntel(data.regions);
+        if (data.generated_utc) setIntelUpdatedAt(data.generated_utc);
+        else if (data.generated) setIntelUpdatedAt(data.generated);
       })
       .catch(() => { /* silently fail — static intel text still shown */ });
   }, []);
@@ -889,7 +892,14 @@ export default function Home() {
                   <Sparkles className={`text-white transition-all duration-300 ${hovered === i ? 'w-5 h-5' : 'w-4 h-4'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel</p>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <p className="text-cyan-400 font-bold text-sm">James's Intel</p>
+                    {intelUpdatedAt && (
+                      <span className="text-white/40 text-xs bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                        Updated: {intelUpdatedAt}
+                      </span>
+                    )}
+                  </div>
                   <p className={`text-white/90 text-xs leading-snug transition-all duration-300 line-clamp-6 ${
                     hovered === i ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 overflow-hidden'
                   }`}>{liveIntel || route.intel}</p>
