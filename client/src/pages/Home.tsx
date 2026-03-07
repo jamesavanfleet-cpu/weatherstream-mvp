@@ -119,7 +119,7 @@ const CRUISE_ROUTES = [
 const MED_ROUTES = [
   {
     name: "Western Mediterranean",
-    image: "/weatherstream-mvp/locations/western-mediterranean.jpg",
+    image: "/locations/western-mediterranean.jpg",
     temp: 62,
     seas: "2-4 ft",
     wind: "12-20 kt",
@@ -130,7 +130,7 @@ const MED_ROUTES = [
   },
   {
     name: "Central Mediterranean",
-    image: "/weatherstream-mvp/locations/central-mediterranean.jpg",
+    image: "/locations/central-mediterranean.jpg",
     temp: 58,
     seas: "2-5 ft",
     wind: "10-18 kt",
@@ -141,7 +141,7 @@ const MED_ROUTES = [
   },
   {
     name: "Eastern Mediterranean",
-    image: "/weatherstream-mvp/locations/eastern-mediterranean.jpg",
+    image: "/locations/eastern-mediterranean.jpg",
     temp: 65,
     seas: "2-4 ft",
     wind: "15-25 kt",
@@ -156,7 +156,7 @@ const MED_ROUTES = [
 const PACIFIC_ROUTES = [
   {
     name: "Ensenada",
-    image: "/weatherstream-mvp/locations/ensenada.jpg",
+    image: "/locations/ensenada.jpg",
     temp: 65,
     seas: "4-6 ft",
     wind: "15-22 kt",
@@ -167,7 +167,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Cabo San Lucas",
-    image: "/weatherstream-mvp/locations/cabo-san-lucas.jpg",
+    image: "/locations/cabo-san-lucas.jpg",
     temp: 78,
     seas: "2-4 ft",
     wind: "10-15 kt",
@@ -178,7 +178,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Mazatlan",
-    image: "/weatherstream-mvp/locations/mazatlan.jpg",
+    image: "/locations/mazatlan.jpg",
     temp: 82,
     seas: "2-3 ft",
     wind: "8-12 kt",
@@ -189,7 +189,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Puerto Vallarta",
-    image: "/weatherstream-mvp/locations/puerto-vallarta.jpg",
+    image: "/locations/puerto-vallarta.jpg",
     temp: 84,
     seas: "2-4 ft",
     wind: "10-16 kt",
@@ -526,7 +526,7 @@ export default function Home() {
       {/* Full-Width Banner Photo */}
       <div className="w-full" style={{height: '260px', overflow: 'hidden'}}>
         <img
-          src="/weatherstream-mvp/locations/bridge-banner.jpg"
+          src="/locations/bridge-banner.jpg"
           alt="Ship bridge at sunrise returning to Miami"
           className="w-full h-full object-cover object-center"
           style={{objectPosition: 'center 50%'}}

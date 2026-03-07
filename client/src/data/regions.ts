@@ -84,7 +84,7 @@ export const REGIONS: Region[] = [
     slug: "western-mediterranean",
     name: "Western Mediterranean",
     intel: "The Western Mediterranean is dominated by the Mistral wind pattern out of the NW, funneling down the Rhone Valley and accelerating across the Gulf of Lion. Barcelona and the Costa Brava see afternoon sea breezes 10-15 kt from the E-SE in summer. Palma de Mallorca and Ibiza are well-positioned on the leeward side of the Balearics. Lisbon and Cadiz on the Atlantic approach are influenced by the Azores High — expect NW 15-25 kt on the Portuguese coast. Malaga and the Strait of Gibraltar see strong Levante winds from the E when Atlantic lows deepen — can gust 30-40 kt through the Strait. Valencia anchorage exposed to E-SE swell during Levante events.",
-    image: "/weatherstream-mvp/locations/western-mediterranean.jpg",
+    image: "/locations/western-mediterranean.jpg",
     gradient: "from-blue-500/20 to-indigo-500/20",
     ports: [
       { name: "Barcelona",         lat: 41.38, lon:  2.18 },
@@ -100,7 +100,7 @@ export const REGIONS: Region[] = [
     slug: "central-mediterranean",
     name: "Central Mediterranean",
     intel: "The Central Mediterranean is one of the most complex weather environments in the world. The Mistral accelerates through the Gulf of Lion and can reach 40-50 kt with little warning — always check the Marseille forecast before departing. The Ligurian Sea between Genoa, La Spezia, and Corsica is sheltered but can see strong Tramontane winds in winter. The Tyrrhenian Sea along the Italian coast is generally calmer, with the Pontine Islands and Capri offering excellent anchorages. Venice and the northern Adriatic are subject to the Bora — a violent NE katabatic wind that can gust 60+ kt in winter. The Adriatic coast from Split to Dubrovnik is beautiful but exposed to Bora and Jugo (SE) winds seasonally.",
-    image: "/weatherstream-mvp/locations/central-mediterranean.jpg",
+    image: "/locations/central-mediterranean.jpg",
     gradient: "from-cyan-500/20 to-teal-500/20",
     ports: [
       { name: "Civitavecchia",     lat: 42.09, lon: 11.80, sublabel: "Port for Rome" },
@@ -122,7 +122,7 @@ export const REGIONS: Region[] = [
     slug: "eastern-mediterranean",
     name: "Eastern Mediterranean",
     intel: "The Eastern Mediterranean is dominated by the Etesian winds (Meltemi) from the N-NW, blowing 20-35 kt across the Aegean from June through September — one of the most reliable and powerful summer wind regimes in the world. Santorini and Mykonos are fully exposed to Meltemi conditions; anchorages on the southern and eastern sides of islands offer the best protection. Corfu and the Ionian Islands are sheltered from the Meltemi but see their own local wind patterns. The Turkish coast near Izmir and the Bodrum peninsula can see strong afternoon thermal winds. Istanbul and the Bosphorus have strong current and variable winds year-round. The Levantine coast from Cyprus to Haifa and Tel Aviv is generally calmer with light NW sea breezes in summer. The Suez Canal approach at Port Said and Alexandria requires careful monitoring of Red Sea weather patterns.",
-    image: "/weatherstream-mvp/locations/eastern-mediterranean.jpg",
+    image: "/locations/eastern-mediterranean.jpg",
     gradient: "from-indigo-500/20 to-violet-500/20",
     ports: [
       { name: "Alexandria",        lat: 31.20, lon: 29.92 },
@@ -142,7 +142,7 @@ export const REGIONS: Region[] = [
     slug: "eastern-pacific",
     name: "Eastern Pacific",
     intel: "The Eastern Pacific coast from Los Angeles to Cabo San Lucas is dominated by the California High pressure system, which drives persistent NW winds and swell down the coast. Morning marine layer burns off by mid-morning along the Southern California coast. The Baja California coast sees strong afternoon thermal winds 20-30 kt — plan passages for early morning. Cabo San Lucas sits at the tip of the Baja peninsula where the Pacific and Sea of Cortez meet — conditions can change rapidly. Mazatlan and Puerto Vallarta in the Sea of Cortez see calmer conditions with afternoon sea breezes. The Mexican Riviera from Manzanillo to Huatulco sees NW swell wrapping around the Baja tip, typically 3-6 ft with 12-16 second periods.",
-    image: "/weatherstream-mvp/locations/eastern-pacific.jpg",
+    image: "/locations/eastern-pacific.jpg",
     gradient: "from-amber-500/20 to-orange-500/20",
     ports: [
       { name: "Cabo San Lucas",    lat: 22.89, lon: -109.91 },

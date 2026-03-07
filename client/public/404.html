@@ -7,7 +7,7 @@
       // GitHub Pages SPA redirect trick
       // Stores the path in sessionStorage and redirects to index.html
       // which then reads it and navigates to the correct route
-      var segmentCount = 1; // number of path segments in the repo name (weatherstream-mvp = 1)
+      var segmentCount = 0; // custom domain at root, no sub-path segments
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
