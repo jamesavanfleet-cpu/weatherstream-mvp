@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { 
   Anchor, ArrowRight, Calendar, Cloud, Waves, Droplets, Info,
   MapPin, Play, Ship, Sparkles, ThermometerSun, TrendingUp, 
-  Wind, Zap, Clock, Users, Navigation, AlertTriangle
+  Wind, Zap, Clock, Users, Navigation, AlertTriangle,
+  X, Eye, Gauge, Thermometer, TrendingDown, Minus
 } from "lucide-react";
 import {
   Tooltip,
@@ -33,78 +34,149 @@ const TROPICAL_BEACH = "https://private-us-east-1.manuscdn.com/sessionFile/XOLEd
 
 // --- Live Conditions Data ---
 const LIVE_DATA = [
-  { location: "Miami",         sublabel: null,                              temp: 78, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-yellow-500" },
-  { location: "Key West",      sublabel: null,                              temp: 80, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
-  { location: "Nassau",        sublabel: null,                              temp: 77, condition: "Breezy",        icon: Wind,           color: "from-cyan-400 to-blue-500" },
-  { location: "Bimini",        sublabel: null,                              temp: 76, condition: "Clear",         icon: Sparkles,       color: "from-sky-400 to-cyan-400" },
-  { location: "Freeport",      sublabel: null,                              temp: 75, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-sky-400" },
-  { location: "Berry Islands", sublabel: "Cruise Lines' Private Islands",   temp: 77, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
-  { location: "San Juan",      sublabel: null,                              temp: 84, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-cyan-400" },
-  { location: "St. Thomas",    sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-400" },
-  { location: "St. Croix",     sublabel: null,                              temp: 82, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-orange-400" },
-  { location: "St. Kitts",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-400" },
-  { location: "St. Maarten",   sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-red-400" },
-  { location: "Antigua",       sublabel: null,                              temp: 82, condition: "Trade Winds",   icon: Wind,           color: "from-cyan-500 to-blue-500" },
-  { location: "Dominica",      sublabel: null,                              temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
-  { location: "St. Lucia",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-amber-500" },
-  { location: "Barbados",      sublabel: null,                              temp: 82, condition: "Trade Winds",   icon: Wind,           color: "from-blue-500 to-indigo-500" },
-  { location: "Turks & Caicos",sublabel: null,                              temp: 79, condition: "Clear",         icon: Sparkles,       color: "from-sky-500 to-cyan-400" },
-  { location: "Grand Cayman",  sublabel: null,                              temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
-  { location: "Cozumel",       sublabel: null,                              temp: 86, condition: "Clear",         icon: Sparkles,       color: "from-emerald-400 to-cyan-400" },
-  { location: "Costa Maya",    sublabel: "Mahahual",                        temp: 85, condition: "Sunny",         icon: ThermometerSun, color: "from-teal-500 to-emerald-500" },
-  { location: "Roatan",        sublabel: null,                              temp: 85, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
-  { location: "Belize City",   sublabel: null,                              temp: 84, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
-  { location: "Cartagena",     sublabel: null,                              temp: 88, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-orange-500" },
-  { location: "Aruba",         sublabel: null,                              temp: 87, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-amber-400" },
-  { location: "Curacao",       sublabel: null,                              temp: 86, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
-  { location: "Bonaire",       sublabel: null,                              temp: 85, condition: "Clear",         icon: Sparkles,       color: "from-cyan-400 to-teal-400" },
-  { location: "Ocho Rios",     sublabel: null,                              temp: 86, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-400 to-emerald-400" },
-  { location: "Falmouth",      sublabel: null,                              temp: 85, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-400 to-orange-400" },
-  { location: "Puerto Plata",  sublabel: null,                              temp: 82, condition: "Breezy",        icon: Wind,           color: "from-blue-400 to-cyan-500" },
-  { location: "La Romana",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-500" },
-  { location: "Samana",        sublabel: null,                              temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
-  { location: "Santo Domingo", sublabel: null,                              temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-400" },
+  { location: "Miami",         sublabel: null,                              lat: 25.77,  lon: -80.19,  temp: 78, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-yellow-500" },
+  { location: "Key West",      sublabel: null,                              lat: 24.56,  lon: -81.78,  temp: 80, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
+  { location: "Nassau",        sublabel: null,                              lat: 25.04,  lon: -77.35,  temp: 77, condition: "Breezy",        icon: Wind,           color: "from-cyan-400 to-blue-500" },
+  { location: "Bimini",        sublabel: null,                              lat: 25.73,  lon: -79.30,  temp: 76, condition: "Clear",         icon: Sparkles,       color: "from-sky-400 to-cyan-400" },
+  { location: "Freeport",      sublabel: null,                              lat: 26.53,  lon: -78.70,  temp: 75, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-sky-400" },
+  { location: "Berry Islands", sublabel: "Cruise Lines' Private Islands",   lat: 25.63,  lon: -77.83,  temp: 77, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
+  { location: "San Juan",      sublabel: null,                              lat: 18.47,  lon: -66.12,  temp: 84, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-cyan-400" },
+  { location: "St. Thomas",    sublabel: null,                              lat: 18.34,  lon: -64.93,  temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-400" },
+  { location: "St. Croix",     sublabel: null,                              lat: 17.73,  lon: -64.73,  temp: 82, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-orange-400" },
+  { location: "St. Kitts",     sublabel: null,                              lat: 17.30,  lon: -62.72,  temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-400" },
+  { location: "St. Maarten",   sublabel: null,                              lat: 18.07,  lon: -63.07,  temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-red-400" },
+  { location: "Antigua",       sublabel: null,                              lat: 17.12,  lon: -61.85,  temp: 82, condition: "Trade Winds",   icon: Wind,           color: "from-cyan-500 to-blue-500" },
+  { location: "Dominica",      sublabel: null,                              lat: 15.30,  lon: -61.39,  temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
+  { location: "St. Lucia",     sublabel: null,                              lat: 13.91,  lon: -60.98,  temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-amber-500" },
+  { location: "Barbados",      sublabel: null,                              lat: 13.10,  lon: -59.62,  temp: 82, condition: "Trade Winds",   icon: Wind,           color: "from-blue-500 to-indigo-500" },
+  { location: "Turks & Caicos",sublabel: null,                              lat: 21.46,  lon: -71.14,  temp: 79, condition: "Clear",         icon: Sparkles,       color: "from-sky-500 to-cyan-400" },
+  { location: "Grand Cayman",  sublabel: null,                              lat: 19.29,  lon: -81.38,  temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
+  { location: "Cozumel",       sublabel: null,                              lat: 20.51,  lon: -86.95,  temp: 86, condition: "Clear",         icon: Sparkles,       color: "from-emerald-400 to-cyan-400" },
+  { location: "Costa Maya",    sublabel: "Mahahual",                        lat: 18.73,  lon: -87.71,  temp: 85, condition: "Sunny",         icon: ThermometerSun, color: "from-teal-500 to-emerald-500" },
+  { location: "Roatan",        sublabel: null,                              lat: 16.32,  lon: -86.53,  temp: 85, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
+  { location: "Belize City",   sublabel: null,                              lat: 17.25,  lon: -88.77,  temp: 84, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
+  { location: "Cartagena",     sublabel: null,                              lat: 10.39,  lon: -75.48,  temp: 88, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-orange-500" },
+  { location: "Aruba",         sublabel: null,                              lat: 12.52,  lon: -70.03,  temp: 87, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-amber-400" },
+  { location: "Curacao",       sublabel: null,                              lat: 12.11,  lon: -68.93,  temp: 86, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
+  { location: "Bonaire",       sublabel: null,                              lat: 12.20,  lon: -68.27,  temp: 85, condition: "Clear",         icon: Sparkles,       color: "from-cyan-400 to-teal-400" },
+  { location: "Ocho Rios",     sublabel: null,                              lat: 18.41,  lon: -77.10,  temp: 86, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-400 to-emerald-400" },
+  { location: "Falmouth",      sublabel: null,                              lat: 18.49,  lon: -77.66,  temp: 85, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-400 to-orange-400" },
+  { location: "Puerto Plata",  sublabel: null,                              lat: 19.79,  lon: -70.69,  temp: 82, condition: "Breezy",        icon: Wind,           color: "from-blue-400 to-cyan-500" },
+  { location: "La Romana",     sublabel: null,                              lat: 18.43,  lon: -68.97,  temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-500" },
+  { location: "Samana",        sublabel: null,                              lat: 19.21,  lon: -69.34,  temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
+  { location: "Santo Domingo", sublabel: null,                              lat: 18.47,  lon: -69.90,  temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-400" },
   // Western Mediterranean
-  { location: "Barcelona",      sublabel: "Spain",                           temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-500 to-indigo-500" },
-  { location: "Valencia",       sublabel: "Spain",                           temp: 63, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
-  { location: "Palma",          sublabel: "Mallorca",                        temp: 61, condition: "Breezy",        icon: Wind,           color: "from-cyan-500 to-blue-500" },
-  { location: "Ibiza",          sublabel: "Spain",                           temp: 62, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
-  { location: "Malaga",         sublabel: "Spain",                           temp: 65, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-500" },
-  { location: "Cadiz",          sublabel: "Spain",                           temp: 63, condition: "Breezy",        icon: Wind,           color: "from-blue-400 to-sky-500" },
-  { location: "Lisbon",         sublabel: "Portugal",                        temp: 60, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
+  { location: "Barcelona",      sublabel: "Spain",                           lat: 41.38,  lon:   2.18,  temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-500 to-indigo-500" },
+  { location: "Valencia",       sublabel: "Spain",                           lat: 39.47,  lon:  -0.37,  temp: 63, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
+  { location: "Palma",          sublabel: "Mallorca",                        lat: 39.57,  lon:   2.65,  temp: 61, condition: "Breezy",        icon: Wind,           color: "from-cyan-500 to-blue-500" },
+  { location: "Ibiza",          sublabel: "Spain",                           lat: 38.91,  lon:   1.43,  temp: 62, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
+  { location: "Malaga",         sublabel: "Spain",                           lat: 36.72,  lon:  -4.42,  temp: 65, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-500" },
+  { location: "Cadiz",          sublabel: "Spain",                           lat: 36.53,  lon:  -6.30,  temp: 63, condition: "Breezy",        icon: Wind,           color: "from-blue-400 to-sky-500" },
+  { location: "Lisbon",         sublabel: "Portugal",                        lat: 38.71,  lon:  -9.14,  temp: 60, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
   // Central Mediterranean
-  { location: "Marseille",      sublabel: "France",                          temp: 58, condition: "Windy",         icon: Wind,           color: "from-indigo-500 to-blue-500" },
-  { location: "Nice",           sublabel: "France",                          temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-amber-400" },
-  { location: "Monaco",         sublabel: "Monaco",                          temp: 61, condition: "Clear",         icon: Sparkles,       color: "from-cyan-400 to-blue-400" },
-  { location: "Genoa",          sublabel: "Italy",                           temp: 57, condition: "Partly Cloudy", icon: Cloud,          color: "from-sky-400 to-blue-400" },
-  { location: "La Spezia",      sublabel: "Italy",                           temp: 58, condition: "Clear",         icon: Sparkles,       color: "from-teal-400 to-cyan-400" },
-  { location: "Livorno",        sublabel: "Italy",                           temp: 59, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
-  { location: "Civitavecchia",  sublabel: "Port for Rome",                   temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
-  { location: "Naples",         sublabel: "Italy",                           temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-500 to-indigo-400" },
-  { location: "Sardinia",       sublabel: "Italy",                           temp: 61, condition: "Breezy",        icon: Wind,           color: "from-emerald-500 to-teal-500" },
-  { location: "Corsica",        sublabel: "France",                          temp: 60, condition: "Clear",         icon: Sparkles,       color: "from-green-400 to-emerald-400" },
-  { location: "Split",          sublabel: "Croatia",                         temp: 58, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-400 to-amber-400" },
-  { location: "Dubrovnik",      sublabel: "Croatia",                         temp: 59, condition: "Clear",         icon: Sparkles,       color: "from-sky-500 to-cyan-500" },
-  { location: "Venice",         sublabel: "Italy",                           temp: 55, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-indigo-400" },
+  { location: "Marseille",      sublabel: "France",                          lat: 43.30,  lon:   5.37,  temp: 58, condition: "Windy",         icon: Wind,           color: "from-indigo-500 to-blue-500" },
+  { location: "Nice",           sublabel: "France",                          lat: 43.71,  lon:   7.26,  temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-amber-400" },
+  { location: "Monaco",         sublabel: "Monaco",                          lat: 43.74,  lon:   7.43,  temp: 61, condition: "Clear",         icon: Sparkles,       color: "from-cyan-400 to-blue-400" },
+  { location: "Genoa",          sublabel: "Italy",                           lat: 44.41,  lon:   8.93,  temp: 57, condition: "Partly Cloudy", icon: Cloud,          color: "from-sky-400 to-blue-400" },
+  { location: "La Spezia",      sublabel: "Italy",                           lat: 44.10,  lon:   9.82,  temp: 58, condition: "Clear",         icon: Sparkles,       color: "from-teal-400 to-cyan-400" },
+  { location: "Livorno",        sublabel: "Italy",                           lat: 43.55,  lon:  10.31,  temp: 59, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
+  { location: "Civitavecchia",  sublabel: "Port for Rome",                   lat: 42.09,  lon:  11.80,  temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
+  { location: "Naples",         sublabel: "Italy",                           lat: 40.85,  lon:  14.27,  temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-500 to-indigo-400" },
+  { location: "Sardinia",       sublabel: "Italy",                           lat: 40.12,  lon:   9.07,  temp: 61, condition: "Breezy",        icon: Wind,           color: "from-emerald-500 to-teal-500" },
+  { location: "Corsica",        sublabel: "France",                          lat: 42.04,  lon:   9.01,  temp: 60, condition: "Clear",         icon: Sparkles,       color: "from-green-400 to-emerald-400" },
+  { location: "Split",          sublabel: "Croatia",                         lat: 43.51,  lon:  16.44,  temp: 58, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-400 to-amber-400" },
+  { location: "Dubrovnik",      sublabel: "Croatia",                         lat: 42.65,  lon:  18.09,  temp: 59, condition: "Clear",         icon: Sparkles,       color: "from-sky-500 to-cyan-500" },
+  { location: "Venice",         sublabel: "Italy",                           lat: 45.44,  lon:  12.33,  temp: 55, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-indigo-400" },
   // Eastern Mediterranean
-  { location: "Athens",         sublabel: "Piraeus, Greece",                 temp: 65, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-orange-400" },
-  { location: "Santorini",      sublabel: "Greece",                          temp: 63, condition: "Windy",         icon: Wind,           color: "from-blue-500 to-indigo-500" },
-  { location: "Mykonos",        sublabel: "Greece",                          temp: 64, condition: "Breezy",        icon: Wind,           color: "from-cyan-400 to-blue-500" },
-  { location: "Rhodes",         sublabel: "Greece",                          temp: 66, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-orange-500" },
-  { location: "Corfu",          sublabel: "Greece",                          temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-400" },
-  { location: "Istanbul",       sublabel: "Turkey",                          temp: 54, condition: "Partly Cloudy", icon: Cloud,          color: "from-indigo-500 to-violet-500" },
-  { location: "Izmir",          sublabel: "Turkey",                          temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
-  { location: "Cyprus",         sublabel: "Mediterranean",                   temp: 68, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
-  { location: "Haifa",          sublabel: "Israel",                          temp: 67, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
-  { location: "Alexandria",     sublabel: "Egypt",                           temp: 68, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
+  { location: "Athens",         sublabel: "Piraeus, Greece",                 lat: 37.94,  lon:  23.64,  temp: 65, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-orange-400" },
+  { location: "Santorini",      sublabel: "Greece",                          lat: 36.39,  lon:  25.46,  temp: 63, condition: "Windy",         icon: Wind,           color: "from-blue-500 to-indigo-500" },
+  { location: "Mykonos",        sublabel: "Greece",                          lat: 37.45,  lon:  25.33,  temp: 64, condition: "Breezy",        icon: Wind,           color: "from-cyan-400 to-blue-500" },
+  { location: "Rhodes",         sublabel: "Greece",                          lat: 36.43,  lon:  28.22,  temp: 66, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-orange-500" },
+  { location: "Corfu",          sublabel: "Greece",                          lat: 39.62,  lon:  19.92,  temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-400" },
+  { location: "Istanbul",       sublabel: "Turkey",                          lat: 41.01,  lon:  28.98,  temp: 54, condition: "Partly Cloudy", icon: Cloud,          color: "from-indigo-500 to-violet-500" },
+  { location: "Izmir",          sublabel: "Turkey",                          lat: 38.42,  lon:  27.14,  temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
+  { location: "Cyprus",         sublabel: "Mediterranean",                   lat: 34.92,  lon:  33.63,  temp: 68, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
+  { location: "Haifa",          sublabel: "Israel",                          lat: 32.82,  lon:  34.99,  temp: 67, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
+  { location: "Alexandria",     sublabel: "Egypt",                           lat: 31.20,  lon:  29.92,  temp: 68, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
   // Eastern Pacific
-  { location: "Ensenada",       sublabel: "Baja California",                 temp: 65, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-sky-400" },
-  { location: "Cabo San Lucas", sublabel: "Baja California Sur",             temp: 78, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
-  { location: "Mazatlan",       sublabel: "Sinaloa, Mexico",                 temp: 82, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-orange-400" },
-  { location: "Puerto Vallarta",sublabel: "Jalisco, Mexico",                 temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-400" },
-  { location: "Manzanillo",     sublabel: "Colima, Mexico",                  temp: 83, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-500 to-emerald-400" },
-  { location: "Huatulco",       sublabel: "Oaxaca, Mexico",                  temp: 86, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-500" },
+  { location: "Ensenada",       sublabel: "Baja California",                 lat: 31.87,  lon: -116.60, temp: 65, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-sky-400" },
+  { location: "Cabo San Lucas", sublabel: "Baja California Sur",             lat: 22.89,  lon: -109.91, temp: 78, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
+  { location: "Mazatlan",       sublabel: "Sinaloa, Mexico",                 lat: 23.24,  lon: -106.41, temp: 82, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-orange-400" },
+  { location: "Puerto Vallarta",sublabel: "Jalisco, Mexico",                 lat: 20.65,  lon: -105.22, temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-400" },
+  { location: "Manzanillo",     sublabel: "Colima, Mexico",                  lat: 19.05,  lon: -104.32, temp: 83, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-500 to-emerald-400" },
+  { location: "Huatulco",       sublabel: "Oaxaca, Mexico",                  lat: 15.74,  lon:  -96.13, temp: 86, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-500" },
 ];
+
+// --- Port Detail Live Data Cache ---
+interface PortLiveData {
+  tempC: number;
+  dewpointC: number;
+  humidity: number;
+  windSpeedKt: number;
+  windDir: number;
+  windGustKt: number;
+  visibilityM: number;
+  pressureHpa: number;
+  pressurePrev: number | null; // 1 hour ago for tendency
+  waveHeightM: number | null;
+  wavePeriodS: number | null;
+  swellHeightM: number | null;
+  swellPeriodS: number | null;
+  swellDirDeg: number | null;
+  fetchedAt: number; // epoch ms
+}
+
+const portDataCache: Record<string, PortLiveData> = {};
+
+async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
+  const key = `${lat},${lon}`;
+  const cached = portDataCache[key];
+  if (cached && Date.now() - cached.fetchedAt < 60 * 60 * 1000) return cached;
+
+  const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&current=temperature_2m,dew_point_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,pressure_msl` +
+    `&hourly=pressure_msl&past_hours=2&forecast_hours=0` +
+    `&wind_speed_unit=kn&temperature_unit=celsius&timezone=auto`;
+
+  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
+    `&current=wave_height,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction` +
+    `&timezone=auto`;
+
+  const [wxRes, marineRes] = await Promise.allSettled([
+    fetch(wxUrl).then(r => r.json()),
+    fetch(marineUrl).then(r => r.json()),
+  ]);
+
+  const wx = wxRes.status === 'fulfilled' ? wxRes.value : null;
+  const marine = marineRes.status === 'fulfilled' ? marineRes.value : null;
+
+  // Pressure tendency: compare current to 1 hour ago from hourly
+  let pressurePrev: number | null = null;
+  if (wx?.hourly?.pressure_msl) {
+    const arr: number[] = wx.hourly.pressure_msl;
+    if (arr.length >= 2) pressurePrev = arr[arr.length - 2];
+  }
+
+  const data: PortLiveData = {
+    tempC:        wx?.current?.temperature_2m       ?? 0,
+    dewpointC:    wx?.current?.dew_point_2m         ?? 0,
+    humidity:     wx?.current?.relative_humidity_2m ?? 0,
+    windSpeedKt:  wx?.current?.wind_speed_10m       ?? 0,
+    windDir:      wx?.current?.wind_direction_10m   ?? 0,
+    windGustKt:   wx?.current?.wind_gusts_10m       ?? 0,
+    visibilityM:  wx?.current?.visibility           ?? 0,
+    pressureHpa:  wx?.current?.pressure_msl         ?? 0,
+    pressurePrev,
+    waveHeightM:  marine?.current?.wave_height        ?? null,
+    wavePeriodS:  marine?.current?.wave_period        ?? null,
+    swellHeightM: marine?.current?.swell_wave_height  ?? null,
+    swellPeriodS: marine?.current?.swell_wave_period  ?? null,
+    swellDirDeg:  marine?.current?.swell_wave_direction ?? null,
+    fetchedAt: Date.now(),
+  };
+  portDataCache[key] = data;
+  return data;
+}
 
 // --- Caribbean Cruise Routes ---
 const CRUISE_ROUTES = [
@@ -301,6 +373,285 @@ function degToCompass(deg: number): string {
   return dirs[Math.round(deg / 22.5) % 16];
 }
 
+// --- Beaufort Sea State from wave height ---
+function beaufortSeaState(waveM: number | null): string {
+  if (waveM === null) return 'N/A';
+  if (waveM < 0.1) return 'Calm (Glassy)';
+  if (waveM < 0.5) return 'Calm (Rippled)';
+  if (waveM < 1.25) return 'Slight';
+  if (waveM < 2.5) return 'Moderate';
+  if (waveM < 4.0) return 'Rough';
+  if (waveM < 6.0) return 'Very Rough';
+  if (waveM < 9.0) return 'High';
+  if (waveM < 14.0) return 'Very High';
+  return 'Phenomenal';
+}
+
+function cToF(c: number): number { return Math.round(c * 9 / 5 + 32); }
+function mToFt(m: number): string { return (m * 3.281).toFixed(1); }
+function mToMi(m: number): string { return (m / 1609).toFixed(1); }
+
+interface PortDetailModalProps {
+  port: typeof LIVE_DATA[0];
+  onClose: () => void;
+  isMetric: boolean;
+}
+
+function PortDetailModal({ port, onClose, isMetric }: PortDetailModalProps) {
+  const [data, setData] = useState<PortLiveData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    fetchPortData(port.lat, port.lon)
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+    // Refresh every hour
+    const id = setInterval(() => {
+      fetchPortData(port.lat, port.lon)
+        .then(d => setData(d))
+        .catch(() => {});
+    }, 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [port.lat, port.lon]);
+
+  const pressureTendency = data && data.pressurePrev !== null
+    ? data.pressureHpa - data.pressurePrev
+    : null;
+
+  const TendencyIcon = pressureTendency === null ? Minus
+    : pressureTendency > 0.5 ? TrendingUp
+    : pressureTendency < -0.5 ? TrendingDown
+    : Minus;
+  const tendencyLabel = pressureTendency === null ? 'Steady'
+    : pressureTendency > 1.5 ? 'Rising Rapidly'
+    : pressureTendency > 0.5 ? 'Rising'
+    : pressureTendency < -1.5 ? 'Falling Rapidly'
+    : pressureTendency < -0.5 ? 'Falling'
+    : 'Steady';
+  const tendencyColor = pressureTendency === null ? 'text-white/50'
+    : pressureTendency > 0.5 ? 'text-green-400'
+    : pressureTendency < -0.5 ? 'text-red-400'
+    : 'text-white/50';
+
+  const tempDisplay = data
+    ? isMetric ? `${data.tempC.toFixed(1)}°C` : `${cToF(data.tempC)}°F`
+    : '--';
+  const dewDisplay = data
+    ? isMetric ? `${data.dewpointC.toFixed(1)}°C` : `${cToF(data.dewpointC)}°F`
+    : '--';
+  const windDisplay = data
+    ? isMetric
+      ? `${(data.windSpeedKt * 1.852).toFixed(0)} km/h`
+      : `${data.windSpeedKt.toFixed(0)} kt`
+    : '--';
+  const gustDisplay = data
+    ? isMetric
+      ? `${(data.windGustKt * 1.852).toFixed(0)} km/h`
+      : `${data.windGustKt.toFixed(0)} kt`
+    : '--';
+  const visDisplay = data
+    ? isMetric
+      ? `${(data.visibilityM / 1000).toFixed(1)} km`
+      : `${mToMi(data.visibilityM)} mi`
+    : '--';
+  const waveDisplay = data?.waveHeightM !== null && data?.waveHeightM !== undefined
+    ? isMetric ? `${data.waveHeightM.toFixed(1)} m` : `${mToFt(data.waveHeightM)} ft`
+    : 'N/A';
+  const swellDisplay = data?.swellHeightM !== null && data?.swellHeightM !== undefined
+    ? isMetric ? `${data.swellHeightM.toFixed(1)} m` : `${mToFt(data.swellHeightM)} ft`
+    : 'N/A';
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="glass-dark rounded-3xl border border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden"
+        style={{ maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`bg-gradient-to-r ${port.color} p-6 relative`}>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center hover:bg-black/50 transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <port.icon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-white font-black text-2xl leading-tight">{port.location}</h2>
+              {port.sublabel && <p className="text-white/70 text-sm">{port.sublabel}</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-white/70 text-xs">Live conditions -- updated hourly</span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6">
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+              <span className="ml-3 text-white/60 text-sm">Fetching live data...</span>
+            </div>
+          )}
+          {error && (
+            <div className="text-center py-8 text-white/50">
+              <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-amber-400" />
+              <p>Unable to retrieve live data. Please try again shortly.</p>
+            </div>
+          )}
+          {data && !loading && (
+            <div className="space-y-5">
+              {/* Atmosphere row */}
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Atmosphere</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Thermometer className="w-4 h-4 text-orange-400" />
+                      <span className="text-white/50 text-xs">Temperature</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{tempDisplay}</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Droplets className="w-4 h-4 text-blue-400" />
+                      <span className="text-white/50 text-xs">Dew Point</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{dewDisplay}</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Droplets className="w-4 h-4 text-cyan-400" />
+                      <span className="text-white/50 text-xs">Humidity</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{data.humidity}%</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Eye className="w-4 h-4 text-sky-400" />
+                      <span className="text-white/50 text-xs">Visibility</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{visDisplay}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wind row */}
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Wind</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Navigation className="w-4 h-4 text-teal-400" />
+                      <span className="text-white/50 text-xs">Direction</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{degToCompass(data.windDir)}</p>
+                    <p className="text-white/40 text-xs mt-0.5">{data.windDir}°</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wind className="w-4 h-4 text-cyan-400" />
+                      <span className="text-white/50 text-xs">Speed</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{windDisplay}</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      <span className="text-white/50 text-xs">Gusts</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{gustDisplay}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pressure row */}
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Pressure</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Gauge className="w-4 h-4 text-violet-400" />
+                      <span className="text-white/50 text-xs">Pressure (MSL)</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{data.pressureHpa.toFixed(1)} hPa</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TendencyIcon className={`w-4 h-4 ${tendencyColor}`} />
+                      <span className="text-white/50 text-xs">Tendency (1 hr)</span>
+                    </div>
+                    <p className={`font-black text-2xl ${tendencyColor}`}>{tendencyLabel}</p>
+                    {pressureTendency !== null && (
+                      <p className="text-white/40 text-xs mt-0.5">
+                        {pressureTendency > 0 ? '+' : ''}{pressureTendency.toFixed(1)} hPa
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Marine row */}
+              <div>
+                <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Marine</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Waves className="w-4 h-4 text-blue-400" />
+                      <span className="text-white/50 text-xs">Sea State</span>
+                    </div>
+                    <p className="text-white font-black text-lg leading-tight">{beaufortSeaState(data.waveHeightM)}</p>
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Waves className="w-4 h-4 text-cyan-400" />
+                      <span className="text-white/50 text-xs">Wave Height</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{waveDisplay}</p>
+                    {data.wavePeriodS !== null && (
+                      <p className="text-white/40 text-xs mt-0.5">{data.wavePeriodS.toFixed(0)}s period</p>
+                    )}
+                  </div>
+                  <div className="glass-dark rounded-2xl p-4 border border-white/5 sm:col-span-1 col-span-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Waves className="w-4 h-4 text-indigo-400" />
+                      <span className="text-white/50 text-xs">Swell</span>
+                    </div>
+                    <p className="text-white font-black text-2xl">{swellDisplay}</p>
+                    {data.swellPeriodS !== null && (
+                      <p className="text-white/40 text-xs mt-0.5">
+                        {data.swellPeriodS.toFixed(0)}s period
+                        {data.swellDirDeg !== null ? ` -- from ${degToCompass(data.swellDirDeg)}` : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-white/25 text-xs text-right">
+                Last updated: {new Date(data.fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -321,6 +672,7 @@ export default function Home() {
   const [, navigate] = useLocation();
   const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
   const [isMetric, setIsMetric] = useState(false);
+  const [selectedPort, setSelectedPort] = useState<typeof LIVE_DATA[0] | null>(null);
 
   // Fetch daily top story from top_story.json
   useEffect(() => {
@@ -659,17 +1011,18 @@ export default function Home() {
       {/* Live Conditions - Rotating 6-card display */}
       <section className="py-8 relative">
         <div className="container">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50" />
             <h3 className="text-2xl font-bold text-white">Live Conditions</h3>
           </div>
+          <p className="text-white/40 text-xs mb-6">Click any port for full conditions</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 overflow-hidden">
             {Array.from({ length: 6 }, (_, i) => {
               const loc = LIVE_DATA[(liveOffset + i) % LIVE_DATA.length];
               return (
                 <div
                   key={`${liveOffset}-${i}`}
-                  className={`glass-dark rounded-2xl p-5 cursor-pointer group border border-white/5 hover:border-white/20`}
+                  className={`glass-dark rounded-2xl p-5 cursor-pointer group border border-white/5 hover:border-white/20 hover:scale-105 transition-all duration-200`}
                   style={{
                     transition: 'opacity 0.45s ease, transform 0.45s ease',
                     transitionDelay: `${i * 35}ms`,
@@ -680,6 +1033,7 @@ export default function Home() {
                       ? 'translateY(28px)'
                       : 'translateY(0px)',
                   }}
+                  onClick={() => setSelectedPort(loc)}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0 pr-2">
@@ -694,12 +1048,22 @@ export default function Home() {
                     </div>
                   </div>
                   <p className="text-white/70 text-xs font-medium">{loc.condition}</p>
+                  <p className="text-white/30 text-[10px] mt-2 group-hover:text-white/60 transition-colors">Tap for details</p>
                 </div>
               );
             })}
           </div>
         </div>
       </section>
+
+      {/* Port Detail Modal */}
+      {selectedPort && (
+        <PortDetailModal
+          port={selectedPort}
+          onClose={() => setSelectedPort(null)}
+          isMetric={isMetric}
+        />
+      )}
 
       {/* Caribbean Cruise Weather */}
       <section className="py-8 relative overflow-hidden">
