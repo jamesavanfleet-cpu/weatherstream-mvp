@@ -1374,7 +1374,7 @@ export default function Home() {
                 <h2 className="text-3xl md:text-4xl font-black text-white mb-6">About James</h2>
                 
                 <p>
-                  With over 30 years of experience as a trailblazing broadcast and operational meteorologist, James Van Fleet has built a career on delivering life-saving, data-driven weather intelligence. He is a trusted media spokesperson and crisis-tested leader credited with protecting lives and multi-billion-dollar assets through precise hurricane routing and real-time decision support.
+                  With over 30 years of experience as a trailblazing broadcast and operational meteorologist, James Van Fleet has built a career on delivering life-saving, data-driven weather intelligence. He is a trusted media spokesperson with regular appearances on The Weather Channel, FOX Weather, and Weather Nation, as well as Network Broadcast Stations, and a crisis-tested leader credited with protecting lives and multi-billion-dollar assets through precise hurricane routing and real-time decision support.
                 </p>
                 
                 <p>
