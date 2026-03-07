@@ -5,7 +5,7 @@
 set -e
 
 echo "Building for GitHub Pages..."
-VITE_BASE_PATH=/weatherstream-mvp/ pnpm run build:pages
+VITE_BASE_PATH=/ pnpm run build:pages
 
 echo "Deploying to gh-pages branch..."
 DIST_DIR="$(pwd)/dist/public"
