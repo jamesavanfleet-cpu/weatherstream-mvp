@@ -341,14 +341,14 @@ export default function Home() {
       .catch(() => { /* silently fail — static intel text still shown */ });
   }, []);
 
-  // Rotate Live Conditions every 5 seconds: shift 3 cards from the left
+  // Rotate Live Conditions every 5 seconds: replace all 6 cards at once
   useEffect(() => {
     const id = setInterval(() => {
       // Phase 1: existing cards lift up and fade out
       setLiveExiting(true);
       setTimeout(() => {
         // Phase 2: swap data, position new cards below (off-screen)
-        setLiveOffset(prev => (prev + 3) % LIVE_DATA.length);
+        setLiveOffset(prev => (prev + 6) % LIVE_DATA.length);
         setLiveExiting(false);
         setLiveEntering(true);
         // Phase 3: new cards slide up into place
