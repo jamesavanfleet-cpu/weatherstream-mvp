@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { REGIONS, type Port } from "@/data/regions";
 import {
@@ -296,6 +296,9 @@ export default function RegionDetail() {
   const [intel, setIntel] = useState<string>("");
   const [intelLoading, setIntelLoading] = useState(true);
   const [isMetric, setIsMetric] = useState(false);
+  // expandedPorts must be declared before any early return to satisfy Rules of Hooks
+  const [expandedPorts, setExpandedPorts] = useState<Set<number>>(new Set());
+  const initialExpandDoneRef = useRef(false);
 
   useEffect(() => {
     if (!region) return;
@@ -340,6 +343,14 @@ export default function RegionDetail() {
       });
   }, [region]);
 
+  // Auto-expand all ports ONCE when they first load -- never re-run so manual collapse is preserved
+  useEffect(() => {
+    if (portWeather.length > 0 && !initialExpandDoneRef.current) {
+      initialExpandDoneRef.current = true;
+      setExpandedPorts(new Set(portWeather.map((_, i) => i)));
+    }
+  }, [portWeather.length]);
+
   if (!region) {
     return (
       <div className="min-h-screen gradient-animate flex items-center justify-center">
@@ -351,15 +362,6 @@ export default function RegionDetail() {
       </div>
     );
   }
-
-  const [expandedPorts, setExpandedPorts] = useState<Set<number>>(new Set());
-
-  // Auto-expand all ports once data starts loading
-  useEffect(() => {
-    if (portWeather.length > 0) {
-      setExpandedPorts(new Set(portWeather.map((_, i) => i)));
-    }
-  }, [portWeather.length]);
 
   return (
     <div className="min-h-screen gradient-animate">
