@@ -60,8 +60,10 @@ git reset --hard origin/gh-pages
 rm -rf assets *.html
 cp -r "$REPO_ROOT/dist/public/assets" .
 cp "$REPO_ROOT/dist/public/index.html" .
+cp "$REPO_ROOT/dist/public/404.html" .
 cp "$REPO_ROOT/dist/public/intel.json" .
 cp "$REPO_ROOT/dist/public/top_story.json" .
+[ -f "$REPO_ROOT/dist/public/james-headshot.png" ] && cp "$REPO_ROOT/dist/public/james-headshot.png" .
 # Also copy live_conditions.json if it exists
 [ -f "$REPO_ROOT/dist/public/live_conditions.json" ] && cp "$REPO_ROOT/dist/public/live_conditions.json" .
 
