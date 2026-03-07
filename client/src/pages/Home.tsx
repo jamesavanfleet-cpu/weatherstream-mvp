@@ -674,6 +674,25 @@ export default function Home() {
   const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
   const [isMetric, setIsMetric] = useState(false);
   const [selectedPort, setSelectedPort] = useState<typeof LIVE_DATA[0] | null>(null);
+  type LiveCondEntry = { tempF: number; tempC: number; condition: string; wmo: number; windKt: number; windDir: number };
+  const [liveConditionsData, setLiveConditionsData] = useState<Record<string, LiveCondEntry> | null>(null);
+
+  // Fetch live_conditions.json -- refreshed hourly at :10 past the hour
+  useEffect(() => {
+    const loadLiveConditions = () => {
+      const base = import.meta.env.BASE_URL || "/";
+      const hourKey = new Date().toISOString().slice(0, 13);
+      fetch(`${base}live_conditions.json?h=${hourKey}`)
+        .then(r => r.json())
+        .then((d: { ports: Record<string, LiveCondEntry> }) => {
+          if (d.ports) setLiveConditionsData(d.ports);
+        })
+        .catch(() => { /* fall back to static LIVE_DATA values */ });
+    };
+    loadLiveConditions();
+    const id = setInterval(loadLiveConditions, 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // Fetch daily top story from top_story.json
   useEffect(() => {
@@ -1065,14 +1084,18 @@ export default function Home() {
                         <p className="text-white/40 text-[10px] leading-tight mt-0.5 truncate">{loc.sublabel}</p>
                       )}
                       <p className="text-3xl font-black text-white mt-1">
-                        {isMetric ? Math.round((loc.temp - 32) * 5 / 9) + '°C' : loc.temp + '°F'}
+                        {(() => {
+                          const live = liveConditionsData?.[loc.location];
+                          if (live) return isMetric ? live.tempC + '°C' : live.tempF + '°F';
+                          return isMetric ? Math.round((loc.temp - 32) * 5 / 9) + '°C' : loc.temp + '°F';
+                        })()}
                       </p>
                     </div>
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${loc.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
                       <loc.icon className="w-5 h-5 text-white" />
                     </div>
                   </div>
-                  <p className="text-white/70 text-xs font-medium">{loc.condition}</p>
+                  <p className="text-white/70 text-xs font-medium">{liveConditionsData?.[loc.location]?.condition ?? loc.condition}</p>
                   <p className="text-white/30 text-[10px] mt-2 group-hover:text-white/60 transition-colors">Tap for details</p>
                 </div>
               );
