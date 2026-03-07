@@ -923,7 +923,7 @@ export default function Home() {
   return (
     <div className="min-h-screen gradient-animate">
       {/* Full-Width Banner Photo */}
-      <div className="w-full relative" style={{height: '260px', overflow: 'hidden'}}>
+      <div className="w-full relative" style={{height: 'clamp(160px, 30vw, 260px)', overflow: 'hidden'}}>
         <img
           src="/locations/bridge-banner.jpg"
           alt="Ship bridge at sunrise returning to Miami"
@@ -940,7 +940,7 @@ export default function Home() {
       </div>
 
       {/* Full-Screen Video Hero */}
-      <section className="relative flex items-center justify-center overflow-hidden pt-0 pb-0" style={{minHeight: '72vh'}}>
+      <section className="relative flex items-center justify-center overflow-hidden pt-6 pb-8 lg:pt-0 lg:pb-0" style={{minHeight: 'clamp(auto, 60vh, 72vh)'}}>
         <div className="absolute inset-0">
           <img
             src={HERO_BG}
@@ -950,21 +950,21 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
         </div>
 
-        <div className="container relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
+        <div className="container relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center py-6 lg:py-0">
+          <div className="space-y-4 lg:space-y-6">
             <Badge className="glass border-white/20 text-white backdrop-blur-xl">
               <TrendingUp className="w-3 h-3 mr-1" />
               30+ Years | Royal Caribbean Chief Met
             </Badge>
             <div className="space-y-3">
-              <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-none">
+              <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
                 <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
                   Weather Intelligence
                 </span>
               </h2>
-              <p className="text-2xl text-white/70 font-light">By James Van Fleet</p>
+              <p className="text-xl md:text-2xl text-white/70 font-light">By James Van Fleet</p>
             </div>
-            <p className="text-xl text-white/80 leading-relaxed max-w-xl">
+            <p className="text-base md:text-xl text-white/80 leading-relaxed max-w-xl">
               Forecast Video Briefings and breaking storm analysis with the former Chief Meteorologist
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, and Eastern Pacific.
               <span className="text-white/40"> Coming soon: South Pacific (Australia &amp; New Zealand) and APAC (China &amp; Japan).</span>
@@ -977,9 +977,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative flex justify-center">
+          <div className="relative flex justify-center mt-6 lg:mt-0">
             <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10" style={{maxWidth: '380px', width: '100%'}}>
-              <div className="aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative group">
+              <div className="aspect-video sm:aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative group">
                 <video
                   className="w-full h-full object-cover"
                   autoPlay
@@ -1012,17 +1012,17 @@ export default function Home() {
       {/* Live Conditions - Rotating 6-card display */}
       <section className="py-8 relative">
         <div className="container">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50" />
                 <h3 className="text-2xl font-bold text-white">Live Conditions</h3>
               </div>
-              <p className="text-white/40 text-xs pl-6">Click any port for full conditions</p>
+              <p className="text-white/40 text-xs pl-6">Tap any port for full conditions</p>
             </div>
             <button
               onClick={() => setIsMetric(m => !m)}
-              className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none flex-shrink-0"
+              className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none self-start sm:flex-shrink-0"
               aria-label="Toggle units"
             >
               {/* Sliding pill */}
