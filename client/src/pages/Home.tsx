@@ -1369,7 +1369,7 @@ export default function Home() {
             <div
               className="filmstrip-scroll flex flex-col gap-3 px-3"
               style={{
-                animation: 'filmstripScroll 90s linear infinite',
+                animation: 'filmstripScroll 180s linear infinite',
               }}
             >
               {/* Duplicate the list for seamless loop */}
