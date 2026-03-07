@@ -28,7 +28,7 @@
           if (q.p !== undefined) {
             window.history.replaceState(
               null, null,
-              l.pathname.split('/').slice(0, 2).join('/') + (q.p || '') +
+              l.pathname.split('/').slice(0, 1).join('/') + (q.p || '') +
               (q.q ? ('?' + q.q) : '') +
               l.hash
             );
