@@ -352,7 +352,14 @@ export default function RegionDetail() {
     );
   }
 
-  const [expandedPort, setExpandedPort] = useState<number | null>(null);
+  const [expandedPorts, setExpandedPorts] = useState<Set<number>>(new Set());
+
+  // Auto-expand all ports once data starts loading
+  useEffect(() => {
+    if (portWeather.length > 0) {
+      setExpandedPorts(new Set(portWeather.map((_, i) => i)));
+    }
+  }, [portWeather.length]);
 
   return (
     <div className="min-h-screen gradient-animate">
@@ -422,8 +429,12 @@ export default function RegionDetail() {
                 key={pw.port.name}
                 pw={pw}
                 gradient={region.gradient}
-                expanded={expandedPort === i}
-                onToggle={() => setExpandedPort(expandedPort === i ? null : i)}
+                expanded={expandedPorts.has(i)}
+                onToggle={() => setExpandedPorts(prev => {
+                  const next = new Set(prev);
+                  if (next.has(i)) next.delete(i); else next.add(i);
+                  return next;
+                })}
                 isMetric={isMetric}
               />
             ))}
