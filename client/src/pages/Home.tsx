@@ -64,6 +64,46 @@ const LIVE_DATA = [
   { location: "La Romana",     sublabel: null,                              temp: 83, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-yellow-500" },
   { location: "Samana",        sublabel: null,                              temp: 81, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-400 to-blue-400" },
   { location: "Santo Domingo", sublabel: null,                              temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-400" },
+  // Western Mediterranean
+  { location: "Barcelona",      sublabel: "Spain",                           temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-500 to-indigo-500" },
+  { location: "Valencia",       sublabel: "Spain",                           temp: 63, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
+  { location: "Palma",          sublabel: "Mallorca",                        temp: 61, condition: "Breezy",        icon: Wind,           color: "from-cyan-500 to-blue-500" },
+  { location: "Ibiza",          sublabel: "Spain",                           temp: 62, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
+  { location: "Malaga",         sublabel: "Spain",                           temp: 65, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-500" },
+  { location: "Cadiz",          sublabel: "Spain",                           temp: 63, condition: "Breezy",        icon: Wind,           color: "from-blue-400 to-sky-500" },
+  { location: "Lisbon",         sublabel: "Portugal",                        temp: 60, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-500" },
+  // Central Mediterranean
+  { location: "Marseille",      sublabel: "France",                          temp: 58, condition: "Windy",         icon: Wind,           color: "from-indigo-500 to-blue-500" },
+  { location: "Nice",           sublabel: "France",                          temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-amber-400" },
+  { location: "Monaco",         sublabel: "Monaco",                          temp: 61, condition: "Clear",         icon: Sparkles,       color: "from-cyan-400 to-blue-400" },
+  { location: "Genoa",          sublabel: "Italy",                           temp: 57, condition: "Partly Cloudy", icon: Cloud,          color: "from-sky-400 to-blue-400" },
+  { location: "La Spezia",      sublabel: "Italy",                           temp: 58, condition: "Clear",         icon: Sparkles,       color: "from-teal-400 to-cyan-400" },
+  { location: "Livorno",        sublabel: "Italy",                           temp: 59, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
+  { location: "Civitavecchia",  sublabel: "Port for Rome",                   temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
+  { location: "Naples",         sublabel: "Italy",                           temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-500 to-indigo-400" },
+  { location: "Sardinia",       sublabel: "Italy",                           temp: 61, condition: "Breezy",        icon: Wind,           color: "from-emerald-500 to-teal-500" },
+  { location: "Corsica",        sublabel: "France",                          temp: 60, condition: "Clear",         icon: Sparkles,       color: "from-green-400 to-emerald-400" },
+  { location: "Split",          sublabel: "Croatia",                         temp: 58, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-400 to-amber-400" },
+  { location: "Dubrovnik",      sublabel: "Croatia",                         temp: 59, condition: "Clear",         icon: Sparkles,       color: "from-sky-500 to-cyan-500" },
+  { location: "Venice",         sublabel: "Italy",                           temp: 55, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-indigo-400" },
+  // Eastern Mediterranean
+  { location: "Athens",         sublabel: "Piraeus, Greece",                 temp: 65, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-orange-400" },
+  { location: "Santorini",      sublabel: "Greece",                          temp: 63, condition: "Windy",         icon: Wind,           color: "from-blue-500 to-indigo-500" },
+  { location: "Mykonos",        sublabel: "Greece",                          temp: 64, condition: "Breezy",        icon: Wind,           color: "from-cyan-400 to-blue-500" },
+  { location: "Rhodes",         sublabel: "Greece",                          temp: 66, condition: "Sunny",         icon: ThermometerSun, color: "from-yellow-500 to-orange-500" },
+  { location: "Corfu",          sublabel: "Greece",                          temp: 62, condition: "Partly Cloudy", icon: Cloud,          color: "from-green-500 to-teal-400" },
+  { location: "Istanbul",       sublabel: "Turkey",                          temp: 54, condition: "Partly Cloudy", icon: Cloud,          color: "from-indigo-500 to-violet-500" },
+  { location: "Izmir",          sublabel: "Turkey",                          temp: 60, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
+  { location: "Cyprus",         sublabel: "Mediterranean",                   temp: 68, condition: "Clear",         icon: Sparkles,       color: "from-yellow-400 to-orange-400" },
+  { location: "Haifa",          sublabel: "Israel",                          temp: 67, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
+  { location: "Alexandria",     sublabel: "Egypt",                           temp: 68, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
+  // Eastern Pacific
+  { location: "Ensenada",       sublabel: "Baja California",                 temp: 65, condition: "Partly Cloudy", icon: Cloud,          color: "from-blue-400 to-sky-400" },
+  { location: "Cabo San Lucas", sublabel: "Baja California Sur",             temp: 78, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
+  { location: "Mazatlan",       sublabel: "Sinaloa, Mexico",                 temp: 82, condition: "Clear",         icon: Sparkles,       color: "from-yellow-500 to-orange-400" },
+  { location: "Puerto Vallarta",sublabel: "Jalisco, Mexico",                 temp: 84, condition: "Sunny",         icon: ThermometerSun, color: "from-orange-500 to-amber-400" },
+  { location: "Manzanillo",     sublabel: "Colima, Mexico",                  temp: 83, condition: "Partly Cloudy", icon: Cloud,          color: "from-teal-500 to-emerald-400" },
+  { location: "Huatulco",       sublabel: "Oaxaca, Mexico",                  temp: 86, condition: "Sunny",         icon: ThermometerSun, color: "from-amber-400 to-orange-500" },
 ];
 
 // --- Caribbean Cruise Routes ---
@@ -276,6 +316,7 @@ export default function Home() {
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
   const [liveOffset, setLiveOffset] = useState(0);
   const [liveExiting, setLiveExiting] = useState(false);
+  const [liveEntering, setLiveEntering] = useState(false);
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
   const [, navigate] = useLocation();
   const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
@@ -303,11 +344,16 @@ export default function Home() {
   // Rotate Live Conditions every 5 seconds: shift 3 cards from the left
   useEffect(() => {
     const id = setInterval(() => {
+      // Phase 1: existing cards lift up and fade out
       setLiveExiting(true);
       setTimeout(() => {
+        // Phase 2: swap data, position new cards below (off-screen)
         setLiveOffset(prev => (prev + 3) % LIVE_DATA.length);
         setLiveExiting(false);
-      }, 400);
+        setLiveEntering(true);
+        // Phase 3: new cards slide up into place
+        setTimeout(() => setLiveEntering(false), 50);
+      }, 450);
     }, 5000);
     return () => clearInterval(id);
   }, []);
@@ -524,12 +570,19 @@ export default function Home() {
   return (
     <div className="min-h-screen gradient-animate">
       {/* Full-Width Banner Photo */}
-      <div className="w-full" style={{height: '260px', overflow: 'hidden'}}>
+      <div className="w-full relative" style={{height: '260px', overflow: 'hidden'}}>
         <img
           src="/locations/bridge-banner.jpg"
           alt="Ship bridge at sunrise returning to Miami"
           className="w-full h-full object-cover object-center"
           style={{objectPosition: 'center 50%'}}
+        />
+        {/* Gradient fade: smooth blend from transparent at top to dark at bottom */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, transparent 30%, rgba(10,12,24,0.5) 60%, rgba(10,12,24,0.85) 80%, rgb(10,12,24) 100%)'
+          }}
         />
       </div>
 
@@ -616,10 +669,17 @@ export default function Home() {
               return (
                 <div
                   key={`${liveOffset}-${i}`}
-                  className={`glass-dark rounded-2xl p-5 cursor-pointer group border border-white/5 hover:border-white/20 transition-all duration-400 ${
-                    liveExiting && i < 3 ? 'opacity-0 -translate-x-4' : 'opacity-100 translate-x-0'
-                  }`}
-                  style={{ transition: 'opacity 0.4s ease, transform 0.4s ease', transitionDelay: `${i * 40}ms` }}
+                  className={`glass-dark rounded-2xl p-5 cursor-pointer group border border-white/5 hover:border-white/20`}
+                  style={{
+                    transition: 'opacity 0.45s ease, transform 0.45s ease',
+                    transitionDelay: `${i * 35}ms`,
+                    opacity: liveExiting ? 0 : liveEntering ? 0 : 1,
+                    transform: liveExiting
+                      ? 'translateY(-28px)'
+                      : liveEntering
+                      ? 'translateY(28px)'
+                      : 'translateY(0px)',
+                  }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0 pr-2">
