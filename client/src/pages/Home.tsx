@@ -1011,11 +1011,33 @@ export default function Home() {
       {/* Live Conditions - Rotating 6-card display */}
       <section className="py-8 relative">
         <div className="container">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50" />
-            <h3 className="text-2xl font-bold text-white">Live Conditions</h3>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse shadow-lg shadow-green-400/50" />
+                <h3 className="text-2xl font-bold text-white">Live Conditions</h3>
+              </div>
+              <p className="text-white/40 text-xs pl-6">Click any port for full conditions</p>
+            </div>
+            <button
+              onClick={() => setIsMetric(m => !m)}
+              className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none flex-shrink-0"
+              aria-label="Toggle units"
+            >
+              {/* Sliding pill */}
+              <span
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
+                  isMetric ? 'left-[calc(50%+2px)]' : 'left-1'
+                }`}
+              />
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                !isMetric ? 'text-white' : 'text-white/50'
+              }`}>US Standard</span>
+              <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
+                isMetric ? 'text-white' : 'text-white/50'
+              }`}>Metric</span>
+            </button>
           </div>
-          <p className="text-white/40 text-xs mb-6">Click any port for full conditions</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 overflow-hidden">
             {Array.from({ length: 6 }, (_, i) => {
               const loc = LIVE_DATA[(liveOffset + i) % LIVE_DATA.length];
@@ -1041,7 +1063,9 @@ export default function Home() {
                       {loc.sublabel && (
                         <p className="text-white/40 text-[10px] leading-tight mt-0.5 truncate">{loc.sublabel}</p>
                       )}
-                      <p className="text-3xl font-black text-white mt-1">{loc.temp}°</p>
+                      <p className="text-3xl font-black text-white mt-1">
+                        {isMetric ? Math.round((loc.temp - 32) * 5 / 9) + '°C' : loc.temp + '°F'}
+                      </p>
                     </div>
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${loc.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
                       <loc.icon className="w-5 h-5 text-white" />
