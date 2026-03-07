@@ -14,6 +14,7 @@ import urllib.parse
 from datetime import date
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
 
 REGIONS = [
     {
@@ -193,7 +194,7 @@ def call_openai(region: dict, weather_summary: str) -> str:
     }).encode()
 
     req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
+        f"{OPENAI_BASE_URL}/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",
