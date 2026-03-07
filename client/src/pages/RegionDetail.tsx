@@ -171,23 +171,23 @@ function UnitsToggle({ isMetric, onToggle }: { isMetric: boolean; onToggle: () =
   );
 }
 
-// ---- Port Row (hover to expand) ----
-function PortRow({ pw, gradient, expanded, onMouseEnter, onMouseLeave, isMetric }: {
+// ---- Port Row (click/tap to expand, hover also works on desktop) ----
+function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
   pw: PortWeather;
   gradient: string;
   expanded: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
+  onToggle: () => void;
   isMetric: boolean;
 }) {
   return (
     <div
       className="glass-dark rounded-2xl border border-white/10 overflow-hidden transition-all duration-300"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
     >
-      {/* Port name tab -- always visible */}
-      <div className={`bg-gradient-to-r ${gradient} px-5 py-4 flex items-center justify-between cursor-default`}>
+      {/* Port name tab -- always visible, tap/click to toggle */}
+      <div
+        className={`bg-gradient-to-r ${gradient} px-5 py-4 flex items-center justify-between cursor-pointer select-none`}
+        onClick={onToggle}
+      >
         <div>
           <p className="text-white font-bold text-lg leading-tight">{pw.port.name}</p>
           {pw.port.sublabel && (
@@ -352,7 +352,7 @@ export default function RegionDetail() {
     );
   }
 
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [expandedPort, setExpandedPort] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen gradient-animate">
@@ -415,22 +415,18 @@ export default function RegionDetail() {
             <h2 className="text-2xl font-black text-white">Port Conditions and Forecasts</h2>
             <UnitsToggle isMetric={isMetric} onToggle={() => setIsMetric(m => !m)} />
           </div>
-          <p className="text-white/40 text-sm mb-6">Hover over any port to view live conditions and 5-day forecast.</p>
+          <p className="text-white/40 text-sm mb-6">Tap any port to view live conditions and 5-day forecast.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {portWeather.map((pw, i) => {
-              const rowIndex = Math.floor(i / 3);
-              return (
-                <PortRow
-                  key={pw.port.name}
-                  pw={pw}
-                  gradient={region.gradient}
-                  expanded={hoveredRow === rowIndex}
-                  onMouseEnter={() => setHoveredRow(rowIndex)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                  isMetric={isMetric}
-                />
-              );
-            })}
+            {portWeather.map((pw, i) => (
+              <PortRow
+                key={pw.port.name}
+                pw={pw}
+                gradient={region.gradient}
+                expanded={expandedPort === i}
+                onToggle={() => setExpandedPort(expandedPort === i ? null : i)}
+                isMetric={isMetric}
+              />
+            ))}
           </div>
         </div>
 
