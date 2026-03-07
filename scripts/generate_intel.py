@@ -105,6 +105,30 @@ REGIONS = [
         "lon": -105.22,
         "ports": ["Puerto Vallarta", "Punta Mita", "Yelapa", "Chacala"],
     },
+    {
+        "slug": "western-mediterranean",
+        "name": "Western Mediterranean",
+        "rep_port": "Barcelona, Spain",
+        "lat": 41.38,
+        "lon": 2.18,
+        "ports": ["Barcelona", "Valencia", "Palma de Mallorca", "Ibiza", "Malaga", "Cadiz", "Lisbon", "Gibraltar"],
+    },
+    {
+        "slug": "central-mediterranean",
+        "name": "Central Mediterranean",
+        "rep_port": "Naples, Italy",
+        "lat": 40.85,
+        "lon": 14.27,
+        "ports": ["Marseille", "Nice", "Monaco", "Genoa", "La Spezia", "Livorno", "Civitavecchia", "Naples", "Sardinia", "Corsica", "Split", "Dubrovnik", "Venice"],
+    },
+    {
+        "slug": "eastern-mediterranean",
+        "name": "Eastern Mediterranean",
+        "rep_port": "Athens (Piraeus), Greece",
+        "lat": 37.94,
+        "lon": 23.64,
+        "ports": ["Athens/Piraeus", "Santorini", "Mykonos", "Rhodes", "Corfu", "Istanbul", "Izmir", "Cyprus", "Haifa", "Alexandria"],
+    },
 ]
 
 
