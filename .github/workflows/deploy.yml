@@ -1,0 +1,66 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build production bundle
+        run: pnpm run build
+
+      - name: Deploy to gh-pages
+        run: |
+          git config user.email "deploy@vanfleet-wx"
+          git config user.name "VanFleet Deploy"
+
+          # Stash the built output before switching branches
+          cp -r dist/public /tmp/deploy-output
+
+          # Switch to gh-pages branch
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          # Preserve CNAME and 404.html
+          cp CNAME /tmp/cname-backup 2>/dev/null || true
+          cp 404.html /tmp/404-backup 2>/dev/null || true
+
+          # Remove old assets and replace with new build
+          rm -f assets/*.js assets/*.css
+          cp -r /tmp/deploy-output/assets/. assets/
+          cp /tmp/deploy-output/index.html index.html
+
+          # Restore preserved files
+          cp /tmp/cname-backup CNAME 2>/dev/null || true
+          cp /tmp/404-backup 404.html 2>/dev/null || true
+
+          # Commit and push
+          git add -A
+          git diff --cached --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "Deploy: auto-deploy from main branch commit ${{ github.sha }}"
+          git push origin gh-pages
