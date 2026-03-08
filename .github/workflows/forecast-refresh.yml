@@ -12,6 +12,15 @@ on:
     - cron: '30 19 * * *'  # 3:30 PM EDT
     - cron: '30 20 * * *'  # 3:30 PM EST
   workflow_dispatch:        # allow manual trigger from GitHub UI
+    inputs:
+      force_run:
+        description: 'Force run regardless of time window (for testing)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: write
@@ -23,6 +32,13 @@ jobs:
       - name: Check if this is the correct Eastern-time run
         id: dst_check
         run: |
+          # Allow force override for manual testing
+          if [ "${{ github.event.inputs.force_run }}" = "true" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "Force run requested -- proceeding with refresh."
+            exit 0
+          fi
+
           # Determine current UTC offset for Eastern time
           # EDT = UTC-4 (second Sunday March through first Sunday November)
           # EST = UTC-5 (rest of year)
