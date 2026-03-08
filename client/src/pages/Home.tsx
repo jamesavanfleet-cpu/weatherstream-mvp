@@ -269,6 +269,7 @@ const MED_ROUTES = [
 const PACIFIC_ROUTES = [
   {
     name: "Ensenada",
+    slug: "eastern-pacific",
     image: "/locations/ensenada.jpg",
     temp: 65,
     seas: "4-6 ft",
@@ -280,6 +281,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Cabo San Lucas",
+    slug: "eastern-pacific",
     image: "/locations/cabo-san-lucas.jpg",
     temp: 78,
     seas: "2-4 ft",
@@ -291,6 +293,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Mazatlan",
+    slug: "eastern-pacific",
     image: "/locations/mazatlan.jpg",
     temp: 82,
     seas: "2-3 ft",
@@ -302,6 +305,7 @@ const PACIFIC_ROUTES = [
   },
   {
     name: "Puerto Vallarta",
+    slug: "eastern-pacific",
     image: "/locations/puerto-vallarta.jpg",
     temp: 84,
     seas: "2-4 ft",
@@ -850,8 +854,8 @@ export default function Home() {
     setHovered: (v: number | null) => void
   ) => {
     const dir = windDirs[route.name];
-    // Derive slug from region name to match REGIONS data
-    const slug = route.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    // Use explicit slug if provided, otherwise derive from region name
+    const slug = (route as any).slug ?? route.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const liveIntel = regionIntel[slug];
     const displayTemp = isMetric ? fToC(route.temp) : `${route.temp}°`;
     const displaySeas = isMetric ? seaFtToM(route.seas) : route.seas;
