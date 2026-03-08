@@ -100,7 +100,7 @@ jobs:
 
       - name: Install Node dependencies
         if: steps.dst_check.outputs.should_run == 'true'
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Generate fresh intel.json
         if: steps.dst_check.outputs.should_run == 'true'
