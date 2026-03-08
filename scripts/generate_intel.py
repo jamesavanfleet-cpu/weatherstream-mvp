@@ -208,7 +208,14 @@ def call_groq(region: dict, weather_summary: str) -> str:
         f"Write 3-4 sentences in a direct, professional mariner's voice. "
         f"Include actionable tips for cruise passengers, yacht captains, or fishing captains. "
         f"Mention specific ports or anchorage conditions where relevant. "
-        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source."
+        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. "
+        f"CRITICAL TROPICAL TERMINOLOGY RULES (NHC official criteria, 1-minute sustained winds): "
+        f"Use 'Tropical Disturbance' for an organized area of convection with no closed circulation. "
+        f"Use 'Tropical Depression' ONLY when maximum sustained winds are 33 kt (38 mph) or less AND a closed circulation exists. "
+        f"Use 'Tropical Storm' ONLY when maximum sustained winds are 34 to 63 kt (39 to 73 mph). "
+        f"Use 'Hurricane' ONLY when maximum sustained winds are 64 kt (74 mph) or more. "
+        f"If wind data does not meet those thresholds, use 'tropical wave', 'tropical moisture', 'tropical disturbance', or 'tropical weather system' instead. "
+        f"Never apply a classification that exceeds what the data supports."
     )
 
     payload = json.dumps({

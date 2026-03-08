@@ -167,9 +167,16 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
         "1. A punchy, professional news headline (max 10 words, no em dash, no quotes)\n"
         "2. A brief 2-sentence paragraph summarising the most impactful weather story across all cruise regions today. "
         "Write in first person as James. Be specific -- mention port names, wind speeds, wave heights. "
-        "No em dash. No hype. Just clear professional meteorology.\n\n"
+        "No em dash. No hype. Just clear professional meteorology.\n"
+        "CRITICAL TROPICAL TERMINOLOGY RULES (NHC official criteria, 1-minute sustained winds): "
+        "Use 'Tropical Disturbance' for organized convection with no closed circulation. "
+        "Use 'Tropical Depression' ONLY when max sustained winds are 33 kt or less AND a closed circulation exists. "
+        "Use 'Tropical Storm' ONLY when max sustained winds are 34 to 63 kt. "
+        "Use 'Hurricane' ONLY when max sustained winds are 64 kt or more. "
+        "If the wind data does not meet those thresholds, use 'tropical wave', 'tropical moisture', 'tropical disturbance', or 'tropical weather system' instead. "
+        "Never apply a classification that exceeds what the data supports.\n\n"
         f"Data: {context}\n\n"
-        "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \"...\"}"
+        "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \".\.\.\"}"
     )
 
     payload = json.dumps({
