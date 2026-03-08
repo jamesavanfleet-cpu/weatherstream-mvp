@@ -1,0 +1,146 @@
+name: Twice-Daily Forecast Refresh
+
+# Runs at 3:30 AM and 3:30 PM Eastern time year-round.
+# EDT (Mar-Nov): 07:30 UTC and 19:30 UTC
+# EST (Nov-Mar): 08:30 UTC and 20:30 UTC
+# We schedule all four times; the DST check inside the job ensures only
+# the correct one actually runs the full refresh.
+on:
+  schedule:
+    - cron: '30 7 * * *'   # 3:30 AM EDT
+    - cron: '30 8 * * *'   # 3:30 AM EST
+    - cron: '30 19 * * *'  # 3:30 PM EDT
+    - cron: '30 20 * * *'  # 3:30 PM EST
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  forecast-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if this is the correct Eastern-time run
+        id: dst_check
+        run: |
+          # Determine current UTC offset for Eastern time
+          # EDT = UTC-4 (second Sunday March through first Sunday November)
+          # EST = UTC-5 (rest of year)
+          MONTH=$(date -u +%-m)
+          DAY=$(date -u +%-d)
+          DOW=$(date -u +%u)  # 1=Mon ... 7=Sun
+          HOUR=$(date -u +%-H)
+          MINUTE=$(date -u +%-M)
+
+          # Rough DST check: EDT active April through October (safe approximation)
+          if [ "$MONTH" -ge 4 ] && [ "$MONTH" -le 10 ]; then
+            OFFSET=4   # EDT = UTC-4
+          else
+            OFFSET=5   # EST = UTC-5
+          fi
+
+          # Convert current UTC to Eastern
+          EASTERN_HOUR=$(( (HOUR - OFFSET + 24) % 24 ))
+
+          echo "UTC: ${HOUR}:${MINUTE}, Eastern offset: -${OFFSET}, Eastern hour: ${EASTERN_HOUR}"
+
+          # Only proceed if Eastern hour is 3 (3:30 AM or 3:30 PM Eastern)
+          if [ "$EASTERN_HOUR" -eq 3 ] || [ "$EASTERN_HOUR" -eq 15 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "Correct Eastern time window -- proceeding with refresh."
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "Not the correct Eastern time window -- skipping."
+          fi
+
+      - name: Checkout repository
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pip install openai aiohttp
+
+      - name: Setup Node.js
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Node dependencies
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate fresh intel.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python3 scripts/generate_intel.py > client/public/intel.json
+          echo "intel.json generated: $(wc -c < client/public/intel.json) bytes"
+
+      - name: Generate fresh top_story.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python3 scripts/generate_top_story.py
+          echo "top_story.json generated"
+
+      - name: Generate fresh live_conditions.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          python3 scripts/generate_live_conditions.py
+          echo "live_conditions.json generated"
+
+      - name: Build production bundle
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pnpm run build:pages
+
+      - name: Deploy to gh-pages
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+
+          cp -r dist/public /tmp/deploy-output
+
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+
+          # Preserve CNAME and 404.html
+          cp CNAME /tmp/cname-backup 2>/dev/null || true
+          cp 404.html /tmp/404-backup 2>/dev/null || true
+
+          # Replace assets and HTML
+          rm -f assets/*.js assets/*.css
+          cp -r /tmp/deploy-output/assets/. assets/
+          cp /tmp/deploy-output/index.html index.html
+          cp /tmp/deploy-output/intel.json intel.json 2>/dev/null || true
+          cp /tmp/deploy-output/top_story.json top_story.json 2>/dev/null || true
+          cp /tmp/deploy-output/live_conditions.json live_conditions.json 2>/dev/null || true
+
+          # Restore preserved files
+          cp /tmp/cname-backup CNAME 2>/dev/null || true
+          cp /tmp/404-backup 404.html 2>/dev/null || true
+
+          git add -A
+          git diff --cached --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "Forecast refresh: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages

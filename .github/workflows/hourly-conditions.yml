@@ -1,0 +1,48 @@
+name: Hourly Live Conditions Update
+
+# Runs at :10 past every hour to fetch fresh current conditions for all ports.
+# Uses only Open-Meteo (free, no API key required).
+# Does NOT rebuild the full site -- just updates live_conditions.json on gh-pages.
+on:
+  schedule:
+    - cron: '10 * * * *'   # :10 past every hour
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  hourly-conditions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch live conditions for all ports
+        run: |
+          python3 scripts/generate_live_conditions.py
+          echo "live_conditions.json generated: $(wc -c < client/public/live_conditions.json) bytes"
+
+      - name: Push updated live_conditions.json to gh-pages
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+
+          cp $GITHUB_WORKSPACE/client/public/live_conditions.json live_conditions.json
+
+          git add live_conditions.json
+          git diff --cached --quiet && echo "No changes to live_conditions.json, skipping push." && exit 0
+          git commit -m "Hourly conditions: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
