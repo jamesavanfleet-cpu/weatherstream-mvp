@@ -39,14 +39,15 @@ jobs:
           git config user.email "deploy@vanfleet-wx"
           git config user.name "VanFleet Deploy"
 
-          # Stash the built output before switching branches
+          # Copy built output to a safe temp location before any branch switching
           cp -r dist/public /tmp/deploy-output
 
-          # Switch to gh-pages branch.
-          # --no-frozen-lockfile may update pnpm-lock.yaml; discard all working
-          # tree changes before checkout to prevent "would be overwritten" errors.
+          # Reset any working tree changes (pnpm-lock.yaml etc.) so git checkout
+          # does not abort with "local changes would be overwritten".
+          # git checkout -f is universally supported across all git versions.
           git fetch origin gh-pages
-          git checkout --discard-changes gh-pages
+          git checkout -f gh-pages
+          git pull origin gh-pages
 
           # Preserve CNAME and 404.html
           cp CNAME /tmp/cname-backup 2>/dev/null || true
@@ -60,7 +61,7 @@ jobs:
           cp top_story.json /tmp/top_story-backup.json 2>/dev/null || true
           cp live_conditions.json /tmp/live_conditions-backup.json 2>/dev/null || true
 
-          # Remove old assets and replace with new build
+          # Replace old assets with new build
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
           cp /tmp/deploy-output/index.html index.html

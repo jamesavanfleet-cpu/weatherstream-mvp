@@ -41,8 +41,9 @@ jobs:
           cp client/public/live_conditions.json /tmp/live_conditions.json
 
           git fetch origin gh-pages
-          # Use --discard-changes to safely switch even if working tree is dirty
-          git checkout --discard-changes gh-pages
+          # Use -f to safely switch even if working tree is dirty.
+          # git checkout -f is universally supported across all git versions.
+          git checkout -f gh-pages
           git pull origin gh-pages
 
           cp /tmp/live_conditions.json live_conditions.json
