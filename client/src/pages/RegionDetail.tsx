@@ -1,4 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+// =============================================================================
+// ACCORDION REGRESSION GUARD -- DO NOT CHANGE WITHOUT READING THIS
+// =============================================================================
+// Port cards are accordion rows. The expand/collapse rules are:
+//   1. All ports start EXPANDED on page load (expandedPorts is seeded from
+//      region.ports.map((_, i) => i) inside the useState initializer).
+//   2. Tapping a port header TOGGLES that port independently of all others.
+//   3. The toggle handler MUST use a functional update (prev => ...) to avoid
+//      closing over stale state. Never replace it with a direct setState call.
+//   4. There is NO useEffect that resets or re-seeds expandedPorts after mount.
+//      Adding one will break manual collapse. If you need to handle region
+//      changes, reset via the useState initializer or a key prop, not useEffect.
+// =============================================================================
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { REGIONS, type Port } from "@/data/regions";
 import {
@@ -297,8 +310,11 @@ export default function RegionDetail() {
   const [intelLoading, setIntelLoading] = useState(true);
   const [isMetric, setIsMetric] = useState(false);
   // expandedPorts must be declared before any early return to satisfy Rules of Hooks
-  const [expandedPorts, setExpandedPorts] = useState<Set<number>>(new Set());
-  const initialExpandDoneRef = useRef(false);
+  // Initialize with all ports expanded. The Set is seeded from region.ports.length
+  // so it is stable from first render and never needs to be reset.
+  const [expandedPorts, setExpandedPorts] = useState<Set<number>>(
+    () => new Set(region ? region.ports.map((_, i) => i) : [])
+  );
 
   useEffect(() => {
     if (!region) return;
@@ -343,13 +359,6 @@ export default function RegionDetail() {
       });
   }, [region]);
 
-  // Auto-expand all ports ONCE when they first load -- never re-run so manual collapse is preserved
-  useEffect(() => {
-    if (portWeather.length > 0 && !initialExpandDoneRef.current) {
-      initialExpandDoneRef.current = true;
-      setExpandedPorts(new Set(portWeather.map((_, i) => i)));
-    }
-  }, [portWeather.length]);
 
   if (!region) {
     return (
@@ -432,11 +441,15 @@ export default function RegionDetail() {
                 pw={pw}
                 gradient={region.gradient}
                 expanded={expandedPorts.has(i)}
-                onToggle={() => setExpandedPorts(prev => {
-                  const next = new Set(prev);
-                  if (next.has(i)) next.delete(i); else next.add(i);
-                  return next;
-                })}
+                onToggle={() => {
+                  // IMPORTANT: always use functional update so we never close over stale state.
+                  // Do NOT replace this with a direct setState(newSet) call.
+                  setExpandedPorts(prev => {
+                    const next = new Set(prev);
+                    if (next.has(i)) next.delete(i); else next.add(i);
+                    return next;
+                  });
+                }}
                 isMetric={isMetric}
               />
             ))}
