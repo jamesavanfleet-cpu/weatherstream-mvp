@@ -181,7 +181,7 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
 }) {
   return (
     <div
-      className="glass-dark rounded-2xl border border-white/10 overflow-hidden transition-all duration-300"
+      className={`rounded-2xl overflow-hidden transition-all duration-300 ${expanded ? 'glass-dark border border-white/10' : ''}`}
     >
       {/* Port name tab -- always visible, tap/click to toggle */}
       <div
