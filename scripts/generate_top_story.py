@@ -2,17 +2,20 @@
 """
 generate_top_story.py
 Scans all region ports for the most impactful forecast condition across
-Caribbean, Mediterranean, and EPAC, then uses GPT to write a headline
+Caribbean, Mediterranean, and EPAC, then uses Groq to write a headline
 and brief paragraph for the homepage "NEW" card.
 Outputs: client/public/top_story.json
 """
 
-import asyncio, json, math, os, sys
+import asyncio, json, math, os, sys, urllib.request
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import aiohttp
-from openai import OpenAI
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # ── Port registry (mirrors regions.ts) ──────────────────────────────────────
 PORTS = [
@@ -73,18 +76,14 @@ def deg_to_compass(deg: float) -> str:
     return dirs[round(deg / 22.5) % 16]
 
 def impact_score(data: dict) -> float:
-    """Return a numeric impact score — higher = more newsworthy."""
+    """Return a numeric impact score -- higher = more newsworthy."""
     score = 0.0
-    # Max wind in next 7 days (kt)
     max_wind = max((ms_to_kt(v) for v in data.get("daily_wind_max", []) if v is not None), default=0)
     score += max_wind * 1.5
-    # Max wave height (ft)
     max_wave = max((v for v in data.get("daily_wave_max", []) if v is not None), default=0)
     score += max_wave * 4
-    # Max swell period (s) — long-period swell is more impactful
     max_period = max((v for v in data.get("daily_swell_period", []) if v is not None), default=0)
     score += max_period * 2
-    # Max rain probability
     max_rain = max((v for v in data.get("daily_rain", []) if v is not None), default=0)
     score += max_rain * 0.5
     return score
@@ -134,9 +133,11 @@ async def fetch_all() -> list[dict]:
         tasks = [fetch_port(session, p) for p in PORTS]
         return await asyncio.gather(*tasks)
 
-# ── GPT story writer ─────────────────────────────────────────────────────────
+# ── Groq story writer ─────────────────────────────────────────────────────────
 def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
-    client = OpenAI()
+    if not GROQ_API_KEY:
+        print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
+        sys.exit(1)
 
     max_wind_kt = round(max((ms_to_kt(v) for v in top["daily_wind_max"] if v is not None), default=0))
     max_wave    = round(max((v for v in top["daily_wave_max"] if v is not None), default=0), 1)
@@ -165,19 +166,40 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
         "Based on the following forecast data, write:\n"
         "1. A punchy, professional news headline (max 10 words, no em dash, no quotes)\n"
         "2. A brief 2-sentence paragraph summarising the most impactful weather story across all cruise regions today. "
-        "Write in first person as James. Be specific — mention port names, wind speeds, wave heights. "
+        "Write in first person as James. Be specific -- mention port names, wind speeds, wave heights. "
         "No em dash. No hype. Just clear professional meteorology.\n\n"
         f"Data: {context}\n\n"
         "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \"...\"}"
     )
 
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        temperature=0.6,
+    payload = json.dumps({
+        "model": GROQ_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 300,
+        "temperature": 0.6,
+    }).encode()
+
+    req = urllib.request.Request(
+        f"{GROQ_BASE_URL}/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+        },
+        method="POST",
     )
-    data = json.loads(response.choices[0].message.content)
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        result = json.loads(resp.read())
+        content = result["choices"][0]["message"]["content"].strip()
+
+    # Extract JSON from the response (Groq may wrap it in markdown code fences)
+    if "```" in content:
+        content = content.split("```")[1]
+        if content.startswith("json"):
+            content = content[4:]
+        content = content.strip()
+
+    data = json.loads(content)
     return data["headline"], data["paragraph"]
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -190,11 +212,11 @@ async def main():
     top      = scored[0]
     runner_up = scored[1] if len(scored) > 1 else None
 
-    print(f"Top impact port: {top['name']} ({top['region']}) — score {impact_score(top):.1f}")
+    print(f"Top impact port: {top['name']} ({top['region']}) -- score {impact_score(top):.1f}")
     if runner_up:
-        print(f"Runner-up: {runner_up['name']} ({runner_up['region']}) — score {impact_score(runner_up):.1f}")
+        print(f"Runner-up: {runner_up['name']} ({runner_up['region']}) -- score {impact_score(runner_up):.1f}")
 
-    print("Generating story with GPT...")
+    print("Generating story with Groq...")
     headline, paragraph = write_story(top, runner_up)
     print(f"Headline: {headline}")
     print(f"Paragraph: {paragraph}")
@@ -208,7 +230,6 @@ async def main():
         "top_region": top["region"],
     }
 
-    # Write to both the public folder (served by vite) and dist (for direct deploy)
     repo = Path(__file__).parent.parent
     targets = [
         repo / "client" / "public" / "top_story.json",

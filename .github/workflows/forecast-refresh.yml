@@ -68,7 +68,7 @@ jobs:
 
       - name: Install Python dependencies
         if: steps.dst_check.outputs.should_run == 'true'
-        run: pip install openai aiohttp
+        run: pip install aiohttp
 
       - name: Setup Node.js
         if: steps.dst_check.outputs.should_run == 'true'
@@ -89,7 +89,7 @@ jobs:
       - name: Generate fresh intel.json
         if: steps.dst_check.outputs.should_run == 'true'
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 scripts/generate_intel.py > client/public/intel.json
           echo "intel.json generated: $(wc -c < client/public/intel.json) bytes"
@@ -97,7 +97,7 @@ jobs:
       - name: Generate fresh top_story.json
         if: steps.dst_check.outputs.should_run == 'true'
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 scripts/generate_top_story.py
           echo "top_story.json generated"

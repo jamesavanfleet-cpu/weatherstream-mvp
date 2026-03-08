@@ -2,7 +2,7 @@
 """
 Daily intel generator for WeatherStream MVP.
 Fetches live weather from Open-Meteo for each region's representative port,
-then calls OpenAI to write a fresh James Van Fleet-style intel briefing.
+then calls Groq to write a fresh James Van Fleet-style intel briefing.
 Outputs intel.json to stdout (captured by GitHub Actions and committed to gh-pages).
 """
 
@@ -13,8 +13,9 @@ import urllib.request
 import urllib.parse
 from datetime import date, datetime, timezone
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 REGIONS = [
     {
@@ -196,7 +197,7 @@ def build_weather_summary(wx: dict) -> str:
     )
 
 
-def call_openai(region: dict, weather_summary: str) -> str:
+def call_groq(region: dict, weather_summary: str) -> str:
     today = date.today().strftime("%B %d, %Y")
     ports_list = ", ".join(region["ports"])
     prompt = (
@@ -211,18 +212,18 @@ def call_openai(region: dict, weather_summary: str) -> str:
     )
 
     payload = json.dumps({
-        "model": "gpt-4.1-mini",
+        "model": GROQ_MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 200,
         "temperature": 0.7,
     }).encode()
 
     req = urllib.request.Request(
-        f"{OPENAI_BASE_URL}/chat/completions",
+        f"{GROQ_BASE_URL}/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Authorization": f"Bearer {GROQ_API_KEY}",
         },
         method="POST",
     )
@@ -232,8 +233,8 @@ def call_openai(region: dict, weather_summary: str) -> str:
 
 
 def main():
-    if not OPENAI_API_KEY:
-        print("ERROR: OPENAI_API_KEY not set", file=sys.stderr)
+    if not GROQ_API_KEY:
+        print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
         sys.exit(1)
 
     now_utc = datetime.now(timezone.utc)
@@ -248,7 +249,7 @@ def main():
         try:
             wx = fetch_weather(region["lat"], region["lon"])
             summary = build_weather_summary(wx)
-            intel = call_openai(region, summary)
+            intel = call_groq(region, summary)
             output["regions"][region["slug"]] = intel
             print(f"  OK: {intel[:80]}...", file=sys.stderr)
         except Exception as e:
