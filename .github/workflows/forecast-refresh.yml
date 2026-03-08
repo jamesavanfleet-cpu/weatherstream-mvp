@@ -134,8 +134,14 @@ jobs:
           git config user.email "deploy@mycruisingweather.com"
           git config user.name "WeatherStream Deploy"
 
+          # Copy all generated files out of the working tree before branch switch
           cp -r dist/public /tmp/deploy-output
+          cp client/public/intel.json /tmp/intel.json 2>/dev/null || true
+          cp client/public/top_story.json /tmp/top_story.json 2>/dev/null || true
+          cp client/public/live_conditions.json /tmp/live_conditions.json 2>/dev/null || true
 
+          # Switch to gh-pages (discard working tree changes to avoid checkout conflict)
+          git checkout -- .
           git fetch origin gh-pages
           git checkout gh-pages
           git pull origin gh-pages
@@ -148,9 +154,9 @@ jobs:
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
           cp /tmp/deploy-output/index.html index.html
-          cp /tmp/deploy-output/intel.json intel.json 2>/dev/null || true
-          cp /tmp/deploy-output/top_story.json top_story.json 2>/dev/null || true
-          cp /tmp/deploy-output/live_conditions.json live_conditions.json 2>/dev/null || true
+          cp /tmp/intel.json intel.json 2>/dev/null || true
+          cp /tmp/top_story.json top_story.json 2>/dev/null || true
+          cp /tmp/live_conditions.json live_conditions.json 2>/dev/null || true
 
           # Restore preserved files
           cp /tmp/cname-backup CNAME 2>/dev/null || true
