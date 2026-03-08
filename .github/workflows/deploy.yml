@@ -42,9 +42,11 @@ jobs:
           # Stash the built output before switching branches
           cp -r dist/public /tmp/deploy-output
 
-          # Switch to gh-pages branch
+          # Switch to gh-pages branch.
+          # --no-frozen-lockfile may update pnpm-lock.yaml; discard all working
+          # tree changes before checkout to prevent "would be overwritten" errors.
           git fetch origin gh-pages
-          git checkout gh-pages
+          git checkout --discard-changes gh-pages
 
           # Preserve CNAME and 404.html
           cp CNAME /tmp/cname-backup 2>/dev/null || true
