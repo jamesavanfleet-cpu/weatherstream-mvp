@@ -307,6 +307,7 @@ export default function RegionDetail() {
   const region = REGIONS.find(r => r.slug === slug);
   const [portWeather, setPortWeather] = useState<PortWeather[]>([]);
   const [intel, setIntel] = useState<string>("");
+  const [intelDate, setIntelDate] = useState<string>("");
   const [intelLoading, setIntelLoading] = useState(true);
   const [isMetric, setIsMetric] = useState(false);
   // expandedPorts must be declared before any early return to satisfy Rules of Hooks
@@ -348,9 +349,14 @@ export default function RegionDetail() {
     const base = import.meta.env.BASE_URL || "/";
     fetch(`${base}intel.json?v=${new Date().toISOString().slice(0, 10)}`)
       .then(r => r.json())
-      .then((data: { regions?: Record<string, string> }) => {
+      .then((data: { regions?: Record<string, string>; generated?: string }) => {
         const text = data.regions?.[region.slug] ?? "";
         setIntel(text || region.intel);
+        // Format the generated date as "March 8, 2026" for display
+        if (data.generated) {
+          const d = new Date(data.generated + "T12:00:00");
+          setIntelDate(d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+        }
         setIntelLoading(false);
       })
       .catch(() => {
@@ -411,7 +417,9 @@ export default function RegionDetail() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-cyan-400 font-bold text-sm mb-2">James's Intel -- Updated Daily</p>
+              <p className="text-cyan-400 font-bold text-sm mb-2">
+                James's Intel{intelDate ? ` -- ${intelDate}` : " -- Updated Daily"}
+              </p>
               {intelLoading ? (
                 <div className="space-y-2">
                   <div className="h-3 bg-white/10 rounded animate-pulse w-full" />
