@@ -185,6 +185,7 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {GROQ_API_KEY}",
+            "User-Agent": "WeatherStream/1.0",
         },
         method="POST",
     )

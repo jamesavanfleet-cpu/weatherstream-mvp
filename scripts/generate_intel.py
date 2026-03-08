@@ -224,6 +224,7 @@ def call_groq(region: dict, weather_summary: str) -> str:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {GROQ_API_KEY}",
+            "User-Agent": "WeatherStream/1.0",
         },
         method="POST",
     )
