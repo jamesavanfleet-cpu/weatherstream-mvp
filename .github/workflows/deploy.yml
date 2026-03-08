@@ -50,6 +50,14 @@ jobs:
           cp CNAME /tmp/cname-backup 2>/dev/null || true
           cp 404.html /tmp/404-backup 2>/dev/null || true
 
+          # Preserve ALL existing JSON data files from gh-pages so a code-only
+          # deploy never wipes live data. These are written by the forecast and
+          # hourly workflows and must survive across deploys.
+          cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
+          cp intel.json /tmp/intel-backup.json 2>/dev/null || true
+          cp top_story.json /tmp/top_story-backup.json 2>/dev/null || true
+          cp live_conditions.json /tmp/live_conditions-backup.json 2>/dev/null || true
+
           # Remove old assets and replace with new build
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
@@ -58,6 +66,12 @@ jobs:
           # Restore preserved files
           cp /tmp/cname-backup CNAME 2>/dev/null || true
           cp /tmp/404-backup 404.html 2>/dev/null || true
+
+          # Restore JSON data files (never overwrite with empty/missing files)
+          cp /tmp/forecast-backup.json forecast.json 2>/dev/null || true
+          cp /tmp/intel-backup.json intel.json 2>/dev/null || true
+          cp /tmp/top_story-backup.json top_story.json 2>/dev/null || true
+          cp /tmp/live_conditions-backup.json live_conditions.json 2>/dev/null || true
 
           # Commit and push
           git add -A

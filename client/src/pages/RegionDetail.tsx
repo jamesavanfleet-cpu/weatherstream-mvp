@@ -348,7 +348,12 @@ export default function RegionDetail() {
     setIntelLoading(true);
     const base = import.meta.env.BASE_URL || "/";
     fetch(`${base}intel.json?v=${new Date().toISOString().slice(0, 10)}`)
-      .then(r => r.json())
+      .then(r => {
+        // Guard against GitHub Pages returning HTML 404 redirect instead of JSON
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
+        return r.json();
+      })
       .then((data: { regions?: Record<string, string>; generated?: string }) => {
         const text = data.regions?.[region.slug] ?? "";
         setIntel(text || region.intel);

@@ -36,11 +36,16 @@ jobs:
           git config user.email "deploy@mycruisingweather.com"
           git config user.name "WeatherStream Deploy"
 
+          # Copy the generated file to a temp location BEFORE switching branches.
+          # This prevents "local changes would be overwritten by checkout" errors.
+          cp client/public/live_conditions.json /tmp/live_conditions.json
+
           git fetch origin gh-pages
-          git checkout gh-pages
+          # Use --discard-changes to safely switch even if working tree is dirty
+          git checkout --discard-changes gh-pages
           git pull origin gh-pages
 
-          cp $GITHUB_WORKSPACE/client/public/live_conditions.json live_conditions.json
+          cp /tmp/live_conditions.json live_conditions.json
 
           git add live_conditions.json
           git diff --cached --quiet && echo "No changes to live_conditions.json, skipping push." && exit 0

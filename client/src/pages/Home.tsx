@@ -688,7 +688,13 @@ export default function Home() {
       const base = import.meta.env.BASE_URL || "/";
       const hourKey = new Date().toISOString().slice(0, 13);
       fetch(`${base}live_conditions.json?h=${hourKey}`)
-        .then(r => r.json())
+        .then(r => {
+          // Guard: if the server returns HTML (e.g. a 404 redirect page) instead of
+          // JSON, parsing it would throw and crash the app. Check content-type first.
+          const ct = r.headers.get("content-type") || "";
+          if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
+          return r.json();
+        })
         .then((d: { ports: Record<string, LiveCondEntry> }) => {
           if (d.ports) setLiveConditionsData(d.ports);
         })
@@ -703,7 +709,11 @@ export default function Home() {
   useEffect(() => {
     const base = import.meta.env.BASE_URL || "/";
     fetch(`${base}top_story.json?v=${new Date().toISOString().slice(0, 10)}`)
-      .then(r => r.json())
+      .then(r => {
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
+        return r.json();
+      })
       .then((d: { headline: string; paragraph: string }) => setTopStory(d))
       .catch(() => {});
   }, []);
@@ -711,7 +721,11 @@ export default function Home() {
   // Fetch daily AI intel from intel.json (committed to gh-pages by GitHub Actions)
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}intel.json?v=${new Date().toISOString().slice(0,13)}`)
-      .then(r => r.json())
+      .then(r => {
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
+        return r.json();
+      })
       .then((data: { regions?: Record<string, string>; generated?: string; generated_utc?: string }) => {
         if (data.regions) setRegionIntel(data.regions);
         if (data.generated_utc) setIntelUpdatedAt(data.generated_utc);
