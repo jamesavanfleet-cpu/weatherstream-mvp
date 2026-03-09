@@ -676,7 +676,7 @@ export default function Home() {
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
   const [intelUpdatedAt, setIntelUpdatedAt] = useState<string>('');
   const [, navigate] = useLocation();
-  const [topStory, setTopStory] = useState<{ headline: string; paragraph: string } | null>(null);
+  const [topStory, setTopStory] = useState<{ caribbean: { headline: string; paragraph: string; top_region: string }; mediterranean: { headline: string; paragraph: string; top_region: string } } | null>(null);
   const [isMetric, setIsMetric] = useState(false);
   const [selectedPort, setSelectedPort] = useState<typeof LIVE_DATA[0] | null>(null);
   type LiveCondEntry = { tempF: number; tempC: number; condition: string; wmo: number; windKt: number; windDir: number };
@@ -714,7 +714,7 @@ export default function Home() {
         if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
         return r.json();
       })
-      .then((d: { headline: string; paragraph: string }) => setTopStory(d))
+      .then((d: { caribbean: { headline: string; paragraph: string; top_region: string }; mediterranean: { headline: string; paragraph: string; top_region: string } }) => setTopStory(d))
       .catch(() => {});
   }, []);
 
@@ -1024,31 +1024,34 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative flex justify-center mt-6 lg:mt-0">
-            <div className="glass-dark rounded-3xl overflow-hidden shadow-2xl glow-accent border-2 border-white/10" style={{maxWidth: '380px', width: '100%'}}>
-              <div className="aspect-video sm:aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative group">
-                <video
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="auto"
-                >
-                  <source src="https://files.manuscdn.com/user_upload_by_module/session_file/110462184/ZjZxBJiirimaafnf.mp4" type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-                <div className="absolute top-4 right-4 glass-dark px-3 py-1.5 rounded-full flex items-center gap-2 z-10">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-white text-xs font-semibold">NEW</span>
-                </div>
+          <div className="relative flex flex-col gap-4 mt-6 lg:mt-0 w-full">
+            {/* Caribbean Top Story */}
+            <div className="glass-dark rounded-2xl overflow-hidden shadow-xl border border-white/10 w-full">
+              <div className="px-5 pt-4 pb-1 flex items-center gap-2 border-b border-white/5">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="text-cyan-400 text-xs font-semibold tracking-widest uppercase">Caribbean</span>
               </div>
-              <div className="p-6 glass-dark border-t border-white/5">
-                <h3 className="text-white font-bold text-lg mb-2">
-                  {topStory ? topStory.headline : "Arctic Blast Sweeps Midwest, Caribbean Perfect"}
+              <div className="p-5">
+                <h3 className="text-white font-bold text-base mb-2">
+                  {topStory ? topStory.caribbean.headline : "Steady Trade Winds Across Eastern Caribbean"}
                 </h3>
-                <p className="text-white/60 text-sm">
-                  {topStory ? topStory.paragraph : "Dangerous wind chills hit the central U.S. while Caribbean cruise routes enjoy perfect conditions."}
+                <p className="text-white/60 text-sm leading-relaxed">
+                  {topStory ? topStory.caribbean.paragraph : "Trade winds are holding steady at 15-20 kt across the Eastern Caribbean with seas running 4-6 ft."}
+                </p>
+              </div>
+            </div>
+            {/* Mediterranean Top Story */}
+            <div className="glass-dark rounded-2xl overflow-hidden shadow-xl border border-white/10 w-full">
+              <div className="px-5 pt-4 pb-1 flex items-center gap-2 border-b border-white/5">
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-amber-400 text-xs font-semibold tracking-widest uppercase">Mediterranean</span>
+              </div>
+              <div className="p-5">
+                <h3 className="text-white font-bold text-base mb-2">
+                  {topStory ? topStory.mediterranean.headline : "Mistral Builds Across Western Mediterranean"}
+                </h3>
+                <p className="text-white/60 text-sm leading-relaxed">
+                  {topStory ? topStory.mediterranean.paragraph : "A strengthening Mistral is pushing winds to 25-30 kt in the Gulf of Lion with seas building to 8-10 ft."}
                 </p>
               </div>
             </div>

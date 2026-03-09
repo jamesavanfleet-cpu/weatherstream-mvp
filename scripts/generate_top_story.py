@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 generate_top_story.py
-Scans all region ports for the most impactful forecast condition across
-Caribbean, Mediterranean, and EPAC, then uses Groq to write a headline
-and brief paragraph for the homepage "NEW" card.
+Scans all region ports and produces TWO top story cards:
+  1. Caribbean (Eastern Caribbean, Western Caribbean, Bahamas, Southern Caribbean, Lesser Antilles)
+  2. Mediterranean (Western Mediterranean, Central Mediterranean, Eastern Mediterranean)
+Each story starts directly with the weather content -- no opener phrase.
 Outputs: client/public/top_story.json
 """
 
@@ -17,57 +18,84 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
-# ── Port registry (mirrors regions.ts) ──────────────────────────────────────
+# ── Port registry ─────────────────────────────────────────────────────────────
 PORTS = [
     # Eastern Caribbean
-    {"name": "San Juan",          "region": "Eastern Caribbean",    "lat": 18.47, "lon": -66.12},
-    {"name": "St. Thomas",        "region": "Eastern Caribbean",    "lat": 18.34, "lon": -64.93},
-    {"name": "St. Maarten",       "region": "Eastern Caribbean",    "lat": 18.07, "lon": -63.07},
-    {"name": "Antigua",           "region": "Eastern Caribbean",    "lat": 17.12, "lon": -61.85},
-    {"name": "Turks & Caicos",    "region": "Eastern Caribbean",    "lat": 21.46, "lon": -71.14},
+    {"name": "San Juan",          "region": "Eastern Caribbean",    "group": "caribbean", "lat": 18.47, "lon": -66.12},
+    {"name": "St. Thomas",        "region": "Eastern Caribbean",    "group": "caribbean", "lat": 18.34, "lon": -64.93},
+    {"name": "St. Maarten",       "region": "Eastern Caribbean",    "group": "caribbean", "lat": 18.07, "lon": -63.07},
+    {"name": "Antigua",           "region": "Eastern Caribbean",    "group": "caribbean", "lat": 17.12, "lon": -61.85},
+    {"name": "Turks & Caicos",    "region": "Eastern Caribbean",    "group": "caribbean", "lat": 21.46, "lon": -71.14},
     # Western Caribbean
-    {"name": "Cozumel",           "region": "Western Caribbean",    "lat": 20.51, "lon": -86.95},
-    {"name": "Roatan",            "region": "Western Caribbean",    "lat": 16.32, "lon": -86.53},
-    {"name": "Grand Cayman",      "region": "Western Caribbean",    "lat": 19.29, "lon": -81.38},
-    {"name": "Ocho Rios",         "region": "Western Caribbean",    "lat": 18.41, "lon": -77.10},
+    {"name": "Cozumel",           "region": "Western Caribbean",    "group": "caribbean", "lat": 20.51, "lon": -86.95},
+    {"name": "Roatan",            "region": "Western Caribbean",    "group": "caribbean", "lat": 16.32, "lon": -86.53},
+    {"name": "Grand Cayman",      "region": "Western Caribbean",    "group": "caribbean", "lat": 19.29, "lon": -81.38},
+    {"name": "Ocho Rios",         "region": "Western Caribbean",    "group": "caribbean", "lat": 18.41, "lon": -77.10},
     # Bahamas
-    {"name": "Nassau",            "region": "Bahamas",              "lat": 25.04, "lon": -77.35},
-    {"name": "Freeport",          "region": "Bahamas",              "lat": 26.53, "lon": -78.70},
-    {"name": "Bimini",            "region": "Bahamas",              "lat": 25.73, "lon": -79.30},
+    {"name": "Nassau",            "region": "Bahamas",              "group": "caribbean", "lat": 25.04, "lon": -77.35},
+    {"name": "Freeport",          "region": "Bahamas",              "group": "caribbean", "lat": 26.53, "lon": -78.70},
+    {"name": "Bimini",            "region": "Bahamas",              "group": "caribbean", "lat": 25.73, "lon": -79.30},
     # Southern Caribbean
-    {"name": "Aruba",             "region": "Southern Caribbean",   "lat": 12.52, "lon": -70.03},
-    {"name": "Curacao",           "region": "Southern Caribbean",   "lat": 12.11, "lon": -68.93},
-    {"name": "Cartagena",         "region": "Southern Caribbean",   "lat": 10.39, "lon": -75.48},
+    {"name": "Aruba",             "region": "Southern Caribbean",   "group": "caribbean", "lat": 12.52, "lon": -70.03},
+    {"name": "Curacao",           "region": "Southern Caribbean",   "group": "caribbean", "lat": 12.11, "lon": -68.93},
+    {"name": "Cartagena",         "region": "Southern Caribbean",   "group": "caribbean", "lat": 10.39, "lon": -75.48},
     # Lesser Antilles
-    {"name": "Barbados",          "region": "Lesser Antilles",      "lat": 13.10, "lon": -59.62},
-    {"name": "St. Lucia",         "region": "Lesser Antilles",      "lat": 13.91, "lon": -60.98},
-    {"name": "Martinique",        "region": "Lesser Antilles",      "lat": 14.64, "lon": -61.02},
-    {"name": "Dominica",          "region": "Lesser Antilles",      "lat": 15.30, "lon": -61.39},
-    {"name": "Grenada",           "region": "Lesser Antilles",      "lat": 12.11, "lon": -61.68},
+    {"name": "Barbados",          "region": "Lesser Antilles",      "group": "caribbean", "lat": 13.10, "lon": -59.62},
+    {"name": "St. Lucia",         "region": "Lesser Antilles",      "group": "caribbean", "lat": 13.91, "lon": -60.98},
+    {"name": "Martinique",        "region": "Lesser Antilles",      "group": "caribbean", "lat": 14.64, "lon": -61.02},
+    {"name": "Dominica",          "region": "Lesser Antilles",      "group": "caribbean", "lat": 15.30, "lon": -61.39},
+    {"name": "Grenada",           "region": "Lesser Antilles",      "group": "caribbean", "lat": 12.11, "lon": -61.68},
     # Western Mediterranean
-    {"name": "Lisbon",            "region": "Western Mediterranean","lat": 38.71, "lon": -9.14},
-    {"name": "Cadiz",             "region": "Western Mediterranean","lat": 36.53, "lon": -6.30},
-    {"name": "Barcelona",         "region": "Western Mediterranean","lat": 41.38, "lon":  2.18},
-    {"name": "Palma de Mallorca", "region": "Western Mediterranean","lat": 39.57, "lon":  2.65},
+    {"name": "Lisbon",            "region": "Western Mediterranean","group": "mediterranean", "lat": 38.71, "lon": -9.14},
+    {"name": "Cadiz",             "region": "Western Mediterranean","group": "mediterranean", "lat": 36.53, "lon": -6.30},
+    {"name": "Barcelona",         "region": "Western Mediterranean","group": "mediterranean", "lat": 41.38, "lon":  2.18},
+    {"name": "Palma de Mallorca", "region": "Western Mediterranean","group": "mediterranean", "lat": 39.57, "lon":  2.65},
     # Central Mediterranean
-    {"name": "Marseille",         "region": "Central Mediterranean","lat": 43.30, "lon":  5.37},
-    {"name": "Naples",            "region": "Central Mediterranean","lat": 40.85, "lon": 14.27},
-    {"name": "Venice",            "region": "Central Mediterranean","lat": 45.44, "lon": 12.33},
-    {"name": "Dubrovnik",         "region": "Central Mediterranean","lat": 42.65, "lon": 18.09},
+    {"name": "Marseille",         "region": "Central Mediterranean","group": "mediterranean", "lat": 43.30, "lon":  5.37},
+    {"name": "Naples",            "region": "Central Mediterranean","group": "mediterranean", "lat": 40.85, "lon": 14.27},
+    {"name": "Venice",            "region": "Central Mediterranean","group": "mediterranean", "lat": 45.44, "lon": 12.33},
+    {"name": "Dubrovnik",         "region": "Central Mediterranean","group": "mediterranean", "lat": 42.65, "lon": 18.09},
     # Eastern Mediterranean
-    {"name": "Athens (Piraeus)",  "region": "Eastern Mediterranean","lat": 37.94, "lon": 23.64},
-    {"name": "Mykonos",           "region": "Eastern Mediterranean","lat": 37.45, "lon": 25.33},
-    {"name": "Istanbul",          "region": "Eastern Mediterranean","lat": 41.01, "lon": 28.98},
-    {"name": "Haifa",             "region": "Eastern Mediterranean","lat": 32.82, "lon": 34.99},
-    # EPAC
-    {"name": "Los Angeles",       "region": "Eastern Pacific",      "lat": 33.73, "lon": -118.26},
-    {"name": "Ensenada",          "region": "Eastern Pacific",      "lat": 31.87, "lon": -116.60},
-    {"name": "Cabo San Lucas",    "region": "Eastern Pacific",      "lat": 22.89, "lon": -109.91},
-    {"name": "Mazatlan",          "region": "Eastern Pacific",      "lat": 23.22, "lon": -106.42},
-    {"name": "Puerto Vallarta",   "region": "Eastern Pacific",      "lat": 20.65, "lon": -105.22},
+    {"name": "Athens (Piraeus)",  "region": "Eastern Mediterranean","group": "mediterranean", "lat": 37.94, "lon": 23.64},
+    {"name": "Mykonos",           "region": "Eastern Mediterranean","group": "mediterranean", "lat": 37.45, "lon": 25.33},
+    {"name": "Istanbul",          "region": "Eastern Mediterranean","group": "mediterranean", "lat": 41.01, "lon": 28.98},
+    {"name": "Haifa",             "region": "Eastern Mediterranean","group": "mediterranean", "lat": 32.82, "lon": 34.99},
+    # EPAC (kept for data completeness, not used for top stories)
+    {"name": "Los Angeles",       "region": "Eastern Pacific",      "group": "epac", "lat": 33.73, "lon": -118.26},
+    {"name": "Ensenada",          "region": "Eastern Pacific",      "group": "epac", "lat": 31.87, "lon": -116.60},
+    {"name": "Cabo San Lucas",    "region": "Eastern Pacific",      "group": "epac", "lat": 22.89, "lon": -109.91},
+    {"name": "Mazatlan",          "region": "Eastern Pacific",      "group": "epac", "lat": 23.22, "lon": -106.42},
+    {"name": "Puerto Vallarta",   "region": "Eastern Pacific",      "group": "epac", "lat": 20.65, "lon": -105.22},
 ]
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+NHC_NWS_RULES = (
+    "CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only:\n"
+    "TROPICAL CYCLONES (NHC, 1-minute sustained winds): "
+    "'Tropical Wave' = trough or cyclonic curvature in trade-wind easterlies, no closed circulation, no wind threshold. "
+    "'Tropical Disturbance' = organized convection 100-300 nmi across, persisting 24+ hours, no closed circulation required. "
+    "'Tropical Depression' = closed circulation present AND max sustained winds 33 kt (38 mph) or less. "
+    "'Tropical Storm' = max sustained winds 34-63 kt (39-73 mph). "
+    "'Hurricane' = max sustained winds 64 kt (74 mph) or more. "
+    "If conditions do not meet a threshold, use 'tropical wave', 'tropical moisture', 'tropical disturbance', or 'tropical weather system'. "
+    "MARINE WIND WARNINGS (NWS, non-tropical): "
+    "'Small Craft Advisory' = sustained winds 20-33 kt or seas 7 ft or greater for more than 2 hours. "
+    "'Gale Warning' = sustained winds or frequent gusts 34-47 kt (39-54 mph). "
+    "'Storm Warning' = sustained winds or frequent gusts 48-63 kt (55-73 mph). "
+    "'Hurricane Force Wind Warning' = sustained winds or frequent gusts 64 kt (74 mph) or more, not associated with a tropical cyclone. "
+    "SEVERE THUNDERSTORM (NWS): requires winds at least 58 mph (50 kt) OR hail at least 1 inch diameter OR a tornado. "
+    "SIGNIFICANT WAVE HEIGHT (NOAA): Mean height of highest one-third of all waves. "
+    "GUST (NOAA): Rapid wind fluctuation with variations of 10 kt or more between peaks and lulls. "
+    "WATERSPOUT: Rotating column of air over water. Not the same as a tornado. "
+    "WIND (NWS): 'Wind Advisory' = sustained 31-39 mph (27-34 kt) for >= 1 hour OR gusts 46-57 mph (40-49 kt). "
+    "'High Wind Warning' = sustained >= 40 mph (35 kt) for >= 1 hour OR gusts >= 58 mph (50 kt). "
+    "FLOOD: 'Flash Flood Warning' = rapid extreme flow or rapid stream rise from heavy rain, dam/levee failure, or ice jam. "
+    "'Flood Warning' = overflow causing damage and/or threat to life. "
+    "HEAT (NWS): 'Excessive Heat Warning' = Heat Index >= 105 F for 2 consecutive hours. "
+    "FOG: 'Dense Fog Advisory' = visibility <= 1/4 mile for >= 3 hours. "
+    "Never apply a classification that exceeds what the data supports.\n\n"
+)
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def ms_to_kt(ms: float) -> float:
     return ms * 1.94384
 
@@ -76,7 +104,6 @@ def deg_to_compass(deg: float) -> str:
     return dirs[round(deg / 22.5) % 16]
 
 def impact_score(data: dict) -> float:
-    """Return a numeric impact score -- higher = more newsworthy."""
     score = 0.0
     max_wind = max((ms_to_kt(v) for v in data.get("daily_wind_max", []) if v is not None), default=0)
     score += max_wind * 1.5
@@ -88,7 +115,7 @@ def impact_score(data: dict) -> float:
     score += max_rain * 0.5
     return score
 
-# ── Async fetch ──────────────────────────────────────────────────────────────
+# ── Async fetch ───────────────────────────────────────────────────────────────
 async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
     lat, lon = port["lat"], port["lon"]
     weather_url = (
@@ -134,7 +161,7 @@ async def fetch_all() -> list[dict]:
         return await asyncio.gather(*tasks)
 
 # ── Groq story writer ─────────────────────────────────────────────────────────
-def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
+def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[str, str]:
     if not GROQ_API_KEY:
         print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
         sys.exit(1)
@@ -147,7 +174,7 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
     swell_dir   = swell_dirs[0] if swell_dirs else "unknown"
 
     context = (
-        f"Top impact port: {top['name']} ({top['region']}). "
+        f"Top impact port in the {group_label}: {top['name']} ({top['region']}). "
         f"Max wind forecast: {max_wind_kt} kt. "
         f"Max wave height: {max_wave} ft. "
         f"Max swell period: {max_period} s. "
@@ -163,49 +190,17 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
 
     prompt = (
         "You are James Van Fleet, former Chief Meteorologist of Royal Caribbean with 30+ years of experience. "
-        "Based on the following forecast data, write:\n"
+        f"Based on the following forecast data for the {group_label}, write:\n"
         "1. A punchy, professional news headline (max 10 words, no em dash, no quotes)\n"
-        "2. A brief 2-sentence paragraph summarising the most impactful weather story across all cruise regions today. "
+        "2. A brief 2-sentence paragraph summarising the most impactful weather story in this region today. "
         "Write in first person as James. Be specific -- mention port names, wind speeds, wave heights. "
+        "IMPORTANT: Start the paragraph DIRECTLY with the weather content. "
+        "Do NOT start with phrases like 'As I analyze', 'Looking at', 'Reviewing the data', or any similar opener. "
+        "Begin immediately with the location and conditions, for example: 'Marseille is experiencing...' or 'Strong winds are building across...'. "
         "No em dash. No hype. Just clear professional meteorology.\n"
-        "CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only:\n"
-        "TROPICAL CYCLONES (NHC, 1-minute sustained winds): "
-        "'Tropical Wave' = trough or cyclonic curvature in trade-wind easterlies, no closed circulation, no wind threshold. "
-        "'Tropical Disturbance' = organized convection 100-300 nmi across, persisting 24+ hours, no closed circulation required. "
-        "'Tropical Depression' = closed circulation present AND max sustained winds 33 kt (38 mph) or less. "
-        "'Tropical Storm' = max sustained winds 34-63 kt (39-73 mph). "
-        "'Hurricane' = max sustained winds 64 kt (74 mph) or more. "
-        "If conditions do not meet a threshold, use 'tropical wave', 'tropical moisture', 'tropical disturbance', or 'tropical weather system'. "
-        "MARINE WIND WARNINGS (NWS, non-tropical): "
-        "'Small Craft Advisory' = sustained winds 20-33 kt (Southern/Gulf region) or seas 7 ft or greater for more than 2 hours. "
-        "'Gale Warning' = sustained winds or frequent gusts 34-47 kt (39-54 mph). "
-        "'Storm Warning' = sustained winds or frequent gusts 48-63 kt (55-73 mph). "
-        "'Hurricane Force Wind Warning' = sustained winds or frequent gusts 64 kt (74 mph) or more, not associated with a tropical cyclone. "
-        "SEVERE THUNDERSTORM (NWS): 'Severe Thunderstorm' requires winds at least 58 mph (50 kt) OR hail at least 1 inch diameter OR a tornado. "
-        "'Severe Thunderstorm Warning' = wind gusts >= 58 mph (50 kt) and/or hail >= 1 inch and/or a tornado. "
-        "'Tornado Warning' = likelihood of a tornado based on radar or actual sighting; usually accompanied by Severe Thunderstorm Warning conditions. "
-        "HURRICANE WARNING (NWS): Sustained winds >= 74 mph (>= 64 kt) (no gust criteria) associated with a hurricane expected within 36 hours. "
-        "'Extreme Wind Warning' = sustained winds 111+ mph (Category 3+ equivalent); used for eyewall approach of a major landfalling hurricane. "
-        "WINTER WEATHER (NWS): 'Blizzard Warning' = sustained winds or frequent gusts >= 35 mph AND blowing snow reducing visibility below 1/4 mile for >= 3 hours as the predominant condition. "
-        "'Ice Storm Warning' = 1/2 inch or greater accretion of freezing rain. "
-        "'Winter Weather Advisory' = multiple winter hazards below warning criteria, OR snow/sleet 3 inches in 12 hours, OR blowing snow reducing visibility to <= 1/4 mile with winds < 35 mph, OR any freezing rain accretion on roads. "
-        "SIGNIFICANT WAVE HEIGHT (NOAA): Mean height of highest one-third of all waves. A range indicates forecast uncertainty, not that all waves are in that range. "
-        "GUST (NOAA): Rapid wind fluctuation with variations of 10 kt or more between peaks and lulls. "
-        "WATERSPOUT: Rotating column of air over water. Not the same as a tornado. "
-        "WIND (NWS): 'Wind Advisory' = sustained 31-39 mph (27-34 kt) for >= 1 hour OR gusts 46-57 mph (40-49 kt). "
-        "'High Wind Warning' = sustained >= 40 mph (>= 35 kt) for >= 1 hour OR gusts >= 58 mph (>= 50 kt). "
-        "WIND CHILL (NWS): 'Wind Chill Advisory' = index -15 to -24 F for >= 3 hours. 'Wind Chill Warning' = index <= -25 F for >= 3 hours. "
-        "SPECIAL MARINE WARNING: Brief/sudden sustained winds or frequent gusts >= 34 kt, usually with thunderstorms, AND/OR hail >= 3/4 inch; also issued for waterspouts. "
-        "STORM SURGE WARNING: Life-threatening inundation from rising water moving inland, generally within 36 hours, associated with a tropical, subtropical, or post-tropical cyclone. "
-        "TROPICAL STORM WARNING: Sustained winds 39-73 mph (34-63 kt), no gust criteria, expected within 36 hours. "
-        "FLOOD (NWS): 'Flood Advisory' = low-lying area inundation, nuisance only. 'Flash Flood Warning' = rapid extreme flow or rapid stream rise from heavy rain, dam/levee failure, or ice jam. "
-        "'Flood Warning' = overflow causing damage and/or threat to life. 'Coastal Flood Warning' = widespread serious coastal flooding (non-tropical). "
-        "HEAT (NWS): 'Excessive Heat Warning' = Heat Index >= 105 F for 2 consecutive hours. 'Heat Advisory' = 95-99 F for 2 days OR 100-104 F for 1 day. 'Heat Wave' = 3+ days >= 90 F. "
-        "FOG/FROST/FREEZE: 'Dense Fog Advisory' = visibility <= 1/4 mile for >= 3 hours. 'Frost Advisory' = shelter temp 33-36 F during growing season. 'Freeze Warning' = shelter temp < 32 F during growing season. "
-        "HIGH SURF ADVISORY: High surf posing danger to life; generally 7+ foot incoming seas at buoys. "
-        "Never apply a classification that exceeds what the data supports.\n\n"
-        f"Data: {context}\n\n"
-        "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \".\.\.\"}"
+        + NHC_NWS_RULES
+        + f"Data: {context}\n\n"
+        "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \"...\"}"
     )
 
     payload = json.dumps({
@@ -229,7 +224,7 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
         result = json.loads(resp.read())
         content = result["choices"][0]["message"]["content"].strip()
 
-    # Extract JSON from the response (Groq may wrap it in markdown code fences)
+    # Strip markdown code fences if present
     if "```" in content:
         content = content.split("```")[1]
         if content.startswith("json"):
@@ -239,43 +234,58 @@ def write_story(top: dict, runner_up: dict | None) -> tuple[str, str]:
     data = json.loads(content)
     return data["headline"], data["paragraph"]
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# ── Main ──────────────────────────────────────────────────────────────────────
 async def main():
     print("Fetching forecast data for all ports...")
     all_ports = await fetch_all()
 
-    # Score each port
-    scored = sorted(all_ports, key=impact_score, reverse=True)
-    top      = scored[0]
-    runner_up = scored[1] if len(scored) > 1 else None
+    # Split by group
+    caribbean_ports = [p for p in all_ports if p.get("group") == "caribbean"]
+    med_ports       = [p for p in all_ports if p.get("group") == "mediterranean"]
 
-    print(f"Top impact port: {top['name']} ({top['region']}) -- score {impact_score(top):.1f}")
-    if runner_up:
-        print(f"Runner-up: {runner_up['name']} ({runner_up['region']}) -- score {impact_score(runner_up):.1f}")
+    # Score each group independently
+    carib_scored = sorted(caribbean_ports, key=impact_score, reverse=True)
+    med_scored   = sorted(med_ports, key=impact_score, reverse=True)
 
-    print("Generating story with Groq...")
-    headline, paragraph = write_story(top, runner_up)
-    print(f"Headline: {headline}")
-    print(f"Paragraph: {paragraph}")
+    carib_top      = carib_scored[0]
+    carib_runner   = carib_scored[1] if len(carib_scored) > 1 else None
+    med_top        = med_scored[0]
+    med_runner     = med_scored[1] if len(med_scored) > 1 else None
+
+    print(f"Caribbean top: {carib_top['name']} ({carib_top['region']}) -- score {impact_score(carib_top):.1f}")
+    print(f"Mediterranean top: {med_top['name']} ({med_top['region']}) -- score {impact_score(med_top):.1f}")
+
+    print("Generating Caribbean story with Groq...")
+    carib_headline, carib_paragraph = write_story(carib_top, carib_runner, "Caribbean")
+
+    print("Generating Mediterranean story with Groq...")
+    med_headline, med_paragraph = write_story(med_top, med_runner, "Mediterranean")
+
+    print(f"Caribbean headline: {carib_headline}")
+    print(f"Med headline: {med_headline}")
 
     out = {
         "date": date.today().isoformat(),
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "headline": headline,
-        "paragraph": paragraph,
-        "top_port": top["name"],
-        "top_region": top["region"],
+        "caribbean": {
+            "headline": carib_headline,
+            "paragraph": carib_paragraph,
+            "top_port": carib_top["name"],
+            "top_region": carib_top["region"],
+        },
+        "mediterranean": {
+            "headline": med_headline,
+            "paragraph": med_paragraph,
+            "top_port": med_top["name"],
+            "top_region": med_top["region"],
+        },
     }
 
     repo = Path(__file__).parent.parent
-    targets = [
-        repo / "client" / "public" / "top_story.json",
-    ]
-    for path in targets:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(out, indent=2))
-        print(f"Written: {path}")
-
+    target = repo / "client" / "public" / "top_story.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(out, indent=2))
+    print(f"Written: {target}")
     print("Done.")
 
 if __name__ == "__main__":
