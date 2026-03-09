@@ -1,8 +1,16 @@
 {
   "date": "2026-03-09",
-  "generated_at": "2026-03-09T14:21:33.114689+00:00",
-  "headline": "Marseille Faces Strong Winds",
-  "paragraph": "As I analyze the forecast data, I see that Marseille in the Central Mediterranean is experiencing the most impactful weather today, with winds reaching up to 20 kt and wave heights of 3.8 ft. The dominant swell direction is SSE, and there's a 93% chance of rain, making it a significant weather story for the region, while Lisbon in the Western Mediterranean is experiencing relatively lighter conditions with max winds of 15 kt.",
-  "top_port": "Marseille",
-  "top_region": "Central Mediterranean"
+  "generated_at": "2026-03-09T15:38:24.279279+00:00",
+  "caribbean": {
+    "headline": "Caribbean Winds Rise",
+    "paragraph": "St. Thomas is experiencing southeast swells with wave heights reaching 5.8 ft and max winds of 16 kt, while San Juan is seeing similar conditions with 16 kt winds. I expect the highest impact in these Eastern Caribbean ports, with a 73% chance of rain in St. Thomas, as a tropical wave brings unsettled weather to the region.",
+    "top_port": "St. Thomas",
+    "top_region": "Eastern Caribbean"
+  },
+  "mediterranean": {
+    "headline": "Mediterranean Winds Rise",
+    "paragraph": "Cadiz is experiencing westward dominant swells with wave heights reaching 3.5 ft and wind speeds of 19 kt, along with a 78% chance of rain, while Lisbon is seeing relatively calmer conditions with max winds of 15 kt. I expect these conditions to impact marine activities in the Western Mediterranean, particularly around Cadiz, where small craft may need to exercise caution due to the moderate winds and wave heights.",
+    "top_port": "Cadiz",
+    "top_region": "Western Mediterranean"
+  }
 }
