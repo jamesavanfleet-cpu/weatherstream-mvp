@@ -9,9 +9,12 @@ Outputs intel.json to stdout (captured by GitHub Actions and committed to gh-pag
 import json
 import os
 import sys
+import time
 import urllib.request
+import urllib.error
 import urllib.parse
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
@@ -142,8 +145,18 @@ def fetch_weather(lat: float, lon: float) -> dict:
         f"precipitation_probability_max,weathercode"
         f"&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3"
     )
-    with urllib.request.urlopen(url, timeout=10) as resp:
-        return json.loads(resp.read())
+    # Retry up to 3 times with backoff for transient network errors
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=15) as resp:
+                return json.loads(resp.read())
+        except Exception as e:
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"  Open-Meteo fetch attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                raise
 
 
 def ms_to_kt(ms: float) -> int:
@@ -275,9 +288,38 @@ def call_groq(region: dict, weather_summary: str) -> str:
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        result = json.loads(resp.read())
-        return result["choices"][0]["message"]["content"].strip()
+    # Retry with exponential backoff to handle 429 rate limit responses
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read())
+                return result["choices"][0]["message"]["content"].strip()
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < 3:
+                wait = 10 * (2 ** attempt)  # 10s, 20s, 40s
+                print(f"  Groq 429 rate limit -- waiting {wait}s before retry {attempt+1}/3", file=sys.stderr)
+                time.sleep(wait)
+                # Rebuild request for retry
+                req = urllib.request.Request(
+                    f"{GROQ_BASE_URL}/chat/completions",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {GROQ_API_KEY}",
+                        "User-Agent": "WeatherStream/1.0",
+                    },
+                    method="POST",
+                )
+            else:
+                raise
+        except Exception as e:
+            if attempt < 3:
+                wait = 5 * (attempt + 1)
+                print(f"  Groq call attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Groq API failed after 4 attempts")
 
 
 def main():
@@ -292,19 +334,39 @@ def main():
         "regions": {}
     }
 
-    for region in REGIONS:
+    for i, region in enumerate(REGIONS):
         print(f"Processing {region['name']}...", file=sys.stderr)
+        # Add inter-region delay after every 3 regions to avoid Groq rate limits
+        if i > 0 and i % 3 == 0:
+            print("  Pausing 5s to avoid Groq rate limit...", file=sys.stderr)
+            time.sleep(5)
         try:
             wx = fetch_weather(region["lat"], region["lon"])
             summary = build_weather_summary(wx)
             intel = call_groq(region, summary)
-            output["regions"][region["slug"]] = intel
+            # Validate: must be a non-empty string of at least 20 characters
+            if not intel or len(intel.strip()) < 20:
+                raise ValueError(f"Groq returned suspiciously short response: {repr(intel)}")
+            output["regions"][region["slug"]] = intel.strip()
             print(f"  OK: {intel[:80]}...", file=sys.stderr)
         except Exception as e:
             print(f"  ERROR: {e}", file=sys.stderr)
-            output["regions"][region["slug"]] = ""
+            # Keep any previously generated value; fall back to empty string
+            output["regions"].setdefault(region["slug"], "")
 
-    print(json.dumps(output, indent=2))
+    # Write directly to file (not stdout) to avoid truncation on crash
+    repo = Path(__file__).parent.parent
+    target = repo / "client" / "public" / "intel.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    # Validate: ensure at least half the regions have non-empty intel
+    non_empty = sum(1 for v in output["regions"].values() if v)
+    total = len(output["regions"])
+    if non_empty < total // 2:
+        print(f"WARNING: Only {non_empty}/{total} regions have intel -- output may be degraded", file=sys.stderr)
+
+    target.write_text(json.dumps(output, indent=2))
+    print(f"intel.json written: {target.stat().st_size} bytes, {non_empty}/{total} regions populated", file=sys.stderr)
 
 
 if __name__ == "__main__":

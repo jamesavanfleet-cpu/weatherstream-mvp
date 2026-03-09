@@ -255,8 +255,21 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
             content = content[4:]
         content = content.strip()
 
-    data = json.loads(content)
-    return data["headline"], data["paragraph"]
+    # Validate JSON and required fields
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Groq returned invalid JSON: {e}\nRaw content: {content[:200]}")
+
+    headline = data.get("headline", "").strip()
+    paragraph = data.get("paragraph", "").strip()
+
+    if not headline or len(headline) < 5:
+        raise ValueError(f"Groq returned empty or too-short headline: {repr(headline)}")
+    if not paragraph or len(paragraph) < 20:
+        raise ValueError(f"Groq returned empty or too-short paragraph: {repr(paragraph)}")
+
+    return headline, paragraph
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 async def main():
@@ -279,15 +292,33 @@ async def main():
     print(f"Caribbean top: {carib_top['name']} ({carib_top['region']}) -- score {impact_score(carib_top):.1f}")
     print(f"Mediterranean top: {med_top['name']} ({med_top['region']}) -- score {impact_score(med_top):.1f}")
 
+    # Generate Caribbean story with fallback on failure
     print("Generating Caribbean story with Groq...")
-    carib_headline, carib_paragraph = write_story(carib_top, carib_runner, "Caribbean")
+    try:
+        carib_headline, carib_paragraph = write_story(carib_top, carib_runner, "Caribbean")
+    except Exception as e:
+        print(f"  Caribbean story failed: {e} -- using fallback", file=sys.stderr)
+        carib_headline = f"Caribbean Conditions: {carib_top['name']}"
+        carib_paragraph = (
+            f"{carib_top['name']} in the {carib_top['region']} is the most active location today. "
+            f"Check the region page for full conditions and the 7-day forecast."
+        )
 
     # Brief pause between Groq calls to avoid rate limiting
     print("Pausing 8 seconds before Mediterranean story call...")
     time.sleep(8)
 
+    # Generate Mediterranean story with fallback on failure
     print("Generating Mediterranean story with Groq...")
-    med_headline, med_paragraph = write_story(med_top, med_runner, "Mediterranean")
+    try:
+        med_headline, med_paragraph = write_story(med_top, med_runner, "Mediterranean")
+    except Exception as e:
+        print(f"  Mediterranean story failed: {e} -- using fallback", file=sys.stderr)
+        med_headline = f"Mediterranean Conditions: {med_top['name']}"
+        med_paragraph = (
+            f"{med_top['name']} in the {med_top['region']} is the most active location today. "
+            f"Check the region page for full conditions and the 7-day forecast."
+        )
 
     print(f"Caribbean headline: {carib_headline}")
     print(f"Med headline: {med_headline}")

@@ -107,8 +107,15 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          python3 scripts/generate_intel.py > client/public/intel.json
-          echo "intel.json generated: $(wc -c < client/public/intel.json) bytes"
+          python3 scripts/generate_intel.py
+          # Validate the output file was written and is large enough
+          INTEL_SIZE=$(wc -c < client/public/intel.json 2>/dev/null || echo 0)
+          echo "intel.json size: ${INTEL_SIZE} bytes"
+          if [ "$INTEL_SIZE" -lt 500 ]; then
+            echo "ERROR: intel.json is too small (${INTEL_SIZE} bytes) -- generation likely failed"
+            exit 1
+          fi
+          echo "intel.json OK"
 
       - name: Generate fresh top_story.json
         if: steps.dst_check.outputs.should_run == 'true'
@@ -116,17 +123,57 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python3 scripts/generate_top_story.py
-          echo "top_story.json generated"
+          # Validate the output file was written and is large enough
+          STORY_SIZE=$(wc -c < client/public/top_story.json 2>/dev/null || echo 0)
+          echo "top_story.json size: ${STORY_SIZE} bytes"
+          if [ "$STORY_SIZE" -lt 100 ]; then
+            echo "ERROR: top_story.json is too small (${STORY_SIZE} bytes) -- generation likely failed"
+            exit 1
+          fi
+          # Validate it is parseable JSON with required keys
+          python3 -c "
+          import json, sys
+          with open('client/public/top_story.json') as f:
+              d = json.load(f)
+          assert 'caribbean' in d, 'Missing caribbean key'
+          assert 'mediterranean' in d, 'Missing mediterranean key'
+          assert d['caribbean'].get('headline'), 'Empty caribbean headline'
+          assert d['mediterranean'].get('headline'), 'Empty mediterranean headline'
+          print('top_story.json validated OK')
+          "
 
       - name: Generate fresh live_conditions.json
         if: steps.dst_check.outputs.should_run == 'true'
         run: |
           python3 scripts/generate_live_conditions.py
-          echo "live_conditions.json generated"
+          # Validate the output file was written and is large enough
+          COND_SIZE=$(wc -c < client/public/live_conditions.json 2>/dev/null || echo 0)
+          echo "live_conditions.json size: ${COND_SIZE} bytes"
+          if [ "$COND_SIZE" -lt 200 ]; then
+            echo "ERROR: live_conditions.json is too small (${COND_SIZE} bytes) -- generation likely failed"
+            exit 1
+          fi
+          echo "live_conditions.json OK"
 
       - name: Build production bundle
         if: steps.dst_check.outputs.should_run == 'true'
         run: pnpm run build:pages
+
+      - name: Validate build output
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          # Ensure the build produced a valid index.html
+          if [ ! -f dist/public/index.html ]; then
+            echo "ERROR: dist/public/index.html not found -- build failed"
+            exit 1
+          fi
+          BUILD_SIZE=$(wc -c < dist/public/index.html)
+          echo "index.html size: ${BUILD_SIZE} bytes"
+          if [ "$BUILD_SIZE" -lt 200 ]; then
+            echo "ERROR: index.html is suspiciously small -- build may have failed"
+            exit 1
+          fi
+          echo "Build output validated OK"
 
       - name: Deploy to gh-pages
         if: steps.dst_check.outputs.should_run == 'true'
@@ -140,8 +187,8 @@ jobs:
           cp client/public/top_story.json /tmp/top_story.json 2>/dev/null || true
           cp client/public/live_conditions.json /tmp/live_conditions.json 2>/dev/null || true
 
-          # Switch to gh-pages (discard working tree changes to avoid checkout conflict)
-          git checkout -- .
+          # Switch to gh-pages (force-discard working tree changes to avoid checkout conflict)
+          git checkout -f -- .
           git fetch origin gh-pages
           git checkout gh-pages
           git pull origin gh-pages
@@ -149,6 +196,9 @@ jobs:
           # Preserve CNAME and 404.html
           cp CNAME /tmp/cname-backup 2>/dev/null || true
           cp 404.html /tmp/404-backup 2>/dev/null || true
+
+          # Preserve existing forecast.json from gh-pages (do not wipe it)
+          cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
 
           # Replace assets and HTML
           rm -f assets/*.js assets/*.css
@@ -161,6 +211,7 @@ jobs:
           # Restore preserved files
           cp /tmp/cname-backup CNAME 2>/dev/null || true
           cp /tmp/404-backup 404.html 2>/dev/null || true
+          cp /tmp/forecast-backup.json forecast.json 2>/dev/null || true
 
           git add -A
           git diff --cached --quiet && echo "No changes to deploy" && exit 0
