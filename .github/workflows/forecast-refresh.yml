@@ -1,16 +1,16 @@
 name: Twice-Daily Forecast Refresh
 
-# Runs at 3:30 AM and 3:30 PM Eastern time year-round.
-# EDT (Mar-Nov): 07:30 UTC and 19:30 UTC
-# EST (Nov-Mar): 08:30 UTC and 20:30 UTC
+# Runs at 4:00 AM and 4:00 PM Eastern time year-round.
+# EDT (Mar-Nov): 08:00 UTC and 20:00 UTC
+# EST (Nov-Mar): 09:00 UTC and 21:00 UTC
 # We schedule all four times; the DST check inside the job ensures only
 # the correct one actually runs the full refresh.
 on:
   schedule:
-    - cron: '30 7 * * *'   # 3:30 AM EDT
-    - cron: '30 8 * * *'   # 3:30 AM EST
-    - cron: '30 19 * * *'  # 3:30 PM EDT
-    - cron: '30 20 * * *'  # 3:30 PM EST
+    - cron: '0 8 * * *'    # 4:00 AM EDT
+    - cron: '0 9 * * *'    # 4:00 AM EST
+    - cron: '0 20 * * *'   # 4:00 PM EDT
+    - cron: '0 21 * * *'   # 4:00 PM EST
   workflow_dispatch:        # allow manual trigger from GitHub UI
     inputs:
       force_run:
@@ -60,8 +60,8 @@ jobs:
 
           echo "UTC: ${HOUR}:${MINUTE}, Eastern offset: -${OFFSET}, Eastern hour: ${EASTERN_HOUR}"
 
-          # Only proceed if Eastern hour is 3 (3:30 AM or 3:30 PM Eastern)
-          if [ "$EASTERN_HOUR" -eq 3 ] || [ "$EASTERN_HOUR" -eq 15 ]; then
+          # Only proceed if Eastern hour is 4 (4:00 AM or 4:00 PM Eastern)
+          if [ "$EASTERN_HOUR" -eq 4 ] || [ "$EASTERN_HOUR" -eq 16 ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "Correct Eastern time window -- proceeding with refresh."
           else
