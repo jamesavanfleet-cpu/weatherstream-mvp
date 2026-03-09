@@ -8,7 +8,7 @@ Each story starts directly with the weather content -- no opener phrase.
 Outputs: client/public/top_story.json
 """
 
-import asyncio, json, math, os, sys, urllib.request
+import asyncio, json, math, os, sys, time, urllib.request
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -220,9 +220,33 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        result = json.loads(resp.read())
-        content = result["choices"][0]["message"]["content"].strip()
+    # Retry with exponential backoff to handle 429 rate limit responses
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read())
+                content = result["choices"][0]["message"]["content"].strip()
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < 3:
+                wait = 10 * (2 ** attempt)  # 10s, 20s, 40s
+                print(f"  Groq 429 rate limit -- waiting {wait}s before retry {attempt + 1}/3", file=sys.stderr)
+                time.sleep(wait)
+                # Re-encode payload for retry
+                req = urllib.request.Request(
+                    f"{GROQ_BASE_URL}/chat/completions",
+                    data=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {GROQ_API_KEY}",
+                        "User-Agent": "WeatherStream/1.0",
+                    },
+                    method="POST",
+                )
+            else:
+                raise
+    else:
+        raise RuntimeError("Groq API failed after 4 attempts")
 
     # Strip markdown code fences if present
     if "```" in content:
@@ -257,6 +281,10 @@ async def main():
 
     print("Generating Caribbean story with Groq...")
     carib_headline, carib_paragraph = write_story(carib_top, carib_runner, "Caribbean")
+
+    # Brief pause between Groq calls to avoid rate limiting
+    print("Pausing 8 seconds before Mediterranean story call...")
+    time.sleep(8)
 
     print("Generating Mediterranean story with Groq...")
     med_headline, med_paragraph = write_story(med_top, med_runner, "Mediterranean")
