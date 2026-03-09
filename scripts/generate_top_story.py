@@ -271,6 +271,40 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
 
     return headline, paragraph
 
+# ── Data-driven fallback (used when Groq API call fails) ─────────────────────
+def build_fallback(top: dict, group_label: str) -> tuple[str, str]:
+    """Produce a specific, data-driven headline and paragraph without Groq."""
+    max_wind_kt = round(max((ms_to_kt(v) for v in top["daily_wind_max"] if v is not None), default=0))
+    max_wave    = round(max((v for v in top["daily_wave_max"] if v is not None), default=0), 1)
+    max_rain    = round(max((v for v in top["daily_rain"] if v is not None), default=0))
+    max_period  = round(max((v for v in top["daily_swell_period"] if v is not None), default=0))
+    swell_dirs  = [deg_to_compass(v) for v in top["daily_swell_dir"] if v is not None]
+    swell_dir   = swell_dirs[0] if swell_dirs else None
+
+    headline = f"{group_label} Conditions: {top['name']}"
+
+    # Build a sentence about wind and waves
+    wind_str = f"winds peaking at {max_wind_kt} kt" if max_wind_kt > 0 else "light winds"
+    wave_str = f"seas building to {max_wave} ft" if max_wave > 0 else "calm seas"
+    swell_str = f" with {swell_dir} swell at {max_period}s periods" if swell_dir and max_period > 0 else ""
+    sentence1 = (
+        f"{top['name']} in the {top['region']} is the highest-impact location in the {group_label} "
+        f"this period, with {wind_str} and {wave_str}{swell_str}."
+    )
+
+    # Build a sentence about rain and overall outlook
+    if max_rain >= 60:
+        rain_str = f"Rain probability reaches {max_rain}% -- expect disrupted conditions for shore excursions and tender operations."
+    elif max_rain >= 30:
+        rain_str = f"Rain probability reaches {max_rain}% -- isolated showers possible but conditions remain manageable."
+    else:
+        rain_str = f"Rain probability stays at {max_rain}% -- overall conditions are favorable for cruise operations."
+    sentence2 = rain_str
+
+    paragraph = f"{sentence1} {sentence2}"
+    return headline, paragraph
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 async def main():
     print("Fetching forecast data for all ports...")
@@ -298,11 +332,7 @@ async def main():
         carib_headline, carib_paragraph = write_story(carib_top, carib_runner, "Caribbean")
     except Exception as e:
         print(f"  Caribbean story failed: {e} -- using fallback", file=sys.stderr)
-        carib_headline = f"Caribbean Conditions: {carib_top['name']}"
-        carib_paragraph = (
-            f"{carib_top['name']} in the {carib_top['region']} is the most active location today. "
-            f"Check the region page for full conditions and the 7-day forecast."
-        )
+        carib_headline, carib_paragraph = build_fallback(carib_top, "Caribbean")
 
     # Brief pause between Groq calls to avoid rate limiting
     print("Pausing 8 seconds before Mediterranean story call...")
@@ -314,11 +344,7 @@ async def main():
         med_headline, med_paragraph = write_story(med_top, med_runner, "Mediterranean")
     except Exception as e:
         print(f"  Mediterranean story failed: {e} -- using fallback", file=sys.stderr)
-        med_headline = f"Mediterranean Conditions: {med_top['name']}"
-        med_paragraph = (
-            f"{med_top['name']} in the {med_top['region']} is the most active location today. "
-            f"Check the region page for full conditions and the 7-day forecast."
-        )
+        med_headline, med_paragraph = build_fallback(med_top, "Mediterranean")
 
     print(f"Caribbean headline: {carib_headline}")
     print(f"Med headline: {med_headline}")

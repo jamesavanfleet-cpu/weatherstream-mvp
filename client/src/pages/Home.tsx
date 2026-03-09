@@ -1174,7 +1174,7 @@ export default function Home() {
               Caribbean Cruise Weather
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              7-day forecasts from the meteorologist who protected Royal Caribbean's fleet for 6+ years
+              5-day forecasts from the meteorologist who protected Royal Caribbean's fleet for 6+ years
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
