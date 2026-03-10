@@ -13,7 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { GALLERY_IMAGES } from "../galleryImages";
@@ -681,6 +681,33 @@ export default function Home() {
   const [selectedPort, setSelectedPort] = useState<typeof LIVE_DATA[0] | null>(null);
   type LiveCondEntry = { tempF: number; tempC: number; condition: string; wmo: number; windKt: number; windDir: number };
   const [liveConditionsData, setLiveConditionsData] = useState<Record<string, LiveCondEntry> | null>(null);
+  const [briefingVideoOpen, setBriefingVideoOpen] = useState(false);
+  const [briefingVideoUrl, setBriefingVideoUrl] = useState<string | null>(null);
+  const [briefingVideoOrientation, setBriefingVideoOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+
+  // Load briefing video config from briefing_video.json
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL || "/";
+    fetch(`${base}briefing_video.json?v=${Date.now()}`)
+      .then(r => {
+        const ct = r.headers.get("content-type") || "";
+        if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
+        return r.json();
+      })
+      .then((d: { url: string; orientation: 'horizontal' | 'vertical' }) => {
+        if (d.url) {
+          setBriefingVideoUrl(d.url);
+          setBriefingVideoOrientation(d.orientation === 'vertical' ? 'vertical' : 'horizontal');
+        }
+      })
+      .catch(() => {
+        // No video configured yet -- button will remain inactive
+      });
+  }, []);
+
+  const closeBriefingVideo = useCallback(() => {
+    setBriefingVideoOpen(false);
+  }, []);
 
   // Fetch live_conditions.json -- refreshed hourly at :10 past the hour
   useEffect(() => {
@@ -1017,9 +1044,15 @@ export default function Home() {
               <span className="text-white/40"> Coming soon: South Pacific (Australia &amp; New Zealand) and APAC (China &amp; Japan).</span>
             </p>
             <div className="flex gap-3">
-              <Button size="lg" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
+                onClick={() => briefingVideoUrl && setBriefingVideoOpen(true)}
+                disabled={!briefingVideoUrl}
+                style={!briefingVideoUrl ? { opacity: 0.6, cursor: 'default' } : {}}
+              >
                 <Play className="w-5 h-5 mr-2" />
-                Watch Today's Briefing
+                Watch the Latest Briefing
               </Button>
             </div>
           </div>
@@ -1142,6 +1175,57 @@ export default function Home() {
           onClose={() => setSelectedPort(null)}
           isMetric={isMetric}
         />
+      )}
+
+      {/* Briefing Video Modal */}
+      {briefingVideoOpen && briefingVideoUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+          onClick={closeBriefingVideo}
+        >
+          <div
+            className="relative"
+            style={briefingVideoOrientation === 'vertical'
+              ? { width: 'min(360px, 90vw)', maxHeight: '90vh' }
+              : { width: 'min(900px, 95vw)', maxHeight: '90vh' }
+            }
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={closeBriefingVideo}
+              className="absolute -top-10 right-0 flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
+              aria-label="Close video"
+            >
+              <X className="w-5 h-5" />
+              Close
+            </button>
+
+            {/* Video container -- aspect ratio adapts to orientation */}
+            <div
+              className="w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+              style={briefingVideoOrientation === 'vertical'
+                ? { aspectRatio: '9/16' }
+                : { aspectRatio: '16/9' }
+              }
+            >
+              <video
+                src={briefingVideoUrl}
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain bg-black"
+                style={{ display: 'block' }}
+              />
+            </div>
+
+            {/* Caption */}
+            <p className="text-center text-white/40 text-xs mt-3 tracking-widest uppercase">
+              Latest Weather Briefing by James Van Fleet
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Caribbean Cruise Weather */}
