@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Ship, MapPin, Calendar, Cloud, Wind, Thermometer, Droplets, ChevronDown, Search, Navigation } from "lucide-react";
+import { Ship, MapPin, Calendar, Cloud, Wind, Thermometer, Droplets, ChevronDown, Search, Navigation, Gauge, Eye } from "lucide-react";
 
 // Types
 interface PortEntry {
@@ -43,12 +43,24 @@ interface PortForecast {
   day: number;
   lat: number;
   lon: number;
-  tempF: number | null;
-  tempC: number | null;
+  // Temperature (stored as Celsius from API)
+  tempMaxC: number | null;
+  tempMinC: number | null;
+  // Wind
   windKt: number | null;
   windDir: string;
-  precip: number | null;
+  windDeg: number | null;
+  // Precipitation
+  precipMm: number | null;
+  precipChance: number | null;
+  // Cloud / sky
+  cloudCoverPct: number | null;
   condition: string;
+  wmoCode: number | null;
+  // Pressure
+  pressureHpa: number | null;
+  // Sea state (wave height in meters)
+  waveHeightM: number | null;
   loading: boolean;
   error: boolean;
 }
@@ -60,8 +72,10 @@ function degToDir(deg: number): string {
 
 function wmoToCondition(code: number): string {
   if (code === 0) return "Clear";
-  if (code <= 3) return "Partly Cloudy";
-  if (code <= 9) return "Foggy";
+  if (code === 1) return "Mostly Clear";
+  if (code === 2) return "Partly Cloudy";
+  if (code === 3) return "Mostly Cloudy";
+  if (code <= 9) return "Haze";
   if (code <= 19) return "Drizzle";
   if (code <= 29) return "Rain";
   if (code <= 39) return "Snow";
@@ -74,6 +88,40 @@ function wmoToCondition(code: number): string {
   if (code <= 86) return "Snow Showers";
   if (code <= 99) return "Thunderstorms";
   return "Unknown";
+}
+
+function wmoToSkyCondition(code: number, cloudCover: number | null): string {
+  if (code === 0) return "Clear";
+  if (code === 1) return "Mostly Clear";
+  if (code === 2) return "Partly Cloudy";
+  if (code === 3) return "Mostly Cloudy";
+  if (cloudCover !== null) {
+    if (cloudCover <= 10) return "Clear";
+    if (cloudCover <= 30) return "Mostly Clear";
+    if (cloudCover <= 60) return "Partly Cloudy";
+    if (cloudCover <= 85) return "Mostly Cloudy";
+    return "Overcast";
+  }
+  return wmoToCondition(code);
+}
+
+function pressureTendency(hpa: number | null): string {
+  if (hpa === null) return "--";
+  if (hpa >= 1020) return "High";
+  if (hpa >= 1013) return "Normal";
+  if (hpa >= 1000) return "Low";
+  return "Very Low";
+}
+
+function waveDescription(m: number | null): string {
+  if (m === null) return "--";
+  if (m < 0.1) return "Calm";
+  if (m < 0.5) return "Smooth";
+  if (m < 1.25) return "Slight";
+  if (m < 2.5) return "Moderate";
+  if (m < 4.0) return "Rough";
+  if (m < 6.0) return "Very Rough";
+  return "High";
 }
 
 function formatDate(dateStr: string): string {
@@ -89,6 +137,13 @@ function formatDepartureDate(dateStr: string, durationDays: number | null, homeP
   return `${label}${dur} -- ${homePort}`;
 }
 
+function cToF(c: number): number { return Math.round(c * 9 / 5 + 32); }
+function mmToIn(mm: number): number { return Math.round(mm / 25.4 * 100) / 100; }
+function hpaToInHg(hpa: number): number { return Math.round(hpa * 0.02953 * 100) / 100; }
+function mToFt(m: number): number { return Math.round(m * 3.281 * 10) / 10; }
+function ktToKmh(kt: number): number { return Math.round(kt * 1.852); }
+function ktToMph(kt: number): number { return Math.round(kt * 1.151); }
+
 async function fetchPortWeather(lat: number, lon: number, date: string): Promise<Partial<PortForecast>> {
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -98,26 +153,41 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
     if (diffDays < 0 || diffDays > 16) {
       return { condition: "Beyond forecast range", loading: false, error: false };
     }
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum&wind_speed_unit=kn&timezone=auto&forecast_days=16`;
+    // Request all needed parameters including cloud cover, precipitation probability, pressure, and marine waves
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,precipitation_probability_max,cloudcover_mean,surface_pressure_mean,wave_height_max&wind_speed_unit=kn&timezone=auto&forecast_days=16`;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error("API error");
     const data = await resp.json();
     const idx = data.daily.time.indexOf(date);
     if (idx === -1) return { condition: "No data available", loading: false, error: false };
-    const tempMaxF = data.daily.temperature_2m_max[idx];
-    const tempMinF = data.daily.temperature_2m_min[idx];
-    const avgTempF = tempMaxF !== null && tempMinF !== null ? Math.round((tempMaxF + tempMinF) / 2) : null;
-    const avgTempC = avgTempF !== null ? Math.round((avgTempF - 32) * 5 / 9) : null;
-    const windKt = data.daily.windspeed_10m_max[idx] !== null ? Math.round(data.daily.windspeed_10m_max[idx]) : null;
-    const windDeg = data.daily.winddirection_10m_dominant[idx];
-    const wmoCode = data.daily.weathercode[idx];
-    const precip = data.daily.precipitation_sum[idx];
+
+    const d = data.daily;
+    // Temperature comes back in Celsius from Open-Meteo (default)
+    const tempMaxC = d.temperature_2m_max?.[idx] ?? null;
+    const tempMinC = d.temperature_2m_min?.[idx] ?? null;
+    const windKt = d.windspeed_10m_max?.[idx] !== null ? Math.round(d.windspeed_10m_max[idx]) : null;
+    const windDeg = d.winddirection_10m_dominant?.[idx] ?? null;
+    const wmoCode = d.weathercode?.[idx] ?? null;
+    const precipMm = d.precipitation_sum?.[idx] !== null ? Math.round(d.precipitation_sum[idx] * 10) / 10 : null;
+    const precipChance = d.precipitation_probability_max?.[idx] ?? null;
+    const cloudCoverPct = d.cloudcover_mean?.[idx] ?? null;
+    const pressureHpa = d.surface_pressure_mean?.[idx] !== null ? Math.round(d.surface_pressure_mean[idx]) : null;
+    const waveHeightM = d.wave_height_max?.[idx] !== null ? Math.round(d.wave_height_max[idx] * 10) / 10 : null;
+
     return {
-      tempF: avgTempF, tempC: avgTempC, windKt,
+      tempMaxC, tempMinC,
+      windKt,
+      windDeg,
       windDir: windDeg !== null ? degToDir(windDeg) : "--",
-      precip: precip !== null ? Math.round(precip * 10) / 10 : null,
+      precipMm,
+      precipChance,
+      cloudCoverPct,
       condition: wmoCode !== null ? wmoToCondition(wmoCode) : "Unknown",
-      loading: false, error: false,
+      wmoCode,
+      pressureHpa,
+      waveHeightM,
+      loading: false,
+      error: false,
     };
   } catch {
     return { loading: false, error: true, condition: "Error" };
@@ -126,7 +196,7 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
 
 interface CruiseFinderProps { isMetric: boolean; }
 
-export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
+export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderProps) {
   const [cruiseData, setCruiseData] = useState<CruiseData | null>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [dataError, setDataError] = useState(false);
@@ -136,6 +206,11 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
   const [portForecasts, setPortForecasts] = useState<PortForecast[]>([]);
   const [loadingForecasts, setLoadingForecasts] = useState(false);
   const [activePort, setActivePort] = useState<string | null>(null);
+  // Local metric toggle -- defaults to parent but user can override within this section
+  const [localMetric, setLocalMetric] = useState<boolean>(parentIsMetric);
+
+  // Sync with parent toggle changes
+  useEffect(() => { setLocalMetric(parentIsMetric); }, [parentIsMetric]);
 
   useEffect(() => {
     setLoadingData(true);
@@ -163,8 +238,13 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
     const initial: PortForecast[] = ports.map((pe: PortEntry) => ({
       port: pe.port, date: pe.date, day: pe.day,
       lat: pe.lat ?? 0, lon: pe.lon ?? 0,
-      tempF: null, tempC: null, windKt: null, windDir: "--",
-      precip: null, condition: "Loading...", loading: true, error: false,
+      tempMaxC: null, tempMinC: null,
+      windKt: null, windDir: "--", windDeg: null,
+      precipMm: null, precipChance: null,
+      cloudCoverPct: null,
+      condition: "Loading...", wmoCode: null,
+      pressureHpa: null, waveHeightM: null,
+      loading: true, error: false,
     }));
     setPortForecasts(initial);
     Promise.all(initial.map(async (pf) => {
@@ -183,9 +263,11 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
     if (c.includes("thunder")) return "⛈";
     if (c.includes("rain") || c.includes("shower") || c.includes("drizzle")) return "🌧";
     if (c.includes("snow")) return "❄";
-    if (c.includes("fog")) return "🌫";
+    if (c.includes("fog") || c.includes("haze")) return "🌫";
     if (c.includes("partly")) return "⛅";
-    if (c.includes("cloudy")) return "☁";
+    if (c.includes("mostly clear")) return "🌤";
+    if (c.includes("mostly cloudy") || c.includes("overcast")) return "☁";
+    if (c.includes("cloudy")) return "⛅";
     if (c.includes("clear") || c.includes("sunny")) return "☀";
     if (c.includes("beyond") || c.includes("no data")) return "📅";
     return "🌤";
@@ -204,6 +286,19 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
 
   return (
     <div className="space-y-6">
+      {/* Header row with metric toggle */}
+      <div className="flex items-center justify-between">
+        <div className="text-white/40 text-xs">Select your ship and sailing date for a port-by-port forecast</div>
+        <button
+          onClick={() => setLocalMetric(!localMetric)}
+          className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-semibold text-white/70 hover:border-cyan-400/50 hover:text-white transition-colors"
+        >
+          <span className={localMetric ? "text-white" : "text-white/30"}>°C / km/h</span>
+          <span className="text-white/20 mx-0.5">|</span>
+          <span className={!localMetric ? "text-white" : "text-white/30"}>°F / kt</span>
+        </button>
+      </div>
+
       {/* Three dropdowns */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Cruise Line */}
@@ -261,9 +356,6 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
           <span className="text-white/70 text-sm font-medium">{selectedShip}</span>
           <span className="text-white/30">|</span>
           <span className="text-white/50 text-sm">{selectedItinerary.description}</span>
-          {selectedItinerary.ports.length === 0 && (
-            <span className="ml-auto text-amber-400/70 text-xs">Detailed port schedule coming soon</span>
-          )}
         </div>
       )}
 
@@ -280,7 +372,7 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
                     ? "bg-cyan-400/20 border-cyan-400/60 text-cyan-300"
                     : "bg-white/5 border-white/10 text-white/70 hover:border-cyan-400/40 hover:text-white"}`}>
                   <span className="text-xs text-white/40 mr-1">Day {pf.day}</span>
-                  {pf.port}
+                  <span className="font-semibold">{pf.port}</span>
                   <span className="ml-1 text-white/30 text-[10px]">{formatDate(pf.date)}</span>
                 </button>
               );
@@ -290,9 +382,33 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
           {activePort && (() => {
             const pf = portForecasts.find(p => (p.port + "|" + p.date) === activePort);
             if (!pf) return null;
+            const isBeyond = pf.condition === "Beyond forecast range";
+            const skyCondition = pf.wmoCode !== null ? wmoToSkyCondition(pf.wmoCode, pf.cloudCoverPct) : pf.condition;
+
+            // Formatted values based on unit preference
+            const tempHighDisplay = pf.tempMaxC !== null
+              ? (localMetric ? `${Math.round(pf.tempMaxC)}°C` : `${cToF(pf.tempMaxC)}°F`)
+              : "--";
+            const tempLowDisplay = pf.tempMinC !== null
+              ? (localMetric ? `${Math.round(pf.tempMinC)}°C` : `${cToF(pf.tempMinC)}°F`)
+              : "--";
+            const windDisplay = pf.windKt !== null
+              ? (localMetric ? `${ktToKmh(pf.windKt)} km/h` : `${pf.windKt} kt`)
+              : "--";
+            const precipDisplay = pf.precipMm !== null
+              ? (localMetric ? `${pf.precipMm} mm` : `${mmToIn(pf.precipMm)}"`)
+              : "--";
+            const pressureDisplay = pf.pressureHpa !== null
+              ? (localMetric ? `${pf.pressureHpa} hPa` : `${hpaToInHg(pf.pressureHpa)} inHg`)
+              : "--";
+            const waveDisplay = pf.waveHeightM !== null
+              ? (localMetric ? `${pf.waveHeightM} m` : `${mToFt(pf.waveHeightM)} ft`)
+              : "--";
+
             return (
               <div className="bg-white/5 border border-cyan-400/30 rounded-xl p-5 animate-in fade-in duration-200">
-                <div className="flex items-start justify-between mb-4">
+                {/* Port header */}
+                <div className="flex items-start justify-between mb-5">
                   <div>
                     <h4 className="text-white font-bold text-lg flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-cyan-400" />{pf.port}
@@ -301,43 +417,97 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
                   </div>
                   <div className="text-right">
                     <div className="text-3xl mb-1">{conditionIcon(pf.condition)}</div>
-                    <div className="text-white/70 text-sm">{pf.condition}</div>
+                    <div className="text-white/70 text-sm font-medium">{skyCondition}</div>
                   </div>
                 </div>
+
                 {pf.loading ? (
                   <div className="flex items-center gap-2 text-white/40 text-sm">
                     <div className="w-4 h-4 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
                     Loading forecast...
                   </div>
-                ) : pf.condition === "Beyond forecast range" ? (
+                ) : isBeyond ? (
                   <div className="text-white/40 text-sm py-2">
                     This sailing is beyond the 16-day forecast window. Check back as your departure date approaches for a full port-by-port forecast.
                   </div>
                 ) : pf.error ? (
                   <div className="text-white/40 text-sm">Forecast unavailable for this port.</div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-white/5 rounded-lg p-3">
-                      <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1"><Thermometer className="w-3 h-3" /> Temperature</div>
-                      <div className="text-white font-bold text-xl">{isMetric ? (pf.tempC !== null ? `${pf.tempC}°C` : "--") : (pf.tempF !== null ? `${pf.tempF}°F` : "--")}</div>
+                  <div className="space-y-3">
+                    {/* Row 1: Temperature, Wind, Rain Chance, Precip */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {/* High Temperature */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Thermometer className="w-3 h-3" /> High Temp
+                        </div>
+                        <div className="text-white font-bold text-xl">{tempHighDisplay}</div>
+                        <div className="text-white/40 text-xs mt-0.5">Low: {tempLowDisplay}</div>
+                      </div>
+                      {/* Wind */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Wind className="w-3 h-3" /> Wind
+                        </div>
+                        <div className="text-white font-bold text-xl">{windDisplay}</div>
+                        <div className="text-white/50 text-xs mt-0.5">{pf.windDir}</div>
+                      </div>
+                      {/* Rain Chance */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Droplets className="w-3 h-3" /> Rain Chance
+                        </div>
+                        <div className="text-white font-bold text-xl">
+                          {pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
+                        </div>
+                        <div className="text-white/40 text-xs mt-0.5">Precip: {precipDisplay}</div>
+                      </div>
+                      {/* Cloud Cover */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Cloud className="w-3 h-3" /> Cloud Cover
+                        </div>
+                        <div className="text-white font-bold text-xl">
+                          {pf.cloudCoverPct !== null ? `${Math.round(pf.cloudCoverPct)}%` : "--"}
+                        </div>
+                        <div className="text-white/40 text-xs mt-0.5">{skyCondition}</div>
+                      </div>
                     </div>
-                    <div className="bg-white/5 rounded-lg p-3">
-                      <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1"><Wind className="w-3 h-3" /> Wind</div>
-                      <div className="text-white font-bold text-xl">{pf.windKt !== null ? (isMetric ? `${Math.round(pf.windKt * 1.852)} km/h` : `${pf.windKt} kt`) : "--"}</div>
-                      <div className="text-white/50 text-xs mt-0.5">{pf.windDir}</div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-3">
-                      <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1"><Droplets className="w-3 h-3" /> Precip</div>
-                      <div className="text-white font-bold text-xl">{pf.precip !== null ? (isMetric ? `${pf.precip} mm` : `${(pf.precip / 25.4).toFixed(2)}"`) : "--"}</div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-3">
-                      <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1"><Cloud className="w-3 h-3" /> Conditions</div>
-                      <div className="text-white font-semibold text-sm leading-tight mt-1">{pf.condition}</div>
+                    {/* Row 2: Sea State, Pressure, Sky Condition */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {/* Sea State */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Navigation className="w-3 h-3" /> Sea State
+                        </div>
+                        <div className="text-white font-bold text-lg">{waveDescription(pf.waveHeightM)}</div>
+                        <div className="text-white/40 text-xs mt-0.5">
+                          {pf.waveHeightM !== null ? waveDisplay : "No wave data"}
+                        </div>
+                      </div>
+                      {/* Pressure */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Gauge className="w-3 h-3" /> Pressure
+                        </div>
+                        <div className="text-white font-bold text-lg">{pressureDisplay}</div>
+                        <div className="text-white/40 text-xs mt-0.5">{pressureTendency(pf.pressureHpa)}</div>
+                      </div>
+                      {/* Sky Condition */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-white/40 text-xs mb-1.5">
+                          <Eye className="w-3 h-3" /> Sky Condition
+                        </div>
+                        <div className="text-white font-bold text-lg leading-tight">{skyCondition}</div>
+                        <div className="text-white/40 text-xs mt-0.5">{pf.condition}</div>
+                      </div>
                     </div>
                   </div>
                 )}
-                {pf.lat !== 0 && pf.condition !== "Beyond forecast range" && (
-                  <div className="mt-3 pt-3 border-t border-white/5 text-white/30 text-xs flex items-center gap-1">
+
+                {/* Footer */}
+                {pf.lat !== 0 && !isBeyond && !pf.loading && !pf.error && (
+                  <div className="mt-4 pt-3 border-t border-white/5 text-white/25 text-xs flex items-center gap-1 flex-wrap">
                     <MapPin className="w-3 h-3" />
                     {pf.lat.toFixed(2)}N, {Math.abs(pf.lon).toFixed(2)}W
                     <span className="ml-2">Open-Meteo 16-day forecast</span>
@@ -350,15 +520,6 @@ export default function CruiseFinder({ isMetric }: CruiseFinderProps) {
           {!activePort && (
             <div className="text-center py-6 text-white/30 text-sm">Tap any port above to see the forecast for that day</div>
           )}
-        </div>
-      )}
-
-      {/* No port data state */}
-      {selectedItinerary && selectedItinerary.ports.length === 0 && !loadingForecasts && (
-        <div className="text-center py-8 text-white/30 text-sm space-y-2">
-          <MapPin className="w-8 h-8 mx-auto opacity-30" />
-          <p>Detailed port schedule for this sailing is being compiled.</p>
-          <p className="text-white/20 text-xs">Check back shortly -- new itineraries are added daily.</p>
         </div>
       )}
 
