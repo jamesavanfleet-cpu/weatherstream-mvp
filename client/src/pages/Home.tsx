@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import CruiseFinder from "../components/CruiseFinder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1228,6 +1229,20 @@ export default function Home() {
         </div>
       )}
 
+      {/* Cruise Itinerary Finder */}
+      <section className="py-8 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-cyan-600/10 rounded-full blur-3xl opacity-20 pointer-events-none" />
+        <div className="container relative z-10">
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50" />
+              <h3 className="text-2xl font-bold text-white">Your Cruise, Port by Port</h3>
+            </div>
+            <p className="text-white/40 text-xs pl-6">Select your ship and sailing date to see a 5-day forecast for every port of call</p>
+          </div>
+          <CruiseFinder isMetric={isMetric} />
+        </div>
+      </section>
       {/* Caribbean Cruise Weather */}
       <section className="py-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-3xl opacity-20" />
