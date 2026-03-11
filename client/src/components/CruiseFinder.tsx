@@ -386,45 +386,90 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
     <div className="space-y-6">
       {/* Promotional teaser -- shown only when no selection has been made yet */}
       {!selectedLine && (
-        <div className="rounded-2xl border border-cyan-400/20 bg-white/[0.03] overflow-hidden">
-          {/* Teaser header */}
-          <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
-            <p className="text-white/60 text-xs font-medium tracking-wide uppercase">Example forecast &mdash; Icon of the Seas, 5-Night Bahamas</p>
-            <span className="text-cyan-400/60 text-xs">Your itinerary will look like this</span>
-          </div>
-          {/* Port tiles */}
-          <div className="grid grid-cols-5 divide-x divide-white/5">
-            {([
-              { name: "Miami",   day: "Sat 3/15", icon: "depart",  temp: "79", cond: "Sunny",         wind: "12", tag: "DEPARTURE",  tagColor: "text-yellow-400" },
-              { name: "At Sea",  day: "Sun 3/16", icon: "waves",   temp: "80", cond: "Partly Cloudy", wind: "18", tag: "SEA DAY",    tagColor: "text-blue-300" },
-              { name: "Nassau",  day: "Mon 3/17", icon: "sun",     temp: "82", cond: "Sunny",         wind: "10", tag: "PORT CALL",  tagColor: "text-cyan-400" },
-              { name: "CocoCay", day: "Tue 3/18", icon: "sun",     temp: "84", cond: "Clear",         wind: "9",  tag: "PORT CALL",  tagColor: "text-cyan-400" },
-              { name: "Miami",   day: "Wed 3/19", icon: "sun",     temp: "78", cond: "Mostly Clear",  wind: "14", tag: "RETURN",     tagColor: "text-emerald-400" },
-            ] as const).map((p, i) => (
-              <div key={i} className={`flex flex-col items-center py-4 px-2 ${
-                p.name === 'At Sea' ? 'bg-blue-950/20' : ''
-              }`}>
-                <span className="text-white/30 text-[10px] mb-1">{p.day}</span>
-                <span className={`text-xs font-semibold mb-2 ${
-                  p.name === 'At Sea' ? 'text-blue-300' : 'text-cyan-400'
-                }`}>{p.name}</span>
-                {/* Weather icon */}
-                <div className="my-2 text-2xl leading-none">
-                  {p.icon === 'waves'
-                    ? <span className="text-blue-300">&#x1F30A;</span>
-                    : <span className="text-yellow-300">&#x2600;&#xFE0F;</span>}
-                </div>
-                <span className="text-white font-black text-2xl leading-none">{p.temp}&deg;</span>
-                <span className="text-white/40 text-[10px] mt-1 text-center leading-tight">{p.cond}</span>
-                <span className="text-green-400 text-xs font-semibold mt-2">{p.wind} mph</span>
-                <span className={`text-[9px] font-bold tracking-widest mt-3 ${p.tagColor}`}>{p.tag}</span>
+        <div
+          className="rounded-2xl overflow-hidden relative"
+          style={{
+            backgroundImage: "url('/teaser_bg.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center 40%",
+            minHeight: "260px",
+          }}
+        >
+          {/* Dark overlay */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(8,14,32,0.92) 38%, rgba(8,14,32,0.70) 100%)" }} />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-6 px-6 py-7">
+            {/* Left: headline + bullets + CTA */}
+            <div className="flex-shrink-0 lg:w-72">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-3 h-3 rounded-full bg-cyan-400 inline-block" />
+                <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Cruise Weather Tool</span>
               </div>
-            ))}
+              <h3 className="text-white font-black text-2xl leading-tight mb-1">Your Cruise Forecast,</h3>
+              <h3 className="text-cyan-400 font-black text-2xl leading-tight mb-3">Port by Port.</h3>
+              <p className="text-white/60 text-sm mb-4 leading-relaxed">Personalized weather for every port of call and every sea day on your itinerary.</p>
+              <ul className="space-y-1.5 mb-5">
+                {[
+                  "Select your cruise line, ship, and sailing date",
+                  "See a 5-day forecast for each stop",
+                  "Wind, temperature, and sky conditions at a glance",
+                ].map((b, i) => (
+                  <li key={i} className="flex items-start gap-2 text-white/50 text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1 flex-shrink-0" />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <div className="inline-block bg-cyan-400 text-[#080e20] font-bold text-sm px-5 py-2.5 rounded-full">
+                Get Your Forecast
+              </div>
+            </div>
+
+            {/* Right: port weather cards */}
+            <div className="flex-1 flex items-center justify-center gap-2 lg:gap-3 overflow-x-auto pb-1">
+              {([
+                { name: "Miami",   temp: "79", cond: "Sunny",        wind: "12", type: "Departure",  typeColor: "text-yellow-400",  sunny: true },
+                { name: "Nassau",  temp: "82", cond: "Sunny",        wind: "10", type: "Port Call",  typeColor: "text-cyan-400",    sunny: true },
+                { name: "CocoCay", temp: "84", cond: "Clear",        wind: "9",  type: "Port Call",  typeColor: "text-cyan-400",    sunny: true },
+                { name: "Miami",   temp: "78", cond: "Mostly Clear", wind: "14", type: "Return",     typeColor: "text-emerald-400", sunny: false },
+              ] as const).map((p, i, arr) => (
+                <div key={i} className="flex items-center gap-2 lg:gap-3">
+                  <div className="flex-shrink-0 bg-[rgba(12,28,60,0.85)] border border-cyan-400/30 rounded-2xl px-3 py-3 flex flex-col items-center w-[110px] sm:w-[130px]">
+                    <span className={`text-[9px] font-bold tracking-widest uppercase mb-1 ${p.typeColor}`}>{p.type}</span>
+                    <span className="text-white font-bold text-sm mb-2">{p.name}</span>
+                    {/* Sun icon */}
+                    <svg width="36" height="36" viewBox="0 0 36 36" className="mb-1">
+                      {[0,45,90,135,180,225,270,315].map(a => (
+                        <line key={a}
+                          x1={18 + 11*Math.cos(a*Math.PI/180)}
+                          y1={18 + 11*Math.sin(a*Math.PI/180)}
+                          x2={18 + 17*Math.cos(a*Math.PI/180)}
+                          y2={18 + 17*Math.sin(a*Math.PI/180)}
+                          stroke="#FFC837" strokeWidth="2.5" strokeLinecap="round"
+                        />
+                      ))}
+                      <circle cx="18" cy="18" r="8" fill="#FFC837" />
+                      {!p.sunny && <ellipse cx="24" cy="24" rx="9" ry="6" fill="#BDD5F0" opacity="0.9" />}
+                    </svg>
+                    <span className="text-white font-black text-2xl leading-none">{p.temp}&deg;</span>
+                    <span className="text-white/40 text-[10px] mt-0.5 text-center">{p.cond}</span>
+                    <span className="text-green-400 text-xs font-semibold mt-1.5">{p.wind} mph</span>
+                  </div>
+                  {/* Arrow connector */}
+                  {i < arr.length - 1 && (
+                    <svg width="20" height="14" viewBox="0 0 20 14" className="flex-shrink-0 opacity-60">
+                      <line x1="0" y1="7" x2="14" y2="7" stroke="#00D4FF" strokeWidth="1.5" strokeDasharray="3 2" />
+                      <polygon points="14,3 20,7 14,11" fill="#00D4FF" />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          {/* CTA footer */}
-          <div className="px-5 py-3 border-t border-white/5 flex items-center justify-center gap-2">
-            <span className="text-white/40 text-xs">Select your cruise line, ship, and sailing date above to see your personalized forecast</span>
-            <span className="text-cyan-400 text-xs font-semibold">&#x2191; Get started</span>
+
+          {/* Bottom strip */}
+          <div className="relative z-10 border-t border-white/10 px-6 py-2.5 flex items-center justify-center">
+            <span className="text-white/35 text-xs text-center">Select your cruise line, ship, and sailing date above &nbsp;|&nbsp; Instant 5-day forecast for every port of call and sea day &nbsp;|&nbsp; Free</span>
           </div>
         </div>
       )}
