@@ -384,17 +384,21 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
 
   return (
     <div className="space-y-6">
-      {/* Promotional teaser -- shown only when no selection has been made yet */}
-      {!selectedLine && (
-        <div
-          className="rounded-2xl overflow-hidden relative"
-          style={{
-            backgroundImage: "url('/teaser_bg.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center 40%",
-            minHeight: "260px",
-          }}
-        >
+      {/* Promotional teaser -- fades out smoothly when a cruise line is selected */}
+      <div
+        className="rounded-2xl overflow-hidden relative"
+        style={{
+          backgroundImage: "url('/teaser_bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center 40%",
+          maxHeight: selectedLine ? "0px" : "600px",
+          opacity: selectedLine ? 0 : 1,
+          marginBottom: selectedLine ? "0" : undefined,
+          overflow: "hidden",
+          transition: "max-height 0.35s ease, opacity 0.25s ease, margin-bottom 0.35s ease",
+          pointerEvents: selectedLine ? "none" : undefined,
+        }}
+      >
           {/* Dark overlay */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(8,14,32,0.92) 38%, rgba(8,14,32,0.70) 100%)" }} />
 
@@ -465,7 +469,6 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
           </div>
 
         </div>
-      )}
 
       {/* Metric toggle -- matches site-wide style */}
       <div className="flex justify-end">
