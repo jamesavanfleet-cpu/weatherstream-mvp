@@ -2697,14 +2697,14 @@
           "name": "Norwegian Getaway",
           "itineraries": [
             {
-              "departure_date": "2026-03-14",
+              "departure_date": "2026-03-13",
               "departure_port": "Miami",
-              "description": "7 nights, round-trip Eastern Caribbean",
-              "duration_days": 8,
+              "description": "3 nights, round-trip Bahamas: Great Stirrup Cay",
+              "duration_days": 4,
               "ports": [
                 {
                   "day": 1,
-                  "date": "2026-03-14",
+                  "date": "2026-03-13",
                   "port": "Miami",
                   "sea_day": false,
                   "lat": 25.7617,
@@ -2712,57 +2712,163 @@
                 },
                 {
                   "day": 2,
-                  "date": "2026-03-15",
+                  "date": "2026-03-14",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 22.0499,
-                  "lon": -72.5615,
-                  "between": "Miami to St. Thomas"
+                  "lat": 25.79,
+                  "lon": -79.39,
+                  "between": "Miami to Great Stirrup Cay"
                 },
                 {
                   "day": 3,
-                  "date": "2026-03-16",
-                  "port": "St. Thomas",
+                  "date": "2026-03-15",
+                  "port": "Great Stirrup Cay",
                   "sea_day": false,
-                  "lat": 18.3381,
-                  "lon": -64.9312
+                  "lat": 25.83,
+                  "lon": -77.89
                 },
                 {
                   "day": 4,
+                  "date": "2026-03-16",
+                  "port": "Miami",
+                  "sea_day": false,
+                  "lat": 25.7617,
+                  "lon": -80.1918
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-03-16",
+              "departure_port": "Miami",
+              "description": "4 nights, round-trip Bahamas: Nassau & Great Stirrup Cay",
+              "duration_days": 5,
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-03-16",
+                  "port": "Miami",
+                  "sea_day": false,
+                  "lat": 25.7617,
+                  "lon": -80.1918
+                },
+                {
+                  "day": 2,
                   "date": "2026-03-17",
-                  "port": "Tortola",
-                  "sea_day": false,
-                  "lat": 18.43,
-                  "lon": -64.62
-                },
-                {
-                  "day": 5,
-                  "date": "2026-03-18",
-                  "port": "San Juan",
-                  "sea_day": false,
-                  "lat": 18.4655,
-                  "lon": -66.1057
-                },
-                {
-                  "day": 6,
-                  "date": "2026-03-19",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 21.7549,
-                  "lon": -71.728,
-                  "between": "San Juan to Nassau"
-                },
-                {
-                  "day": 7,
-                  "date": "2026-03-20",
                   "port": "Nassau",
                   "sea_day": false,
                   "lat": 25.0443,
                   "lon": -77.3504
                 },
                 {
-                  "day": 8,
+                  "day": 3,
+                  "date": "2026-03-18",
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 25.44,
+                  "lon": -77.87,
+                  "between": "Nassau to Great Stirrup Cay"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-03-19",
+                  "port": "Great Stirrup Cay",
+                  "sea_day": false,
+                  "lat": 25.83,
+                  "lon": -77.89
+                },
+                {
+                  "day": 5,
+                  "date": "2026-03-20",
+                  "port": "Miami",
+                  "sea_day": false,
+                  "lat": 25.7617,
+                  "lon": -80.1918
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-03-20",
+              "departure_port": "Miami",
+              "description": "3 nights, round-trip Bahamas: Great Stirrup Cay",
+              "duration_days": 4,
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-03-20",
+                  "port": "Miami",
+                  "sea_day": false,
+                  "lat": 25.7617,
+                  "lon": -80.1918
+                },
+                {
+                  "day": 2,
                   "date": "2026-03-21",
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 25.79,
+                  "lon": -79.39,
+                  "between": "Miami to Great Stirrup Cay"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-03-22",
+                  "port": "Great Stirrup Cay",
+                  "sea_day": false,
+                  "lat": 25.83,
+                  "lon": -77.89
+                },
+                {
+                  "day": 4,
+                  "date": "2026-03-23",
+                  "port": "Miami",
+                  "sea_day": false,
+                  "lat": 25.7617,
+                  "lon": -80.1918
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-03-23",
+              "departure_port": "Miami",
+              "description": "4 nights, round-trip Bahamas: Great Stirrup Cay & Nassau",
+              "duration_days": 5,
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-03-23",
+                  "port": "Miami",
+                  "sea_day": false,
+                  "lat": 25.7617,
+                  "lon": -80.1918
+                },
+                {
+                  "day": 2,
+                  "date": "2026-03-24",
+                  "port": "Great Stirrup Cay",
+                  "sea_day": false,
+                  "lat": 25.83,
+                  "lon": -77.89
+                },
+                {
+                  "day": 3,
+                  "date": "2026-03-25",
+                  "port": "Nassau",
+                  "sea_day": false,
+                  "lat": 25.0443,
+                  "lon": -77.3504
+                },
+                {
+                  "day": 4,
+                  "date": "2026-03-26",
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 25.22,
+                  "lon": -78.72,
+                  "between": "Nassau to Miami"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-03-27",
                   "port": "Miami",
                   "sea_day": false,
                   "lat": 25.7617,
