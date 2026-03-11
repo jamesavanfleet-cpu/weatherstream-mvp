@@ -108,6 +108,9 @@ function portImageSlug(port: string): string {
     "Ocean Cay": "ocean-cay",
     "Roseau": "roseau",
     "St. Croix": "st-croix",
+    "New Orleans": "new-orleans",
+    "Port of New Orleans": "new-orleans",
+    "Seattle": "seattle",
   };
   return map[port] || "";
 }
