@@ -1040,7 +1040,7 @@ export default function Home() {
               <p className="text-xl md:text-2xl text-white/70 font-light">By James Van Fleet</p>
             </div>
             <p className="text-base md:text-xl text-white/80 leading-relaxed max-w-xl">
-              Forecast Video Briefings and breaking storm analysis with the former Chief Meteorologist
+              Forecast Briefings, your cruise forecast at every port call, and breaking storm analysis with the former Chief Meteorologist
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, and Eastern Pacific.
               <span className="text-white/40"> Coming soon: South Pacific (Australia &amp; New Zealand) and APAC (China &amp; Japan).</span>
             </p>
