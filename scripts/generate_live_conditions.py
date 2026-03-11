@@ -1,17 +1,31 @@
 #!/usr/bin/env python3
 """
 Hourly live conditions generator for WeatherStream MVP.
-Fetches current weather from Open-Meteo for all 67 carousel ports.
+Fetches current weather from Open-Meteo for all 68 carousel ports.
 Writes live_conditions.json to client/public/ for the site to consume.
 Runs at :10 past every hour.
+
+SSL fix: Uses requests library with retry/backoff instead of urllib.
+Falls back to individual port requests if batch fails.
 """
 
 import json
-import urllib.request
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-# All 67 ports matching LIVE_DATA in Home.tsx (same order)
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
+
+import urllib.request
+import ssl
+
+# All 68 ports matching LIVE_DATA in Home.tsx (same order)
 PORTS = [
     # Caribbean
     {"key": "Miami",            "lat": 25.77,  "lon": -80.19},
@@ -105,49 +119,124 @@ def wmo_condition(code):
 def c_to_f(c):
     return round(c * 9 / 5 + 32)
 
-def fetch_batch(ports_batch):
+def build_url(ports_batch):
     lats = ",".join(str(p["lat"]) for p in ports_batch)
     lons = ",".join(str(p["lon"]) for p in ports_batch)
-    url = (
+    return (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lats}&longitude={lons}"
         f"&current=temperature_2m,weathercode,wind_speed_10m,wind_direction_10m"
         f"&temperature_unit=celsius&wind_speed_unit=kn&timezone=auto"
     )
-    with urllib.request.urlopen(url, timeout=15) as resp:
-        return json.loads(resp.read())
+
+def make_session():
+    """Create a requests Session with retry/backoff."""
+    session = requests.Session()
+    retry = Retry(
+        total=3,
+        backoff_factor=1.5,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+def fetch_with_requests(session, ports_batch, timeout=30):
+    url = build_url(ports_batch)
+    resp = session.get(url, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
+def fetch_with_urllib(ports_batch, timeout=30):
+    """Fallback using urllib with a relaxed SSL context."""
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    url = build_url(ports_batch)
+    with urllib.request.urlopen(url, timeout=timeout, context=ctx) as r:
+        return json.loads(r.read())
+
+def parse_response(data, batch):
+    results = {}
+    if isinstance(data, dict):
+        data = [data]
+    for j, port in enumerate(batch):
+        try:
+            current = data[j].get("current", {})
+            temp_c = current.get("temperature_2m", 20)
+            wmo = current.get("weathercode", 0)
+            results[port["key"]] = {
+                "tempF": c_to_f(temp_c),
+                "tempC": round(temp_c, 1),
+                "condition": wmo_condition(wmo),
+                "wmo": wmo,
+                "windKt": round(current.get("wind_speed_10m", 0)),
+                "windDir": round(current.get("wind_direction_10m", 0)),
+            }
+        except Exception as e:
+            print(f"  Parse error for {port['key']}: {e}")
+            results[port["key"]] = None
+    return results
+
+def fetch_batch_robust(session, ports_batch):
+    """
+    Try fetching a batch with three escalating strategies:
+    1. requests with retry (preferred)
+    2. urllib with relaxed SSL
+    3. Individual port requests via urllib (last resort)
+    """
+    # Strategy 1: requests with retry
+    if session:
+        try:
+            data = fetch_with_requests(session, ports_batch)
+            return parse_response(data, ports_batch), "requests"
+        except Exception as e:
+            print(f"  requests batch failed: {e}")
+
+    # Strategy 2: urllib relaxed SSL batch
+    try:
+        data = fetch_with_urllib(ports_batch)
+        return parse_response(data, ports_batch), "urllib-batch"
+    except Exception as e:
+        print(f"  urllib batch failed: {e}")
+
+    # Strategy 3: individual urllib requests
+    print(f"  Falling back to individual requests for {len(ports_batch)} ports...")
+    results = {}
+    for port in ports_batch:
+        for attempt in range(2):
+            try:
+                data = fetch_with_urllib([port], timeout=20)
+                results.update(parse_response(data, [port]))
+                break
+            except Exception as e:
+                if attempt == 1:
+                    print(f"    {port['key']}: FAILED after 2 attempts ({e})")
+                    results[port["key"]] = None
+                else:
+                    time.sleep(2)
+    return results, "urllib-individual"
 
 def main():
+    session = make_session() if HAS_REQUESTS else None
+    if not HAS_REQUESTS:
+        print("WARNING: requests library not available, using urllib fallback only")
+
     results = {}
-    # Open-Meteo supports up to 100 locations per batch request
     batch_size = 50
+
     for i in range(0, len(PORTS), batch_size):
         batch = PORTS[i:i + batch_size]
-        try:
-            data = fetch_batch(batch)
-            # If single location, wrap in list
-            if isinstance(data, dict):
-                data = [data]
-            for j, port in enumerate(batch):
-                try:
-                    current = data[j].get("current", {})
-                    temp_c = current.get("temperature_2m", 20)
-                    wmo = current.get("weathercode", 0)
-                    results[port["key"]] = {
-                        "tempF": c_to_f(temp_c),
-                        "tempC": round(temp_c, 1),
-                        "condition": wmo_condition(wmo),
-                        "wmo": wmo,
-                        "windKt": round(current.get("wind_speed_10m", 0)),
-                        "windDir": round(current.get("wind_direction_10m", 0)),
-                    }
-                except Exception as e:
-                    print(f"  Parse error for {port['key']}: {e}")
-        except Exception as e:
-            print(f"  Batch fetch error (ports {i}-{i+batch_size}): {e}")
-            # Fill with empty for failed batch
-            for port in batch:
-                results[port["key"]] = None
+        print(f"Fetching ports {i+1}-{i+len(batch)} of {len(PORTS)}...")
+        batch_results, method = fetch_batch_robust(session, batch)
+        results.update(batch_results)
+        has = sum(1 for v in batch_results.values() if v is not None)
+        print(f"  Done via [{method}]: {has}/{len(batch)} ports OK")
+
+    has_data = sum(1 for v in results.values() if v is not None)
+    print(f"\nTotal: {len(results)} ports, {has_data} with live data, {len(results)-has_data} null")
 
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -157,7 +246,7 @@ def main():
     repo = Path(__file__).parent.parent
     out_path = repo / "client" / "public" / "live_conditions.json"
     out_path.write_text(json.dumps(output, indent=2))
-    print(f"Written {len(results)} ports to {out_path}")
+    print(f"Written to {out_path}")
     print(f"Generated at: {output['generated_at']}")
 
 if __name__ == "__main__":
