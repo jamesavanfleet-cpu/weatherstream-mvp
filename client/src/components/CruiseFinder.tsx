@@ -420,9 +420,6 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                   </li>
                 ))}
               </ul>
-              <div className="inline-block bg-cyan-400 text-[#080e20] font-bold text-sm px-5 py-2.5 rounded-full">
-                Get Your Forecast
-              </div>
             </div>
 
             {/* Right: port weather cards */}
@@ -467,10 +464,6 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
             </div>
           </div>
 
-          {/* Bottom strip */}
-          <div className="relative z-10 border-t border-white/10 px-6 py-2.5 flex items-center justify-center">
-            <span className="text-white/35 text-xs text-center">Select your cruise line, ship, and sailing date above &nbsp;|&nbsp; Instant 5-day forecast for every port of call and sea day &nbsp;|&nbsp; Free</span>
-          </div>
         </div>
       )}
 
