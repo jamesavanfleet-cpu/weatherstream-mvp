@@ -60,6 +60,58 @@ interface PortForecast {
   error: boolean;
 }
 
+// Map port names to their image filenames
+function portImageSlug(port: string): string {
+  const map: Record<string, string> = {
+    "Miami": "miami",
+    "Nassau": "nassau",
+    "San Juan": "san-juan",
+    "St. Thomas": "st-thomas",
+    "St. Maarten": "st-maarten",
+    "Philipsburg": "philipsburg",
+    "Cozumel": "cozumel",
+    "Key West": "key-west",
+    "Falmouth": "falmouth",
+    "Oranjestad": "oranjestad",
+    "Willemstad": "willemstad",
+    "Bridgetown": "bridgetown",
+    "Castries": "castries",
+    "Fort-de-France": "fort-de-france",
+    "Basseterre": "basseterre",
+    "St. John's": "st-johns",
+    "Tortola": "tortola",
+    "Roatan": "roatan",
+    "Costa Maya": "costa-maya",
+    "Belize City": "belize-city",
+    "Grand Turk": "grand-turk",
+    "The Beach Club at Bimini": "the-beach-club-at-bimini",
+    "Amber Cove": "amber-cove",
+    "Puerto Plata": "puerto-plata",
+    "Labadee": "labadee",
+    "Perfect Day at CocoCay": "perfect-day-at-cococay",
+    "George Town": "george-town",
+    "Cartagena": "cartagena",
+    "Colon": "colon",
+    "Puntarenas": "puntarenas",
+    "Puerto Quetzal": "puerto-quetzal",
+    "Cabo San Lucas": "cabo-san-lucas",
+    "Los Angeles": "los-angeles",
+    "Fort Lauderdale": "fort-lauderdale",
+    "Port Canaveral": "port-canaveral",
+    "Tampa": "tampa",
+    "Galveston": "galveston",
+    "New York": "new-york",
+    "Newport": "newport",
+    "Charleston": "charleston",
+    "Princess Cays": "princess-cays",
+    "Celebration Key": "celebration-key",
+    "Ocean Cay": "ocean-cay",
+    "Roseau": "roseau",
+    "St. Croix": "st-croix",
+  };
+  return map[port] || "";
+}
+
 function degToDir(deg: number): string {
   const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return dirs[Math.round(deg / 22.5) % 16];
@@ -213,7 +265,7 @@ function SkyIcon({ condition, className }: { condition: string; className?: stri
   return <Cloud className={className} />;
 }
 
-// Forecast card component -- icon size matches site-wide style (w-6 h-6)
+// Forecast card component -- icon size w-8 h-8 matching site-wide style
 function ForecastCard({
   icon, label, value, subValue
 }: {
@@ -245,7 +297,7 @@ function TempCard({
   return (
     <div className="glass-dark rounded-2xl p-4 border border-white/5">
       <div className="flex items-center gap-2 mb-2">
-        <Thermometer className="w-6 h-6 text-orange-400" />
+        <Thermometer className="w-8 h-8 text-orange-400" />
         <span className="text-white/50 text-xs">{label}</span>
       </div>
       <p className="text-white font-black text-4xl leading-tight">{tempHigh}</p>
@@ -456,19 +508,39 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
 
             return (
               <div className="bg-white/5 border border-cyan-400/20 rounded-2xl p-5">
-                {/* Port header */}
-                <div className="flex items-start justify-between mb-5">
-                  <div>
-                    <h4 className="text-white font-bold text-xl flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-cyan-400" />{pf.port}
-                    </h4>
-                    <p className="text-white/50 text-sm mt-0.5">Day {pf.day} &mdash; {formatDate(pf.date)}</p>
-                  </div>
-                  <div className="text-right">
-                    <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />
-                    <div className="text-white/60 text-sm">{skyCondition}</div>
-                  </div>
-                </div>
+                {/* Port header with photo */}
+                {(() => {
+                  const slug = portImageSlug(pf.port);
+                  const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+                  const imgSrc = slug ? `${base}/port-images/${slug}.jpg` : null;
+                  return (
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        {imgSrc && (
+                          <div className="flex-shrink-0 w-28 h-20 sm:w-40 sm:h-28 rounded-xl overflow-hidden border border-white/10">
+                            <img
+                              src={imgSrc}
+                              alt={pf.port}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h4 className="text-white font-bold text-xl flex items-center gap-2">
+                            <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                            <span className="truncate">{pf.port}</span>
+                          </h4>
+                          <p className="text-white/50 text-sm mt-0.5">Day {pf.day} &mdash; {formatDate(pf.date)}</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-3">
+                        <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />
+                        <div className="text-white/60 text-sm">{skyCondition}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {pf.loading ? (
                   <div className="flex items-center gap-2 text-white/40 text-sm py-4">
@@ -493,19 +565,19 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                           label="High Temp"
                         />
                         <ForecastCard
-                          icon={<Wind className="w-6 h-6 text-cyan-400" />}
+                          icon={<Wind className="w-8 h-8 text-cyan-400" />}
                           label="Wind"
                           value={windDisplay}
                           subValue={pf.windDir}
                         />
                         <ForecastCard
-                          icon={<Droplets className="w-6 h-6 text-blue-400" />}
+                          icon={<Droplets className="w-8 h-8 text-blue-400" />}
                           label="Rain Chance"
                           value={pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
                           subValue={precipDisplay ? `Precip: ${precipDisplay}` : undefined}
                         />
                         <ForecastCard
-                          icon={<Cloud className="w-6 h-6 text-slate-300" />}
+                          icon={<Cloud className="w-8 h-8 text-slate-300" />}
                           label="Cloud Cover"
                           value={pf.cloudCoverPct !== null ? `${Math.round(pf.cloudCoverPct)}%` : "--"}
                           subValue={skyCondition}
@@ -517,19 +589,19 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                       <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Marine</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <ForecastCard
-                          icon={<Waves className="w-6 h-6 text-cyan-400" />}
+                          icon={<Waves className="w-8 h-8 text-cyan-400" />}
                           label="Sea State"
                           value={waveDescription(pf.waveHeightM)}
                           subValue={waveDisplay ? (swellDisplay ? `${waveDisplay} | ${swellDisplay}` : waveDisplay) : "No wave data"}
                         />
                         <ForecastCard
-                          icon={<Gauge className="w-6 h-6 text-violet-400" />}
+                          icon={<Gauge className="w-8 h-8 text-violet-400" />}
                           label="Pressure"
                           value={pressureDisplay}
                           subValue={pressureTendency(pf.pressureHpa)}
                         />
                         <ForecastCard
-                          icon={<SkyIcon condition={skyCondition} className="w-6 h-6 text-yellow-300" />}
+                          icon={<SkyIcon condition={skyCondition} className="w-8 h-8 text-yellow-300" />}
                           label="Sky Condition"
                           value={skyCondition}
                           subValue={pf.condition !== skyCondition ? pf.condition : undefined}
