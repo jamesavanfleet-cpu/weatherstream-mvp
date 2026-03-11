@@ -1042,7 +1042,7 @@ export default function Home() {
             <p className="text-base md:text-xl text-white/80 leading-relaxed max-w-xl">
               Forecast Briefings, your cruise forecast at every port call, and breaking storm analysis with the former Chief Meteorologist
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, and Eastern Pacific.
-              <span className="text-white/40"> Coming soon: South Pacific (Australia &amp; New Zealand) and APAC (China &amp; Japan).</span>
+              <span className="text-white/40"> Coming soon: Mediterranean and Southeast Alaska.</span>
             </p>
             <div className="flex gap-3">
               <Button
