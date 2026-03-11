@@ -615,7 +615,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                             <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0" />
                             <span className="truncate">{pf.port}</span>
                           </h4>
-                          <p className="text-white/50 text-sm mt-0.5">Day {pf.day} &mdash; {formatDate(pf.date)}</p>
+                          <p className="text-white/50 text-sm mt-0.5">Day {pf.day} -- {formatDate(pf.date)}</p>
                         </div>
                         <div className="text-right flex-shrink-0 ml-3">
                           <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />

@@ -191,7 +191,7 @@ const CRUISE_ROUTES = [
     rain: "5%",
     status: "Perfect",
     gradient: "from-emerald-500/20 to-cyan-500/20",
-    intel: "High pressure dominating the region through the weekend. Expect light trade winds and calm seas—ideal for tender operations in St. Thomas and St. Maarten. UV index will be extreme, so remind passengers about sun protection."
+    intel: "High pressure dominating the region through the weekend. Expect light trade winds and calm seas -- ideal for tender operations in St. Thomas and St. Maarten. UV index will be extreme, so remind passengers about sun protection."
   },
   {
     name: "Western Caribbean",
@@ -202,7 +202,7 @@ const CRUISE_ROUTES = [
     rain: "10%",
     status: "Excellent",
     gradient: "from-orange-500/20 to-pink-500/20",
-    intel: "Typical pattern with easterly flow. Cozumel and Grand Cayman will see afternoon sea breezes—perfect beach weather. Watch for isolated showers near Jamaica's Blue Mountains in the late afternoon, but they'll stay inland."
+    intel: "Typical pattern with easterly flow. Cozumel and Grand Cayman will see afternoon sea breezes -- perfect beach weather. Watch for isolated showers near Jamaica's Blue Mountains in the late afternoon, but they'll stay inland."
   },
   {
     name: "Bahamas",
@@ -213,7 +213,7 @@ const CRUISE_ROUTES = [
     rain: "20%",
     status: "Very Good",
     gradient: "from-blue-500/20 to-purple-500/20",
-    intel: "Cold front passed through yesterday—cooler temps but crystal-clear visibility. Seas building slightly on the Atlantic side, but western anchorages (Nassau, Freeport) remain protected. Great conditions for snorkeling and diving with 100+ ft visibility."
+    intel: "Cold front passed through yesterday -- cooler temps but crystal-clear visibility. Seas building slightly on the Atlantic side, but western anchorages (Nassau, Freeport) remain protected. Great conditions for snorkeling and diving with 100+ ft visibility."
   },
   {
     name: "Southern Caribbean",
@@ -224,7 +224,7 @@ const CRUISE_ROUTES = [
     rain: "3%",
     status: "Excellent",
     gradient: "from-teal-500/20 to-emerald-500/20",
-    intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curacao enjoying persistent easterlies—perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
+    intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curacao enjoying persistent easterlies -- perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
   },
 ];
 
@@ -251,7 +251,7 @@ const MED_ROUTES = [
     rain: "20%",
     status: "Good",
     gradient: "from-cyan-500/20 to-teal-500/20",
-    intel: "Ligurian Sea calm with light variable winds. Tyrrhenian Sea 2-3 ft with NW 10-15 kt. Adriatic watching for Bora development — current forecast shows no significant event this week. Naples and Civitavecchia conditions favorable for cruise operations."
+    intel: "Ligurian Sea calm with light variable winds. Tyrrhenian Sea 2-3 ft with NW 10-15 kt. Adriatic watching for Bora development -- current forecast shows no significant event this week. Naples and Civitavecchia conditions favorable for cruise operations."
   },
   {
     name: "Eastern Mediterranean",
@@ -262,7 +262,7 @@ const MED_ROUTES = [
     rain: "8%",
     status: "Very Good",
     gradient: "from-indigo-500/20 to-violet-500/20",
-    intel: "Aegean Meltemi winds running 20-25 kt N-NW. Santorini and Mykonos exposed on northern approaches — use leeward anchorages. Ionian Sea calm. Turkish coast thermal winds building to 15-20 kt by afternoon. Levantine coast light NW 10-15 kt with excellent visibility."
+    intel: "Aegean Meltemi winds running 20-25 kt N-NW. Santorini and Mykonos exposed on northern approaches -- use leeward anchorages. Ionian Sea calm. Turkish coast thermal winds building to 15-20 kt by afternoon. Levantine coast light NW 10-15 kt with excellent visibility."
   },
 ];
 
@@ -278,7 +278,7 @@ const PACIFIC_ROUTES = [
     rain: "10%",
     status: "Moderate",
     gradient: "from-slate-500/20 to-blue-600/20",
-    intel: "NW swell running 4-6 ft with a 14-second period—comfortable offshore but watch the harbor entrance. Afternoon thermal winds pick up to 20+ kt in the afternoon along the Baja coast. Overnight conditions settle considerably. Fuel and provisions readily available."
+    intel: "NW swell running 4-6 ft with a 14-second period -- comfortable offshore but watch the harbor entrance. Afternoon thermal winds pick up to 20+ kt in the afternoon along the Baja coast. Overnight conditions settle considerably. Fuel and provisions readily available."
   },
   {
     name: "Cabo San Lucas",
@@ -323,27 +323,27 @@ const BRIEFING_CLIENTS = [
   {
     icon: Anchor,
     title: "Fishing Captains",
-    description: "Florida and surrounding waters. Know where the fish are holding and where the weather will let you run. Get a decision briefing before you leave the dock—wind, seas, current, and the best window to get out and get back safely.",
+    description: "Florida and surrounding waters. Know where the fish are holding and where the weather will let you run. Get a decision briefing before you leave the dock -- wind, seas, current, and the best window to get out and get back safely.",
     color: "from-blue-500 to-cyan-500",
     examples: ["Offshore trolling windows", "Sea state by fishing grounds", "Return window timing", "Squall and storm cell tracking"],
   },
   {
     icon: Users,
     title: "Charter Captains",
-    description: "Day charters and rental guests deserve the best experience. Know which direction to run for the calmest water, the clearest skies, and the best conditions for your guests—whether that's snorkeling, diving, or just a comfortable ride.",
+    description: "Day charters and rental guests deserve the best experience. Know which direction to run for the calmest water, the clearest skies, and the best conditions for your guests -- whether that's snorkeling, diving, or just a comfortable ride.",
     color: "from-emerald-500 to-teal-500",
     examples: ["Best direction to run for calm water", "Guest comfort sea state forecasts", "Afternoon thunderstorm timing", "Alternate destination planning"],
   },
   {
     icon: Navigation,
     title: "Yacht Owners and Captains",
-    description: "Longer passages, repositioning voyages, and multi-port itineraries require serious weather intelligence. Get a full briefing covering routing, passage windows, anchorage conditions, and tropical weather threats—including hurricane track analysis and vessel movement decisions.",
+    description: "Longer passages, repositioning voyages, and multi-port itineraries require serious weather intelligence. Get a full briefing covering routing, passage windows, anchorage conditions, and tropical weather threats -- including hurricane track analysis and vessel movement decisions.",
     color: "from-violet-500 to-purple-500",
     examples: ["Passage routing and timing", "Tropical storm and hurricane decisions", "Stay tied up or move the vessel?", "When and where to relocate for safety"],
   },
 ];
 
-// Coordinates for each route card — used to fetch live wind direction
+// Coordinates for each route card -- used to fetch live wind direction
 const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Eastern Caribbean":  { lat: 18.0,   lon: -63.0  },
   "Western Caribbean":  { lat: 19.3,   lon: -81.4  },
@@ -759,7 +759,7 @@ export default function Home() {
         if (data.generated_utc) setIntelUpdatedAt(data.generated_utc);
         else if (data.generated) setIntelUpdatedAt(data.generated);
       })
-      .catch(() => { /* silently fail — static intel text still shown */ });
+      .catch(() => { /* silently fail -- static intel text still shown */ });
   }, []);
 
   // Rotate Live Conditions every 5 seconds: replace all 6 cards at once
@@ -798,7 +798,7 @@ export default function Home() {
         });
         setWindDirs(results);
       })
-      .catch(() => { /* silently fail — static wind speed still shown */ });
+      .catch(() => { /* silently fail -- static wind speed still shown */ });
   }, []);
 
   // Scroll-triggered intel expansion for Caribbean cards
@@ -1266,7 +1266,7 @@ export default function Home() {
               Mediterranean Cruise Weather
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              Western, Central, and Eastern Mediterranean — complete port and passage forecasts
+              Western, Central, and Eastern Mediterranean -- complete port and passage forecasts
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
@@ -1313,7 +1313,7 @@ export default function Home() {
               Eastern Pacific Cruise Weather
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              From Los Angeles to Cabo San Lucas — complete Pacific Mexico coastal and offshore forecasts
+              From Los Angeles to Cabo San Lucas -- complete Pacific Mexico coastal and offshore forecasts
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
@@ -1344,7 +1344,7 @@ export default function Home() {
               Schedule a Weather Decision Briefing
             </h3>
             <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-              A focused 20-minute one-on-one session with James. You bring the question—where to go, when to go, whether to stay tied up or move the vessel. James brings 30+ years of professional meteorology and the answers you need before you leave the dock.
+              A focused 20-minute one-on-one session with James. You bring the question -- where to go, when to go, whether to stay tied up or move the vessel. James brings 30+ years of professional meteorology and the answers you need before you leave the dock.
             </p>
           </div>
 
@@ -1382,7 +1382,7 @@ export default function Home() {
               <div>
                 <h4 className="text-2xl font-black text-white mb-3">Tropical Weather and Hurricane Decisions</h4>
                 <p className="text-white/70 leading-relaxed text-base">
-                  When a tropical system is developing or a hurricane is threatening, the decisions get serious fast. Do you stay tied up or move the vessel? If you move, when do you need to leave, and where should you go? James provides clear, direct answers based on the actual forecast data—not the headlines. This is the same level of decision support he provided for Royal Caribbean's fleet, now available to you directly.
+                  When a tropical system is developing or a hurricane is threatening, the decisions get serious fast. Do you stay tied up or move the vessel? If you move, when do you need to leave, and where should you go? James provides clear, direct answers based on the actual forecast data -- not the headlines. This is the same level of decision support he provided for Royal Caribbean's fleet, now available to you directly.
                 </p>
               </div>
             </div>
