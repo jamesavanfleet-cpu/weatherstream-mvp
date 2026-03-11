@@ -336,50 +336,51 @@
                   "date": "2026-03-16",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 23.7778,
-                  "lon": -77.571,
-                  "between": "Miami to Labadee"
+                  "lat": 23.5,
+                  "lon": -76.5,
+                  "between": "Miami to St. Maarten"
                 },
                 {
                   "day": 3,
                   "date": "2026-03-17",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 21.7339,
-                  "lon": -74.8708,
-                  "between": "Miami to Labadee"
+                  "lat": 20.5,
+                  "lon": -72.5,
+                  "between": "Miami to St. Maarten"
                 },
                 {
                   "day": 4,
                   "date": "2026-03-18",
-                  "port": "Labadee",
+                  "port": "St. Maarten",
                   "sea_day": false,
-                  "lat": 19.75,
-                  "lon": -72.25
+                  "lat": 18.0425,
+                  "lon": -63.0548
                 },
                 {
                   "day": 5,
                   "date": "2026-03-19",
-                  "port": "San Juan",
-                  "sea_day": false,
-                  "lat": 18.4655,
-                  "lon": -66.1057
-                },
-                {
-                  "day": 6,
-                  "date": "2026-03-20",
                   "port": "St. Thomas",
                   "sea_day": false,
                   "lat": 18.3381,
                   "lon": -64.9312
                 },
                 {
+                  "day": 6,
+                  "date": "2026-03-20",
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 23.0,
+                  "lon": -74.5,
+                  "between": "St. Thomas to Nassau"
+                },
+                {
                   "day": 7,
                   "date": "2026-03-21",
-                  "port": "Perfect Day at CocoCay",
+                  "port": "Nassau",
                   "sea_day": false,
-                  "lat": 25.8295,
-                  "lon": -77.9421
+                  "lat": 25.0443,
+                  "lon": -77.3504
                 },
                 {
                   "day": 8,
@@ -394,7 +395,7 @@
             {
               "departure_date": "2026-03-22",
               "departure_port": "Miami",
-              "description": "7 nights, round-trip Caribbean",
+              "description": "7 nights, round-trip Western Caribbean & Perfect Day",
               "duration_days": 8,
               "ports": [
                 {
@@ -426,8 +427,8 @@
                   "date": "2026-03-25",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 22.1475,
-                  "lon": -72.0239,
+                  "lat": 22.5,
+                  "lon": -73.0,
                   "between": "CocoCay to San Juan"
                 },
                 {
@@ -451,8 +452,8 @@
                   "date": "2026-03-28",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 22.7784,
-                  "lon": -75.4399,
+                  "lat": 22.5,
+                  "lon": -75.5,
                   "between": "Puerto Plata to Miami"
                 },
                 {
@@ -717,43 +718,40 @@
                   "port": "At Sea",
                   "sea_day": true,
                   "lat": 37.0,
-                  "lon": -25.7,
-                  "between": "Approaching Azores"
+                  "lon": -22.0,
+                  "between": "Approaching Spain"
                 },
                 {
                   "day": 13,
                   "date": "2026-03-28",
-                  "port": "Ponta Delgada, Azores",
+                  "port": "Cadiz (Seville), Spain",
                   "sea_day": false,
-                  "lat": 37.7412,
-                  "lon": -25.6756
+                  "lat": 36.5271,
+                  "lon": -6.2886
                 },
                 {
                   "day": 14,
                   "date": "2026-03-29",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 38.5,
-                  "lon": -18.0,
-                  "between": "Azores to Barcelona"
+                  "port": "Malaga, Spain",
+                  "sea_day": false,
+                  "lat": 36.7213,
+                  "lon": -4.4214
                 },
                 {
                   "day": 15,
                   "date": "2026-03-30",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 39.5,
-                  "lon": -10.0,
-                  "between": "Approaching Iberian Peninsula"
+                  "port": "Cartagena, Spain",
+                  "sea_day": false,
+                  "lat": 37.6035,
+                  "lon": -0.9869
                 },
                 {
                   "day": 16,
                   "date": "2026-03-31",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 40.5,
-                  "lon": -3.0,
-                  "between": "Mediterranean entrance"
+                  "port": "Alicante, Spain",
+                  "sea_day": false,
+                  "lat": 38.3452,
+                  "lon": -0.481
                 },
                 {
                   "day": 17,
@@ -1876,36 +1874,35 @@
                 {
                   "day": 2,
                   "date": "2026-03-15",
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 26.5,
+                  "lon": -78.5,
+                  "between": "Port Canaveral to Half Moon Cay"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-03-16",
                   "port": "Half Moon Cay",
                   "sea_day": false,
                   "lat": 24.75,
                   "lon": -76.15
                 },
                 {
-                  "day": 3,
-                  "date": "2026-03-16",
+                  "day": 4,
+                  "date": "2026-03-17",
                   "port": "Nassau",
                   "sea_day": false,
                   "lat": 25.0443,
                   "lon": -77.3504
                 },
                 {
-                  "day": 4,
-                  "date": "2026-03-17",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 26.1569,
-                  "lon": -78.4227,
-                  "between": "Nassau to Port Canaveral"
-                },
-                {
                   "day": 5,
                   "date": "2026-03-18",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 27.3032,
-                  "lon": -79.5275,
-                  "between": "Nassau to Port Canaveral"
+                  "port": "Celebration Key",
+                  "sea_day": false,
+                  "lat": 24.9,
+                  "lon": -77.85
                 },
                 {
                   "day": 6,
@@ -1934,27 +1931,27 @@
                 {
                   "day": 2,
                   "date": "2026-03-20",
-                  "port": "Princess Cays",
-                  "sea_day": false,
-                  "lat": 23.7,
-                  "lon": -76.15
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 26.5,
+                  "lon": -79.0,
+                  "between": "Port Canaveral to Princess Cays"
                 },
                 {
                   "day": 3,
                   "date": "2026-03-21",
-                  "port": "Celebration Key",
+                  "port": "Princess Cays",
                   "sea_day": false,
-                  "lat": 26.3827,
-                  "lon": -78.0
+                  "lat": 22.8,
+                  "lon": -74.5
                 },
                 {
                   "day": 4,
                   "date": "2026-03-22",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 27.3993,
-                  "lon": -79.2999,
-                  "between": "Celebration Key to Port Canaveral"
+                  "port": "Celebration Key",
+                  "sea_day": false,
+                  "lat": 24.9,
+                  "lon": -77.85
                 },
                 {
                   "day": 5,
@@ -1983,11 +1980,10 @@
                 {
                   "day": 2,
                   "date": "2026-03-24",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 26.73,
-                  "lon": -78.9751,
-                  "between": "Port Canaveral to Nassau"
+                  "port": "Celebration Key",
+                  "sea_day": false,
+                  "lat": 24.9,
+                  "lon": -77.85
                 },
                 {
                   "day": 3,
@@ -2000,19 +1996,19 @@
                 {
                   "day": 4,
                   "date": "2026-03-26",
-                  "port": "Half Moon Cay",
+                  "port": "Princess Cays",
                   "sea_day": false,
-                  "lat": 24.75,
-                  "lon": -76.15
+                  "lat": 22.8,
+                  "lon": -74.5
                 },
                 {
                   "day": 5,
                   "date": "2026-03-27",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 26.5829,
-                  "lon": -78.3749,
-                  "between": "Half Moon Cay to Port Canaveral"
+                  "lat": 26.5,
+                  "lon": -79.0,
+                  "between": "Princess Cays to Port Canaveral"
                 },
                 {
                   "day": 6,
@@ -2193,151 +2189,150 @@
           "itineraries": [
             {
               "departure_date": "2026-03-14",
-              "departure_port": "Miami",
+              "departure_port": "Port Canaveral",
               "description": "7 nights, round-trip Eastern Caribbean",
               "duration_days": 8,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-03-14",
-                  "port": "Miami",
+                  "port": "Port Canaveral",
                   "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "lat": 28.4158,
+                  "lon": -80.5998
                 },
                 {
                   "day": 2,
                   "date": "2026-03-15",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 23.2069,
-                  "lon": -74.535,
-                  "between": "Miami to St. Maarten"
+                  "lat": 24.0,
+                  "lon": -76.0,
+                  "between": "Port Canaveral to Puerto Plata"
                 },
                 {
                   "day": 3,
                   "date": "2026-03-16",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 20.5748,
-                  "lon": -68.7068,
-                  "between": "Miami to St. Maarten"
+                  "port": "Puerto Plata",
+                  "sea_day": false,
+                  "lat": 19.795,
+                  "lon": -70.688
                 },
                 {
                   "day": 4,
                   "date": "2026-03-17",
-                  "port": "St. Maarten",
-                  "sea_day": false,
-                  "lat": 18.02,
-                  "lon": -63.05
-                },
-                {
-                  "day": 5,
-                  "date": "2026-03-18",
-                  "port": "St. Thomas",
-                  "sea_day": false,
-                  "lat": 18.3381,
-                  "lon": -64.9312
-                },
-                {
-                  "day": 6,
-                  "date": "2026-03-19",
                   "port": "San Juan",
                   "sea_day": false,
                   "lat": 18.4655,
                   "lon": -66.1057
+                },
+                {
+                  "day": 5,
+                  "date": "2026-03-18",
+                  "port": "St. Kitts",
+                  "sea_day": false,
+                  "lat": 17.3578,
+                  "lon": -62.783
+                },
+                {
+                  "day": 6,
+                  "date": "2026-03-19",
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 22.0,
+                  "lon": -74.0,
+                  "between": "St. Kitts to Port Canaveral"
                 },
                 {
                   "day": 7,
                   "date": "2026-03-20",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 22.1136,
-                  "lon": -73.1488,
-                  "between": "San Juan to Miami"
+                  "lat": 26.0,
+                  "lon": -78.0,
+                  "between": "St. Kitts to Port Canaveral"
                 },
                 {
                   "day": 8,
                   "date": "2026-03-21",
-                  "port": "Miami",
+                  "port": "Port Canaveral",
                   "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "lat": 28.4158,
+                  "lon": -80.5998
                 }
               ]
             },
             {
               "departure_date": "2026-03-21",
-              "departure_port": "Miami",
-              "description": "7 nights, round-trip Eastern Caribbean",
+              "departure_port": "Port Canaveral",
+              "description": "7 nights, round-trip Key West, Bahamas & Grand Turk",
               "duration_days": 8,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-03-21",
-                  "port": "Miami",
+                  "port": "Port Canaveral",
                   "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "lat": 28.4158,
+                  "lon": -80.5998
                 },
                 {
                   "day": 2,
                   "date": "2026-03-22",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 23.2069,
-                  "lon": -74.535,
-                  "between": "Miami to St. Maarten"
+                  "port": "Key West",
+                  "sea_day": false,
+                  "lat": 24.5551,
+                  "lon": -81.78
                 },
                 {
                   "day": 3,
                   "date": "2026-03-23",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 20.5748,
-                  "lon": -68.7068,
-                  "between": "Miami to St. Maarten"
+                  "port": "Bimini",
+                  "sea_day": false,
+                  "lat": 25.7333,
+                  "lon": -79.2833
                 },
                 {
                   "day": 4,
                   "date": "2026-03-24",
-                  "port": "St. Maarten",
-                  "sea_day": false,
-                  "lat": 18.02,
-                  "lon": -63.05
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 22.5,
+                  "lon": -73.5,
+                  "between": "Bimini to Puerto Plata"
                 },
                 {
                   "day": 5,
                   "date": "2026-03-25",
-                  "port": "St. Thomas",
+                  "port": "Puerto Plata",
                   "sea_day": false,
-                  "lat": 18.3381,
-                  "lon": -64.9312
+                  "lat": 19.795,
+                  "lon": -70.688
                 },
                 {
                   "day": 6,
                   "date": "2026-03-26",
-                  "port": "San Juan",
+                  "port": "Grand Turk",
                   "sea_day": false,
-                  "lat": 18.4655,
-                  "lon": -66.1057
+                  "lat": 21.4667,
+                  "lon": -71.1333
                 },
                 {
                   "day": 7,
                   "date": "2026-03-27",
                   "port": "At Sea",
                   "sea_day": true,
-                  "lat": 22.1136,
-                  "lon": -73.1488,
-                  "between": "San Juan to Miami"
+                  "lat": 25.0,
+                  "lon": -77.5,
+                  "between": "Grand Turk to Port Canaveral"
                 },
                 {
                   "day": 8,
                   "date": "2026-03-28",
-                  "port": "Miami",
+                  "port": "Port Canaveral",
                   "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "lat": 28.4158,
+                  "lon": -80.5998
                 }
               ]
             }
@@ -2499,27 +2494,27 @@
                 {
                   "day": 2,
                   "date": "2026-03-24",
-                  "port": "Lighthouse Point",
-                  "sea_day": false,
-                  "lat": 25.1267,
-                  "lon": -76.1429
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 26.5,
+                  "lon": -79.5,
+                  "between": "Port Canaveral to Lighthouse Point"
                 },
                 {
                   "day": 3,
                   "date": "2026-03-25",
-                  "port": "Castaway Cay",
+                  "port": "Lighthouse Point",
                   "sea_day": false,
-                  "lat": 26.0023,
-                  "lon": -77.5317
+                  "lat": 24.8833,
+                  "lon": -76.3167
                 },
                 {
                   "day": 4,
                   "date": "2026-03-26",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 27.2091,
-                  "lon": -79.0658,
-                  "between": "Castaway Cay to Port Canaveral"
+                  "port": "Castaway Cay",
+                  "sea_day": false,
+                  "lat": 26.0,
+                  "lon": -77.5333
                 },
                 {
                   "day": 5,
@@ -2844,27 +2839,27 @@
                 {
                   "day": 2,
                   "date": "2026-03-24",
-                  "port": "Great Stirrup Cay",
-                  "sea_day": false,
-                  "lat": 25.83,
-                  "lon": -77.89
+                  "port": "At Sea",
+                  "sea_day": true,
+                  "lat": 25.5,
+                  "lon": -78.5,
+                  "between": "Miami to Great Stirrup Cay"
                 },
                 {
                   "day": 3,
                   "date": "2026-03-25",
-                  "port": "Nassau",
+                  "port": "Great Stirrup Cay",
                   "sea_day": false,
-                  "lat": 25.0443,
-                  "lon": -77.3504
+                  "lat": 25.8333,
+                  "lon": -77.9167
                 },
                 {
                   "day": 4,
                   "date": "2026-03-26",
-                  "port": "At Sea",
-                  "sea_day": true,
-                  "lat": 25.22,
-                  "lon": -78.72,
-                  "between": "Nassau to Miami"
+                  "port": "Nassau",
+                  "sea_day": false,
+                  "lat": 25.0443,
+                  "lon": -77.3504
                 },
                 {
                   "day": 5,
