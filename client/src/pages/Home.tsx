@@ -1058,37 +1058,52 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative flex flex-col gap-4 mt-6 lg:mt-0 w-full">
-            {/* Caribbean Top Story */}
-            <div className="glass-dark rounded-2xl overflow-hidden shadow-xl border border-white/10 w-full">
-              <div className="px-5 pt-4 pb-1 flex items-center gap-2 border-b border-white/5">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="text-cyan-400 text-xs font-semibold tracking-widest uppercase">Caribbean</span>
-              </div>
-              <div className="p-5">
-                <h3 className="text-white font-bold text-base mb-2">
-                  {topStory ? topStory.caribbean.headline : "Steady Trade Winds Across Eastern Caribbean"}
-                </h3>
-                <p className="text-white/60 text-sm leading-relaxed">
-                  {topStory ? topStory.caribbean.paragraph : "Trade winds are holding steady at 15-20 kt across the Eastern Caribbean with seas running 4-6 ft."}
-                </p>
-              </div>
+          {/* Live Conditions Mini-Grid */}
+          <div className="relative mt-6 lg:mt-0 w-full">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">Live Conditions Now</span>
             </div>
-            {/* Mediterranean Top Story */}
-            <div className="glass-dark rounded-2xl overflow-hidden shadow-xl border border-white/10 w-full">
-              <div className="px-5 pt-4 pb-1 flex items-center gap-2 border-b border-white/5">
-                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-amber-400 text-xs font-semibold tracking-widest uppercase">Mediterranean</span>
-              </div>
-              <div className="p-5">
-                <h3 className="text-white font-bold text-base mb-2">
-                  {topStory ? topStory.mediterranean.headline : "Mistral Builds Across Western Mediterranean"}
-                </h3>
-                <p className="text-white/60 text-sm leading-relaxed">
-                  {topStory ? topStory.mediterranean.paragraph : "A strengthening Mistral is pushing winds to 25-30 kt in the Gulf of Lion with seas building to 8-10 ft."}
-                </p>
-              </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                "Miami", "Nassau", "San Juan",
+                "St. Thomas", "Cozumel", "Barbados"
+              ].map((portName) => {
+                const staticPort = LIVE_DATA.find(p => p.location === portName);
+                const live = liveConditionsData?.[portName];
+                const tempF = live?.tempF ?? staticPort?.temp ?? 80;
+                const tempC = live?.tempC ?? Math.round((tempF - 32) * 5 / 9);
+                const condition = live?.condition ?? staticPort?.condition ?? "Clear";
+                const windKt = live?.windKt ?? 0;
+                const windMph = Math.round(windKt * 1.15078);
+                const windDirDeg = live?.windDir ?? 0;
+                const windDirLabel = degToCompass(windDirDeg);
+                const IconComp = staticPort?.icon ?? ThermometerSun;
+                const colorClass = staticPort?.color ?? "from-cyan-500 to-blue-600";
+                return (
+                  <div
+                    key={portName}
+                    className="glass-dark rounded-2xl p-3 border border-white/5 hover:border-white/20 cursor-pointer transition-all duration-200 hover:scale-105"
+                    onClick={() => staticPort && setSelectedPort(staticPort)}
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="text-white font-bold text-xs leading-tight truncate pr-1">{portName}</p>
+                      <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
+                        <IconComp className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                    <p className="text-white font-black text-xl leading-none">
+                      {isMetric ? `${tempC}°C` : `${tempF}°F`}
+                    </p>
+                    <p className="text-white/50 text-[10px] mt-1 truncate">{condition}</p>
+                    <p className="text-white/35 text-[10px]">
+                      {isMetric ? `${windKt} kt` : `${windMph} mph`} {windDirLabel}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
+            <p className="text-white/25 text-[10px] mt-2 text-right">Updated hourly -- tap any port for full conditions</p>
           </div>
         </div>
       </section>

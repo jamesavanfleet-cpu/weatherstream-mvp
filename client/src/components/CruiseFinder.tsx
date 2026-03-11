@@ -506,38 +506,39 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
               ? (localMetric ? `Swell: ${pf.swellHeightM} m` : `Swell: ${mToFt(pf.swellHeightM)} ft`)
               : null;
 
+            const isSeaDay = pf.port === 'At Sea';
             return (
               <div className="bg-white/5 border border-cyan-400/20 rounded-2xl p-5">
-                {/* Port header with photo */}
+                {/* Port header with wide photo on right */}
                 {(() => {
-                  const slug = portImageSlug(pf.port);
+                  const slug = isSeaDay ? 'at-sea' : portImageSlug(pf.port);
                   const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
                   const imgSrc = slug ? `${base}/port-images/${slug}.jpg` : null;
                   return (
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-4 flex-1 min-w-0">
-                        {imgSrc && (
-                          <div className="flex-shrink-0 w-28 h-20 sm:w-40 sm:h-28 rounded-xl overflow-hidden border border-white/10">
-                            <img
-                              src={imgSrc}
-                              alt={pf.port}
-                              className="w-full h-full object-cover"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          </div>
-                        )}
-                        <div className="min-w-0">
+                    <div className="mb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="min-w-0 flex-1">
                           <h4 className="text-white font-bold text-xl flex items-center gap-2">
                             <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0" />
                             <span className="truncate">{pf.port}</span>
                           </h4>
                           <p className="text-white/50 text-sm mt-0.5">Day {pf.day} &mdash; {formatDate(pf.date)}</p>
                         </div>
+                        <div className="text-right flex-shrink-0 ml-3">
+                          <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />
+                          <div className="text-white/60 text-sm">{skyCondition}</div>
+                        </div>
                       </div>
-                      <div className="text-right flex-shrink-0 ml-3">
-                        <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />
-                        <div className="text-white/60 text-sm">{skyCondition}</div>
-                      </div>
+                      {imgSrc && (
+                        <div className="mt-3 w-full h-40 sm:h-52 rounded-xl overflow-hidden border border-white/10">
+                          <img
+                            src={imgSrc}
+                            alt={pf.port}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
