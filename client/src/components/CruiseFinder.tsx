@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Ship, MapPin, Calendar, ChevronDown, Search, Navigation } from "lucide-react";
+import { Ship, MapPin, Calendar, ChevronDown, Search, Navigation, Thermometer, Wind, Droplets, Gauge, Waves, Eye, Cloud, Sun, CloudRain, CloudLightning, Snowflake } from "lucide-react";
 
 // Types
 interface PortEntry {
@@ -174,18 +174,56 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
   }
 }
 
-// Forecast card component matching Port Conditions style
+// Lucide icon for sky condition
+function SkyIcon({ condition, className }: { condition: string; className?: string }) {
+  const c = condition.toLowerCase();
+  if (c.includes("thunder")) return <CloudLightning className={className} />;
+  if (c.includes("rain") || c.includes("shower") || c.includes("drizzle")) return <CloudRain className={className} />;
+  if (c.includes("snow")) return <Snowflake className={className} />;
+  if (c.includes("fog") || c.includes("haze")) return <Eye className={className} />;
+  if (c.includes("partly") || c.includes("mostly clear")) return <Cloud className={className} />;
+  if (c.includes("mostly cloudy") || c.includes("overcast") || c.includes("cloudy")) return <Cloud className={className} />;
+  if (c.includes("clear") || c.includes("sunny")) return <Sun className={className} />;
+  return <Cloud className={className} />;
+}
+
+// Forecast card component matching Current Conditions style from Home.tsx
 function ForecastCard({
-  icon, iconColor, value, subValue, label
+  icon, label, value, subValue
 }: {
-  icon: string; iconColor: string; value: string; subValue?: string; label: string;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  subValue?: string;
 }) {
   return (
-    <div className="bg-[#111827] rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-1 min-h-[110px]">
-      <div className={`text-3xl mb-1 ${iconColor}`}>{icon}</div>
-      <div className="text-white font-bold text-xl leading-tight">{value}</div>
-      {subValue && <div className="text-white/40 text-xs">{subValue}</div>}
-      <div className="text-white/50 text-xs mt-0.5">{label}</div>
+    <div className="glass-dark rounded-2xl p-4 border border-white/5">
+      <div className="flex items-center gap-2 mb-1">
+        {icon}
+        <span className="text-white/50 text-xs">{label}</span>
+      </div>
+      <p className="text-white font-black text-2xl leading-tight">{value}</p>
+      {subValue && <p className="text-white/40 text-xs mt-0.5">{subValue}</p>}
+    </div>
+  );
+}
+
+// Temperature card with extra-large high temp display
+function TempCard({
+  tempHigh, tempLow, label
+}: {
+  tempHigh: string;
+  tempLow: string | null;
+  label: string;
+}) {
+  return (
+    <div className="glass-dark rounded-2xl p-4 border border-white/5">
+      <div className="flex items-center gap-2 mb-1">
+        <Thermometer className="w-4 h-4 text-orange-400" />
+        <span className="text-white/50 text-xs">{label}</span>
+      </div>
+      <p className="text-white font-black text-4xl leading-tight">{tempHigh}</p>
+      {tempLow && <p className="text-white/40 text-xs mt-0.5">Low: {tempLow}</p>}
     </div>
   );
 }
@@ -251,21 +289,6 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
       if (results.length > 0) setActivePort(results[0].port + "|" + results[0].date);
     });
   }, [selectedItinerary, cruiseData]);
-
-  const conditionEmoji = (condition: string) => {
-    const c = condition.toLowerCase();
-    if (c.includes("thunder")) return "⛈";
-    if (c.includes("rain") || c.includes("shower") || c.includes("drizzle")) return "🌧";
-    if (c.includes("snow")) return "❄";
-    if (c.includes("fog") || c.includes("haze")) return "🌫";
-    if (c.includes("partly")) return "⛅";
-    if (c.includes("mostly clear")) return "🌤";
-    if (c.includes("mostly cloudy") || c.includes("overcast")) return "☁";
-    if (c.includes("cloudy")) return "⛅";
-    if (c.includes("clear") || c.includes("sunny")) return "☀";
-    if (c.includes("beyond") || c.includes("no data")) return "📅";
-    return "🌤";
-  };
 
   if (loadingData) return (
     <div className="flex items-center justify-center py-12">
@@ -412,7 +435,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                     <p className="text-white/50 text-sm mt-0.5">Day {pf.day} &mdash; {formatDate(pf.date)}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-4xl mb-1">{conditionEmoji(pf.condition)}</div>
+                    <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />
                     <div className="text-white/60 text-sm">{skyCondition}</div>
                   </div>
                 </div>
@@ -430,60 +453,59 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                   <div className="text-white/40 text-sm">Forecast unavailable for this port.</div>
                 ) : (
                   <div className="space-y-3">
-                    {/* Row 1: Temperature, Wind, Rain Chance, Cloud Cover */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <ForecastCard
-                        icon="🌡"
-                        iconColor="text-orange-400"
-                        value={tempHighDisplay}
-                        subValue={tempLowDisplay ? `Low: ${tempLowDisplay}` : undefined}
-                        label="High Temp"
-                      />
-                      <ForecastCard
-                        icon="💨"
-                        iconColor="text-blue-400"
-                        value={windDisplay}
-                        subValue={pf.windDir}
-                        label="Wind"
-                      />
-                      <ForecastCard
-                        icon="🌧"
-                        iconColor="text-purple-400"
-                        value={pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
-                        subValue={precipDisplay ? `Precip: ${precipDisplay}` : undefined}
-                        label="Rain Chance"
-                      />
-                      <ForecastCard
-                        icon="☁"
-                        iconColor="text-slate-300"
-                        value={pf.cloudCoverPct !== null ? `${Math.round(pf.cloudCoverPct)}%` : "--"}
-                        subValue={skyCondition}
-                        label="Cloud Cover"
-                      />
+                    {/* Row 1: Temperature (large), Wind, Rain Chance, Cloud Cover */}
+                    <div>
+                      <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Conditions</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {/* Temperature card with extra-large high temp */}
+                        <TempCard
+                          tempHigh={tempHighDisplay}
+                          tempLow={tempLowDisplay}
+                          label="High Temp"
+                        />
+                        <ForecastCard
+                          icon={<Wind className="w-4 h-4 text-cyan-400" />}
+                          label="Wind"
+                          value={windDisplay}
+                          subValue={pf.windDir}
+                        />
+                        <ForecastCard
+                          icon={<Droplets className="w-4 h-4 text-blue-400" />}
+                          label="Rain Chance"
+                          value={pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
+                          subValue={precipDisplay ? `Precip: ${precipDisplay}` : undefined}
+                        />
+                        <ForecastCard
+                          icon={<Cloud className="w-4 h-4 text-slate-300" />}
+                          label="Cloud Cover"
+                          value={pf.cloudCoverPct !== null ? `${Math.round(pf.cloudCoverPct)}%` : "--"}
+                          subValue={skyCondition}
+                        />
+                      </div>
                     </div>
                     {/* Row 2: Sea State, Pressure, Sky Condition */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <ForecastCard
-                        icon="🌊"
-                        iconColor="text-cyan-400"
-                        value={waveDescription(pf.waveHeightM)}
-                        subValue={waveDisplay ? waveDisplay : "No wave data"}
-                        label="Sea State"
-                      />
-                      <ForecastCard
-                        icon="🔵"
-                        iconColor="text-indigo-400"
-                        value={pressureDisplay}
-                        subValue={pressureTendency(pf.pressureHpa)}
-                        label="Pressure"
-                      />
-                      <ForecastCard
-                        icon={conditionEmoji(skyCondition)}
-                        iconColor="text-yellow-300"
-                        value={skyCondition}
-                        subValue={pf.condition !== skyCondition ? pf.condition : undefined}
-                        label="Sky Condition"
-                      />
+                    <div>
+                      <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Marine</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <ForecastCard
+                          icon={<Waves className="w-4 h-4 text-cyan-400" />}
+                          label="Sea State"
+                          value={waveDescription(pf.waveHeightM)}
+                          subValue={waveDisplay ? waveDisplay : "No wave data"}
+                        />
+                        <ForecastCard
+                          icon={<Gauge className="w-4 h-4 text-violet-400" />}
+                          label="Pressure"
+                          value={pressureDisplay}
+                          subValue={pressureTendency(pf.pressureHpa)}
+                        />
+                        <ForecastCard
+                          icon={<SkyIcon condition={skyCondition} className="w-4 h-4 text-yellow-300" />}
+                          label="Sky Condition"
+                          value={skyCondition}
+                          subValue={pf.condition !== skyCondition ? pf.condition : undefined}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
