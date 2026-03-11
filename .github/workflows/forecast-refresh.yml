@@ -48,12 +48,20 @@ jobs:
           HOUR=$(date -u +%-H)
           MINUTE=$(date -u +%-M)
 
-          # Rough DST check: EDT active April through October (safe approximation)
-          if [ "$MONTH" -ge 4 ] && [ "$MONTH" -le 10 ]; then
-            OFFSET=4   # EDT = UTC-4
-          else
-            OFFSET=5   # EST = UTC-5
-          fi
+          # DST check: EDT active second Sunday of March through first Sunday of November
+EDT=0
+if [ "$MONTH" -ge 4 ] && [ "$MONTH" -le 10 ]; then
+  EDT=1
+elif [ "$MONTH" -eq 3 ] && [ "$DAY" -ge 8 ]; then
+  EDT=1
+elif [ "$MONTH" -eq 11 ] && [ "$DAY" -lt 8 ]; then
+  EDT=1
+fi
+if [ "$EDT" -eq 1 ]; then
+  OFFSET=4   # EDT = UTC-4
+else
+  OFFSET=5   # EST = UTC-5
+fi
 
           # Convert current UTC to Eastern
           EASTERN_HOUR=$(( (HOUR - OFFSET + 24) % 24 ))
