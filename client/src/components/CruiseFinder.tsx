@@ -265,7 +265,7 @@ function SkyIcon({ condition, className }: { condition: string; className?: stri
   return <Cloud className={className} />;
 }
 
-// Forecast card component -- icon size w-8 h-8 matching site-wide style
+// Forecast card component -- icon size w-10 h-10 matching site-wide style
 function ForecastCard({
   icon, label, value, subValue
 }: {
@@ -297,7 +297,7 @@ function TempCard({
   return (
     <div className="glass-dark rounded-2xl p-4 border border-white/5">
       <div className="flex items-center gap-2 mb-2">
-        <Thermometer className="w-8 h-8 text-orange-400" />
+        <Thermometer className="w-10 h-10 text-orange-400" />
         <span className="text-white/50 text-xs">{label}</span>
       </div>
       <p className="text-white font-black text-4xl leading-tight">{tempHigh}</p>
@@ -565,19 +565,19 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                           label="High Temp"
                         />
                         <ForecastCard
-                          icon={<Wind className="w-8 h-8 text-cyan-400" />}
+                          icon={<Wind className="w-10 h-10 text-cyan-400" />}
                           label="Wind"
                           value={windDisplay}
                           subValue={pf.windDir}
                         />
                         <ForecastCard
-                          icon={<Droplets className="w-8 h-8 text-blue-400" />}
+                          icon={<Droplets className="w-10 h-10 text-blue-400" />}
                           label="Rain Chance"
                           value={pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
                           subValue={precipDisplay ? `Precip: ${precipDisplay}` : undefined}
                         />
                         <ForecastCard
-                          icon={<Cloud className="w-8 h-8 text-slate-300" />}
+                          icon={<Cloud className="w-10 h-10 text-slate-300" />}
                           label="Cloud Cover"
                           value={pf.cloudCoverPct !== null ? `${Math.round(pf.cloudCoverPct)}%` : "--"}
                           subValue={skyCondition}
@@ -589,19 +589,19 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                       <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Marine</p>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <ForecastCard
-                          icon={<Waves className="w-8 h-8 text-cyan-400" />}
+                          icon={<Waves className="w-10 h-10 text-cyan-400" />}
                           label="Sea State"
                           value={waveDescription(pf.waveHeightM)}
                           subValue={waveDisplay ? (swellDisplay ? `${waveDisplay} | ${swellDisplay}` : waveDisplay) : "No wave data"}
                         />
                         <ForecastCard
-                          icon={<Gauge className="w-8 h-8 text-violet-400" />}
+                          icon={<Gauge className="w-10 h-10 text-violet-400" />}
                           label="Pressure"
                           value={pressureDisplay}
                           subValue={pressureTendency(pf.pressureHpa)}
                         />
                         <ForecastCard
-                          icon={<SkyIcon condition={skyCondition} className="w-8 h-8 text-yellow-300" />}
+                          icon={<SkyIcon condition={skyCondition} className="w-10 h-10 text-yellow-300" />}
                           label="Sky Condition"
                           value={skyCondition}
                           subValue={pf.condition !== skyCondition ? pf.condition : undefined}
