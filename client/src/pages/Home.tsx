@@ -1048,9 +1048,7 @@ export default function Home() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
-                onClick={() => briefingVideoUrl && setBriefingVideoOpen(true)}
-                disabled={!briefingVideoUrl}
-                style={!briefingVideoUrl ? { opacity: 0.6, cursor: 'default' } : {}}
+                onClick={() => setBriefingVideoOpen(true)}
               >
                 <Play className="w-5 h-5 mr-2" />
                 Watch the Latest Briefing
@@ -1122,8 +1120,8 @@ export default function Home() {
         />
       )}
 
-      {/* Briefing Video Modal */}
-      {briefingVideoOpen && briefingVideoUrl && (
+      {/* Briefing Video Modal -- always opens; shows video if URL loaded, otherwise coming-soon card */}
+      {briefingVideoOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
@@ -1131,9 +1129,11 @@ export default function Home() {
         >
           <div
             className="relative"
-            style={briefingVideoOrientation === 'vertical'
-              ? { width: 'min(360px, 90vw)', maxHeight: '90vh' }
-              : { width: 'min(900px, 95vw)', maxHeight: '90vh' }
+            style={briefingVideoUrl
+              ? (briefingVideoOrientation === 'vertical'
+                  ? { width: 'min(360px, 90vw)', maxHeight: '90vh' }
+                  : { width: 'min(900px, 95vw)', maxHeight: '90vh' })
+              : { width: 'min(480px, 90vw)' }
             }
             onClick={e => e.stopPropagation()}
           >
@@ -1147,28 +1147,37 @@ export default function Home() {
               Close
             </button>
 
-            {/* Video container -- aspect ratio adapts to orientation */}
-            <div
-              className="w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10"
-              style={briefingVideoOrientation === 'vertical'
-                ? { aspectRatio: '9/16' }
-                : { aspectRatio: '16/9' }
-              }
-            >
-              <video
-                src={briefingVideoUrl}
-                controls
-                autoPlay
-                playsInline
-                className="w-full h-full object-contain bg-black"
-                style={{ display: 'block' }}
-              />
-            </div>
-
-            {/* Caption */}
-            <p className="text-center text-white/40 text-xs mt-3 tracking-widest uppercase">
-              Latest Weather Briefing by James Van Fleet
-            </p>
+            {briefingVideoUrl ? (
+              <>
+                {/* Video container -- aspect ratio adapts to orientation */}
+                <div
+                  className="w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+                  style={briefingVideoOrientation === 'vertical'
+                    ? { aspectRatio: '9/16' }
+                    : { aspectRatio: '16/9' }
+                  }
+                >
+                  <video
+                    src={briefingVideoUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-contain bg-black"
+                    style={{ display: 'block' }}
+                  />
+                </div>
+                {/* Caption */}
+                <p className="text-center text-white/40 text-xs mt-3 tracking-widest uppercase">
+                  Latest Weather Briefing by James Van Fleet
+                </p>
+              </>
+            ) : (
+              <div className="bg-black/90 border border-white/10 rounded-2xl p-10 text-center shadow-2xl">
+                <Play className="w-12 h-12 text-cyan-400 mx-auto mb-4 opacity-70" />
+                <h3 className="text-white font-bold text-xl mb-3">Briefing Coming Soon</h3>
+                <p className="text-white/50 text-sm leading-relaxed">The latest weather briefing from James Van Fleet will appear here. Check back shortly.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
