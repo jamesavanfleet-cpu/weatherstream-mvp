@@ -1,0 +1,91 @@
+{
+  "runs": [
+    {
+      "run_timestamp": "2026-03-11T23:45:00",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "FIXED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-03-15",
+          "was": "Miami, At Sea, At Sea, Labadee, San Juan, St. Thomas, CocoCay, Miami",
+          "now": "Miami, At Sea, At Sea, St. Maarten, St. Thomas, At Sea, Nassau, Miami",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-03-22",
+          "was": "Miami, Nassau, CocoCay, At Sea, At Sea, San Juan, Puerto Plata, At Sea, Miami",
+          "now": "Miami, Nassau, CocoCay, At Sea, At Sea, San Juan, Puerto Plata, At Sea, Miami",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Harmony of the Seas",
+          "departure_date": "2026-03-16",
+          "was": "Galveston, At Sea, At Sea, Nassau, At Sea x8, Ponta Delgada Azores, At Sea x3, Barcelona",
+          "now": "Galveston, At Sea, At Sea, Nassau, At Sea x8, Cadiz Spain, Malaga Spain, Cartagena Spain, Alicante Spain, Barcelona",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-03-14",
+          "was": "Port Canaveral, Half Moon Cay, Nassau, At Sea, At Sea, Port Canaveral",
+          "now": "Port Canaveral, At Sea, Half Moon Cay, Nassau, Celebration Key, Port Canaveral",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-03-19",
+          "was": "Port Canaveral, Princess Cays, Celebration Key, At Sea, Port Canaveral",
+          "now": "Port Canaveral, At Sea, Princess Cays, Celebration Key, Port Canaveral",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-03-23",
+          "was": "Port Canaveral, At Sea, Nassau, Half Moon Cay, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Celebration Key, Nassau, Princess Cays, At Sea, Port Canaveral",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Celebrity Apex",
+          "departure_date": "2026-03-14",
+          "was": "Miami, At Sea, St. Maarten, St. Thomas, San Juan, At Sea, At Sea, Miami",
+          "now": "Port Canaveral, At Sea, Puerto Plata, San Juan, St. Kitts, At Sea, At Sea, Port Canaveral",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Celebrity Apex",
+          "departure_date": "2026-03-21",
+          "was": "Miami, At Sea, St. Maarten, St. Thomas, San Juan, At Sea, At Sea, Miami",
+          "now": "Port Canaveral, Key West, Bimini, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-03-23",
+          "was": "Port Canaveral, Lighthouse Point, Castaway Cay, At Sea, Port Canaveral",
+          "now": "Port Canaveral, At Sea, Disney Lookout Cay, Castaway Cay, Port Canaveral",
+          "detail": ""
+        },
+        {
+          "type": "FIXED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-03-23",
+          "was": "Miami, Great Stirrup Cay, Nassau, At Sea, Miami",
+          "now": "Miami, At Sea, Great Stirrup Cay, Nassau, Miami",
+          "detail": ""
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

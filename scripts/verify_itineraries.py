@@ -36,6 +36,7 @@ from bs4 import BeautifulSoup
 
 REPO_DIR = Path("/home/ubuntu/vanfleet-wx")
 JSON_PATH = REPO_DIR / "client/public/cruise_itineraries.json"
+CHANGE_LOG_PATH = REPO_DIR / "scripts/itinerary_change_log.json"
 
 HEADERS = {
     "User-Agent": (
@@ -592,13 +593,86 @@ def verify_all_ships(dry_run: bool = False, target_ship: str | None = None) -> d
     elif not changes_made:
         log.info("All itineraries verified -- no changes needed.")
 
-    return {
+    result = {
         "timestamp": datetime.utcnow().isoformat(),
         "checked": checked,
         "changes": changes_made,
         "errors": errors,
         "dry_run": dry_run,
     }
+
+    # Append to persistent change log (skip dry runs)
+    if not dry_run and (changes_made or errors):
+        append_to_change_log(result)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Change log
+# ---------------------------------------------------------------------------
+
+def append_to_change_log(result: dict) -> None:
+    """
+    Append a verification run result to the persistent change log JSON file.
+    Keeps the last 90 days of entries.
+    """
+    try:
+        if CHANGE_LOG_PATH.exists():
+            log_data = json.loads(CHANGE_LOG_PATH.read_text())
+        else:
+            log_data = {"runs": []}
+
+        # Build structured change entries
+        structured_changes = []
+        for c in result["changes"]:
+            if c.startswith("ADDED "):
+                rest = c[len("ADDED "):]
+                # Parse "Ship Name YYYY-MM-DD: description"
+                parts = rest.split(": ", 1)
+                ship_date = parts[0].rsplit(" ", 1)
+                structured_changes.append({
+                    "type": "ADDED",
+                    "ship": ship_date[0] if len(ship_date) > 1 else parts[0],
+                    "departure_date": ship_date[1] if len(ship_date) > 1 else "",
+                    "description": parts[1] if len(parts) > 1 else "",
+                    "detail": c,
+                })
+            elif c.startswith("FIXED "):
+                rest = c[len("FIXED "):]
+                parts = rest.split(": was [", 1)
+                ship_date = parts[0].rsplit(" ", 1)
+                was_now = parts[1].split("] -> now [") if len(parts) > 1 else ["", ""]
+                structured_changes.append({
+                    "type": "FIXED",
+                    "ship": ship_date[0] if len(ship_date) > 1 else parts[0],
+                    "departure_date": ship_date[1] if len(ship_date) > 1 else "",
+                    "was": was_now[0].rstrip("]") if was_now else "",
+                    "now": was_now[1].rstrip("]") if len(was_now) > 1 else "",
+                    "detail": c,
+                })
+
+        run_entry = {
+            "run_timestamp": result["timestamp"],
+            "sailings_checked": len(result["checked"]),
+            "changes": structured_changes,
+            "errors": result["errors"],
+        }
+
+        log_data["runs"].append(run_entry)
+
+        # Prune entries older than 90 days
+        cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
+        log_data["runs"] = [
+            r for r in log_data["runs"]
+            if r.get("run_timestamp", "") >= cutoff
+        ]
+
+        CHANGE_LOG_PATH.write_text(json.dumps(log_data, indent=2, ensure_ascii=False))
+        log.info(f"Change log updated: {len(structured_changes)} entries written.")
+
+    except Exception as e:
+        log.error(f"Failed to update change log: {e}")
 
 
 # ---------------------------------------------------------------------------
