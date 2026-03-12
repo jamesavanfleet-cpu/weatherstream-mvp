@@ -72,6 +72,7 @@ function portImageSlug(port: string): string {
     "Cozumel": "cozumel",
     "Key West": "key-west",
     "Falmouth": "falmouth",
+    "Aruba": "aruba",
     "Oranjestad": "oranjestad",
     "Willemstad": "willemstad",
     "Bridgetown": "bridgetown",
