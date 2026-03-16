@@ -1,15 +1,14 @@
 // =============================================================================
-// ACCORDION REGRESSION GUARD -- DO NOT CHANGE WITHOUT READING THIS
+// ACCORDION BEHAVIOR -- DO NOT CHANGE WITHOUT READING THIS
 // =============================================================================
 // Port cards are accordion rows. The expand/collapse rules are:
-//   1. All ports start EXPANDED on page load (expandedPorts is seeded from
-//      region.ports.map((_, i) => i) inside the useState initializer).
-//   2. Tapping a port header TOGGLES that port independently of all others.
-//   3. The toggle handler MUST use a functional update (prev => ...) to avoid
+//   1. All ports start COLLAPSED on page load (expandedRows is an empty Set).
+//   2. Ports are laid out in a 3-column grid. Clicking any port header toggles
+//      the entire ROW (all 3 ports in that row) together.
+//   3. Row index = Math.floor(portIndex / COLS) where COLS = 3.
+//   4. The toggle handler MUST use a functional update (prev => ...) to avoid
 //      closing over stale state. Never replace it with a direct setState call.
-//   4. There is NO useEffect that resets or re-seeds expandedPorts after mount.
-//      Adding one will break manual collapse. If you need to handle region
-//      changes, reset via the useState initializer or a key prop, not useEffect.
+//   5. There is NO useEffect that resets expandedRows after mount.
 // =============================================================================
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
@@ -102,6 +101,7 @@ interface PortWeather {
   forecast: DayForecast[];
 }
 
+const COLS = 3; // Number of columns in the port grid -- used for row-level accordion toggling
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | "loading" | "error">> {
@@ -310,12 +310,9 @@ export default function RegionDetail() {
   const [intelDate, setIntelDate] = useState<string>("");
   const [intelLoading, setIntelLoading] = useState(true);
   const [isMetric, setIsMetric] = useState(false);
-  // expandedPorts must be declared before any early return to satisfy Rules of Hooks
-  // Initialize with all ports expanded. The Set is seeded from region.ports.length
-  // so it is stable from first render and never needs to be reset.
-  const [expandedPorts, setExpandedPorts] = useState<Set<number>>(
-    () => new Set(region ? region.ports.map((_, i) => i) : [])
-  );
+  // expandedRows must be declared before any early return to satisfy Rules of Hooks.
+  // Starts empty (all rows collapsed). Each entry is a row index (Math.floor(portIndex / COLS)).
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(() => new Set<number>());
 
   useEffect(() => {
     if (!region) return;
@@ -448,24 +445,27 @@ export default function RegionDetail() {
           </div>
           <p className="text-white/40 text-sm mb-6">Tap any port to view live conditions and 5-day forecast.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {portWeather.map((pw, i) => (
-              <PortRow
-                key={pw.port.name}
-                pw={pw}
-                gradient={region.gradient}
-                expanded={expandedPorts.has(i)}
-                onToggle={() => {
-                  // IMPORTANT: always use functional update so we never close over stale state.
-                  // Do NOT replace this with a direct setState(newSet) call.
-                  setExpandedPorts(prev => {
-                    const next = new Set(prev);
-                    if (next.has(i)) next.delete(i); else next.add(i);
-                    return next;
-                  });
-                }}
-                isMetric={isMetric}
-              />
-            ))}
+            {portWeather.map((pw, i) => {
+              const rowIdx = Math.floor(i / COLS);
+              return (
+                <PortRow
+                  key={pw.port.name}
+                  pw={pw}
+                  gradient={region.gradient}
+                  expanded={expandedRows.has(rowIdx)}
+                  onToggle={() => {
+                    // IMPORTANT: always use functional update so we never close over stale state.
+                    // Toggles the entire row (all COLS ports in the same row).
+                    setExpandedRows(prev => {
+                      const next = new Set(prev);
+                      if (next.has(rowIdx)) next.delete(rowIdx); else next.add(rowIdx);
+                      return next;
+                    });
+                  }}
+                  isMetric={isMetric}
+                />
+              );
+            })}
           </div>
         </div>
 
