@@ -403,10 +403,11 @@ interface PortDetailModalProps {
   isMetric: boolean;
 }
 
-function PortDetailModal({ port, onClose, isMetric }: PortDetailModalProps) {
+function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailModalProps) {
   const [data, setData] = useState<PortLiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isMetric, setIsMetric] = useState(isMetricProp);
 
   useEffect(() => {
     setLoading(true);
@@ -450,13 +451,13 @@ function PortDetailModal({ port, onClose, isMetric }: PortDetailModalProps) {
     : '--';
   const windDisplay = data
     ? isMetric
-      ? `${(data.windSpeedKt * 1.852).toFixed(0)} km/h`
-      : `${data.windSpeedKt.toFixed(0)} kt`
+      ? `${data.windSpeedKt.toFixed(0)} kt`
+      : `${Math.round(data.windSpeedKt * 1.15078)} mph`
     : '--';
   const gustDisplay = data
     ? isMetric
-      ? `${(data.windGustKt * 1.852).toFixed(0)} km/h`
-      : `${data.windGustKt.toFixed(0)} kt`
+      ? `${data.windGustKt.toFixed(0)} kt`
+      : `${Math.round(data.windGustKt * 1.15078)} mph`
     : '--';
   const visDisplay = data
     ? isMetric
@@ -498,9 +499,29 @@ function PortDetailModal({ port, onClose, isMetric }: PortDetailModalProps) {
               {port.sublabel && <p className="text-white/70 text-sm">{port.sublabel}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-white/70 text-xs">Live conditions -- updated hourly</span>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-white/70 text-xs">Live conditions -- updated hourly</span>
+            </div>
+            {/* Units toggle inside modal header */}
+            <button
+              onClick={() => setIsMetric(m => !m)}
+              className="relative flex items-center gap-0 rounded-full border border-white/30 bg-black/25 backdrop-blur-sm overflow-hidden h-8 w-44 select-none flex-shrink-0"
+              aria-label="Toggle units"
+            >
+              <span
+                className={`absolute top-0.5 bottom-0.5 w-[calc(50%-3px)] rounded-full bg-white/90 shadow transition-all duration-300 ease-in-out ${
+                  isMetric ? 'left-[calc(50%+2px)]' : 'left-0.5'
+                }`}
+              />
+              <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
+                !isMetric ? 'text-slate-800' : 'text-white/70'
+              }`}>US Standard</span>
+              <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
+                isMetric ? 'text-slate-800' : 'text-white/70'
+              }`}>Metric</span>
+            </button>
           </div>
         </div>
 
@@ -1057,9 +1078,29 @@ export default function Home() {
 
           {/* Live Conditions Mini-Grid */}
           <div className="relative mt-6 lg:mt-0 w-full">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">Live Conditions Now</span>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">Live Conditions Now</span>
+              </div>
+              {/* Units toggle for the live conditions strip */}
+              <button
+                onClick={() => setIsMetric(m => !m)}
+                className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-8 w-44 select-none flex-shrink-0"
+                aria-label="Toggle units"
+              >
+                <span
+                  className={`absolute top-0.5 bottom-0.5 w-[calc(50%-3px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
+                    isMetric ? 'left-[calc(50%+2px)]' : 'left-0.5'
+                  }`}
+                />
+                <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
+                  !isMetric ? 'text-white' : 'text-white/50'
+                }`}>US Standard</span>
+                <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
+                  isMetric ? 'text-white' : 'text-white/50'
+                }`}>Metric</span>
+              </button>
             </div>
             <p className="text-white/40 text-xs mb-3">Click on any port below for expanded conditions</p>
             <div className="grid grid-cols-3 gap-2 overflow-hidden">
