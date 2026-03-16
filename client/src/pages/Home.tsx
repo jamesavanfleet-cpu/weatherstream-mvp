@@ -1057,10 +1057,11 @@ export default function Home() {
 
           {/* Live Conditions Mini-Grid */}
           <div className="relative mt-6 lg:mt-0 w-full">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">Live Conditions Now</span>
             </div>
+            <p className="text-white/40 text-xs mb-3">Click on any port below for expanded conditions</p>
             <div className="grid grid-cols-3 gap-2 overflow-hidden">
               {Array.from({ length: 6 }, (_, i) => {
                 const loc = LIVE_DATA[(liveOffset + i) % LIVE_DATA.length];
