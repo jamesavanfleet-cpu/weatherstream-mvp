@@ -202,7 +202,10 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
     const targetDate = new Date(date + "T12:00:00Z");
     const todayDate = new Date(today + "T12:00:00Z");
     const diffDays = Math.round((targetDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays < 0 || diffDays > 16) {
+    if (diffDays < 0) {
+      return { condition: "Date in past", loading: false, error: false };
+    }
+    if (diffDays > 16) {
       return { condition: "Beyond forecast range", loading: false, error: false };
     }
 
@@ -575,6 +578,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
             const pf = portForecasts.find(p => (p.port + "|" + p.date) === activePort);
             if (!pf) return null;
             const isBeyond = pf.condition === "Beyond forecast range";
+            const isPast = pf.condition === "Date in past";
             const skyCondition = pf.wmoCode !== null ? wmoToSkyCondition(pf.wmoCode, pf.cloudCoverPct) : pf.condition;
 
             const tempHighDisplay = pf.tempMaxC !== null
@@ -641,6 +645,10 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                   <div className="flex items-center gap-2 text-white/40 text-sm py-4">
                     <div className="w-4 h-4 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
                     Loading forecast...
+                  </div>
+                ) : isPast ? (
+                  <div className="text-white/40 text-sm py-2">
+                    This day has already occurred. No weather forecast available.
                   </div>
                 ) : isBeyond ? (
                   <div className="text-white/40 text-sm py-2">
