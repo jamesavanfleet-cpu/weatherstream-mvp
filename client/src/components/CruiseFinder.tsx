@@ -390,22 +390,19 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
 
   return (
     <div className="space-y-6">
-      {/* Promotional teaser -- absolutely positioned so it never affects page layout when it fades out */}
-      {/* Wrapping relative container ensures the teaser overlays the dropdowns area without causing any scroll jump */}
-      <div className="relative">
-        {/* Spacer: reserves the teaser height only when teaser is visible, collapses instantly when hidden */}
-        <div style={{ height: selectedLine ? 0 : undefined, overflow: "hidden", transition: "none" }}>
-          <div
-            className="rounded-2xl overflow-hidden relative"
-            style={{
-              backgroundImage: "url('/teaser_bg.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center 40%",
-              opacity: selectedLine ? 0 : 1,
-              transition: "opacity 0.25s ease",
-              pointerEvents: selectedLine ? "none" : undefined,
-            }}
-          >
+      {/* Promotional teaser -- visibility+opacity only, height NEVER changes, page NEVER jumps */}
+      <div
+        className="rounded-2xl overflow-hidden relative"
+        style={{
+          backgroundImage: "url('/teaser_bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center 40%",
+          opacity: selectedLine ? 0 : 1,
+          visibility: selectedLine ? "hidden" : "visible",
+          transition: "opacity 0.25s ease",
+          pointerEvents: selectedLine ? "none" : undefined,
+        }}
+      >
           {/* Dark overlay */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(8,14,32,0.92) 38%, rgba(8,14,32,0.70) 100%)" }} />
 
@@ -474,9 +471,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
               ))}
             </div>
           </div>{/* end content row */}
-          </div>{/* end teaser card */}
-        </div>{/* end spacer */}
-      </div>{/* end relative wrapper */}
+      </div>{/* end teaser card */}
 
       {/* Metric toggle -- matches site-wide style */}
       <div className="flex justify-end">
