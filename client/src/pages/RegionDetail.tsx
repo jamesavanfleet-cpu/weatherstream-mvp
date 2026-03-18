@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { REGIONS, type Port } from "@/data/regions";
 import {
-  ArrowLeft, ThermometerSun, Waves, Wind, Droplets, Sparkles, AlertTriangle, ChevronDown
+  ArrowLeft, ThermometerSun, Waves, Wind, Droplets, Sparkles, AlertTriangle, ChevronDown, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -73,6 +73,15 @@ function seaStateFromWind(ktSpeed: number): string {
   return "9+ ft";
 }
 
+// ---- Determine time-of-day label from a local hour (0-23) ----
+// Morning: 6-11, Afternoon: 12-17, Evening: 18-21, Overnight: 22-23 or 0-5
+function hourToTimeOfDay(hour: number): string {
+  if (hour >= 6 && hour <= 11) return "Morning";
+  if (hour >= 12 && hour <= 17) return "Afternoon";
+  if (hour >= 18 && hour <= 21) return "Evening";
+  return "Overnight";
+}
+
 // ---- Interfaces ----
 interface DayForecast {
   date: string;
@@ -94,7 +103,9 @@ interface PortWeather {
   windKt: number;
   windDir: string;
   seas: string;
-  rainChance: number;
+  rainChance: number;       // current hourly snapshot
+  peakRainChance: number;   // today's daily max (matches 5-day forecast day 0)
+  peakRainTimeOfDay: string; // Morning / Afternoon / Evening / Overnight
   condition: string;
   loading: boolean;
   error: boolean;
@@ -108,6 +119,7 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
   const weatherUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
+    `&hourly=precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
     `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
 
@@ -132,9 +144,37 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
 
   const c = weather.current;
   const d = weather.daily;
+  const h = weather.hourly;
   const md = marine?.daily ?? null;
 
   const windKt = msToKt(c.wind_speed_10m);
+
+  // ---- Derive peak rain chance for today from hourly data ----
+  // The hourly array covers 7 days (168 values). Today's hours are indices 0-23.
+  // We find the max value and the hour at which it occurs.
+  let peakRainChance = d.precipitation_probability_max?.[0] ?? 0;
+  let peakRainTimeOfDay = "Afternoon"; // sensible default
+
+  if (h?.time && h?.precipitation_probability) {
+    const todayDate = (d.time as string[])[0]; // e.g. "2026-03-18"
+    const todayHours: { hour: number; prob: number }[] = [];
+
+    (h.time as string[]).forEach((isoTime: string, idx: number) => {
+      // isoTime format: "2026-03-18T00:00" -- extract date portion
+      if (isoTime.startsWith(todayDate)) {
+        const hour = parseInt(isoTime.slice(11, 13), 10);
+        const prob = h.precipitation_probability[idx] ?? 0;
+        todayHours.push({ hour, prob });
+      }
+    });
+
+    if (todayHours.length > 0) {
+      // Find the hour with the highest probability
+      const peak = todayHours.reduce((best, cur) => cur.prob > best.prob ? cur : best, todayHours[0]);
+      peakRainChance = peak.prob;
+      peakRainTimeOfDay = hourToTimeOfDay(peak.hour);
+    }
+  }
 
   const forecast: DayForecast[] = (d.time as string[]).map((dateStr: string, i: number) => {
     const wKt = msToKt(d.wind_speed_10m_max[i]);
@@ -160,6 +200,8 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     windDir: degToCompass(c.wind_direction_10m),
     seas: seaStateFromWind(windKt),
     rainChance: c.precipitation_probability ?? 0,
+    peakRainChance,
+    peakRainTimeOfDay,
     condition: wmoToCondition(c.weathercode),
     forecast,
   };
@@ -219,7 +261,7 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
       {/* Expandable forecast panel */}
           <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          expanded ? "max-h-[900px] opacity-100" : "max-h-0 opacity-0"
+          expanded ? "max-h-[1100px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="p-5">
@@ -237,27 +279,41 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
             <p className="text-white/40 text-sm text-center py-4">Data temporarily unavailable</p>
           ) : (
             <>
-              {/* Current conditions grid */}
+              {/* ---- CURRENT CONDITIONS section ---- */}
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-3">Current Conditions</p>
               <div className="grid grid-cols-2 gap-3 mb-5">
+                {/* Temperature */}
                 <div className="glass rounded-xl p-3 text-center">
                   <ThermometerSun className="w-5 h-5 mx-auto mb-1 text-orange-400" />
                   <p className="text-xl font-bold text-white">{isMetric ? fToCStr(pw.tempF) : `${pw.tempF}\u00b0`}</p>
                   <p className="text-xs text-white/50">Temperature</p>
                 </div>
+                {/* Sea State */}
                 <div className="glass rounded-xl p-3 text-center">
                   <Waves className="w-5 h-5 mx-auto mb-1 text-blue-400" />
                   <p className="text-xl font-bold text-white">{isMetric ? seaFtToMStr(pw.seas) : pw.seas}</p>
                   <p className="text-xs text-white/50">Sea State</p>
                 </div>
+                {/* Wind */}
                 <div className="glass rounded-xl p-3 text-center">
                   <Wind className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
                   <p className="text-xl font-bold text-white">{pw.windDir} {pw.windKt} kt</p>
                   <p className="text-xs text-white/50">Wind</p>
                 </div>
+                {/* Rain Chance This Hour */}
                 <div className="glass rounded-xl p-3 text-center">
                   <Droplets className="w-5 h-5 mx-auto mb-1 text-purple-400" />
                   <p className="text-xl font-bold text-white">{pw.rainChance}%</p>
-                  <p className="text-xs text-white/50">Rain Chance</p>
+                  <p className="text-xs text-white/50">Rain Chance This Hour</p>
+                </div>
+                {/* Peak Rain Chance Today -- spans full width for emphasis */}
+                <div className="glass rounded-xl p-3 text-center col-span-2">
+                  <TrendingUp className="w-5 h-5 mx-auto mb-1 text-yellow-400" />
+                  <p className="text-xl font-bold text-white">{pw.peakRainChance}%</p>
+                  <p className="text-xs text-white/50">
+                    Peak Rain Chance Today
+                    <span className="ml-1 text-yellow-400/80">({pw.peakRainTimeOfDay})</span>
+                  </p>
                 </div>
               </div>
 
@@ -321,7 +377,8 @@ export default function RegionDetail() {
   useEffect(() => {
     if (!region) return;
     const initial: PortWeather[] = region.ports.map(p => ({
-      port: p, tempF: 0, windKt: 0, windDir: "", seas: "", rainChance: 0,
+      port: p, tempF: 0, windKt: 0, windDir: "", seas: "",
+      rainChance: 0, peakRainChance: 0, peakRainTimeOfDay: "Afternoon",
       condition: "", loading: true, error: false, forecast: [],
     }));
     setPortWeather(initial);
