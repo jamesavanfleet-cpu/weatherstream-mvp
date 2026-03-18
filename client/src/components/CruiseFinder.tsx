@@ -124,6 +124,7 @@ function portImageSlug(port: string): string {
     "Juneau": "juneau",
     "Skagway": "skagway",
     "Ketchikan": "ketchikan",
+    "Victoria": "victoria",
   };
   return map[port] || "";
 }
