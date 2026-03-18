@@ -123,6 +123,7 @@ function portImageSlug(port: string): string {
     "St. Kitts": "basseterre",
     "Juneau": "juneau",
     "Skagway": "skagway",
+    "Ketchikan": "ketchikan",
   };
   return map[port] || "";
 }
