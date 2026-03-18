@@ -117,7 +117,6 @@ function portImageSlug(port: string): string {
     "Ensenada": "ensenada",
     "Puerto Vallarta": "puerto-vallarta",
     "Mazatlan": "mazatlan",
-    "Cabo San Lucas": "cabo-san-lucas",
   };
   return map[port] || "";
 }
