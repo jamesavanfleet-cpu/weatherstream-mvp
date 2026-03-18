@@ -351,7 +351,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
       .catch(() => { setDataError(true); setLoadingData(false); });
   }, []);
 
-  const availableShips = cruiseData?.cruise_lines.find(cl => cl.id === selectedLine)?.ships ?? [];
+  const availableShips = [...(cruiseData?.cruise_lines.find(cl => cl.id === selectedLine)?.ships ?? [])].sort((a, b) => a.name.localeCompare(b.name));
   const availableDates = availableShips.find(s => s.name === selectedShip)?.itineraries ?? [];
   const selectedItinerary = availableDates.find(i => i.departure_date === selectedDate);
 
