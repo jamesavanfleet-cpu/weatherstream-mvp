@@ -3,6 +3,11 @@ export interface Port {
   lat: number;
   lon: number;
   sublabel?: string;
+  // Optional marine-only coordinates for ports where the main lat/lon falls on land
+  // or in an enclosed harbor where the Open-Meteo marine model returns null swell data.
+  // When set, the marine API uses these coords; all other data uses lat/lon.
+  marineLat?: number;
+  marineLon?: number;
 }
 
 export interface Region {
@@ -44,10 +49,10 @@ export const REGIONS: Region[] = [
     image: "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7uKRTFIx5OB/sandbox/KmIDdlWnVqsNKICKmf9H1h-img-2_1771041480000_na1fn_Y2FyaWJiZWFuLWNydWlzZS1zdW5zZXQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWE9MRWRnOXlabGc3dUtSVEZJeDVPQi9zYW5kYm94L0ttSURkbFduVnFzTktJQ0ttZjlIMWgtaW1nLTJfMTc3MTA0MTQ4MDAwMF9uYTFmbl9ZMkZ5YVdKaVpXRnVMV055ZFdselpTMXpkVzV6WlhRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=q7HRCQyQ~-w~C5w33nY2ql2sG3uXJCzYOhBWvxdtDbze05vqRtYbS1MyRLwFD-TcVNJiFFpZJHcV2VwV~1q2R3cALqcMsvdGRwHnu21~weD8Sbi-uWiSdqPpU9WlWn2TKGKSeggtUFRQyfGACZXSWEN8fFARTbR6zzad3L~CHbe4XhsMPFnsc3p-wyMqi~d0BXyI285CVEa7MEblcdb65PW9fdjkfHT~qRlFn6r07oCoZ0-QNyv5bieV7Uc3tjnaZPINOxgUEUae~nkcYOMaSW3rbEpaeOPirXqd8MTpAakVSef6F4V~VkghbCiPu~VmHDnSaWoQ6uLrTOXc4UCehA__",
     gradient: "from-orange-500/20 to-pink-500/20",
     ports: [
-      { name: "Belize City",       lat: 17.25, lon: -88.77 },
+      { name: "Belize City",       lat: 17.25, lon: -88.77, marineLat: 17.25, marineLon: -87.80 }, // east of Belize Barrier Reef
       { name: "Costa Maya",        lat: 18.73, lon: -87.71, sublabel: "Mahahual" },
       { name: "Cozumel",           lat: 20.51, lon: -86.95 },
-      { name: "Falmouth",          lat: 18.49, lon: -77.66 },
+      { name: "Falmouth",          lat: 18.49, lon: -77.66, marineLat: 18.52, marineLon: -77.66 }, // 2 nmi north, open north coast of Jamaica
       { name: "Grand Cayman",      lat: 19.29, lon: -81.38 },
       { name: "Ocho Rios",         lat: 18.41, lon: -77.10 },
       { name: "Roatan",            lat: 16.32, lon: -86.53 },
@@ -104,7 +109,7 @@ export const REGIONS: Region[] = [
     gradient: "from-cyan-500/20 to-teal-500/20",
     ports: [
       { name: "Civitavecchia",     lat: 42.09, lon: 11.80, sublabel: "Port for Rome" },
-      { name: "Corsica",           lat: 42.04, lon:  9.01 },
+      { name: "Corsica",           lat: 42.04, lon:  9.01, marineLat: 42.00, marineLon:  8.90 }, // west coast offshore
       { name: "Dubrovnik",         lat: 42.65, lon: 18.09 },
       { name: "Genoa",             lat: 44.41, lon:  8.93 },
       { name: "La Spezia",         lat: 44.10, lon:  9.82 },
@@ -113,7 +118,7 @@ export const REGIONS: Region[] = [
       { name: "Monaco",            lat: 43.74, lon:  7.43 },
       { name: "Naples",            lat: 40.85, lon: 14.27 },
       { name: "Nice",              lat: 43.71, lon:  7.26 },
-      { name: "Sardinia",          lat: 40.12, lon:  9.07 },
+      { name: "Sardinia",          lat: 40.12, lon:  9.07, marineLat: 39.90, marineLon:  9.60 }, // east coast offshore
       { name: "Split",             lat: 43.51, lon: 16.44 },
       { name: "Venice",            lat: 45.44, lon: 12.33 },
     ],

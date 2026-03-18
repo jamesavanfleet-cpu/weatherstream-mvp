@@ -111,8 +111,12 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
     `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
 
+  // Use marineLat/marineLon if set (offshore nudge for ports where the marine model
+  // grid falls on land or in an enclosed harbor returning null swell data).
+  const marineLat = port.marineLat ?? port.lat;
+  const marineLon = port.marineLon ?? port.lon;
   const marineUrl =
-    `https://marine-api.open-meteo.com/v1/marine?latitude=${port.lat}&longitude=${port.lon}` +
+    `https://marine-api.open-meteo.com/v1/marine?latitude=${marineLat}&longitude=${marineLon}` +
     `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
     `&length_unit=imperial&timezone=auto&forecast_days=7`;
 
