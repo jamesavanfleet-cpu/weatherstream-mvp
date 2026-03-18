@@ -121,6 +121,7 @@ function portImageSlug(port: string): string {
     "Martinique": "fort-de-france",
     "Fort-de-France, Martinique": "fort-de-france",
     "St. Kitts": "basseterre",
+    "Juneau": "juneau",
   };
   return map[port] || "";
 }
