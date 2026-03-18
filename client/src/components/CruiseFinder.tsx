@@ -117,6 +117,7 @@ function portImageSlug(port: string): string {
     "Ensenada": "ensenada",
     "Puerto Vallarta": "puerto-vallarta",
     "Mazatlan": "mazatlan",
+    "Barbados": "bridgetown",
   };
   return map[port] || "";
 }
