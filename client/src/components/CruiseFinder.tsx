@@ -114,6 +114,7 @@ function portImageSlug(port: string): string {
     "New Orleans": "new-orleans",
     "Port of New Orleans": "new-orleans",
     "Seattle": "seattle",
+    "Ensenada": "ensenada",
   };
   return map[port] || "";
 }
