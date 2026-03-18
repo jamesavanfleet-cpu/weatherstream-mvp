@@ -390,17 +390,13 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
 
   return (
     <div className="space-y-6">
-      {/* Promotional teaser -- visibility+opacity only, height NEVER changes, page NEVER jumps */}
+      {/* Promotional teaser -- always visible, height NEVER changes, page NEVER jumps */}
       <div
         className="rounded-2xl overflow-hidden relative"
         style={{
           backgroundImage: "url('/teaser_bg.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center 40%",
-          opacity: selectedLine ? 0 : 1,
-          visibility: selectedLine ? "hidden" : "visible",
-          transition: "opacity 0.25s ease",
-          pointerEvents: selectedLine ? "none" : undefined,
         }}
       >
           {/* Dark overlay */}
