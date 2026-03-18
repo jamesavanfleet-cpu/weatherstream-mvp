@@ -116,6 +116,7 @@ function portImageSlug(port: string): string {
     "Seattle": "seattle",
     "Ensenada": "ensenada",
     "Puerto Vallarta": "puerto-vallarta",
+    "Mazatlan": "mazatlan",
   };
   return map[port] || "";
 }
