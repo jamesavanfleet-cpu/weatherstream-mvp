@@ -118,6 +118,8 @@ function portImageSlug(port: string): string {
     "Puerto Vallarta": "puerto-vallarta",
     "Mazatlan": "mazatlan",
     "Barbados": "bridgetown",
+    "Martinique": "fort-de-france",
+    "Fort-de-France, Martinique": "fort-de-france",
   };
   return map[port] || "";
 }
