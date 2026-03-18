@@ -120,6 +120,7 @@ function portImageSlug(port: string): string {
     "Barbados": "bridgetown",
     "Martinique": "fort-de-france",
     "Fort-de-France, Martinique": "fort-de-france",
+    "St. Kitts": "basseterre",
   };
   return map[port] || "";
 }
