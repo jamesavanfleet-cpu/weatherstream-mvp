@@ -413,11 +413,12 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
     <div className="space-y-6">
       {/* Promotional teaser -- always visible, height NEVER changes, page NEVER jumps */}
       <div
-        className="rounded-2xl overflow-hidden relative"
+        className="rounded-2xl relative"
         style={{
           backgroundImage: "url('/teaser_bg.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center 40%",
+          overflow: "hidden",
         }}
       >
           {/* Dark overlay */}
@@ -448,7 +449,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
             </div>
 
             {/* Right: port weather cards */}
-            <div className="w-full lg:flex-1 flex items-center justify-start lg:justify-center gap-2 lg:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none -mx-1 px-1">
+            <div className="w-full lg:flex-1 flex items-center justify-start lg:justify-center gap-2 lg:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none" style={{WebkitOverflowScrolling: 'touch', paddingRight: '24px'}}>
               {([
                 { name: "Miami",   temp: "79", cond: "Sunny",        wind: "12", type: "Departure",  typeColor: "text-yellow-400",  sunny: true },
                 { name: "Nassau",  temp: "82", cond: "Sunny",        wind: "10", type: "Port Call",  typeColor: "text-cyan-400",    sunny: true },
