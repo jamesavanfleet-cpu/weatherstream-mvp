@@ -628,15 +628,33 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                     <div className="mb-4">
                       <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-white font-bold text-xl flex items-center gap-2">
+                          <h4 className="text-white font-bold text-xl flex items-center gap-2 flex-wrap">
                             <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0" />
                             <span className="truncate">{pf.port}</span>
+                            {!isBeyond && !isPast && !pf.loading && !pf.error && skyCondition && (
+                              <span className="flex items-center gap-1 text-white/60 text-sm font-normal">
+                                <SkyIcon condition={pf.condition} className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+                                {skyCondition}
+                              </span>
+                            )}
                           </h4>
                           <p className="text-white/50 text-sm mt-0.5">Day {pf.day} -- {formatDate(pf.date)}</p>
                         </div>
-                        <div className="text-right flex-shrink-0 ml-3">
-                          <SkyIcon condition={pf.condition} className="w-10 h-10 ml-auto mb-1 text-yellow-300" />
-                          <div className="text-white/60 text-sm">{skyCondition}</div>
+                        <div className="flex-shrink-0 ml-3">
+                          <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+                            <button
+                              onClick={() => setLocalMetric(false)}
+                              className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+                            >
+                              US Standard
+                            </button>
+                            <button
+                              onClick={() => setLocalMetric(true)}
+                              className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+                            >
+                              Metric
+                            </button>
+                          </div>
                         </div>
                       </div>
                       {imgSrc && (
