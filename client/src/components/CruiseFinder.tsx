@@ -512,7 +512,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
       {/* Three dropdowns */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <label className="text-white/50 text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
+          <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
             <Ship className="w-3 h-3" /> Cruise Line
           </label>
           <div className="relative">
@@ -525,7 +525,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-white/50 text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
+          <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
             <Navigation className="w-3 h-3" /> Ship
           </label>
           <div className="relative">
@@ -538,7 +538,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-white/50 text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
+          <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
             <Calendar className="w-3 h-3" /> Departure Date
           </label>
           <div className="relative">
