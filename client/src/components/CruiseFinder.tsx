@@ -425,7 +425,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
 
           <div className="relative z-10 flex flex-col lg:flex-row items-center gap-6 px-6 py-7">
             {/* Left: headline + bullets + CTA */}
-            <div className="flex-shrink-0 lg:w-72">
+            <div className="flex-shrink-0 w-full lg:w-72">
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-3 h-3 rounded-full bg-cyan-400 inline-block" />
                 <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Cruise Weather Tool</span>
@@ -448,15 +448,15 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
             </div>
 
             {/* Right: port weather cards */}
-            <div className="flex-1 flex items-center justify-center gap-2 lg:gap-3 overflow-x-auto pb-1">
+            <div className="w-full lg:flex-1 flex items-center justify-start lg:justify-center gap-2 lg:gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none -mx-1 px-1">
               {([
                 { name: "Miami",   temp: "79", cond: "Sunny",        wind: "12", type: "Departure",  typeColor: "text-yellow-400",  sunny: true },
                 { name: "Nassau",  temp: "82", cond: "Sunny",        wind: "10", type: "Port Call",  typeColor: "text-cyan-400",    sunny: true },
                 { name: "CocoCay", temp: "84", cond: "Clear",        wind: "9",  type: "Port Call",  typeColor: "text-cyan-400",    sunny: true },
                 { name: "Miami",   temp: "78", cond: "Mostly Clear", wind: "14", type: "Return",     typeColor: "text-emerald-400", sunny: false },
               ] as const).map((p, i, arr) => (
-                <div key={i} className="flex items-center gap-2 lg:gap-3">
-                  <div className="flex-shrink-0 bg-[rgba(12,28,60,0.85)] border border-cyan-400/30 rounded-2xl px-3 py-3 flex flex-col items-center w-[110px] sm:w-[130px]">
+                <div key={i} className="flex items-center gap-2 lg:gap-3 snap-start">
+                  <div className="flex-shrink-0 bg-[rgba(12,28,60,0.85)] border border-cyan-400/30 rounded-2xl px-3 py-3 flex flex-col items-center w-[100px] sm:w-[120px] lg:w-[130px]">
                     <span className={`text-[9px] font-bold tracking-widest uppercase mb-1 ${p.typeColor}`}>{p.type}</span>
                     <span className="text-white font-bold text-sm mb-2">{p.name}</span>
                     {/* Sun icon */}
