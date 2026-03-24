@@ -352,7 +352,17 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
   }, []);
 
   const availableShips = [...(cruiseData?.cruise_lines.find(cl => cl.id === selectedLine)?.ships ?? [])].sort((a, b) => a.name.localeCompare(b.name));
-  const availableDates = availableShips.find(s => s.name === selectedShip)?.itineraries ?? [];
+  const availableDates = [...(availableShips.find(s => s.name === selectedShip)?.itineraries ?? [])]
+    .sort((a, b) => a.departure_date.localeCompare(b.departure_date))
+    .filter(i => {
+      const today = new Date().toISOString().slice(0, 10);
+      const durDays = i.duration_days ?? 7;
+      const endDate = new Date(i.departure_date + 'T12:00:00Z');
+      endDate.setDate(endDate.getDate() + durDays);
+      const endStr = endDate.toISOString().slice(0, 10);
+      // Keep current sailing (already departed but not yet ended) and all future sailings
+      return endStr >= today;
+    });
   const selectedItinerary = availableDates.find(i => i.departure_date === selectedDate);
 
   const handleLineChange = (line: string) => { setSelectedLine(line); setSelectedShip(""); setSelectedDate(""); setPortForecasts([]); setActivePort(null); };
