@@ -632,7 +632,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                             <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0" />
                             <span className="truncate">{pf.port}</span>
                             {!isBeyond && !isPast && !pf.loading && !pf.error && skyCondition && (
-                              <span className="flex items-center gap-1 text-white/60 text-sm font-normal">
+                              <span className="flex items-center gap-1 text-white/60 text-sm font-normal ml-4">
                                 <SkyIcon condition={pf.condition} className="w-4 h-4 text-yellow-300 flex-shrink-0" />
                                 {skyCondition}
                               </span>
