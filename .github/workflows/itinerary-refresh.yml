@@ -1,0 +1,121 @@
+name: Twice-Weekly Itinerary Refresh
+
+# Runs every Tuesday and Friday at 6:00 AM Eastern time.
+# EDT (Mar-Nov): 10:00 UTC on Tue (2) and Fri (5)
+# EST (Nov-Mar): 11:00 UTC on Tue (2) and Fri (5)
+# Both times are scheduled; the script handles idempotency.
+on:
+  schedule:
+    - cron: '0 10 * * 2'   # Tuesday 6:00 AM EDT
+    - cron: '0 11 * * 2'   # Tuesday 6:00 AM EST
+    - cron: '0 10 * * 5'   # Friday 6:00 AM EDT
+    - cron: '0 11 * * 5'   # Friday 6:00 AM EST
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+    inputs:
+      dry_run:
+        description: 'Dry run only (do not write to JSON)'
+        required: false
+        default: 'false'
+      ship:
+        description: 'Only refresh this ship (leave blank for all ships)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-itineraries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run itinerary refresh
+        id: refresh
+        run: |
+          DRY_RUN_FLAG=""
+          SHIP_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          if [ -n "${{ github.event.inputs.ship }}" ]; then
+            SHIP_FLAG="--ship \"${{ github.event.inputs.ship }}\""
+          fi
+
+          python3 scripts/refresh_itineraries.py $DRY_RUN_FLAG $SHIP_FLAG 2>&1 | tee /tmp/refresh_report.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+
+          ADDED=$(grep "Itineraries added:" /tmp/refresh_report.txt | awk '{print $3}')
+          REMOVED=$(grep "Itineraries removed:" /tmp/refresh_report.txt | awk '{print $3}')
+          FAILURES=$(grep "Validation failures:" /tmp/refresh_report.txt | awk '{print $3}')
+
+          echo "itins_added=${ADDED:-0}" >> $GITHUB_OUTPUT
+          echo "itins_removed=${REMOVED:-0}" >> $GITHUB_OUTPUT
+          echo "validation_failures=${FAILURES:-0}" >> $GITHUB_OUTPUT
+          echo "exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT
+
+      - name: Push updated cruise_itineraries.json to gh-pages
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+
+          cp client/public/cruise_itineraries.json /tmp/cruise_itineraries_updated.json
+
+          git fetch origin gh-pages
+          git checkout -f gh-pages
+          git pull origin gh-pages
+
+          if ! diff -q /tmp/cruise_itineraries_updated.json cruise_itineraries.json > /dev/null 2>&1; then
+            cp /tmp/cruise_itineraries_updated.json cruise_itineraries.json
+            git add cruise_itineraries.json
+            git commit -m "Itinerary refresh: +${{ steps.refresh.outputs.itins_added }} added, -${{ steps.refresh.outputs.itins_removed }} removed, ${{ steps.refresh.outputs.validation_failures }} flagged for review"
+            git push origin gh-pages
+            echo "cruise_itineraries.json updated on gh-pages"
+          else
+            echo "No changes to cruise_itineraries.json -- skipping push"
+          fi
+
+      - name: Send validation failure report
+        if: steps.refresh.outputs.validation_failures != '0'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          secure: false
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "mycruisingweather.com -- Itinerary Refresh Report: ${{ steps.refresh.outputs.validation_failures }} items need review"
+          to: jamesaanfleet@gmail.com
+          from: "WeatherStream Deploy <deploy@mycruisingweather.com>"
+          body: |
+            Itinerary refresh completed on ${{ github.run_started_at }}.
+
+            Summary:
+            - Itineraries added: ${{ steps.refresh.outputs.itins_added }}
+            - Itineraries removed: ${{ steps.refresh.outputs.itins_removed }}
+            - Items flagged for review: ${{ steps.refresh.outputs.validation_failures }}
+
+            The following itineraries failed validation and were NOT published to the live site.
+            Please review and manually correct if needed.
+
+            --- FULL REPORT ---
+            ${{ steps.refresh.outputs.report }}
+
+      - name: Print full report to workflow log
+        if: always()
+        run: |
+          echo "=== FULL REFRESH REPORT ==="
+          cat /tmp/refresh_report.txt
