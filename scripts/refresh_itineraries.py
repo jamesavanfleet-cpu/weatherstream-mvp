@@ -53,7 +53,7 @@ REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 JSON_PATH = os.path.join(REPO_ROOT, 'client', 'public', 'cruise_itineraries.json')
 
 TODAY = date.today()
-MAX_FUTURE_DAYS = 30   # only store sailings within 30 days of today (rolling window)
+MAX_FUTURE_DAYS = 60   # only store sailings within 60 days of today (rolling window)
 
 # ---------------------------------------------------------------------------
 # Comprehensive port coordinates database
