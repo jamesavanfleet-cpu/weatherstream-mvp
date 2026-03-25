@@ -56,6 +56,12 @@ interface PortForecast {
   pressureHpa: number | null;
   waveHeightM: number | null;
   swellHeightM: number | null;
+  // Hourly-derived time-of-day context
+  peakRainTimeOfDay: string | null;    // "Morning" | "Afternoon" | "Evening" | "Overnight"
+  peakCloudTimeOfDay: string | null;   // time-of-day for highest cloud cover
+  peakCloudLabel: string | null;       // "Overcast" | "Mostly Cloudy" | "Partly Cloudy"
+  clearestTimeOfDay: string | null;    // time-of-day for lowest cloud cover
+  clearestCloudPct: number | null;     // cloud % at clearest hour
   loading: boolean;
   error: boolean;
 }
@@ -220,9 +226,9 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
       return { condition: "Beyond forecast range", loading: false, error: false };
     }
 
-    // Fetch weather forecast and marine data in parallel
+    // Fetch weather forecast (daily + hourly) and marine data in parallel
     const [weatherResp, marineResp] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,precipitation_probability_max,cloudcover_mean,surface_pressure_mean&wind_speed_unit=kn&timezone=auto&forecast_days=16`),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,precipitation_probability_max,cloudcover_mean,surface_pressure_mean&hourly=precipitation_probability,cloudcover&wind_speed_unit=kn&timezone=auto&forecast_days=16`),
       fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&daily=wave_height_max,swell_wave_height_max&timezone=auto&forecast_days=16`),
     ]);
 
@@ -231,6 +237,67 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
     const idx = data.daily.time.indexOf(date);
     if (idx === -1) return { condition: "No data available", loading: false, error: false };
     const d = data.daily;
+    const h = data.hourly;
+
+    // ---- Hourly time-of-day analysis for the target date ----
+    const hourToTimeOfDay = (hour: number): string => {
+      if (hour >= 6 && hour <= 11) return "Morning";
+      if (hour >= 12 && hour <= 17) return "Afternoon";
+      if (hour >= 18 && hour <= 21) return "Evening";
+      return "Overnight";
+    };
+
+    const cloudPctToLabel = (pct: number): string => {
+      if (pct >= 85) return "Overcast";
+      if (pct >= 60) return "Mostly Cloudy";
+      if (pct >= 30) return "Partly Cloudy";
+      return "Mostly Clear";
+    };
+
+    let peakRainTimeOfDay: string | null = null;
+    let peakCloudTimeOfDay: string | null = null;
+    let peakCloudLabel: string | null = null;
+    let clearestTimeOfDay: string | null = null;
+    let clearestCloudPct: number | null = null;
+
+    if (h?.time && h?.precipitation_probability && h?.cloudcover) {
+      // Collect all hours belonging to the target date (daytime hours 6-21 only for clearest)
+      interface HourEntry { hour: number; rain: number; cloud: number; }
+      const dayHours: HourEntry[] = [];
+      (h.time as string[]).forEach((isoTime: string, i: number) => {
+        if (isoTime.startsWith(date)) {
+          const hour = parseInt(isoTime.slice(11, 13), 10);
+          dayHours.push({
+            hour,
+            rain: h.precipitation_probability[i] ?? 0,
+            cloud: h.cloudcover[i] ?? 0,
+          });
+        }
+      });
+
+      if (dayHours.length > 0) {
+        // Peak rain hour
+        const peakRain = dayHours.reduce((best, cur) => cur.rain > best.rain ? cur : best, dayHours[0]);
+        if (peakRain.rain > 0) {
+          peakRainTimeOfDay = hourToTimeOfDay(peakRain.hour);
+        }
+
+        // Peak cloud hour (highest cloud cover)
+        const peakCloud = dayHours.reduce((best, cur) => cur.cloud > best.cloud ? cur : best, dayHours[0]);
+        if (peakCloud.cloud >= 30) {
+          peakCloudTimeOfDay = hourToTimeOfDay(peakCloud.hour);
+          peakCloudLabel = cloudPctToLabel(peakCloud.cloud);
+        }
+
+        // Clearest daytime hour (lowest cloud cover between 6am-8pm)
+        const daytimeHours = dayHours.filter(e => e.hour >= 6 && e.hour <= 20);
+        if (daytimeHours.length > 0) {
+          const clearest = daytimeHours.reduce((best, cur) => cur.cloud < best.cloud ? cur : best, daytimeHours[0]);
+          clearestTimeOfDay = hourToTimeOfDay(clearest.hour);
+          clearestCloudPct = clearest.cloud;
+        }
+      }
+    }
 
     // Parse marine data (best-effort -- may not be available for all locations)
     let waveHeightM: number | null = null;
@@ -264,6 +331,11 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
       pressureHpa: d.surface_pressure_mean?.[idx] !== null ? Math.round(d.surface_pressure_mean[idx]) : null,
       waveHeightM,
       swellHeightM,
+      peakRainTimeOfDay,
+      peakCloudTimeOfDay,
+      peakCloudLabel,
+      clearestTimeOfDay,
+      clearestCloudPct,
       loading: false,
       error: false,
     };
@@ -384,6 +456,8 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
       cloudCoverPct: null,
       condition: "Loading...", wmoCode: null,
       pressureHpa: null, waveHeightM: null, swellHeightM: null,
+      peakRainTimeOfDay: null, peakCloudTimeOfDay: null, peakCloudLabel: null,
+      clearestTimeOfDay: null, clearestCloudPct: null,
       loading: true, error: false,
     }));
     setPortForecasts(initial);
@@ -717,13 +791,28 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                           icon={<Droplets className="w-10 h-10 text-blue-400" />}
                           label="Rain Chance"
                           value={pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
-                          subValue={precipDisplay ? `Precip: ${precipDisplay}` : undefined}
+                          subValue={
+                            pf.peakRainTimeOfDay
+                              ? `Highest chance: ${pf.peakRainTimeOfDay}`
+                              : (precipDisplay ? `Precip: ${precipDisplay}` : "Low rain risk")
+                          }
                         />
                         <ForecastCard
                           icon={<Cloud className="w-10 h-10 text-slate-300" />}
                           label="Cloud Cover"
                           value={pf.cloudCoverPct !== null ? `${Math.round(pf.cloudCoverPct)}%` : "--"}
-                          subValue={skyCondition}
+                          subValue={
+                            (() => {
+                              const parts: string[] = [];
+                              if (pf.peakCloudLabel && pf.peakCloudTimeOfDay) {
+                                parts.push(`${pf.peakCloudLabel}: ${pf.peakCloudTimeOfDay}`);
+                              }
+                              if (pf.clearestTimeOfDay && pf.clearestCloudPct !== null) {
+                                parts.push(`Clearest: ${pf.clearestTimeOfDay} (${pf.clearestCloudPct}%)`);
+                              }
+                              return parts.length > 0 ? parts.join(" | ") : skyCondition;
+                            })()
+                          }
                         />
                       </div>
                     </div>
