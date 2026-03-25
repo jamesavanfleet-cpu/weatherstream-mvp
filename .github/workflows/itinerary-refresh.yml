@@ -1,23 +1,21 @@
-name: Twice-Weekly Itinerary Refresh
+name: Itinerary Refresh (Playwright)
 
-# Runs every Tuesday and Friday at 6:00 AM Eastern time.
-# EDT (Mar-Nov): 10:00 UTC on Tue (2) and Fri (5)
-# EST (Nov-Mar): 11:00 UTC on Tue (2) and Fri (5)
-# Both times are scheduled; the script handles idempotency.
 on:
   schedule:
-    - cron: '0 10 * * 2'   # Tuesday 6:00 AM EDT
-    - cron: '0 11 * * 2'   # Tuesday 6:00 AM EST
-    - cron: '0 10 * * 5'   # Friday 6:00 AM EDT
-    - cron: '0 11 * * 5'   # Friday 6:00 AM EST
-  workflow_dispatch:        # allow manual trigger from GitHub UI
+    - cron: '0 10 * * 2,5'
+    - cron: '0 11 * * 2,5'
+  workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Dry run only (do not write to JSON)'
+      force_run:
+        description: 'Force run regardless of time window (for testing)'
         required: false
         default: 'false'
-      ship:
-        description: 'Only refresh this ship (leave blank for all ships)'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      single_ship:
+        description: 'Only refresh this ship name (leave blank for all ships)'
         required: false
         default: ''
 
@@ -25,97 +23,151 @@ permissions:
   contents: write
 
 jobs:
-  refresh-itineraries:
+  itinerary-refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main branch
+      - name: Check if this is the correct Eastern-time run
+        id: dst_check
+        run: |
+          if [ "${{ github.event.inputs.force_run }}" = "true" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          MONTH=$(date -u +%-m)
+          DAY=$(date -u +%-d)
+          HOUR=$(date -u +%-H)
+          MINUTE=$(date -u +%-M)
+          EDT=0
+          if [ "$MONTH" -ge 4 ] && [ "$MONTH" -le 10 ]; then
+            EDT=1
+          elif [ "$MONTH" -eq 3 ] && [ "$DAY" -ge 8 ]; then
+            EDT=1
+          elif [ "$MONTH" -eq 11 ] && [ "$DAY" -lt 8 ]; then
+            EDT=1
+          fi
+          if [ "$EDT" -eq 1 ]; then
+            OFFSET=4
+          else
+            OFFSET=5
+          fi
+          EASTERN_HOUR=$(( (HOUR - OFFSET + 24) % 24 ))
+          echo "UTC: ${HOUR}:${MINUTE}, Eastern offset: -${OFFSET}, Eastern hour: ${EASTERN_HOUR}"
+          if [ "$EASTERN_HOUR" -eq 6 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout repository
+        if: steps.dst_check.outputs.should_run == 'true'
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
       - name: Setup Python
+        if: steps.dst_check.outputs.should_run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install requests
+      - name: Install Python dependencies
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          pip install playwright
+          playwright install chromium
+          playwright install-deps chromium
 
-      - name: Run itinerary refresh
+      - name: Run Playwright itinerary refresh
+        if: steps.dst_check.outputs.should_run == 'true'
         id: refresh
         run: |
-          DRY_RUN_FLAG=""
-          SHIP_FLAG=""
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
+          SHIP_ARG=""
+          if [ -n "${{ github.event.inputs.single_ship }}" ]; then
+            SHIP_ARG="--ship \"${{ github.event.inputs.single_ship }}\""
           fi
-          if [ -n "${{ github.event.inputs.ship }}" ]; then
-            SHIP_FLAG="--ship \"${{ github.event.inputs.ship }}\""
+          python3 scripts/playwright_refresh.py $SHIP_ARG
+
+      - name: Validate cruise_itineraries.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          JSON_SIZE=$(wc -c < client/public/cruise_itineraries.json 2>/dev/null || echo 0)
+          if [ "$JSON_SIZE" -lt 10000 ]; then
+            echo "ERROR: cruise_itineraries.json is too small"
+            exit 1
+          fi
+          python3 -c "
+          import json, sys
+          with open('client/public/cruise_itineraries.json') as f:
+              d = json.load(f)
+          lines = d.get('cruise_lines', [])
+          assert len(lines) >= 8, f'Expected 8+ cruise lines, got {len(lines)}'
+          total_ships = sum(len(cl.get('ships', [])) for cl in lines)
+          assert total_ships >= 100, f'Expected 100+ ships, got {total_ships}'
+          print(f'Validated: {len(lines)} cruise lines, {total_ships} ships')
+          "
+
+      - name: Setup Node.js
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Node dependencies
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build production bundle
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pnpm run build:pages
+
+      - name: Validate build output
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          if [ ! -f dist/public/index.html ]; then
+            echo "ERROR: dist/public/index.html not found"
+            exit 1
+          fi
+          BUILD_SIZE=$(wc -c < dist/public/index.html)
+          if [ "$BUILD_SIZE" -lt 200 ]; then
+            echo "ERROR: index.html is suspiciously small"
+            exit 1
           fi
 
-          python3 scripts/refresh_itineraries.py $DRY_RUN_FLAG $SHIP_FLAG 2>&1 | tee /tmp/refresh_report.txt
-          EXIT_CODE=${PIPESTATUS[0]}
-
-          ADDED=$(grep "Itineraries added:" /tmp/refresh_report.txt | awk '{print $3}')
-          REMOVED=$(grep "Itineraries removed:" /tmp/refresh_report.txt | awk '{print $3}')
-          FAILURES=$(grep "Validation failures:" /tmp/refresh_report.txt | awk '{print $3}')
-
-          echo "itins_added=${ADDED:-0}" >> $GITHUB_OUTPUT
-          echo "itins_removed=${REMOVED:-0}" >> $GITHUB_OUTPUT
-          echo "validation_failures=${FAILURES:-0}" >> $GITHUB_OUTPUT
-          echo "exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT
-
-      - name: Push updated cruise_itineraries.json to gh-pages
-        if: github.event.inputs.dry_run != 'true'
+      - name: Deploy to gh-pages
+        if: steps.dst_check.outputs.should_run == 'true'
         run: |
           git config user.email "deploy@mycruisingweather.com"
           git config user.name "WeatherStream Deploy"
-
-          cp client/public/cruise_itineraries.json /tmp/cruise_itineraries_updated.json
-
+          cp -r dist/public /tmp/deploy-output
+          cp client/public/cruise_itineraries.json /tmp/cruise_itineraries.json 2>/dev/null || true
+          git checkout -f -- .
           git fetch origin gh-pages
-          git checkout -f gh-pages
+          git checkout gh-pages
           git pull origin gh-pages
-
-          if ! diff -q /tmp/cruise_itineraries_updated.json cruise_itineraries.json > /dev/null 2>&1; then
-            cp /tmp/cruise_itineraries_updated.json cruise_itineraries.json
-            git add cruise_itineraries.json
-            git commit -m "Itinerary refresh: +${{ steps.refresh.outputs.itins_added }} added, -${{ steps.refresh.outputs.itins_removed }} removed, ${{ steps.refresh.outputs.validation_failures }} flagged for review"
-            git push origin gh-pages
-            echo "cruise_itineraries.json updated on gh-pages"
-          else
-            echo "No changes to cruise_itineraries.json -- skipping push"
-          fi
-
-      - name: Send validation failure report
-        if: steps.refresh.outputs.validation_failures != '0'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          secure: false
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "mycruisingweather.com -- Itinerary Refresh Report: ${{ steps.refresh.outputs.validation_failures }} items need review"
-          to: jamesaanfleet@gmail.com
-          from: "WeatherStream Deploy <deploy@mycruisingweather.com>"
-          body: |
-            Itinerary refresh completed on ${{ github.run_started_at }}.
-
-            Summary:
-            - Itineraries added: ${{ steps.refresh.outputs.itins_added }}
-            - Itineraries removed: ${{ steps.refresh.outputs.itins_removed }}
-            - Items flagged for review: ${{ steps.refresh.outputs.validation_failures }}
-
-            The following itineraries failed validation and were NOT published to the live site.
-            Please review and manually correct if needed.
-
-            --- FULL REPORT ---
-            ${{ steps.refresh.outputs.report }}
-
-      - name: Print full report to workflow log
-        if: always()
-        run: |
-          echo "=== FULL REFRESH REPORT ==="
-          cat /tmp/refresh_report.txt
+          cp CNAME /tmp/cname-backup 2>/dev/null || true
+          cp 404.html /tmp/404-backup 2>/dev/null || true
+          cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
+          cp intel.json /tmp/intel-backup.json 2>/dev/null || true
+          cp top_story.json /tmp/top_story-backup.json 2>/dev/null || true
+          cp live_conditions.json /tmp/live_conditions-backup.json 2>/dev/null || true
+          rm -f assets/*.js assets/*.css
+          cp -r /tmp/deploy-output/assets/. assets/
+          cp /tmp/deploy-output/index.html index.html
+          cp /tmp/cruise_itineraries.json cruise_itineraries.json 2>/dev/null || true
+          cp /tmp/cname-backup CNAME 2>/dev/null || true
+          cp /tmp/404-backup 404.html 2>/dev/null || true
+          cp /tmp/forecast-backup.json forecast.json 2>/dev/null || true
+          cp /tmp/intel-backup.json intel.json 2>/dev/null || true
+          cp /tmp/top_story-backup.json top_story.json 2>/dev/null || true
+          cp /tmp/live_conditions-backup.json live_conditions.json 2>/dev/null || true
+          git add -A
+          git diff --cached --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "Itinerary refresh: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
