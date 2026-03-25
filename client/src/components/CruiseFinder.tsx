@@ -491,22 +491,31 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
           </div>{/* end content row */}
       </div>{/* end teaser card */}
 
-      {/* Metric toggle -- matches site-wide style */}
+      {/* Back button (when itinerary loaded) or Metric toggle (when no itinerary) */}
       <div className="flex justify-end">
-        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+        {portForecasts.length > 0 ? (
           <button
-            onClick={() => setLocalMetric(false)}
-            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            onClick={() => { setSelectedLine(""); setSelectedShip(""); setSelectedDate(""); setPortForecasts([]); setActivePort(null); }}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[#d4c5a9] text-xs font-semibold hover:border-cyan-400/50 hover:text-white transition-colors"
           >
-            US Standard
+            <ChevronDown className="w-3 h-3 rotate-90" /> Back
           </button>
-          <button
-            onClick={() => setLocalMetric(true)}
-            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            Metric
-          </button>
-        </div>
+        ) : (
+          <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+            <button
+              onClick={() => setLocalMetric(false)}
+              className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            >
+              US Standard
+            </button>
+            <button
+              onClick={() => setLocalMetric(true)}
+              className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            >
+              Metric
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Three dropdowns */}
