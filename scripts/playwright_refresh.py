@@ -281,6 +281,114 @@ PORT_COORDS = {
     "Mombasa": (-4.0435, 39.6682),
     "Zanzibar": (-6.1630, 39.2000),
     "Mauritius": (-20.1609, 57.4977),
+    # Extended Caribbean / private islands
+    "Celebration Key": (26.5500, -78.7000),
+    "Disney Lookout Cay": (25.1333, -76.1500),
+    "Bimini": (25.7333, -79.3000),
+    "Bimini Islands": (25.7333, -79.3000),
+    "Kralendijk": (12.1667, -68.2833),
+    "Oranjestad": (12.5167, -70.0167),
+    "Philipsburg": (18.0167, -63.0500),
+    "St Georges": (12.0500, -61.7500),
+    "Key West": (24.5551, -81.7800),
+    "Kings Wharf": (32.3167, -64.8333),
+    # Mexico extended
+    "La Paz": (24.1426, -110.3128),
+    "Loreto": (26.0122, -111.3447),
+    "Puerto Chiapas": (14.7000, -92.4167),
+    "Puerto Quetzal": (13.9167, -90.8000),
+    "Santa Barbara": (34.4208, -119.6982),
+    "Santa Catalina Island": (33.3894, -118.4159),
+    # US extended
+    "Newport RI": (41.4901, -71.3128),
+    # Canada
+    "Halifax": (44.6488, -63.5752),
+    "Victoria BC": (48.4284, -123.3656),
+    # Europe extended
+    "Southampton": (50.9097, -1.4044),
+    "Dover": (51.1295, 1.3089),
+    "London": (51.5074, -0.1278),
+    "Tilbury": (51.4639, 0.3553),
+    "Le Havre": (49.4938, 0.1077),
+    "Hamburg": (53.5753, 10.0153),
+    "Amsterdam": (52.3676, 4.9041),
+    "IJmuiden": (52.4667, 4.5833),
+    "Zeebrugge": (51.3333, 3.2000),
+    "Oslo": (59.9139, 10.7522),
+    "Copenhagen": (55.6761, 12.5683),
+    "Skagen": (57.7167, 10.5833),
+    "Stockholm": (59.3293, 18.0686),
+    "Helsinki": (60.1699, 24.9384),
+    "Tallinn": (59.4370, 24.7536),
+    "Riga": (56.9496, 24.1052),
+    "Gdansk": (54.3520, 18.6466),
+    "Greenock": (55.9500, -4.7667),
+    "Invergordon": (57.6833, -4.1667),
+    "Leith": (55.9756, -3.1714),
+    "Dublin": (53.3498, -6.2603),
+    "Falmouth UK": (50.1528, -5.0728),
+    "La Coruna": (43.3623, -8.4115),
+    "Vigo": (42.2328, -8.7226),
+    "Tarragona": (41.1189, 1.2445),
+    "Motril": (36.7500, -3.5167),
+    "Toulon": (43.1242, 5.9280),
+    "Villefranche-sur-Mer": (43.7050, 7.3100),
+    "Santa Margherita Ligure": (44.3333, 9.2167),
+    "La Spezia": (44.1024, 9.8240),
+    "Sarande": (39.8750, 20.0000),
+    "Marmaris": (36.8556, 28.2722),
+    "Katakolon": (37.6333, 21.3167),
+    "Souda": (35.4833, 24.0833),
+    # Pacific / Oceania
+    "Sydney": (-33.8688, 151.2093),
+    "Melbourne": (-37.8136, 144.9631),
+    "Brisbane": (-27.4698, 153.0251),
+    "Hobart": (-42.8821, 147.3272),
+    "Adelaide": (-34.9285, 138.6007),
+    "Fremantle": (-32.0569, 115.7439),
+    "Darwin": (-12.4634, 130.8456),
+    "Eden": (-37.0667, 149.9000),
+    "Port Arthur": (-43.1333, 147.8500),
+    "Port Douglas": (-16.4833, 145.4667),
+    "Yorkeys Knob": (-16.8167, 145.7167),
+    "Exmouth WA": (-21.9333, 114.1167),
+    "Kangaroo Island": (-35.7833, 137.1667),
+    "Willis Island": (-16.2833, 149.9667),
+    "Auckland": (-36.8485, 174.7633),
+    "Wellington": (-41.2865, 174.7762),
+    "Tauranga": (-37.6878, 176.1651),
+    "Noumea": (-22.2758, 166.4580),
+    "Lifou Island": (-20.9167, 167.2000),
+    "Luganville": (-15.5167, 167.1667),
+    "Port Vila": (-17.7333, 168.3167),
+    "Mystery Island": (-20.2500, 169.9167),
+    "Suva": (-18.1416, 178.4419),
+    "Lautoka": (-17.6167, 177.4500),
+    "Papeete": (-17.5334, -149.5667),
+    "Moorea Island": (-17.5333, -149.8333),
+    "Raiatea Island": (-16.8333, -151.4167),
+    "Bora Bora": (-16.5000, -151.7500),
+    "Kahului": (20.8893, -156.4729),
+    "Kailua-Kona": (19.6400, -155.9969),
+    # Asia extended
+    "Shimizu": (34.9833, 138.5167),
+    "Nagasaki City": (32.7503, 129.8779),
+    "Kagoshima City": (31.5966, 130.5571),
+    "Hakodate": (41.7686, 140.7288),
+    "Kochi City": (33.5597, 133.5311),
+    "Miyako-Iwate": (39.6417, 141.9567),
+    "Yatsushiro": (32.5167, 130.6000),
+    "Keelung": (25.1333, 121.7333),
+    "Jeju Island": (33.4996, 126.5312),
+    "Saigon": (10.8231, 106.6297),
+    "Phu My": (10.6167, 107.0500),
+    # South America extended
+    "Salvador de Bahia": (-12.9714, -38.5014),
+    # Indian Ocean / Africa extended
+    "Mahe Island": (-4.6167, 55.4500),
+    "La Digue Island": (-4.3667, 55.8333),
+    "Nosy Be Island": (-13.3333, 48.2667),
+    "Male City": (4.1748, 73.5089),
     # Sea day markers (no coordinates)
     "At Sea": None,
     "Sea Day": None,
@@ -432,6 +540,164 @@ PORT_ALIASES = {
     "departing from cape liberty": "Cape Liberty",
     "departing from baltimore, maryland": "Baltimore",
     "departing from boston, massachusetts": "Boston",
+    # CruiseMapper verbose names for Caribbean / private islands
+    "costa maya, perfect day mexico, royal caribbean": "Costa Maya",
+    "roatan island, isla tropicale-coxen hole, honduras": "Roatan",
+    "celebration key bahamas, carnival grand bahama island": "Celebration Key",
+    "grand cayman island, george town harbour": "Grand Cayman",
+    "oranjestad aruba, netherlands antilles": "Oranjestad",
+    "tortola island bvi, road town, uk virgin islands": "Tortola",
+    "philipsburg st maarten, netherlands antilles": "Philipsburg",
+    "grand turk island, cockburn town, turks and caicos": "Grand Turk",
+    "basseterre st kitts, port zante": "Basseterre",
+    "bimini islands, resorts world bimini bahamas": "Bimini",
+    "willemstad curacao, netherlands antilles": "Willemstad",
+    "kralendijk bonaire, netherlands antilles": "Kralendijk",
+    "st johns antigua, rci royal beach club": "Antigua",
+    "disney lookout cay, lighthouse point, eleuthera bahamas": "Disney Lookout Cay",
+    "half moon cay, relaxaway, bahamas carnival private island": "Half Moon Cay",
+    "harvest caye belize, ncl private island": "Harvest Caye",
+    "freeport, bahamas, grand bahama island": "Freeport",
+    "key west, florida": "Key West",
+    "kings wharf, bermuda": "Kings Wharf",
+    "st georges grenada": "St Georges",
+    "castries, st lucia island": "Castries",
+    # CruiseMapper verbose names for Mexico / Pacific
+    "ensenada, baja california mexico": "Ensenada",
+    "cabo san lucas, baja california mexico": "Cabo San Lucas",
+    "puerto vallarta, jalisco, mexico riviera": "Puerto Vallarta",
+    "mazatlan, sinaloa, mexico riviera": "Mazatlan",
+    "huatulco, la crucecita, mexico riviera": "Huatulco",
+    "la paz, baja california mexico": "La Paz",
+    "loreto, baja california mexico": "Loreto",
+    "puerto chiapas, chiapas mexico": "Puerto Chiapas",
+    "puerto quetzal, guatemala": "Puerto Quetzal",
+    "progreso, merida, yucatan mexico": "Progreso",
+    "puntarenas, puerto caldera, costa rica": "Puntarenas",
+    "santa catalina island ca, avalon, california": "Santa Catalina Island",
+    "santa barbara ca, california": "Santa Barbara",
+    "los angeles, long beach-san pedro, california": "Los Angeles",
+    "arriving in los angeles, long beach-san pedro, california": "Los Angeles",
+    "ketchikan, revillagigedo island alaska": "Ketchikan",
+    "sitka, baranof island alaska": "Sitka",
+    "victoria bc, vancouver island canada": "Victoria BC",
+    # CruiseMapper verbose names for US / Canada
+    "departing from jacksonville, jaxport, florida": "Jacksonville",
+    "departing from norfolk va, virginia": "Norfolk",
+    "departing from new orleans, port nola louisiana": "New Orleans",
+    "departing from halifax, nova scotia canada": "Halifax",
+    "departing from le havre-paris, france": "Le Havre",
+    "departing from southampton, england": "Southampton",
+    "departing from civitavecchia-rome, italy": "Civitavecchia",
+    "departing from piraeus-athens, greece": "Piraeus",
+    "departing from colon, panama": "Colon",
+    "departing from cartagena colombia": "Cartagena",
+    "departing from la romana, dominicana": "La Romana",
+    "departing from buenos aires, argentina": "Buenos Aires",
+    "departing from fremantle, perth, western australia": "Fremantle",
+    "departing from sydney, nsw australia": "Sydney",
+    "departing from brisbane, queensland australia": "Brisbane",
+    "departing from auckland, new zealand": "Auckland",
+    "departing from singapore": "Singapore",
+    "departing from hong kong, china": "Hong Kong",
+    "departing from honolulu, oahu island hawaii": "Honolulu",
+    "departing from yokohama, tokyo, japan kanagawa": "Yokohama",
+    "arriving in civitavecchia-rome, italy": "Civitavecchia",
+    # CruiseMapper verbose names for Europe
+    "ponta delgada, sao miguel island azores portugal": "Ponta Delgada",
+    "cadiz, spain, sevilla": "Cadiz",
+    "palma de mallorca, majorca island balearic spain": "Palma",
+    "ibiza, ibiza island balearic spain": "Ibiza",
+    "tarragona, spain costa daurada": "Tarragona",
+    "motril, spain granada": "Motril",
+    "la coruna, spain galicia": "La Coruna",
+    "vigo, spain galicia": "Vigo",
+    "genoa, milan, italy riviera": "Genoa",
+    "la spezia, italy riviera": "La Spezia",
+    "santa margherita ligure, italy riviera": "Santa Margherita Ligure",
+    "livorno, florence-pisa, italy": "Livorno",
+    "toulon, france riviera, la seyne-sur-mer": "Toulon",
+    "villefranche-sur-mer, nice, france riviera": "Villefranche-sur-Mer",
+    "le havre-paris, france": "Le Havre",
+    "ijmuiden, netherlands north holland": "IJmuiden",
+    "zeebrugge, bruges, belgium": "Zeebrugge",
+    "greenock-glasgow, clydeport, scotland": "Greenock",
+    "leith-edinburgh, newhaven-rosyth-queensferry, scotland": "Leith",
+    "invergordon, scotland": "Invergordon",
+    "falmouth uk, england": "Falmouth UK",
+    "dover, england": "Dover",
+    "london-tilbury, england": "Tilbury",
+    "hamburg, germany": "Hamburg",
+    "oslo, norway": "Oslo",
+    "skagen, denmark": "Skagen",
+    "kusadasi, ephesus, turkey": "Kusadasi",
+    "marmaris, turkey": "Marmaris",
+    "katakolon, olympia, greece": "Katakolon",
+    "souda-chania, crete greece": "Souda",
+    "corfu island, kerkyra, greece": "Corfu",
+    "santorini island, thira, greece": "Santorini",
+    "mykonos island, greece": "Mykonos",
+    "piraeus-athens, greece": "Piraeus",
+    "sarande, albania": "Sarande",
+    "la goulette-tunis, tunisia": "Tunis",
+    "gibraltar, uk": "Gibraltar",
+    "las palmas de gran canaria, canary islands": "Las Palmas",
+    "porto-leixoes, oporto, portugal": "Porto",
+    # CruiseMapper verbose names for Pacific / Oceania
+    "sydney, nsw australia": "Sydney",
+    "melbourne, victoria australia": "Melbourne",
+    "hobart, tasmania australia": "Hobart",
+    "darwin, nt australia": "Darwin",
+    "eden, nsw australia": "Eden",
+    "port arthur, tasmania australia": "Port Arthur",
+    "port douglas, queensland australia": "Port Douglas",
+    "yorkeys knob, queensland australia": "Yorkeys Knob",
+    "exmouth wa, western australia": "Exmouth WA",
+    "kangaroo island, penneshaw, south australia": "Kangaroo Island",
+    "willis island, coral sea, australia": "Willis Island",
+    "tauranga, rotorua, new zealand": "Tauranga",
+    "noumea, grande terre island new caledonia": "Noumea",
+    "lifou island, new caledonia": "Lifou Island",
+    "luganville, espiritu santo island, vanuatu": "Luganville",
+    "port vila, efate island vanuatu": "Port Vila",
+    "mystery island, aneityum, vanuatu": "Mystery Island",
+    "suva, viti levu island fiji": "Suva",
+    "lautoka, viti levu island fiji": "Lautoka",
+    "papeete, tahiti island french polynesia": "Papeete",
+    "moorea island, society islands french polynesia": "Moorea Island",
+    "raiatea island, uturoa, french polynesia": "Raiatea Island",
+    "honolulu, oahu island hawaii": "Honolulu",
+    "kahului, maui island hawaii": "Kahului",
+    "kailua-kona, hawaii island": "Kailua-Kona",
+    "nawiliwili, lihue, kauai island hawaii": "Nawiliwili",
+    # CruiseMapper verbose names for Asia
+    "hong kong, china": "Hong Kong",
+    "kobe-osaka, kyoto, japan": "Kobe",
+    "shimizu, japan shizuoka": "Shimizu",
+    "nagasaki city, japan nagasaki": "Nagasaki City",
+    "kagoshima city, japan kagoshima": "Kagoshima City",
+    "hakodate, japan oshima": "Hakodate",
+    "kochi city, japan kochi": "Kochi City",
+    "miyako-iwate, japan iwate": "Miyako-Iwate",
+    "yatsushiro-kumamoto city, japan kumamoto": "Yatsushiro",
+    "keelung, taipei city, taiwan china": "Keelung",
+    "jeju island, seogwipo-jeju city, korea": "Jeju Island",
+    "saigon, phu my port-ho chi minh city, vietnam": "Saigon",
+    "phuket, thailand": "Phuket",
+    "departing from hong kong, china": "Hong Kong",
+    # CruiseMapper verbose names for South America
+    "salvador de bahia, brazil": "Salvador de Bahia",
+    "rio de janeiro, brazil": "Rio de Janeiro",
+    "departing from cartagena colombia": "Cartagena",
+    # CruiseMapper verbose names for Indian Ocean / Africa
+    "mahe island seychelles, victoria": "Mahe Island",
+    "la digue island seychelles, la passe": "La Digue Island",
+    "nosy be island, madagascar": "Nosy Be Island",
+    "male city, kaafu atoll maldives": "Male City",
+    # Panama Canal
+    "panama canal": "Colon",
+    "panama canal transit": "Colon",
+    "panama city, fuerte amador, balboa": "Panama City",
 }
 
 SEA_DAY_KEYWORDS = {
@@ -833,10 +1099,78 @@ def main():
                     continue
 
                 if not raw_itins:
-                    print(f"  No sailings in 30-day window")
-                    if not args.dry_run:
-                        ship['itineraries'] = []
+                    # Ship has no sailings in the 30-day window.
+                    # This is normal: dry dock, repositioning, or seasonal gap.
+                    # We preserve existing future itineraries already in the JSON
+                    # rather than wiping them, so the site shows something useful.
+                    existing = ship.get('itineraries', [])
+                    still_valid = [
+                        i for i in existing
+                        if i.get('departure_date', '') >= TODAY.strftime('%Y-%m-%d')
+                    ]
+                    if still_valid:
+                        print(f"  No new sailings found -- ship may be in dry dock or between seasons.")
+                        print(f"  Preserving {len(still_valid)} existing future itineraries.")
+                    else:
+                        print(f"  No sailings in 30-day window and no future itineraries to preserve.")
+                        if not args.dry_run:
+                            ship['itineraries'] = []
                     continue
+
+                # Split 14-night (or double-duration) sailings that share a departure
+                # date with a shorter sailing of the same ship. The cruise line is
+                # selling the same route as both a 7-night and a 14-night option.
+                # We display the 7-night as-is and derive a second 7-night entry
+                # from the second half of the 14-night itinerary.
+                expanded_itins = []
+                for itin in raw_itins:
+                    dep_date_str = itin.get('departure_date', '')
+                    duration = itin.get('duration_days', 0)
+                    # Check if there is a shorter sailing on the same date
+                    same_date_durations = [
+                        i.get('duration_days', 0)
+                        for i in raw_itins
+                        if i.get('departure_date') == dep_date_str
+                        and i is not itin
+                    ]
+                    if same_date_durations:
+                        shortest = min(same_date_durations)
+                        # If this sailing is exactly double the shortest, split it
+                        if duration == shortest * 2 and duration >= 10:
+                            ports = itin.get('ports', [])
+                            midpoint = len(ports) // 2
+                            second_half = ports[midpoint:]
+                            if second_half:
+                                # Re-number days and set the new departure date
+                                new_dep_date_str = second_half[0]['date']
+                                for idx, p in enumerate(second_half):
+                                    p['day'] = idx + 1
+                                new_nights = len(second_half) - 1
+                                # Determine region from original description
+                                orig_desc = itin.get('description', '')
+                                region_part = orig_desc.split(',', 1)[-1].strip() if ',' in orig_desc else orig_desc
+                                second_itin = {
+                                    'departure_date': new_dep_date_str,
+                                    'departure_port': second_half[0]['port'],
+                                    'description': f"{new_nights} nights, {region_part}",
+                                    'duration_days': len(second_half),
+                                    'ports': second_half,
+                                    'split_from_14night': True,
+                                }
+                                # Keep only the first half for the original entry
+                                first_half = ports[:midpoint]
+                                for idx, p in enumerate(first_half):
+                                    p['day'] = idx + 1
+                                first_nights = len(first_half) - 1
+                                itin['ports'] = first_half
+                                itin['duration_days'] = len(first_half)
+                                itin['description'] = f"{first_nights} nights, {region_part}"
+                                expanded_itins.append(itin)
+                                expanded_itins.append(second_itin)
+                                print(f"  SPLIT: {dep_date_str} {duration}-night -> two {shortest}-night sailings")
+                                continue
+                    expanded_itins.append(itin)
+                raw_itins = expanded_itins
 
                 # Validate each itinerary
                 valid_itins = []
