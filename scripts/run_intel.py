@@ -12,6 +12,7 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse
+import httpx
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -282,45 +283,28 @@ def call_llm(region: dict, weather_summary: str) -> str:
         f"Never apply a classification that exceeds what the data supports."
     )
 
-    payload = json.dumps({
+    payload = {
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 200,
         "temperature": 0.7,
-    }).encode()
-
-    req = urllib.request.Request(
-        f"{API_BASE}/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {API_KEY}",
-            "User-Agent": "WeatherStream/1.0",
-        },
-        method="POST",
-    )
+    }
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                result = json.loads(resp.read())
-                return result["choices"][0]["message"]["content"].strip()
-        except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < 3:
+            resp = httpx.post(
+                f"{API_BASE}/chat/completions",
+                json=payload,
+                headers={"Authorization": f"Bearer {API_KEY}"},
+                timeout=30,
+            )
+            if resp.status_code == 429 and attempt < 3:
                 wait = 10 * (2 ** attempt)
                 print(f"  Rate limit -- waiting {wait}s before retry {attempt+1}/3", file=sys.stderr)
                 time.sleep(wait)
-                req = urllib.request.Request(
-                    f"{API_BASE}/chat/completions",
-                    data=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {API_KEY}",
-                        "User-Agent": "WeatherStream/1.0",
-                    },
-                    method="POST",
-                )
-            else:
-                raise
+                continue
+            resp.raise_for_status()
+            result = resp.json()
+            return result["choices"][0]["message"]["content"].strip()
         except Exception as e:
             if attempt < 3:
                 wait = 5 * (attempt + 1)

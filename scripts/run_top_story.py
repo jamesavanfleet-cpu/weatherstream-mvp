@@ -7,6 +7,7 @@ Outputs: client/public/top_story.json
 """
 
 import asyncio, json, math, os, sys, time, urllib.request, urllib.error
+import httpx
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -211,45 +212,35 @@ def write_story(top: dict, runner_up, group_label: str):
         "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \"...\"}"
     )
 
-    payload = json.dumps({
+    payload = {
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 300,
         "temperature": 0.6,
-    }).encode()
-
-    req = urllib.request.Request(
-        f"{API_BASE}/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {API_KEY}",
-            "User-Agent": "WeatherStream/1.0",
-        },
-        method="POST",
-    )
+    }
     content = None
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                result = json.loads(resp.read())
-                content = result["choices"][0]["message"]["content"].strip()
-            break
-        except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < 3:
+            resp = httpx.post(
+                f"{API_BASE}/chat/completions",
+                json=payload,
+                headers={"Authorization": f"Bearer {API_KEY}"},
+                timeout=30,
+            )
+            if resp.status_code == 429 and attempt < 3:
                 wait = 10 * (2 ** attempt)
                 print(f"  Rate limit -- waiting {wait}s before retry {attempt+1}/3", file=sys.stderr)
                 time.sleep(wait)
-                req = urllib.request.Request(
-                    f"{API_BASE}/chat/completions",
-                    data=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {API_KEY}",
-                        "User-Agent": "WeatherStream/1.0",
-                    },
-                    method="POST",
-                )
+                continue
+            resp.raise_for_status()
+            result = resp.json()
+            content = result["choices"][0]["message"]["content"].strip()
+            break
+        except Exception as e:
+            if attempt < 3:
+                wait = 5 * (attempt + 1)
+                print(f"  LLM call attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
             else:
                 raise
     else:
