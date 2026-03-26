@@ -1144,8 +1144,11 @@ def main():
                     ]
                     if same_date_durations:
                         shortest = min(same_date_durations)
-                        # If this sailing is exactly double the shortest, split it
-                        if duration == shortest * 2 and duration >= 10:
+                        # Only split if this sailing is >= 14 nights AND exactly double
+                        # the shortest same-date sailing. Sailings of 10-13 nights that
+                        # share a date with a shorter sailing are legitimate separate
+                        # products and must NOT be split -- doing so creates duplicates.
+                        if duration == shortest * 2 and duration >= 14:
                             ports = itin.get('ports', [])
                             midpoint = len(ports) // 2
                             second_half = ports[midpoint:]
@@ -1208,6 +1211,22 @@ def main():
 
                 # Sort by departure date
                 valid_itins.sort(key=lambda x: x['departure_date'])
+
+                # Deduplication safety net: if two itineraries share the same
+                # departure_date, keep only the first one. This prevents any
+                # duplicate from reaching the live site regardless of cause.
+                seen_dates = set()
+                deduped_itins = []
+                for itin in valid_itins:
+                    dep = itin.get('departure_date', '')
+                    if dep in seen_dates:
+                        print(f"  DEDUP: removed duplicate entry for {dep}")
+                        continue
+                    seen_dates.add(dep)
+                    deduped_itins.append(itin)
+                if len(deduped_itins) < len(valid_itins):
+                    print(f"  Deduplication removed {len(valid_itins) - len(deduped_itins)} duplicate(s)")
+                valid_itins = deduped_itins
 
                 old_count = len(ship.get('itineraries', []))
                 new_count = len(valid_itins)
