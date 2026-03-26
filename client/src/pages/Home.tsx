@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { 
   Anchor, ArrowRight, Calendar, Cloud, Waves, Droplets, Info,
   MapPin, Play, Ship, Sparkles, ThermometerSun, TrendingUp, 
-  Wind, Zap, Clock, Users, Navigation, AlertTriangle,
+  Wind, Clock, Users, Navigation, AlertTriangle,
   X, Eye, Gauge, Thermometer, TrendingDown, Minus
 } from "lucide-react";
 import {
@@ -641,7 +641,7 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
                   </div>
                   <div className="glass-dark rounded-2xl p-4 border border-white/5">
                     <div className="flex items-center gap-2 mb-1">
-                      <Zap className="w-4 h-4 text-yellow-400" />
+                      <Wind className="w-4 h-4 text-cyan-300" />
                       <span className="text-white/50 text-xs">Gusts</span>
                     </div>
                     <p className="text-white font-black text-2xl">{gustDisplay}</p>
@@ -769,9 +769,12 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
                         <tr>
                           {data.hourlyForecast.map((slot) => (
                             <td key={slot.time} className={`py-1 text-xs font-semibold px-1 ${
-                              slot.precipPct >= 60 ? 'text-blue-400' :
-                              slot.precipPct >= 30 ? 'text-blue-300/70' :
-                              'text-white/40'
+                              slot.precipPct >= 80 ? 'text-red-400' :
+                              slot.precipPct >= 60 ? 'text-orange-400' :
+                              slot.precipPct >= 45 ? 'text-yellow-400' :
+                              slot.precipPct >= 30 ? 'text-amber-200/80' :
+                              slot.precipPct >= 10 ? 'text-white/55' :
+                              'text-white/30'
                             }`}>
                               {slot.precipPct}%
                             </td>
@@ -811,6 +814,8 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
                       <span className="text-cyan-400 text-[10px]">ft = wave ht</span>
                       <span className="text-cyan-400 text-[10px]">dir = swell dir</span>
                       <span className="text-white/40 text-[10px]">s = period</span>
+                      <span className="text-amber-200/70 text-[10px]">% = precip prob</span>
+                      <span className="text-white/40 text-[10px]">wind = dir / speed</span>
                     </div>
                   </div>
                 )}
