@@ -42,9 +42,8 @@ jobs:
           # Copy built output to a safe temp location before any branch switching
           cp -r dist/public /tmp/deploy-output
 
-          # Reset any working tree changes (pnpm-lock.yaml etc.) so git checkout
+          # Reset any working tree changes (pnpm-lock.yaml etc. ) so git checkout
           # does not abort with "local changes would be overwritten".
-          # git checkout -f is universally supported across all git versions.
           git fetch origin gh-pages
           git checkout -f gh-pages
           git pull origin gh-pages
@@ -54,12 +53,13 @@ jobs:
           cp 404.html /tmp/404-backup 2>/dev/null || true
 
           # Preserve ALL existing JSON data files from gh-pages so a code-only
-          # deploy never wipes live data. These are written by the forecast and
-          # hourly workflows and must survive across deploys.
+          # deploy never wipes live data. These are written by the forecast,
+          # hourly, and itinerary-refresh workflows and must survive across deploys.
           cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
           cp intel.json /tmp/intel-backup.json 2>/dev/null || true
           cp top_story.json /tmp/top_story-backup.json 2>/dev/null || true
           cp live_conditions.json /tmp/live_conditions-backup.json 2>/dev/null || true
+          cp cruise_itineraries.json /tmp/cruise_itineraries-backup.json 2>/dev/null || true
 
           # Replace old assets with new build
           rm -f assets/*.js assets/*.css
@@ -75,6 +75,7 @@ jobs:
           cp /tmp/intel-backup.json intel.json 2>/dev/null || true
           cp /tmp/top_story-backup.json top_story.json 2>/dev/null || true
           cp /tmp/live_conditions-backup.json live_conditions.json 2>/dev/null || true
+          cp /tmp/cruise_itineraries-backup.json cruise_itineraries.json 2>/dev/null || true
 
           # Commit and push
           git add -A
