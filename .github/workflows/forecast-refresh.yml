@@ -83,6 +83,14 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Ensure latest main code is used
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+          echo "Building from commit: $(git rev-parse HEAD) -- $(git log -1 --pretty='%s')"
+
       - name: Setup Python
         if: steps.dst_check.outputs.should_run == 'true'
         uses: actions/setup-python@v5
