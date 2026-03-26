@@ -1,7 +1,7 @@
 name: Twice-Daily Forecast Refresh
 
 # Runs at 4:00 AM and 4:00 PM Eastern time year-round.
-# EDT (Mar-Nov): 08:00 UTC and 20:00 UTC
+# EDT (Mar-Nov ): 08:00 UTC and 20:00 UTC
 # EST (Nov-Mar): 09:00 UTC and 21:00 UTC
 # We schedule all four times; the DST check inside the job ensures only
 # the correct one actually runs the full refresh.
@@ -111,7 +111,7 @@ jobs:
         run: |
           python3 scripts/generate_intel.py
           # Validate the output file was written and is large enough
-          INTEL_SIZE=$(wc -c < client/public/intel.json 2>/dev/null || echo 0)
+          INTEL_SIZE=$(wc -c < client/public/intel.json 2>/dev/null || echo 0 )
           echo "intel.json size: ${INTEL_SIZE} bytes"
           if [ "$INTEL_SIZE" -lt 500 ]; then
             echo "ERROR: intel.json is too small (${INTEL_SIZE} bytes) -- generation likely failed"
@@ -190,8 +190,9 @@ jobs:
           # Preserve CNAME and 404.html
           cp CNAME /tmp/cname-backup 2>/dev/null || true
           cp 404.html /tmp/404-backup 2>/dev/null || true
-          # Preserve existing forecast.json from gh-pages (do not wipe it)
+          # Preserve existing forecast.json and cruise_itineraries.json from gh-pages
           cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
+          cp cruise_itineraries.json /tmp/cruise_itineraries-backup.json 2>/dev/null || true
           # Replace assets and HTML
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
@@ -203,6 +204,7 @@ jobs:
           cp /tmp/cname-backup CNAME 2>/dev/null || true
           cp /tmp/404-backup 404.html 2>/dev/null || true
           cp /tmp/forecast-backup.json forecast.json 2>/dev/null || true
+          cp /tmp/cruise_itineraries-backup.json cruise_itineraries.json 2>/dev/null || true
           git add -A
           git diff --cached --quiet && echo "No changes to deploy" && exit 0
           git commit -m "Forecast refresh: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
