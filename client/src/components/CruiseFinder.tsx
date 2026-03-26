@@ -842,7 +842,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                                           className={`rounded-sm transition-all ${isHigh ? 'bg-blue-400' : 'bg-blue-400/30'}`}
                                         />
                                       </div>
-                                      <span className="text-white/30 leading-none" style={{fontSize: '8px'}}>{label}</span>
+                                      <span className="text-amber-100/70 leading-none" style={{fontSize: '8px'}}>{label}</span>
                                     </div>
                                   );
                                 })}
