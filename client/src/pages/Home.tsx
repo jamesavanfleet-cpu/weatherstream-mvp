@@ -110,6 +110,18 @@ const LIVE_DATA = [
 ];
 
 // --- Port Detail Live Data Cache ---
+interface HourlyForecastSlot {
+  time: string;       // ISO datetime string
+  tempC: number;
+  windSpeedKt: number;
+  windDir: number;
+  precipPct: number;
+  waveHeightM: number | null;
+  swellHeightM: number | null;
+  swellDirDeg: number | null;
+  swellPeriodS: number | null;
+}
+
 interface PortLiveData {
   tempC: number;
   dewpointC: number;
@@ -126,6 +138,7 @@ interface PortLiveData {
   swellPeriodS: number | null;
   swellDirDeg: number | null;
   fetchedAt: number; // epoch ms
+  hourlyForecast: HourlyForecastSlot[]; // next 12 hours
 }
 
 const portDataCache: Record<string, PortLiveData> = {};
@@ -137,11 +150,14 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
 
   const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,dew_point_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,pressure_msl` +
-    `&hourly=pressure_msl&past_hours=2&forecast_hours=0` +
+    `&hourly=pressure_msl,temperature_2m,wind_speed_10m,wind_direction_10m,precipitation_probability` +
+    `&past_hours=2&forecast_hours=14` +
     `&wind_speed_unit=kn&temperature_unit=celsius&timezone=auto`;
 
   const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
     `&current=wave_height,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction` +
+    `&hourly=wave_height,swell_wave_height,swell_wave_direction,swell_wave_period` +
+    `&past_hours=2&forecast_hours=14` +
     `&timezone=auto`;
 
   const [wxRes, marineRes] = await Promise.allSettled([
@@ -157,6 +173,32 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
   if (wx?.hourly?.pressure_msl) {
     const arr: number[] = wx.hourly.pressure_msl;
     if (arr.length >= 2) pressurePrev = arr[arr.length - 2];
+  }
+
+  // Build next-12-hour forecast slots starting from current hour
+  const hourlyForecast: HourlyForecastSlot[] = [];
+  if (wx?.hourly?.time) {
+    const nowIso = new Date().toISOString().slice(0, 13); // 'YYYY-MM-DDTHH'
+    const times: string[] = wx.hourly.time;
+    const startIdx = times.findIndex((t: string) => t.slice(0, 13) >= nowIso);
+    if (startIdx >= 0) {
+      for (let i = startIdx; i < Math.min(startIdx + 12, times.length); i++) {
+        const mIdx = marine?.hourly?.time
+          ? (marine.hourly.time as string[]).findIndex((t: string) => t === times[i])
+          : -1;
+        hourlyForecast.push({
+          time: times[i],
+          tempC: wx.hourly.temperature_2m?.[i] ?? 0,
+          windSpeedKt: wx.hourly.wind_speed_10m?.[i] ?? 0,
+          windDir: wx.hourly.wind_direction_10m?.[i] ?? 0,
+          precipPct: wx.hourly.precipitation_probability?.[i] ?? 0,
+          waveHeightM: mIdx >= 0 ? (marine.hourly.wave_height?.[mIdx] ?? null) : null,
+          swellHeightM: mIdx >= 0 ? (marine.hourly.swell_wave_height?.[mIdx] ?? null) : null,
+          swellDirDeg: mIdx >= 0 ? (marine.hourly.swell_wave_direction?.[mIdx] ?? null) : null,
+          swellPeriodS: mIdx >= 0 ? (marine.hourly.swell_wave_period?.[mIdx] ?? null) : null,
+        });
+      }
+    }
   }
 
   const data: PortLiveData = {
@@ -175,6 +217,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
     swellPeriodS: marine?.current?.swell_wave_period  ?? null,
     swellDirDeg:  marine?.current?.swell_wave_direction ?? null,
     fetchedAt: Date.now(),
+    hourlyForecast,
   };
   portDataCache[key] = data;
   return data;
@@ -408,6 +451,7 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isMetric, setIsMetric] = useState(isMetricProp);
+  const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -666,6 +710,110 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* 12-Hour Forecast toggle button */}
+              <div className="mt-2">
+                <button
+                  onClick={() => setShowForecast(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <span className="text-cyan-400 text-sm font-semibold tracking-wide">12-Hour Forecast</span>
+                  <span className="text-white/40 text-xs">{showForecast ? 'Hide' : 'Show'}</span>
+                </button>
+
+                {showForecast && data.hourlyForecast.length > 0 && (
+                  <div className="mt-3 overflow-x-auto">
+                    <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">12-Hour Forecast</p>
+                    <table className="w-full min-w-[560px] text-center border-collapse">
+                      <thead>
+                        <tr>
+                          {data.hourlyForecast.map((slot) => {
+                            const d = new Date(slot.time);
+                            const hr = d.getHours();
+                            const label = hr === 0 ? '12a' : hr < 12 ? `${hr}a` : hr === 12 ? '12p' : `${hr - 12}p`;
+                            return (
+                              <th key={slot.time} className="pb-2 text-white/60 font-semibold text-xs px-1" style={{minWidth:'44px'}}>{label}</th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Temperature */}
+                        <tr className="border-t border-white/5">
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className="py-2 text-white font-black text-sm px-1">
+                              {isMetric ? `${slot.tempC.toFixed(0)}°` : `${cToF(slot.tempC)}°`}
+                            </td>
+                          ))}
+                        </tr>
+                        {/* Wind direction */}
+                        <tr>
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className="py-1 text-cyan-400 font-semibold text-xs px-1">
+                              {degToCompass(slot.windDir)}
+                            </td>
+                          ))}
+                        </tr>
+                        {/* Wind speed */}
+                        <tr>
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className="py-1 text-white/80 text-xs px-1">
+                              {isMetric
+                                ? `${slot.windSpeedKt.toFixed(0)}kt`
+                                : `${Math.round(slot.windSpeedKt * 1.15078)}mph`}
+                            </td>
+                          ))}
+                        </tr>
+                        {/* Rain chance */}
+                        <tr>
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className={`py-1 text-xs font-semibold px-1 ${
+                              slot.precipPct >= 60 ? 'text-blue-400' :
+                              slot.precipPct >= 30 ? 'text-blue-300/70' :
+                              'text-white/40'
+                            }`}>
+                              {slot.precipPct}%
+                            </td>
+                          ))}
+                        </tr>
+                        {/* Divider */}
+                        <tr><td colSpan={12} className="py-1"><div className="border-t border-white/10" /></td></tr>
+                        {/* Wave height */}
+                        <tr>
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className="py-1 text-cyan-300 font-semibold text-xs px-1">
+                              {slot.waveHeightM !== null
+                                ? isMetric ? `${slot.waveHeightM.toFixed(1)}m` : `${mToFt(slot.waveHeightM)}ft`
+                                : '--'}
+                            </td>
+                          ))}
+                        </tr>
+                        {/* Swell direction */}
+                        <tr>
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className="py-1 text-cyan-400 text-xs px-1">
+                              {slot.swellDirDeg !== null ? degToCompass(slot.swellDirDeg) : '--'}
+                            </td>
+                          ))}
+                        </tr>
+                        {/* Swell period */}
+                        <tr>
+                          {data.hourlyForecast.map((slot) => (
+                            <td key={slot.time} className="py-1 text-white/50 text-xs px-1">
+                              {slot.swellPeriodS !== null ? `${slot.swellPeriodS.toFixed(0)}s` : '--'}
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div className="flex gap-4 mt-3 flex-wrap">
+                      <span className="text-cyan-400 text-[10px]">ft = wave ht</span>
+                      <span className="text-cyan-400 text-[10px]">dir = swell dir</span>
+                      <span className="text-white/40 text-[10px]">s = period</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <p className="text-white/25 text-xs text-right">
