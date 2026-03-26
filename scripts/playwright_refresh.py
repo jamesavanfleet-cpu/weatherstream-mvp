@@ -875,14 +875,19 @@ def fetch_ship_itineraries(ship_name: str, cm_url: str, page) -> tuple:
         except ValueError:
             continue
 
-        if dep_date < TODAY or dep_date > CUTOFF:
-            continue
-
-        # Extract duration from description
+        # Extract duration before the date check so we can compute return date
         desc_text = cells[1].inner_text().strip()
         dur_match = re.search(r'(\d+)\s+days?', desc_text, re.IGNORECASE)
         duration = int(dur_match.group(1)) if dur_match else None
         if not duration or duration < 2 or duration > 21:
+            continue
+
+        return_date = dep_date + timedelta(days=duration - 1)
+        # Include sailings currently in progress (departed before today but not
+        # yet returned) as well as future sailings within the 30-day window.
+        # Exclude sailings that have fully completed (return_date < TODAY)
+        # and sailings departing beyond the window.
+        if return_date < TODAY or dep_date > CUTOFF:
             continue
 
         dep_port_text = cells[2].inner_text().strip() if len(cells) > 2 else ""
@@ -1019,8 +1024,12 @@ def validate_itinerary(itin: dict, ship_name: str) -> tuple:
     else:
         try:
             d = datetime.strptime(dep_date_str, '%Y-%m-%d').date()
-            if d < TODAY - timedelta(days=1):
-                issues.append(f"Departure {dep_date_str} is in the past")
+            dur = itin.get('duration_days') or 0
+            return_date = d + timedelta(days=dur - 1)
+            # A sailing is valid if it is currently in progress (departed before
+            # today but return_date is today or later) OR departs in the future.
+            if return_date < TODAY:
+                issues.append(f"Sailing {dep_date_str} has already completed (returned {return_date})")
             if d > CUTOFF:
                 issues.append(f"Departure {dep_date_str} is beyond the {MAX_FUTURE_DAYS}-day window")
         except ValueError:
