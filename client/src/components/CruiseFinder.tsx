@@ -202,11 +202,24 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-function formatDepartureDate(dateStr: string, durationDays: number | null, homePort: string): string {
+function getSailingStatus(dateStr: string, durationDays: number | null): 'live' | 'next' | 'future' {
+  const today = new Date().toISOString().slice(0, 10);
+  const durDays = durationDays ?? 7;
+  const depDate = dateStr;
+  const endDate = new Date(dateStr + 'T12:00:00Z');
+  endDate.setDate(endDate.getDate() + durDays);
+  const endStr = endDate.toISOString().slice(0, 10);
+  if (depDate <= today && endStr >= today) return 'live';
+  return 'future';
+}
+
+function formatDepartureDate(dateStr: string, durationDays: number | null, homePort: string, isNext?: boolean): string {
   const d = new Date(dateStr + "T12:00:00Z");
   const label = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
   const dur = durationDays ? ` (${durationDays} nights)` : "";
-  return `${label}${dur} -- ${homePort}`;
+  const status = getSailingStatus(dateStr, durationDays);
+  const prefix = status === 'live' ? '[LIVE] ' : (isNext ? '[Next Sailing] ' : '');
+  return `${prefix}${label}${dur} -- ${homePort}`;
 }
 
 function cToF(c: number): number { return Math.round(c * 9 / 5 + 32); }
@@ -648,11 +661,18 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
             <select value={selectedDate} onChange={e => handleDateChange(e.target.value)} disabled={!selectedShip}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm appearance-none cursor-pointer hover:border-cyan-400/50 focus:border-cyan-400 focus:outline-none transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
               <option value="" disabled className="bg-[#0a0f1a]">{selectedShip ? "Select departure date..." : "Select ship first"}</option>
-              {availableDates.map(i => (
-                <option key={i.departure_date} value={i.departure_date} className="bg-[#0a0f1a]">
-                  {formatDepartureDate(i.departure_date, i.duration_days, i.departure_port)}
-                </option>
-              ))}
+              {availableDates.map((i, idx) => {
+                const status = getSailingStatus(i.departure_date, i.duration_days);
+                // Determine if this is the "next sailing" -- the first non-live entry
+                // when no live sailing exists at position 0
+                const hasLive = availableDates.length > 0 && getSailingStatus(availableDates[0].departure_date, availableDates[0].duration_days) === 'live';
+                const isNext = !hasLive && idx === 0;
+                return (
+                  <option key={i.departure_date} value={i.departure_date} className="bg-[#0a0f1a]">
+                    {formatDepartureDate(i.departure_date, i.duration_days, i.departure_port, isNext)}
+                  </option>
+                );
+              })}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
           </div>

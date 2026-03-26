@@ -38,6 +38,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 JSON_PATH = os.path.join(REPO_ROOT, 'client', 'public', 'cruise_itineraries.json')
 LOOKUP_PATH = os.path.join(SCRIPT_DIR, 'ship_id_lookup.json')
+FALLBACK_URLS_PATH = os.path.join(SCRIPT_DIR, 'cruise_line_fallback_urls.json')
 
 TODAY = date.today()
 MAX_FUTURE_DAYS = 30   # rolling window: today + 30 days
@@ -1075,6 +1076,14 @@ def main():
     with open(LOOKUP_PATH) as f:
         ship_lookup = json.load(f)
 
+    # Load fallback cruise line URLs for manual verification when CruiseMapper is empty
+    fallback_urls = {}
+    if os.path.exists(FALLBACK_URLS_PATH):
+        with open(FALLBACK_URLS_PATH) as f:
+            fallback_urls = json.load(f)
+    else:
+        print(f"  WARNING: cruise_line_fallback_urls.json not found at {FALLBACK_URLS_PATH}")
+
     validation_failures = []
     ships_updated = 0
     itins_added = 0
@@ -1114,6 +1123,26 @@ def main():
                     # rather than wiping them, so the site shows something useful.
                     # But we still purge any fully-completed past sailings so stale
                     # entries do not accumulate between scraper runs.
+
+                    # --- FALLBACK: Log the cruise line's official itinerary URL ---
+                    # When CruiseMapper shows nothing, the operator should manually
+                    # verify on the cruise line's own site before assuming a gap is real.
+                    fallback_url = None
+                    try:
+                        if fallback_urls:
+                            line_name = cl.get('name', '')
+                            line_fb = fallback_urls.get(line_name, {})
+                            ship_slugs = line_fb.get('ship_slugs', {})
+                            ship_codes = line_fb.get('ship_codes', {})
+                            slug = ship_slugs.get(ship_name) or ship_codes.get(ship_name)
+                            pattern = line_fb.get('ship_page_pattern', '')
+                            if slug and pattern:
+                                fallback_url = pattern.replace('{ship_slug}', slug)
+                            elif line_fb.get('search_base_url'):
+                                fallback_url = line_fb['search_base_url']
+                    except Exception:
+                        pass
+
                     existing = ship.get('itineraries', [])
                     still_valid = [
                         i for i in existing
@@ -1126,12 +1155,16 @@ def main():
                     if purged:
                         print(f"  Purged {purged} fully-completed past sailing(s).")
                     if still_valid:
-                        print(f"  No new sailings found -- ship may be in dry dock or between seasons.")
+                        print(f"  No new sailings found on CruiseMapper -- ship may be in dry dock or between seasons.")
+                        if fallback_url:
+                            print(f"  FALLBACK VERIFY: {fallback_url}")
                         print(f"  Preserving {len(still_valid)} existing future/in-progress itineraries.")
                         if not args.dry_run:
                             ship['itineraries'] = still_valid
                     else:
                         print(f"  No sailings in 30-day window and no future itineraries to preserve.")
+                        if fallback_url:
+                            print(f"  FALLBACK VERIFY: {fallback_url}")
                         if not args.dry_run:
                             ship['itineraries'] = []
                     continue
