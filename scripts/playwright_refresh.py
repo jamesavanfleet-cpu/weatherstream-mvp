@@ -1112,14 +1112,24 @@ def main():
                     # This is normal: dry dock, repositioning, or seasonal gap.
                     # We preserve existing future itineraries already in the JSON
                     # rather than wiping them, so the site shows something useful.
+                    # But we still purge any fully-completed past sailings so stale
+                    # entries do not accumulate between scraper runs.
                     existing = ship.get('itineraries', [])
                     still_valid = [
                         i for i in existing
-                        if i.get('departure_date', '') >= TODAY.strftime('%Y-%m-%d')
+                        if (
+                            datetime.strptime(i['departure_date'], '%Y-%m-%d').date()
+                            + timedelta(days=i.get('duration_days', 1) - 1)
+                        ) >= TODAY
                     ]
+                    purged = len(existing) - len(still_valid)
+                    if purged:
+                        print(f"  Purged {purged} fully-completed past sailing(s).")
                     if still_valid:
                         print(f"  No new sailings found -- ship may be in dry dock or between seasons.")
-                        print(f"  Preserving {len(still_valid)} existing future itineraries.")
+                        print(f"  Preserving {len(still_valid)} existing future/in-progress itineraries.")
+                        if not args.dry_run:
+                            ship['itineraries'] = still_valid
                     else:
                         print(f"  No sailings in 30-day window and no future itineraries to preserve.")
                         if not args.dry_run:
@@ -1237,6 +1247,9 @@ def main():
                     itins_removed += abs(delta)
 
                 if not args.dry_run:
+                    # Purge any fully-completed past sailings that were in the JSON
+                    # from a previous run but are no longer in the fresh scrape window.
+                    # This prevents stale past entries from accumulating.
                     ship['itineraries'] = valid_itins
 
                 ships_updated += 1
