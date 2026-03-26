@@ -62,6 +62,8 @@ interface PortForecast {
   peakCloudLabel: string | null;       // "Overcast" | "Mostly Cloudy" | "Partly Cloudy"
   clearestTimeOfDay: string | null;    // time-of-day for lowest cloud cover
   clearestCloudPct: number | null;     // cloud % at clearest hour
+  // Hourly rain probability for bar chart (2-hour increments 6am-midnight)
+  hourlyRain: { hour: number; pct: number }[];
   loading: boolean;
   error: boolean;
 }
@@ -317,6 +319,22 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
       }
     }
 
+    // Build 2-hour increment rain array from 6am to midnight
+    const hourlyRain: { hour: number; pct: number }[] = [];
+    if (h?.time && h?.precipitation_probability) {
+      const rainMap: Record<number, number> = {};
+      (h.time as string[]).forEach((isoTime: string, i: number) => {
+        if (isoTime.startsWith(date)) {
+          const hr = parseInt(isoTime.slice(11, 13), 10);
+          rainMap[hr] = h.precipitation_probability[i] ?? 0;
+        }
+      });
+      for (let hr = 6; hr <= 24; hr += 2) {
+        const displayHr = hr === 24 ? 0 : hr;
+        hourlyRain.push({ hour: hr === 24 ? 24 : displayHr, pct: rainMap[displayHr] ?? 0 });
+      }
+    }
+
     return {
       tempMaxC: d.temperature_2m_max?.[idx] ?? null,
       tempMinC: d.temperature_2m_min?.[idx] ?? null,
@@ -336,6 +354,7 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
       peakCloudLabel,
       clearestTimeOfDay,
       clearestCloudPct,
+      hourlyRain,
       loading: false,
       error: false,
     };
@@ -458,6 +477,7 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
       pressureHpa: null, waveHeightM: null, swellHeightM: null,
       peakRainTimeOfDay: null, peakCloudTimeOfDay: null, peakCloudLabel: null,
       clearestTimeOfDay: null, clearestCloudPct: null,
+      hourlyRain: [],
       loading: true, error: false,
     }));
     setPortForecasts(initial);
@@ -787,16 +807,55 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                           value={windDisplay}
                           subValue={pf.windDir}
                         />
-                        <ForecastCard
-                          icon={<Droplets className="w-10 h-10 text-blue-400" />}
-                          label="Rain Chance"
-                          value={pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
-                          subValue={
-                            pf.peakRainTimeOfDay
-                              ? `Highest chance: ${pf.peakRainTimeOfDay}`
-                              : (precipDisplay ? `Precip: ${precipDisplay}` : "Low rain risk")
-                          }
-                        />
+                        {/* Rain Chance card with vertical hourly bar chart */}
+                        <div className="glass-dark rounded-2xl border border-white/5 overflow-hidden">
+                          {/* Header row: icon+label on left, pct+timing on right */}
+                          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Droplets className="w-6 h-6 text-blue-400 flex-shrink-0" />
+                              <span className="text-white/50 text-xs">Rain Chance</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-white font-black text-xl leading-none">
+                                {pf.precipChance !== null ? `${pf.precipChance}%` : "--"}
+                              </span>
+                              {pf.peakRainTimeOfDay && (
+                                <p className="text-blue-300/70 text-[10px] leading-tight mt-0.5">
+                                  Peak: {pf.peakRainTimeOfDay}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {/* Vertical bar chart -- 2-hour increments 6am to midnight */}
+                          {pf.hourlyRain.length > 0 ? (
+                            <div className="px-3 pb-3">
+                              <div className="flex items-end justify-between gap-0.5" style={{height: '64px'}}>
+                                {pf.hourlyRain.map(({ hour, pct }) => {
+                                  const barH = Math.max(3, Math.round((pct / 100) * 56));
+                                  const isHigh = pct >= 50;
+                                  const label = hour === 6 ? '6a' : hour === 8 ? '8a' : hour === 10 ? '10a' : hour === 12 ? '12p' : hour === 14 ? '2p' : hour === 16 ? '4p' : hour === 18 ? '6p' : hour === 20 ? '8p' : hour === 22 ? '10p' : '12a';
+                                  return (
+                                    <div key={hour} className="flex flex-col items-center flex-1" style={{gap: '2px'}}>
+                                      <div className="w-full flex items-end justify-center" style={{height: '48px'}}>
+                                        <div
+                                          style={{height: `${barH}px`, width: '100%', maxWidth: '14px'}}
+                                          className={`rounded-sm transition-all ${isHigh ? 'bg-blue-400' : 'bg-blue-400/30'}`}
+                                        />
+                                      </div>
+                                      <span className="text-white/30 leading-none" style={{fontSize: '8px'}}>{label}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="px-4 pb-3">
+                              <p className="text-white/30 text-xs">
+                                {pf.peakRainTimeOfDay ? `Highest chance: ${pf.peakRainTimeOfDay}` : (precipDisplay ? `Precip: ${precipDisplay}` : "Low rain risk")}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                         <ForecastCard
                           icon={<Cloud className="w-10 h-10 text-slate-300" />}
                           label="Cloud Cover"
