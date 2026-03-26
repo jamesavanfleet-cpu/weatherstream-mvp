@@ -849,20 +849,24 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
                           {/* Vertical bar chart -- 2-hour increments 6am to midnight */}
                           {pf.hourlyRain.length > 0 ? (
                             <div className="px-3 pb-3">
-                              <div className="flex items-end justify-between gap-0.5" style={{height: '64px'}}>
+                              <div className="flex items-end justify-between gap-0.5" style={{height: '80px'}}>
                                 {pf.hourlyRain.map(({ hour, pct }) => {
-                                  const barH = Math.max(3, Math.round((pct / 100) * 56));
+                                  const barH = Math.max(3, Math.round((pct / 100) * 48));
                                   const isHigh = pct >= 50;
                                   const label = hour === 6 ? '6a' : hour === 8 ? '8a' : hour === 10 ? '10a' : hour === 12 ? '12p' : hour === 14 ? '2p' : hour === 16 ? '4p' : hour === 18 ? '6p' : hour === 20 ? '8p' : hour === 22 ? '10p' : '12a';
                                   return (
                                     <div key={hour} className="flex flex-col items-center flex-1" style={{gap: '2px'}}>
+                                      {/* Percentage label above bar -- only show if > 0 */}
+                                      <span className="leading-none font-bold text-white/80" style={{fontSize: '9px', minHeight: '11px'}}>
+                                        {pct > 0 ? `${pct}%` : ''}
+                                      </span>
                                       <div className="w-full flex items-end justify-center" style={{height: '48px'}}>
                                         <div
                                           style={{height: `${barH}px`, width: '100%', maxWidth: '14px'}}
                                           className={`rounded-sm transition-all ${isHigh ? 'bg-blue-400' : 'bg-blue-400/30'}`}
                                         />
                                       </div>
-                                      <span className="text-amber-100/70 leading-none" style={{fontSize: '8px'}}>{label}</span>
+                                      <span className="text-amber-100/80 leading-none font-bold" style={{fontSize: '10px'}}>{label}</span>
                                     </div>
                                   );
                                 })}
