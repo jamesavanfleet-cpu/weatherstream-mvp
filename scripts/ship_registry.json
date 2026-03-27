@@ -1,0 +1,167 @@
+{
+  "_readme": "SHIP REGISTRY -- Single source of truth for all ships and cruise lines scraped by playwright_refresh.py. To add a ship: add an entry with active=true. To retire a ship: set active=false (do NOT delete -- preserves history). To add a new cruise line: add a new block. The scraper reads this file at runtime -- the core scraper script never needs to change.",
+  "cruise_lines": [
+    {
+      "name": "Carnival Cruise Line",
+      "active": true,
+      "cruisemapper_line_id": "9",
+      "ships": [
+        { "name": "Carnival Breeze",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Breeze-677" },
+        { "name": "Carnival Celebration",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Celebration-2168" },
+        { "name": "Carnival Dream",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Dream-536" },
+        { "name": "Carnival Elation",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Elation-219" },
+        { "name": "Carnival Freedom",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Freedom-397" },
+        { "name": "Carnival Horizon",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Horizon-2050" },
+        { "name": "Carnival Jubilee",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Jubilee-2178" },
+        { "name": "Carnival Legend",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Legend-278" },
+        { "name": "Carnival Luminosa",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Luminosa-2167" },
+        { "name": "Carnival Magic",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Magic-617" },
+        { "name": "Carnival Mardi Gras",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Mardi-Gras-2144" },
+        { "name": "Carnival Panorama",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Panorama-2118" },
+        { "name": "Carnival Paradise",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Paradise-230" },
+        { "name": "Carnival Pride",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Pride-268" },
+        { "name": "Carnival Radiance",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Radiance-2155" },
+        { "name": "Carnival Spirit",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Spirit-267" },
+        { "name": "Carnival Sunshine",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Sunshine-290" },
+        { "name": "Carnival Valor",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Valor-316" },
+        { "name": "Carnival Venezia",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Venezia-2174" },
+        { "name": "Carnival Vista",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Carnival-Vista-2009" }
+      ]
+    },
+    {
+      "name": "Celebrity Cruises",
+      "active": true,
+      "cruisemapper_line_id": "5",
+      "ships": [
+        { "name": "Celebrity Apex",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Apex-1587" },
+        { "name": "Celebrity Ascent",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Ascent-2176" },
+        { "name": "Celebrity Beyond",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Beyond-2166" },
+        { "name": "Celebrity Constellation","active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Constellation-272" },
+        { "name": "Celebrity Eclipse",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Eclipse-573" },
+        { "name": "Celebrity Edge",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Edge-2082" },
+        { "name": "Celebrity Equinox",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Equinox-541" },
+        { "name": "Celebrity Reflection",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Reflection-711" },
+        { "name": "Celebrity Silhouette",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Silhouette-643" },
+        { "name": "Celebrity Solstice",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Solstice-507" },
+        { "name": "Celebrity Summit",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Celebrity-Summit-261" }
+      ]
+    },
+    {
+      "name": "Disney Cruise Line",
+      "active": true,
+      "cruisemapper_line_id": "12",
+      "ships": [
+        { "name": "Disney Dream",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Disney-Dream-548" },
+        { "name": "Disney Fantasy",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Disney-Fantasy-673" },
+        { "name": "Disney Magic",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Disney-Magic-208" },
+        { "name": "Disney Treasure", "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Disney-Treasure-2182" },
+        { "name": "Disney Wish",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Disney-Wish-2163" },
+        { "name": "Disney Wonder",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Disney-Wonder-222" }
+      ]
+    },
+    {
+      "name": "MSC Cruises",
+      "active": true,
+      "cruisemapper_line_id": "13",
+      "ships": [
+        { "name": "MSC Divina",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/MSC-Divina-719" },
+        { "name": "MSC Meraviglia",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/MSC-Meraviglia-2051" },
+        { "name": "MSC Seascape",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/MSC-Seascape-2171" },
+        { "name": "MSC Seashore",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/MSC-Seashore-2153" },
+        { "name": "MSC World America","active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/MSC-World-America-2183" }
+      ]
+    },
+    {
+      "name": "Norwegian Cruise Line",
+      "active": true,
+      "cruisemapper_line_id": "10",
+      "ships": [
+        { "name": "Norwegian Aqua",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Aqua-2181" },
+        { "name": "Norwegian Bliss",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Bliss-1454" },
+        { "name": "Norwegian Breakaway","active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Breakaway-750" },
+        { "name": "Norwegian Encore",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Encore-2120" },
+        { "name": "Norwegian Epic",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Epic-572" },
+        { "name": "Norwegian Escape",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Escape-1998" },
+        { "name": "Norwegian Gem",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Gem-434" },
+        { "name": "Norwegian Getaway",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Getaway-802" },
+        { "name": "Norwegian Jade",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Jade-432" },
+        { "name": "Norwegian Joy",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Joy-2048" },
+        { "name": "Norwegian Pearl",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Pearl-433" },
+        { "name": "Norwegian Prima",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Prima-2164" },
+        { "name": "Norwegian Sky",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Sky-229" },
+        { "name": "Norwegian Star",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Star-270" },
+        { "name": "Norwegian Sun",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Sun-253" },
+        { "name": "Norwegian Viva",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Norwegian-Viva-2175" }
+      ]
+    },
+    {
+      "name": "Princess Cruises",
+      "active": true,
+      "cruisemapper_line_id": "3",
+      "ships": [
+        { "name": "Caribbean Princess",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Caribbean-Princess-558" },
+        { "name": "Coral Princess",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Coral-Princess-277" },
+        { "name": "Crown Princess",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Crown-Princess-430" },
+        { "name": "Discovery Princess",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Discovery-Princess-2158" },
+        { "name": "Emerald Princess",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Emerald-Princess-431" },
+        { "name": "Enchanted Princess",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Enchanted-Princess-2140" },
+        { "name": "Grand Princess",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Grand-Princess-228" },
+        { "name": "Island Princess",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Island-Princess-314" },
+        { "name": "Majestic Princess",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Majestic-Princess-2044" },
+        { "name": "Regal Princess",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Regal-Princess-803" },
+        { "name": "Royal Princess",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Royal-Princess-751" },
+        { "name": "Ruby Princess",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Ruby-Princess-508" },
+        { "name": "Sapphire Princess",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Sapphire-Princess-315" },
+        { "name": "Sky Princess",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Sky-Princess-2119" },
+        { "name": "Star Princess",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Star-Princess-2179" },
+        { "name": "Sun Princess",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Sun-Princess-2180" }
+      ]
+    },
+    {
+      "name": "Royal Caribbean",
+      "active": true,
+      "cruisemapper_line_id": "1",
+      "ships": [
+        { "name": "Adventure Of The Seas",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Adventure-Of-The-Seas-533" },
+        { "name": "Allure Of The Seas",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Allure-Of-The-Seas-662" },
+        { "name": "Anthem of the Seas",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Anthem-of-the-Seas-801" },
+        { "name": "Brilliance Of The Seas",   "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Brilliance-Of-The-Seas-271" },
+        { "name": "Enchantment Of The Seas",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Enchantment-Of-The-Seas-224" },
+        { "name": "Explorer Of The Seas",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Explorer-Of-The-Seas-254" },
+        { "name": "Freedom Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Freedom-Of-The-Seas-396" },
+        { "name": "Grandeur Of The Seas",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Grandeur-Of-The-Seas-209" },
+        { "name": "Harmony Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Harmony-Of-The-Seas-2008" },
+        { "name": "Icon Of The Seas",         "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Icon-Of-The-Seas-2177" },
+        { "name": "Independence Of The Seas", "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Independence-Of-The-Seas-466" },
+        { "name": "Jewel Of The Seas",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Jewel-Of-The-Seas-313" },
+        { "name": "Liberty Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Liberty-Of-The-Seas-429" },
+        { "name": "Mariner Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Mariner-Of-The-Seas-1040" },
+        { "name": "Navigator Of The Seas",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Navigator-Of-The-Seas-255" },
+        { "name": "Oasis Of The Seas",        "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Oasis-Of-The-Seas-537" },
+        { "name": "Odyssey Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Odyssey-Of-The-Seas-2148" },
+        { "name": "Ovation Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Ovation-Of-The-Seas-2007" },
+        { "name": "Quantum Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Quantum-Of-The-Seas-804" },
+        { "name": "Radiance Of The Seas",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Radiance-Of-The-Seas-266" },
+        { "name": "Rhapsody Of The Seas",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Rhapsody-Of-The-Seas-210" },
+        { "name": "Serenade Of The Seas",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Serenade-Of-The-Seas-312" },
+        { "name": "Star Of The Seas",         "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Star-Of-The-Seas-2184" },
+        { "name": "Symphony Of The Seas",     "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Symphony-Of-The-Seas-2088" },
+        { "name": "Utopia Of The Seas",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Utopia-Of-The-Seas-2180" },
+        { "name": "Vision Of The Seas",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Vision-Of-The-Seas-211" },
+        { "name": "Voyager Of The Seas",      "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Voyager-Of-The-Seas-252" },
+        { "name": "Wonder Of The Seas",       "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Wonder-Of-The-Seas-2165" }
+      ]
+    },
+    {
+      "name": "Virgin Voyages",
+      "active": true,
+      "cruisemapper_line_id": "109",
+      "ships": [
+        { "name": "Brilliant Lady",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Brilliant-Lady-2186" },
+        { "name": "Resilient Lady",  "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Resilient-Lady-2162" },
+        { "name": "Scarlet Lady",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Scarlet-Lady-2130" },
+        { "name": "Valiant Lady",    "active": true, "cruisemapper_url": "https://www.cruisemapper.com/ships/Valiant-Lady-2156" }
+      ]
+    }
+  ]
+}

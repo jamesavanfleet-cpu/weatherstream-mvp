@@ -11,8 +11,10 @@ ship pages exactly as a human would:
   5. Validate and write to cruise_itineraries.json
   6. Push updated JSON to gh-pages (when run in GitHub Actions)
 
-To add a new ship: add one entry to scripts/ship_id_lookup.json.
-No other changes needed.
+To add a new ship: add one entry to scripts/ship_registry.json with active=true.
+To retire a ship: set active=false in ship_registry.json.
+To add a new cruise line: add a new block to ship_registry.json.
+The core scraper script never needs to change for fleet management.
 
 Usage:
   python3 playwright_refresh.py              # full refresh, all ships
@@ -38,6 +40,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 JSON_PATH = os.path.join(REPO_ROOT, 'client', 'public', 'cruise_itineraries.json')
 LOOKUP_PATH = os.path.join(SCRIPT_DIR, 'ship_id_lookup.json')
+REGISTRY_PATH = os.path.join(SCRIPT_DIR, 'ship_registry.json')
 FALLBACK_URLS_PATH = os.path.join(SCRIPT_DIR, 'cruise_line_fallback_urls.json')
 
 TODAY = date.today()
@@ -1182,12 +1185,31 @@ def main():
     with open(JSON_PATH) as f:
         data = json.load(f)
 
-    # Load ship lookup
-    if not os.path.exists(LOOKUP_PATH):
-        print(f"ERROR: ship_id_lookup.json not found at {LOOKUP_PATH}")
-        sys.exit(1)
-    with open(LOOKUP_PATH) as f:
-        ship_lookup = json.load(f)
+    # Load ship registry (single source of truth for fleet management)
+    # To add/remove ships or lines, edit scripts/ship_registry.json only.
+    if os.path.exists(REGISTRY_PATH):
+        with open(REGISTRY_PATH) as f:
+            registry = json.load(f)
+        # Build a lookup dict from the registry for fast URL access
+        ship_lookup = {}
+        for reg_cl in registry['cruise_lines']:
+            if not reg_cl.get('active', True):
+                continue
+            for reg_ship in reg_cl['ships']:
+                if reg_ship.get('active', True):
+                    ship_lookup[reg_ship['name']] = {
+                        'url': reg_ship['cruisemapper_url'],
+                        'line_id': reg_cl.get('cruisemapper_line_id', '')
+                    }
+        print(f"Loaded ship registry: {len(ship_lookup)} active ships across {len([c for c in registry['cruise_lines'] if c.get('active', True)])} active cruise lines")
+    else:
+        # Fallback to legacy ship_id_lookup.json if registry not found
+        print(f"  WARNING: ship_registry.json not found at {REGISTRY_PATH}, falling back to ship_id_lookup.json")
+        if not os.path.exists(LOOKUP_PATH):
+            print(f"ERROR: ship_id_lookup.json not found at {LOOKUP_PATH}")
+            sys.exit(1)
+        with open(LOOKUP_PATH) as f:
+            ship_lookup = json.load(f)
 
     # Load fallback cruise line URLs for manual verification when CruiseMapper is empty
     fallback_urls = {}
@@ -1215,7 +1237,7 @@ def main():
                     continue
 
                 if ship_name not in ship_lookup:
-                    print(f"  SKIP {ship_name}: not in ship_id_lookup.json")
+                    print(f"  SKIP {ship_name}: not in ship_registry.json (set active=true to enable)")
                     continue
 
                 cm_url = ship_lookup[ship_name]['url']
