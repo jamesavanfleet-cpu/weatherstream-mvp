@@ -145,6 +145,14 @@ function swellFtToM(ft: number | null): string | null {
   return (ft * 0.3048).toFixed(1) + "m";
 }
 
+function seaStateFromWind(ktSpeed: number): string {
+  if (ktSpeed <= 6) return "< 1 ft";
+  if (ktSpeed <= 10) return "1-2 ft";
+  if (ktSpeed <= 16) return "2-4 ft";
+  if (ktSpeed <= 21) return "4-6 ft";
+  if (ktSpeed <= 27) return "6-9 ft";
+  return "9+ ft";
+}
 function wmoToCondition(code: number): string {
   if (code === 0) return "Clear";
   if (code <= 2) return "Partly Cloudy";
@@ -184,6 +192,11 @@ interface DayForecast {
   swellHeightFt: number | null;
   swellDir: string | null;
   swellPeriod: number | null;
+  humidity: number | null;
+  uvIndex: number | null;
+  cloudCover: number | null;
+  visibility: number | null;
+  seaState: string | null;
 }
 
 interface HourlySlot {
@@ -195,6 +208,11 @@ interface HourlySlot {
   rainChance: number;
   condition: string;
   wmoCode: number;
+  humidity: number;
+  uvIndex: number;
+  cloudCover: number;
+  visibility: number;
+  seaState: string;
 }
 
 interface PortWeatherData {
@@ -224,8 +242,8 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
   const weatherUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode` +
-    `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
-    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
+    `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability,relativehumidity_2m,uv_index,cloudcover,visibility` +
+    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode,uv_index_max,windspeed_10m_max` +
     `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=8`;
 
   const marineUrl =
@@ -292,6 +310,11 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
       const wDir = degToCompass(h.wind_direction_10m[idx] ?? 0);
       const wmo = h.weathercode[idx] ?? 0;
       const rain = h.precipitation_probability[idx] ?? 0;
+      const hum = h.relativehumidity_2m?.[idx] ?? 0;
+      const uv = h.uv_index?.[idx] ?? 0;
+      const cc = h.cloudcover?.[idx] ?? 0;
+      const vis = h.visibility?.[idx] ?? 0; // metres
+      const visKm = Math.round(vis / 100) / 10; // km with 1 decimal
 
       hourlySlots.push({
         hour: effectiveHour,
@@ -302,6 +325,11 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
         rainChance: rain,
         condition: wmoToCondition(wmo),
         wmoCode: wmo,
+        humidity: hum,
+        uvIndex: Math.round(uv * 10) / 10,
+        cloudCover: cc,
+        visibility: visKm,
+        seaState: seaStateFromWind(wKt),
       });
     });
   }
@@ -325,6 +353,11 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
       swellHeightFt: md?.swell_wave_height_max?.[i] != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
       swellDir:      swellDeg != null ? degToCompass(swellDeg) : null,
       swellPeriod:   md?.swell_wave_period_max?.[i] != null ? Math.round(md.swell_wave_period_max[i]) : null,
+      humidity: null,
+      uvIndex: d.uv_index_max?.[i] != null ? Math.round(d.uv_index_max[i] * 10) / 10 : null,
+      cloudCover: null,
+      visibility: null,
+      seaState: seaStateFromWind(wKt),
     };
   });
 
@@ -341,34 +374,53 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
 // ============================================================
 // Today's Hourly Forecast Panel
 // ============================================================
+function cloudCoverIcon(pct: number): string {
+  if (pct <= 10) return "\u2600\ufe0f";  // clear sun
+  if (pct <= 30) return "\uD83C\uDF24\uFE0F"; // sun behind small cloud
+  if (pct <= 60) return "\u26C5";  // partly cloudy
+  if (pct <= 85) return "\uD83C\uDF25\uFE0F"; // sun behind large cloud
+  return "\u2601\ufe0f"; // full cloud
+}
 function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: boolean }) {
   if (slots.length === 0) {
     return <p className="text-white/30 text-xs py-2">Hourly data unavailable for this port.</p>;
   }
-  // Full-width CSS grid -- each card gets an equal share of the container, no scroll, no empty space
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-auto">
       <div
-        className="grid w-full gap-1"
-        style={{ gridTemplateColumns: `repeat(${slots.length}, 1fr)` }}
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${slots.length}, minmax(62px, 1fr))`, minWidth: `${slots.length * 62}px` }}
       >
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center justify-between bg-white/5 border border-white/10 rounded-lg py-2 px-0.5 min-w-0"
+            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-2 px-1 gap-0.5 min-w-0"
           >
-            <span className="text-amber-100/70 text-[11px] font-bold truncate w-full text-center">{slot.label}</span>
-            <SkyIcon condition={slot.condition} className="w-5 h-5 text-yellow-300 my-0.5 flex-shrink-0" />
-            <span className="text-white font-black text-sm leading-none">
+            <span className="text-amber-100/70 text-[11px] font-bold w-full text-center">{slot.label}</span>
+            <SkyIcon condition={slot.condition} className="w-6 h-6 text-yellow-300 flex-shrink-0" />
+            <span className="text-white font-black text-[13px] leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
             </span>
-            <span className="text-cyan-300 text-[10px] font-bold mt-0.5 truncate w-full text-center">
+            <span className="text-cyan-300 text-[11px] font-bold w-full text-center">
               {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
             </span>
-            <span className="text-white/50 text-[9px] truncate w-full text-center">{slot.windDir}</span>
-            <span className="text-blue-300 text-[10px] font-bold mt-0.5">{slot.rainChance}%</span>
+            <span className="text-white/50 text-[10px] w-full text-center">{slot.windDir}</span>
+            <span className="text-blue-300 text-[11px] font-bold">{slot.rainChance}%</span>
+            <span className="text-white/60 text-[10px]">{slot.humidity}% hum</span>
+            <span className="text-yellow-200 text-[10px]">UV {slot.uvIndex}</span>
+            <span className="text-white/70 text-[11px]" title={`Cloud cover: ${slot.cloudCover}%`}>{cloudCoverIcon(slot.cloudCover)} {slot.cloudCover}%</span>
+            <span className="text-green-300 text-[10px]">{slot.visibility}km vis</span>
+            <span className="text-teal-300 text-[10px]">{slot.seaState}</span>
           </div>
         ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
+        <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
+        <span className="text-white/60 text-xs font-bold">hum = humidity</span>
+        <span className="text-yellow-200 text-xs font-bold">UV = UV index</span>
+        <span className="text-white/70 text-xs font-bold">cloud % = cloud cover</span>
+        <span className="text-green-300 text-xs font-bold">vis = visibility</span>
+        <span className="text-teal-300 text-xs font-bold">sea state</span>
       </div>
     </div>
   );
@@ -388,7 +440,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
-              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-4 px-1">
+              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-2 px-1">
               <div>
                 <p className="text-white/70 text-base font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
                 <SkyIcon condition={day.condition} className="w-14 h-14 text-yellow-300 mx-auto mb-2" />
@@ -406,6 +458,8 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                   {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
                 </p>
                 <p className="text-blue-300 text-base font-extrabold">{day.rainChance}%</p>
+                {day.uvIndex != null && <p className="text-yellow-200 text-sm font-bold">UV {day.uvIndex}</p>}
+                {day.seaState && <p className="text-teal-300 text-sm font-bold">{day.seaState}</p>}
               </div>
               {(() => {
                 // Use swellHeightFt if available, fall back to waveHeightFt
@@ -426,13 +480,14 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
           );
         })}
       </div>
-      {hasWave && (
-        <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/10">
-          <span className="text-teal-300 text-xs font-bold">ft/m = swell ht</span>
-          <span className="text-teal-400/70 text-xs font-bold">dir = swell dir</span>
-          <span className="text-white/50 text-xs font-bold">s = period</span>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
+        <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
+        {hasWave && <span className="text-teal-300 text-xs font-bold">ft/m = swell ht</span>}
+        {hasWave && <span className="text-teal-400/70 text-xs font-bold">dir = swell dir</span>}
+        {hasWave && <span className="text-white/50 text-xs font-bold">s = period</span>}
+        <span className="text-yellow-200 text-xs font-bold">UV = UV index</span>
+        <span className="text-teal-300 text-xs font-bold">sea state shown</span>
+      </div>
     </div>
   );
 }
@@ -639,7 +694,7 @@ function PortSlotCard({
               {/* Today's hourly */}
               <div>
                 <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">
-                  Today's Forecast -- 4 AM to Midnight (2-Hour Increments)
+                  Today's Forecast -- Hour by Hour (6 AM to 10 PM)
                 </p>
                 <HourlyForecast slots={slot!.weather!.hourlyToday} isMetric={isMetric} />
               </div>
