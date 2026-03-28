@@ -448,6 +448,7 @@ function PortSlotCard({
   selectedPort,
   onQueryChange,
   onClear,
+  onGetForecast,
 }: {
   slotIndex: number;
   slot: PortSlot | null;
