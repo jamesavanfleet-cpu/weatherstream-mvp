@@ -255,12 +255,13 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
   const apiTimezone: string = weather.timezone ?? "UTC";
   const todayLocalDate = new Date().toLocaleDateString("en-CA", { timeZone: apiTimezone }); // "YYYY-MM-DD"
 
-  // Target hours for the hourly strip: 4a through 10p (even hours 4-22) plus midnight of next day
+  // Target hours for the hourly strip: every hour from 4 AM through 11 PM, plus midnight of next day
   // We represent midnight as hour 24 internally so the sort works correctly
-  const TARGET_HOURS_TODAY = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+  const TARGET_HOURS_TODAY = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
   const labelMap: Record<number, string> = {
-    4: "4a", 6: "6a", 8: "8a", 10: "10a", 12: "12p",
-    14: "2p", 16: "4p", 18: "6p", 20: "8p", 22: "10p", 24: "12a"
+    4:"4a",5:"5a",6:"6a",7:"7a",8:"8a",9:"9a",10:"10a",11:"11a",
+    12:"12p",13:"1p",14:"2p",15:"3p",16:"4p",17:"5p",18:"6p",19:"7p",
+    20:"8p",21:"9p",22:"10p",23:"11p",24:"12a"
   };
 
   // Calculate the next local date string for midnight lookup
@@ -350,25 +351,26 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
     return <p className="text-white/30 text-xs py-2">Hourly data unavailable for this port.</p>;
   }
   return (
-    <div className="w-full">
-      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${slots.length}, 1fr)` }}>
+    <div className="w-full overflow-x-auto pb-1">
+      <div className="flex gap-1.5" style={{ minWidth: `${slots.length * 62}px` }}>
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-xl py-3 px-1"
+            className="flex flex-col items-center justify-between bg-white/5 border border-white/10 rounded-xl py-3 px-1 flex-shrink-0"
+            style={{ width: "60px" }}
           >
-            <span className="text-amber-100/70 text-xs font-bold mb-1">{slot.label}</span>
-            <SkyIcon condition={slot.condition} className="w-6 h-6 text-yellow-300 mb-1" />
-            <span className="text-white font-black text-base leading-none">
+            <span className="text-amber-100/70 text-xs font-bold">{slot.label}</span>
+            <SkyIcon condition={slot.condition} className="w-6 h-6 text-yellow-300 my-1" />
+            <span className="text-white font-black text-sm leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
             </span>
-            <div className="mt-1.5 text-center">
-              <span className="text-cyan-300 text-xs font-bold block">
+            <div className="text-center mt-1">
+              <span className="text-cyan-300 text-[11px] font-bold block">
                 {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
               </span>
-              <span className="text-white/40 text-[10px]">{slot.windDir}</span>
+              <span className="text-white/50 text-[10px] block">{slot.windDir}</span>
             </div>
-            <span className="text-blue-300 text-xs font-bold mt-1">{slot.rainChance}%</span>
+            <span className="text-blue-300 text-[11px] font-bold mt-1">{slot.rainChance}%</span>
           </div>
         ))}
       </div>
@@ -390,21 +392,25 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
-            <div key={day.date} className="text-center bg-white/5 border border-white/10 rounded-xl py-5 px-2">
-              <p className="text-white/70 text-sm font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
-              <SkyIcon condition={day.condition} className="w-9 h-9 text-yellow-300 mx-auto mb-2" />
-              <p className="text-white text-xl font-extrabold leading-tight">
-                {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
-              </p>
-              <p className="text-white/50 text-sm font-bold mb-2">
-                {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
-              </p>
+              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-5 px-2 min-h-[280px]">
+              <div>
+                <p className="text-white/70 text-sm font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
+                <SkyIcon condition={day.condition} className="w-9 h-9 text-yellow-300 mx-auto mb-2" />
+                <p className="text-white text-xl font-extrabold leading-tight">
+                  {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
+                </p>
+                <p className="text-white/50 text-sm font-bold mb-3">
+                  {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
+                </p>
+              </div>
               <div className="border-t border-white/10 my-2" />
-              <p className="text-cyan-300 text-sm font-extrabold">{day.windDir}</p>
-              <p className="text-white/80 text-sm font-bold">
-                {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
-              </p>
-              <p className="text-blue-300 text-sm font-extrabold">{day.rainChance}%</p>
+              <div>
+                <p className="text-cyan-300 text-sm font-extrabold">{day.windDir}</p>
+                <p className="text-white/80 text-sm font-bold">
+                  {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
+                </p>
+                <p className="text-blue-300 text-sm font-extrabold">{day.rainChance}%</p>
+              </div>
               {(() => {
                 // Use swellHeightFt if available, fall back to waveHeightFt
                 const displayHt = day.swellHeightFt ?? day.waveHeightFt;
