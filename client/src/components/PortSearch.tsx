@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 
 // ============================================================
-// PORT MASTER LIST -- 68 verified ports with lat/lon
+// PORT MASTER LIST -- 68 verified ports with lat/lon -- v2
 // ============================================================
 export const PORT_LIST: { name: string; lat: number; lon: number; region: string }[] = [
   // Caribbean
@@ -204,31 +204,52 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
 
   const currentWindKt = msToKt(c.wind_speed_10m);
 
-  // Build today's hourly slots: 4 AM to midnight in 2-hour increments
-  const targetHours = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
-  const todayDate = (d.time as string[])[0];
+  // Determine today's local date using the API's timezone string
+  // Open-Meteo returns timezone e.g. "America/Nassau" -- use it to get the correct local date
+  const apiTimezone: string = weather.timezone ?? "UTC";
+  const todayLocalDate = new Date().toLocaleDateString("en-CA", { timeZone: apiTimezone }); // "YYYY-MM-DD"
+
+  // Target hours for the hourly strip: 4a through 10p (even hours 4-22) plus midnight of next day
+  // We represent midnight as hour 24 internally so the sort works correctly
+  const TARGET_HOURS_TODAY = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+  const labelMap: Record<number, string> = {
+    4: "4a", 6: "6a", 8: "8a", 10: "10a", 12: "12p",
+    14: "2p", 16: "4p", 18: "6p", 20: "8p", 22: "10p", 24: "12a"
+  };
+
+  // Calculate the next local date string for midnight lookup
+  const nextLocalDate = (() => {
+    const d2 = new Date(new Date().toLocaleString("en-US", { timeZone: apiTimezone }));
+    d2.setDate(d2.getDate() + 1);
+    return d2.toLocaleDateString("en-CA", { timeZone: apiTimezone });
+  })();
+
   const hourlySlots: HourlySlot[] = [];
+  const seenHours = new Set<number>();
 
   if (h?.time) {
     (h.time as string[]).forEach((isoTime: string, idx: number) => {
       const datePart = isoTime.slice(0, 10);
       const hourPart = parseInt(isoTime.slice(11, 13), 10);
-      const isNextDayMidnight = datePart !== todayDate && hourPart === 0;
-      const isToday = datePart === todayDate;
-      if (!isToday && !isNextDayMidnight) return;
-      const effectiveHour = isNextDayMidnight ? 24 : hourPart;
-      if (!targetHours.includes(effectiveHour)) return;
+
+      let effectiveHour: number | null = null;
+
+      if (datePart === todayLocalDate && TARGET_HOURS_TODAY.includes(hourPart)) {
+        effectiveHour = hourPart;
+      } else if (datePart === nextLocalDate && hourPart === 0) {
+        // Midnight of the following local day = end of today's strip
+        effectiveHour = 24;
+      }
+
+      if (effectiveHour === null) return;
+      if (seenHours.has(effectiveHour)) return; // deduplicate
+      seenHours.add(effectiveHour);
 
       const tempF = cToF(h.temperature_2m[idx] ?? 20);
       const wKt = msToKt(h.wind_speed_10m[idx] ?? 0);
       const wDir = degToCompass(h.wind_direction_10m[idx] ?? 0);
       const wmo = h.weathercode[idx] ?? 0;
       const rain = h.precipitation_probability[idx] ?? 0;
-
-      const labelMap: Record<number, string> = {
-        4: "4a", 6: "6a", 8: "8a", 10: "10a", 12: "12p",
-        14: "2p", 16: "4p", 18: "6p", 20: "8p", 22: "10p", 24: "12a"
-      };
 
       hourlySlots.push({
         hour: effectiveHour,
@@ -372,18 +393,19 @@ function PortSlotCard({
   slotIndex,
   slot,
   isMetric,
-  onFetch,
+  query,
+  selectedPort,
+  onQueryChange,
   onClear,
 }: {
   slotIndex: number;
   slot: PortSlot | null;
   isMetric: boolean;
-  onFetch: (port: { name: string; lat: number; lon: number }) => void;
+  query: string;
+  selectedPort: typeof PORT_LIST[0] | null;
+  onQueryChange: (q: string, port: typeof PORT_LIST[0] | null) => void;
   onClear: () => void;
 }) {
-  // selectedPort holds the port the user has chosen from the dropdown but not yet fetched
-  const [selectedPort, setSelectedPort] = useState<{ name: string; lat: number; lon: number } | null>(null);
-  const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -391,19 +413,15 @@ function PortSlotCard({
 
   const labels = ["Port 1", "Port 2", "Port 3", "Port 4"];
 
-  // When slot is cleared externally, reset local state
-  useEffect(() => {
-    if (!slot) {
-      setQuery("");
-      setSelectedPort(null);
-      setExpanded(true);
-    }
-  }, [slot]);
-
   // Auto-expand when new weather data arrives
   useEffect(() => {
     if (slot?.weather && !slot.loading) setExpanded(true);
   }, [slot?.weather, slot?.loading]);
+
+  // Collapse open dropdown when slot is cleared
+  useEffect(() => {
+    if (!slot && !query) setOpen(false);
+  }, [slot, query]);
 
   const suggestions = query.length >= 1
     ? PORT_LIST.filter(p =>
@@ -412,23 +430,15 @@ function PortSlotCard({
       ).slice(0, 8)
     : [];
 
-  const handlePickSuggestion = (port: { name: string; lat: number; lon: number }) => {
-    setQuery(port.name);
-    setSelectedPort(port);
+  const handlePickSuggestion = (port: typeof PORT_LIST[0]) => {
+    onQueryChange(port.name, port);
     setOpen(false);
   };
 
   const handleClear = () => {
-    setQuery("");
-    setSelectedPort(null);
+    onQueryChange("", null);
     setOpen(false);
     onClear();
-  };
-
-  const handleGetForecast = () => {
-    if (selectedPort) {
-      onFetch(selectedPort);
-    }
   };
 
   // Close dropdown when clicking outside
@@ -471,9 +481,8 @@ function PortSlotCard({
               }}
               onFocus={() => { if (query.length >= 1) setOpen(true); }}
               onKeyDown={e => {
-                if (e.key === "Enter" && selectedPort) {
-                  setOpen(false);
-                  onFetch(selectedPort);
+                if (e.key === "Enter") {
+                  handleGetForecast();
                 }
               }}
               placeholder="Type a port name..."
@@ -507,18 +516,7 @@ function PortSlotCard({
             )}
           </div>
 
-          {/* Get Forecast button -- only active once a port is selected from suggestions */}
-          <button
-            onClick={handleGetForecast}
-            disabled={!selectedPort}
-            className={`px-5 py-3 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${
-              selectedPort
-                ? "bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/20"
-                : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
-            }`}
-          >
-            Get Forecast
-          </button>
+          {/* No per-slot button -- the shared Get Forecast button below fires all slots */}
         </div>
       </div>
 
@@ -598,10 +596,15 @@ interface PortSearchProps { isMetric: boolean; }
 export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps) {
   const [localMetric, setLocalMetric] = useState(parentIsMetric);
   const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null, null]);
+  // Lifted query state so the shared Get Forecast button can read all 4 inputs
+  const [queries, setQueries] = useState<string[]>(["" , "", "", ""]);
+  const [selectedPorts, setSelectedPorts] = useState<(typeof PORT_LIST[0] | null)[]>([null, null, null, null]);
+  // Whether any forecast has been loaded -- controls Back button visibility
+  const [forecastsLoaded, setForecastsLoaded] = useState(false);
 
   useEffect(() => { setLocalMetric(parentIsMetric); }, [parentIsMetric]);
 
-  const handleFetch = useCallback((slotIndex: number, port: { name: string; lat: number; lon: number }) => {
+  const fetchSlot = useCallback((slotIndex: number, port: { name: string; lat: number; lon: number }) => {
     setSlots(prev => {
       const next = [...prev];
       next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: true, error: false };
@@ -615,6 +618,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
           next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather, loading: false, error: false };
           return next;
         });
+        setForecastsLoaded(true);
       })
       .catch(() => {
         setSlots(prev => {
@@ -625,13 +629,50 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       });
   }, []);
 
-  const handleClear = useCallback((slotIndex: number) => {
-    setSlots(prev => {
-      const next = [...prev];
-      next[slotIndex] = null;
-      return next;
+  // Resolve a query string to a port entry via fuzzy match
+  const resolvePort = (q: string, preSelected: typeof PORT_LIST[0] | null) => {
+    if (preSelected) return preSelected;
+    const lower = q.trim().toLowerCase();
+    if (!lower) return null;
+    return (
+      PORT_LIST.find(p => p.name.toLowerCase() === lower) ??
+      PORT_LIST.find(p => p.name.toLowerCase().startsWith(lower)) ??
+      PORT_LIST.find(p => p.name.toLowerCase().includes(lower)) ??
+      null
+    );
+  };
+
+  // Shared Get Forecast: fires all slots that have a non-empty query
+  const handleGetAllForecasts = () => {
+    let fired = false;
+    queries.forEach((q, i) => {
+      if (!q.trim()) return;
+      const port = resolvePort(q, selectedPorts[i]);
+      if (!port) return;
+      // Update query display to canonical name
+      setQueries(prev => { const n = [...prev]; n[i] = port.name; return n; });
+      setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
+      fetchSlot(i, port);
+      fired = true;
     });
+    if (fired) setForecastsLoaded(true);
+  };
+
+  // Back button: clear all forecasts and queries, return to input view
+  const handleBack = () => {
+    setSlots([null, null, null, null]);
+    setQueries(["", "", "", ""]);
+    setSelectedPorts([null, null, null, null]);
+    setForecastsLoaded(false);
+  };
+
+  const handleClear = useCallback((slotIndex: number) => {
+    setSlots(prev => { const n = [...prev]; n[slotIndex] = null; return n; });
+    setQueries(prev => { const n = [...prev]; n[slotIndex] = ""; return n; });
+    setSelectedPorts(prev => { const n = [...prev]; n[slotIndex] = null; return n; });
   }, []);
+
+  const anyQueryFilled = queries.some(q => q.trim().length > 0);
 
   return (
     <div className="space-y-6">
@@ -645,7 +686,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
           <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
           <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
           <p className="text-white/50 text-sm mt-1 max-w-md">
-            Type a port name, select it from the list, then tap <strong className="text-white/70">Get Forecast</strong> to load today's hour-by-hour conditions and the 5-day outlook right below.
+            Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
           </p>
         </div>
         {/* Units toggle */}
@@ -673,10 +714,41 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
             slotIndex={i}
             slot={slots[i]}
             isMetric={localMetric}
-            onFetch={port => handleFetch(i, port)}
+            query={queries[i]}
+            selectedPort={selectedPorts[i]}
+            onQueryChange={(q, port) => {
+              setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
+              setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
+            }}
             onClear={() => handleClear(i)}
           />
         ))}
+      </div>
+
+      {/* Shared action row: Get Forecast + Back */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          onClick={handleGetAllForecasts}
+          disabled={!anyQueryFilled}
+          className={`flex-1 sm:flex-none px-8 py-3.5 rounded-xl text-sm font-black tracking-wide transition-all ${
+            anyQueryFilled
+              ? "bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30"
+              : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
+          }`}
+        >
+          Get Forecast
+        </button>
+        {forecastsLoaded && (
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+        )}
       </div>
     </div>
   );
