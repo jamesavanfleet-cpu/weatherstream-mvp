@@ -368,9 +368,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
               </span>
               <span className="text-white/40 text-[10px]">{slot.windDir}</span>
             </div>
-            {slot.rainChance > 0 && (
-              <span className="text-blue-300 text-xs font-bold mt-1">{slot.rainChance}%</span>
-            )}
+            <span className="text-blue-300 text-xs font-bold mt-1">{slot.rainChance}%</span>
           </div>
         ))}
       </div>
@@ -407,16 +405,21 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                 {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
               </p>
               <p className="text-blue-300 text-sm font-extrabold">{day.rainChance}%</p>
-              {hasWave && day.swellHeightFt != null && (
-                <>
-                  <div className="border-t border-white/10 my-2" />
-                  <p className="text-teal-300 text-sm font-extrabold leading-snug">
-                    {isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}
-                  </p>
-                  {day.swellDir && <p className="text-teal-400/70 text-xs font-bold leading-snug">{day.swellDir}</p>}
-                  {day.swellPeriod && <p className="text-white/50 text-xs font-bold leading-snug">{day.swellPeriod}s</p>}
-                </>
-              )}
+              {(() => {
+                // Use swellHeightFt if available, fall back to waveHeightFt
+                const displayHt = day.swellHeightFt ?? day.waveHeightFt;
+                if (displayHt == null) return null;
+                return (
+                  <>
+                    <div className="border-t border-white/10 my-2" />
+                    <p className="text-teal-300 text-sm font-extrabold leading-snug">
+                      {isMetric ? swellFtToM(displayHt) : `${displayHt}ft`}
+                    </p>
+                    {day.swellDir && <p className="text-teal-400/70 text-xs font-bold leading-snug">{day.swellDir}</p>}
+                    {day.swellPeriod && <p className="text-white/50 text-xs font-bold leading-snug">{day.swellPeriod}s</p>}
+                  </>
+                );
+              })()}
             </div>
           );
         })}
