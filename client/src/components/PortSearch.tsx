@@ -1,0 +1,673 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  MapPin, Search, Thermometer, Wind, Droplets, Waves, Gauge, X,
+  Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown
+} from "lucide-react";
+
+// ============================================================
+// PORT MASTER LIST -- 68 verified ports with lat/lon
+// ============================================================
+export const PORT_LIST: { name: string; lat: number; lon: number; region: string }[] = [
+  // Caribbean
+  { name: "Miami",           lat: 25.77,  lon: -80.19, region: "Caribbean" },
+  { name: "Key West",        lat: 24.56,  lon: -81.78, region: "Caribbean" },
+  { name: "Nassau",          lat: 25.04,  lon: -77.35, region: "Caribbean" },
+  { name: "Bimini",          lat: 25.73,  lon: -79.29, region: "Caribbean" },
+  { name: "Freeport",        lat: 26.53,  lon: -78.70, region: "Caribbean" },
+  { name: "Berry Islands",   lat: 25.63,  lon: -77.83, region: "Caribbean" },
+  { name: "San Juan",        lat: 18.47,  lon: -66.12, region: "Caribbean" },
+  { name: "St. Thomas",      lat: 18.34,  lon: -64.93, region: "Caribbean" },
+  { name: "St. Croix",       lat: 17.73,  lon: -64.73, region: "Caribbean" },
+  { name: "St. Kitts",       lat: 17.30,  lon: -62.72, region: "Caribbean" },
+  { name: "Antigua",         lat: 17.12,  lon: -61.85, region: "Caribbean" },
+  { name: "Barbados",        lat: 13.10,  lon: -59.62, region: "Caribbean" },
+  { name: "St. Lucia",       lat: 13.91,  lon: -60.98, region: "Caribbean" },
+  { name: "Martinique",      lat: 14.67,  lon: -61.01, region: "Caribbean" },
+  { name: "St. Maarten",     lat: 18.07,  lon: -63.06, region: "Caribbean" },
+  { name: "Turks & Caicos",  lat: 21.46,  lon: -71.14, region: "Caribbean" },
+  { name: "Cozumel",         lat: 20.51,  lon: -86.95, region: "Caribbean" },
+  { name: "Costa Maya",      lat: 18.73,  lon: -87.71, region: "Caribbean" },
+  { name: "Roatan",          lat: 16.32,  lon: -86.53, region: "Caribbean" },
+  { name: "Belize City",     lat: 17.25,  lon: -88.77, region: "Caribbean" },
+  { name: "Grand Cayman",    lat: 19.29,  lon: -81.38, region: "Caribbean" },
+  { name: "Ocho Rios",       lat: 18.41,  lon: -77.10, region: "Caribbean" },
+  { name: "Falmouth",        lat: 18.50,  lon: -77.66, region: "Caribbean" },
+  { name: "Aruba",           lat: 12.52,  lon: -70.03, region: "Caribbean" },
+  { name: "Curacao",         lat: 12.11,  lon: -68.93, region: "Caribbean" },
+  { name: "Bonaire",         lat: 12.20,  lon: -68.26, region: "Caribbean" },
+  { name: "Dominica",        lat: 15.30,  lon: -61.39, region: "Caribbean" },
+  { name: "La Romana",       lat: 18.43,  lon: -68.97, region: "Caribbean" },
+  { name: "Puerto Plata",    lat: 19.80,  lon: -70.69, region: "Caribbean" },
+  { name: "Samana",          lat: 19.21,  lon: -69.34, region: "Caribbean" },
+  { name: "Santo Domingo",   lat: 18.47,  lon: -69.90, region: "Caribbean" },
+  { name: "Cartagena",       lat: 10.39,  lon: -75.48, region: "Caribbean" },
+  // Western Mediterranean
+  { name: "Barcelona",       lat: 41.38,  lon:   2.18, region: "Mediterranean" },
+  { name: "Valencia",        lat: 39.47,  lon:  -0.38, region: "Mediterranean" },
+  { name: "Palma",           lat: 39.57,  lon:   2.65, region: "Mediterranean" },
+  { name: "Ibiza",           lat: 38.91,  lon:   1.43, region: "Mediterranean" },
+  { name: "Malaga",          lat: 36.72,  lon:  -4.42, region: "Mediterranean" },
+  { name: "Cadiz",           lat: 36.53,  lon:  -6.30, region: "Mediterranean" },
+  { name: "Lisbon",          lat: 38.72,  lon:  -9.14, region: "Mediterranean" },
+  { name: "Marseille",       lat: 43.30,  lon:   5.37, region: "Mediterranean" },
+  { name: "Nice",            lat: 43.70,  lon:   7.27, region: "Mediterranean" },
+  { name: "Monaco",          lat: 43.73,  lon:   7.42, region: "Mediterranean" },
+  { name: "Genoa",           lat: 44.41,  lon:   8.93, region: "Mediterranean" },
+  { name: "La Spezia",       lat: 44.10,  lon:   9.82, region: "Mediterranean" },
+  { name: "Livorno",         lat: 43.55,  lon:  10.31, region: "Mediterranean" },
+  { name: "Civitavecchia",   lat: 42.09,  lon:  11.80, region: "Mediterranean" },
+  { name: "Naples",          lat: 40.85,  lon:  14.27, region: "Mediterranean" },
+  { name: "Sardinia",        lat: 39.22,  lon:   9.11, region: "Mediterranean" },
+  { name: "Corsica",         lat: 42.04,  lon:   9.01, region: "Mediterranean" },
+  { name: "Split",           lat: 43.51,  lon:  16.44, region: "Mediterranean" },
+  { name: "Dubrovnik",       lat: 42.65,  lon:  18.09, region: "Mediterranean" },
+  { name: "Venice",          lat: 45.44,  lon:  12.33, region: "Mediterranean" },
+  // Eastern Mediterranean
+  { name: "Athens",          lat: 37.94,  lon:  23.64, region: "Mediterranean" },
+  { name: "Santorini",       lat: 36.39,  lon:  25.46, region: "Mediterranean" },
+  { name: "Mykonos",         lat: 37.45,  lon:  25.33, region: "Mediterranean" },
+  { name: "Rhodes",          lat: 36.43,  lon:  28.22, region: "Mediterranean" },
+  { name: "Corfu",           lat: 39.62,  lon:  19.92, region: "Mediterranean" },
+  { name: "Istanbul",        lat: 41.01,  lon:  28.98, region: "Mediterranean" },
+  { name: "Izmir",           lat: 38.42,  lon:  27.14, region: "Mediterranean" },
+  { name: "Cyprus",          lat: 34.92,  lon:  33.63, region: "Mediterranean" },
+  { name: "Haifa",           lat: 32.82,  lon:  34.99, region: "Mediterranean" },
+  { name: "Alexandria",      lat: 31.20,  lon:  29.92, region: "Mediterranean" },
+  // Eastern Pacific
+  { name: "Ensenada",        lat: 31.87,  lon: -116.60, region: "Pacific" },
+  { name: "Cabo San Lucas",  lat: 22.89,  lon: -109.91, region: "Pacific" },
+  { name: "Mazatlan",        lat: 23.24,  lon: -106.41, region: "Pacific" },
+  { name: "Puerto Vallarta", lat: 20.65,  lon: -105.22, region: "Pacific" },
+  { name: "Manzanillo",      lat: 19.05,  lon: -104.32, region: "Pacific" },
+  { name: "Huatulco",        lat: 15.74,  lon:  -96.13, region: "Pacific" },
+];
+
+// ============================================================
+// Helpers
+// ============================================================
+function degToCompass(deg: number): string {
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+function msToKt(ms: number): number { return Math.round(ms * 1.94384); }
+function cToF(c: number): number { return Math.round(c * 9 / 5 + 32); }
+function ktToMph(kt: number): number { return Math.round(kt * 1.15078); }
+function mToFt(m: number): number { return Math.round(m * 3.281 * 10) / 10; }
+function fToCStr(f: number): string { return Math.round((f - 32) * 5 / 9) + "\u00b0C"; }
+function swellFtToM(ft: number | null): string | null {
+  if (ft == null) return null;
+  return (ft * 0.3048).toFixed(1) + "m";
+}
+
+function wmoToCondition(code: number): string {
+  if (code === 0) return "Clear";
+  if (code <= 2) return "Partly Cloudy";
+  if (code === 3) return "Overcast";
+  if (code <= 49) return "Fog";
+  if (code <= 59) return "Drizzle";
+  if (code <= 69) return "Rain";
+  if (code <= 79) return "Snow";
+  if (code <= 82) return "Rain Showers";
+  if (code <= 84) return "Heavy Showers";
+  if (code <= 99) return "Thunderstorm";
+  return "Unknown";
+}
+
+function SkyIcon({ condition, className }: { condition: string; className?: string }) {
+  const c = condition.toLowerCase();
+  if (c.includes("thunder")) return <CloudLightning className={className} />;
+  if (c.includes("rain") || c.includes("shower") || c.includes("drizzle")) return <CloudRain className={className} />;
+  if (c.includes("snow")) return <Snowflake className={className} />;
+  if (c.includes("fog")) return <Eye className={className} />;
+  if (c.includes("partly") || c.includes("overcast") || c.includes("cloudy")) return <Cloud className={className} />;
+  return <Sun className={className} />;
+}
+
+// ============================================================
+// Interfaces
+// ============================================================
+interface DayForecast {
+  date: string;
+  maxF: number;
+  minF: number;
+  windKt: number;
+  windDir: string;
+  rainChance: number;
+  condition: string;
+  waveHeightFt: number | null;
+  swellHeightFt: number | null;
+  swellDir: string | null;
+  swellPeriod: number | null;
+}
+
+interface HourlySlot {
+  hour: number;
+  label: string;
+  tempF: number;
+  windKt: number;
+  windDir: string;
+  rainChance: number;
+  condition: string;
+  wmoCode: number;
+}
+
+interface PortWeatherData {
+  tempF: number;
+  windKt: number;
+  windDir: string;
+  condition: string;
+  hourlyToday: HourlySlot[];
+  forecast: DayForecast[];
+}
+
+interface PortSlot {
+  portName: string;
+  lat: number;
+  lon: number;
+  weather: PortWeatherData | null;
+  loading: boolean;
+  error: boolean;
+}
+
+const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+// ============================================================
+// Data Fetching
+// ============================================================
+async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData> {
+  const weatherUrl =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode` +
+    `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
+    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
+    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=6`;
+
+  const marineLat = lat;
+  const marineLon = lon;
+  const marineUrl =
+    `https://marine-api.open-meteo.com/v1/marine?latitude=${marineLat}&longitude=${marineLon}` +
+    `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
+    `&length_unit=imperial&timezone=auto&forecast_days=6`;
+
+  const [weatherRes, marineRes] = await Promise.allSettled([
+    fetch(weatherUrl).then(r => r.json()),
+    fetch(marineUrl).then(r => r.json()),
+  ]);
+
+  const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
+  const marine  = marineRes.status  === "fulfilled" ? marineRes.value  : null;
+
+  if (!weather || weather.error) throw new Error("Weather fetch failed");
+
+  const c = weather.current;
+  const d = weather.daily;
+  const h = weather.hourly;
+  const md = marine?.daily ?? null;
+
+  const currentWindKt = msToKt(c.wind_speed_10m);
+
+  // Build today's hourly slots: 4 AM to midnight (hours 4,6,8,10,12,14,16,18,20,22,0-next)
+  // We want 2-hour increments from 04:00 to 24:00 (midnight = hour 0 of next day shown as 12a)
+  const todayDate = (d.time as string[])[0];
+  const hourlySlots: HourlySlot[] = [];
+  const targetHours = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24];
+
+  if (h?.time) {
+    (h.time as string[]).forEach((isoTime: string, idx: number) => {
+      const datePart = isoTime.slice(0, 10);
+      const hourPart = parseInt(isoTime.slice(11, 13), 10);
+
+      // Hour 24 is represented as hour 0 of the next day
+      const isNextDayMidnight = datePart !== todayDate && hourPart === 0;
+      const isToday = datePart === todayDate;
+
+      if (!isToday && !isNextDayMidnight) return;
+
+      const effectiveHour = isNextDayMidnight ? 24 : hourPart;
+      if (!targetHours.includes(effectiveHour)) return;
+
+      const tempF = cToF(h.temperature_2m[idx] ?? 20);
+      const wKt = msToKt(h.wind_speed_10m[idx] ?? 0);
+      const wDir = degToCompass(h.wind_direction_10m[idx] ?? 0);
+      const wmo = h.weathercode[idx] ?? 0;
+      const rain = h.precipitation_probability[idx] ?? 0;
+
+      const labelMap: Record<number, string> = {
+        4: "4a", 6: "6a", 8: "8a", 10: "10a", 12: "12p",
+        14: "2p", 16: "4p", 18: "6p", 20: "8p", 22: "10p", 24: "12a"
+      };
+
+      hourlySlots.push({
+        hour: effectiveHour,
+        label: labelMap[effectiveHour] ?? `${effectiveHour}:00`,
+        tempF,
+        windKt: wKt,
+        windDir: wDir,
+        rainChance: rain,
+        condition: wmoToCondition(wmo),
+        wmoCode: wmo,
+      });
+    });
+  }
+
+  // Sort by hour
+  hourlySlots.sort((a, b) => a.hour - b.hour);
+
+  // Build 5-day forecast (skip today = index 0, show days 1-5)
+  const forecast: DayForecast[] = (d.time as string[]).slice(1, 6).map((dateStr: string, rawIdx: number) => {
+    const i = rawIdx + 1; // offset because we sliced from index 1
+    const wKt = msToKt(d.wind_speed_10m_max[i]);
+    const swellDeg = md?.swell_wave_direction_dominant?.[i];
+    return {
+      date: dateStr,
+      maxF: cToF(d.temperature_2m_max[i]),
+      minF: cToF(d.temperature_2m_min[i]),
+      windKt: wKt,
+      windDir: degToCompass(d.wind_direction_10m_dominant[i]),
+      rainChance: d.precipitation_probability_max[i] ?? 0,
+      condition: wmoToCondition(d.weathercode[i]),
+      waveHeightFt:  md?.wave_height_max?.[i]       != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
+      swellHeightFt: md?.swell_wave_height_max?.[i] != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
+      swellDir:      swellDeg != null ? degToCompass(swellDeg) : null,
+      swellPeriod:   md?.swell_wave_period_max?.[i] != null ? Math.round(md.swell_wave_period_max[i]) : null,
+    };
+  });
+
+  return {
+    tempF: cToF(c.temperature_2m),
+    windKt: currentWindKt,
+    windDir: degToCompass(c.wind_direction_10m),
+    condition: wmoToCondition(c.weathercode),
+    hourlyToday: hourlySlots,
+    forecast,
+  };
+}
+
+// ============================================================
+// Typeahead Input Component
+// ============================================================
+function PortTypeahead({
+  slotIndex,
+  value,
+  onSelect,
+  onClear,
+}: {
+  slotIndex: number;
+  value: string;
+  onSelect: (port: { name: string; lat: number; lon: number }) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Sync external value changes (e.g. clear)
+  useEffect(() => { setQuery(value); }, [value]);
+
+  const suggestions = query.length >= 1
+    ? PORT_LIST.filter(p =>
+        p.name.toLowerCase().startsWith(query.toLowerCase()) ||
+        p.name.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  const handleSelect = (port: { name: string; lat: number; lon: number }) => {
+    setQuery(port.name);
+    setOpen(false);
+    onSelect(port);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        inputRef.current && !inputRef.current.contains(e.target as Node) &&
+        listRef.current && !listRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const labels = ["Port 1", "Port 2", "Port 3", "Port 4"];
+
+  return (
+    <div className="relative">
+      <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2 mb-2">
+        <MapPin className="w-3 h-3 text-cyan-400" />
+        {labels[slotIndex]}
+      </label>
+      <div className="relative flex items-center">
+        <Search className="absolute left-3 w-4 h-4 text-white/30 pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => { if (query.length >= 1) setOpen(true); }}
+          placeholder="Type a port name..."
+          className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-9 py-3 text-white text-sm placeholder-white/30 focus:border-cyan-400/60 focus:outline-none transition-colors"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(""); setOpen(false); onClear(); }}
+            className="absolute right-3 text-white/30 hover:text-white/70 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      {open && suggestions.length > 0 && (
+        <div
+          ref={listRef}
+          className="absolute z-50 w-full mt-1 bg-[#0c1a30] border border-cyan-400/30 rounded-lg shadow-xl overflow-hidden"
+        >
+          {suggestions.map(port => (
+            <button
+              key={port.name}
+              onMouseDown={() => handleSelect(port)}
+              className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-cyan-400/10 hover:text-white flex items-center justify-between transition-colors"
+            >
+              <span>{port.name}</span>
+              <span className="text-white/30 text-xs">{port.region}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Today's Hourly Forecast Panel
+// ============================================================
+function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: boolean }) {
+  if (slots.length === 0) {
+    return <p className="text-white/30 text-xs py-2">Hourly data unavailable for this port.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto pb-1">
+      <div className="flex gap-2 min-w-max">
+        {slots.map(slot => (
+          <div
+            key={slot.hour}
+            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-xl px-3 py-3 min-w-[64px]"
+          >
+            <span className="text-amber-100/70 text-xs font-bold mb-1">{slot.label}</span>
+            <SkyIcon condition={slot.condition} className="w-5 h-5 text-yellow-300 mb-1" />
+            <span className="text-white font-black text-base leading-none">
+              {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
+            </span>
+            <div className="mt-1.5 text-center">
+              <span className="text-cyan-300 text-[11px] font-bold block">
+                {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
+              </span>
+              <span className="text-white/40 text-[10px]">{slot.windDir}</span>
+            </div>
+            {slot.rainChance > 0 && (
+              <span className="text-blue-300 text-[11px] font-bold mt-1">{slot.rainChance}%</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 5-Day Forecast Panel
+// ============================================================
+function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: boolean }) {
+  if (days.length === 0) return null;
+  const hasWave = days.some(d => d.swellHeightFt != null);
+
+  return (
+    <div>
+      <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">5-Day Forecast</p>
+      <div className="grid grid-cols-5 gap-2">
+        {days.map(day => {
+          const d = new Date(day.date + "T12:00:00");
+          return (
+            <div key={day.date} className="text-center bg-white/5 border border-white/10 rounded-xl py-3 px-1">
+              <p className="text-white/60 text-xs font-extrabold mb-1">{DAY_NAMES[d.getDay()]}</p>
+              <SkyIcon condition={day.condition} className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
+              <p className="text-white text-sm font-extrabold">
+                {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
+              </p>
+              <p className="text-white/50 text-xs font-bold">
+                {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
+              </p>
+              <div className="border-t border-white/10 my-1.5" />
+              <p className="text-cyan-300 text-xs font-extrabold">{day.windDir}</p>
+              <p className="text-white/80 text-xs font-bold">
+                {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
+              </p>
+              <p className="text-blue-300 text-xs font-extrabold">{day.rainChance}%</p>
+              {hasWave && day.swellHeightFt != null && (
+                <>
+                  <div className="border-t border-white/10 my-1.5" />
+                  <p className="text-teal-300 text-[11px] font-extrabold leading-snug">
+                    {isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}
+                  </p>
+                  {day.swellDir && <p className="text-teal-400/70 text-[10px] leading-snug">{day.swellDir}</p>}
+                  {day.swellPeriod && <p className="text-white/50 text-[10px] leading-snug">{day.swellPeriod}s</p>}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {hasWave && (
+        <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/10">
+          <span className="text-teal-300 text-xs font-bold">ft/m = swell ht</span>
+          <span className="text-teal-400/70 text-xs font-bold">dir = swell dir</span>
+          <span className="text-white/50 text-xs font-bold">s = period</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Single Port Card
+// ============================================================
+function PortCard({
+  slotIndex,
+  slot,
+  isMetric,
+  onSelect,
+  onClear,
+}: {
+  slotIndex: number;
+  slot: PortSlot | null;
+  isMetric: boolean;
+  onSelect: (port: { name: string; lat: number; lon: number }) => void;
+  onClear: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Auto-expand when data loads
+  useEffect(() => {
+    if (slot?.weather && !slot.loading) setExpanded(true);
+  }, [slot?.weather, slot?.loading]);
+
+  const portName = slot?.portName ?? "";
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+      {/* Search row */}
+      <div className="p-4">
+        <PortTypeahead
+          slotIndex={slotIndex}
+          value={portName}
+          onSelect={onSelect}
+          onClear={onClear}
+        />
+      </div>
+
+      {/* Loading state */}
+      {slot?.loading && (
+        <div className="px-4 pb-4 flex items-center gap-2 text-white/40 text-sm">
+          <div className="w-4 h-4 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          Loading forecast for {slot.portName}...
+        </div>
+      )}
+
+      {/* Error state */}
+      {slot?.error && !slot.loading && (
+        <div className="px-4 pb-4 text-white/40 text-sm">
+          Forecast unavailable for {slot.portName}. Please try again.
+        </div>
+      )}
+
+      {/* Forecast content */}
+      {slot?.weather && !slot.loading && !slot.error && (
+        <div>
+          {/* Port header bar -- click to expand/collapse */}
+          <button
+            onClick={() => setExpanded(e => !e)}
+            className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500/15 to-blue-600/10 border-t border-cyan-400/20 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <SkyIcon condition={slot.weather.condition} className="w-5 h-5 text-yellow-300" />
+              <div className="text-left">
+                <span className="text-white font-bold text-sm">{slot.portName}</span>
+                <span className="text-white/50 text-xs ml-2">{slot.weather.condition}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-white font-black text-xl">
+                {isMetric ? fToCStr(slot.weather.tempF) : `${slot.weather.tempF}\u00b0`}
+              </span>
+              <span className="text-cyan-300 text-sm font-bold">
+                {isMetric ? `${slot.weather.windKt}kt` : `${ktToMph(slot.weather.windKt)}mph`}
+                <span className="text-white/40 text-xs ml-1">{slot.weather.windDir}</span>
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-white/40 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+              />
+            </div>
+          </button>
+
+          {/* Expandable forecast panels */}
+          <div
+            className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              expanded ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="px-4 py-4 space-y-5">
+              {/* Today's hourly */}
+              <div>
+                <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">
+                  Today's Forecast -- 4 AM to Midnight (2-Hour Increments)
+                </p>
+                <HourlyForecast slots={slot.weather.hourlyToday} isMetric={isMetric} />
+              </div>
+
+              {/* 5-day forecast */}
+              <FiveDayForecast days={slot.weather.forecast} isMetric={isMetric} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Main PortSearch Component
+// ============================================================
+interface PortSearchProps { isMetric: boolean; }
+
+export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps) {
+  const [localMetric, setLocalMetric] = useState(parentIsMetric);
+  const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null, null]);
+
+  useEffect(() => { setLocalMetric(parentIsMetric); }, [parentIsMetric]);
+
+  const handleSelect = useCallback((slotIndex: number, port: { name: string; lat: number; lon: number }) => {
+    // Set loading state
+    setSlots(prev => {
+      const next = [...prev];
+      next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: true, error: false };
+      return next;
+    });
+
+    // Fetch data
+    fetchPortData(port.lat, port.lon)
+      .then(weather => {
+        setSlots(prev => {
+          const next = [...prev];
+          next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather, loading: false, error: false };
+          return next;
+        });
+      })
+      .catch(() => {
+        setSlots(prev => {
+          const next = [...prev];
+          next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: false, error: true };
+          return next;
+        });
+      });
+  }, []);
+
+  const handleClear = useCallback((slotIndex: number) => {
+    setSlots(prev => {
+      const next = [...prev];
+      next[slotIndex] = null;
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      {/* Section header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+            <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
+          </div>
+          <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
+          <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
+          <p className="text-white/50 text-sm mt-1 max-w-md">
+            Search up to 4 ports. Get today's hour-by-hour forecast and the 5-day outlook for each stop on your voyage.
+          </p>
+        </div>
+        {/* Units toggle */}
+        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold self-start">
+          <button
+            onClick={() => setLocalMetric(false)}
+            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+          >
+            US Standard
+          </button>
+          <button
+            onClick={() => setLocalMetric(true)}
+            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+          >
+            Metric
+          </button>
+        </div>
+      </div>
+
+      {/* 4 port cards stacked vertically */}
+      <div className="space-y-4">
+        {[0, 1, 2, 3].map(i => (
+          <PortCard
+            key={i}
+            slotIndex={i}
+            slot={slots[i]}
+            isMetric={localMetric}
+            onSelect={port => handleSelect(i, port)}
+            onClear={() => handleClear(i)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

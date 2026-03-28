@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import CruiseFinder from "../components/CruiseFinder";
+import PortSearch from "../components/PortSearch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1380,7 +1380,7 @@ export default function Home() {
       <section className="pt-2 pb-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-cyan-600/10 rounded-full blur-3xl opacity-20 pointer-events-none" />
         <div className="container relative z-10">
-          <CruiseFinder isMetric={isMetric} />
+          <PortSearch isMetric={isMetric} />
         </div>
       </section>
       {/* Caribbean Cruise Weather */}
