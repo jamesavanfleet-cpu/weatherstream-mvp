@@ -308,8 +308,8 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
 
   hourlySlots.sort((a, b) => a.hour - b.hour);
 
-  // Build 5-day forecast (skip today = index 0, show days 1-5)
-  const forecast: DayForecast[] = (d.time as string[]).slice(1, 6).map((dateStr: string, rawIdx: number) => {
+  // Build 7-day forecast (skip today = index 0, show days 1-7)
+  const forecast: DayForecast[] = (d.time as string[]).slice(1, 8).map((dateStr: string, rawIdx: number) => {
     const i = rawIdx + 1;
     const wKt = msToKt(d.wind_speed_10m_max[i]);
     const swellDeg = md?.swell_wave_direction_dominant?.[i];
@@ -375,7 +375,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
 }
 
 // ============================================================
-// 5-Day Forecast Panel
+// 7-Day Forecast Panel
 // ============================================================
 function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: boolean }) {
   if (days.length === 0) return null;
@@ -383,8 +383,8 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
 
   return (
     <div>
-      <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">5-Day Forecast</p>
-      <div className="grid grid-cols-5 gap-3">
+      <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">7-Day Forecast</p>
+      <div className="grid grid-cols-7 gap-2">
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
@@ -631,7 +631,7 @@ function PortSlotCard({
                 </p>
                 <HourlyForecast slots={slot!.weather!.hourlyToday} isMetric={isMetric} />
               </div>
-              {/* 5-day forecast */}
+              {/* 7-day forecast */}
               <FiveDayForecast days={slot!.weather!.forecast} isMetric={isMetric} />
             </div>
           </div>
