@@ -255,21 +255,16 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
   const apiTimezone: string = weather.timezone ?? "UTC";
   const todayLocalDate = new Date().toLocaleDateString("en-CA", { timeZone: apiTimezone }); // "YYYY-MM-DD"
 
-  // Target hours for the hourly strip: every hour from 4 AM through 11 PM, plus midnight of next day
-  // We represent midnight as hour 24 internally so the sort works correctly
-  const TARGET_HOURS_TODAY = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+  // Target hours for the hourly strip: 6 AM through 10 PM (17 slots)
+  const TARGET_HOURS_TODAY = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
   const labelMap: Record<number, string> = {
-    4:"4a",5:"5a",6:"6a",7:"7a",8:"8a",9:"9a",10:"10a",11:"11a",
+    6:"6a",7:"7a",8:"8a",9:"9a",10:"10a",11:"11a",
     12:"12p",13:"1p",14:"2p",15:"3p",16:"4p",17:"5p",18:"6p",19:"7p",
-    20:"8p",21:"9p",22:"10p",23:"11p",24:"12a"
+    20:"8p",21:"9p",22:"10p"
   };
 
-  // Calculate the next local date string for midnight lookup
-  const nextLocalDate = (() => {
-    const d2 = new Date(new Date().toLocaleString("en-US", { timeZone: apiTimezone }));
-    d2.setDate(d2.getDate() + 1);
-    return d2.toLocaleDateString("en-CA", { timeZone: apiTimezone });
-  })();
+  // No midnight slot needed for 6a-10p range
+  const nextLocalDate = "";
 
   const hourlySlots: HourlySlot[] = [];
   const seenHours = new Set<number>();
@@ -288,7 +283,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
         effectiveHour = 24;
       }
 
-      if (effectiveHour === null) return;
+      if (effectiveHour === null || effectiveHour === 24) return;
       if (seenHours.has(effectiveHour)) return; // deduplicate
       seenHours.add(effectiveHour);
 
@@ -350,27 +345,28 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
   if (slots.length === 0) {
     return <p className="text-white/30 text-xs py-2">Hourly data unavailable for this port.</p>;
   }
+  // Full-width CSS grid -- each card gets an equal share of the container, no scroll, no empty space
   return (
-    <div className="w-full overflow-x-auto pb-1">
-      <div className="flex gap-1.5" style={{ minWidth: `${slots.length * 62}px` }}>
+    <div className="w-full">
+      <div
+        className="grid w-full gap-1"
+        style={{ gridTemplateColumns: `repeat(${slots.length}, 1fr)` }}
+      >
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center justify-between bg-white/5 border border-white/10 rounded-xl py-3 px-1 flex-shrink-0"
-            style={{ width: "60px" }}
+            className="flex flex-col items-center justify-between bg-white/5 border border-white/10 rounded-lg py-2 px-0.5 min-w-0"
           >
-            <span className="text-amber-100/70 text-xs font-bold">{slot.label}</span>
-            <SkyIcon condition={slot.condition} className="w-6 h-6 text-yellow-300 my-1" />
+            <span className="text-amber-100/70 text-[11px] font-bold truncate w-full text-center">{slot.label}</span>
+            <SkyIcon condition={slot.condition} className="w-5 h-5 text-yellow-300 my-0.5 flex-shrink-0" />
             <span className="text-white font-black text-sm leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
             </span>
-            <div className="text-center mt-1">
-              <span className="text-cyan-300 text-[11px] font-bold block">
-                {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
-              </span>
-              <span className="text-white/50 text-[10px] block">{slot.windDir}</span>
-            </div>
-            <span className="text-blue-300 text-[11px] font-bold mt-1">{slot.rainChance}%</span>
+            <span className="text-cyan-300 text-[10px] font-bold mt-0.5 truncate w-full text-center">
+              {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
+            </span>
+            <span className="text-white/50 text-[9px] truncate w-full text-center">{slot.windDir}</span>
+            <span className="text-blue-300 text-[10px] font-bold mt-0.5">{slot.rainChance}%</span>
           </div>
         ))}
       </div>
@@ -392,24 +388,24 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
-              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-5 px-2 min-h-[280px]">
+              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-4 px-1">
               <div>
-                <p className="text-white/70 text-sm font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
-                <SkyIcon condition={day.condition} className="w-9 h-9 text-yellow-300 mx-auto mb-2" />
-                <p className="text-white text-xl font-extrabold leading-tight">
+                <p className="text-white/70 text-base font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
+                <SkyIcon condition={day.condition} className="w-14 h-14 text-yellow-300 mx-auto mb-2" />
+                <p className="text-white text-3xl font-extrabold leading-tight">
                   {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
                 </p>
-                <p className="text-white/50 text-sm font-bold mb-3">
+                <p className="text-white/50 text-xl font-bold mb-3">
                   {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
                 </p>
               </div>
               <div className="border-t border-white/10 my-2" />
               <div>
-                <p className="text-cyan-300 text-sm font-extrabold">{day.windDir}</p>
-                <p className="text-white/80 text-sm font-bold">
+                <p className="text-cyan-300 text-base font-extrabold">{day.windDir}</p>
+                <p className="text-white/80 text-base font-bold">
                   {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
                 </p>
-                <p className="text-blue-300 text-sm font-extrabold">{day.rainChance}%</p>
+                <p className="text-blue-300 text-base font-extrabold">{day.rainChance}%</p>
               </div>
               {(() => {
                 // Use swellHeightFt if available, fall back to waveHeightFt
