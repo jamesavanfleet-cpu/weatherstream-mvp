@@ -226,12 +226,12 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode` +
     `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
-    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=6`;
+    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=8`;
 
   const marineUrl =
     `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
     `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
-    `&length_unit=imperial&timezone=auto&forecast_days=6`;
+    `&length_unit=imperial&timezone=auto&forecast_days=8`;
 
   const [weatherRes, marineRes] = await Promise.allSettled([
     fetch(weatherUrl).then(r => r.json()),
