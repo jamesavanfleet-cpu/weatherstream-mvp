@@ -669,6 +669,7 @@ function PortSlotCard({
       {hasForecast && (
         <div>
           {/* Port summary bar -- click to collapse/expand */}
+          {/* Current conditions (temp, wind) sit RIGHT NEXT TO the sky condition text on the left side */}
           <button
             onClick={() => setExpanded(e => !e)}
             className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500/15 to-blue-600/10 border-t border-cyan-400/20 flex items-center justify-between"
@@ -679,19 +680,18 @@ function PortSlotCard({
                 <span className="text-white font-bold text-sm">{slot!.portName}</span>
                 <span className="text-white/50 text-xs ml-2">{slot!.weather!.condition}</span>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-white font-black text-xl">
+              {/* Current conditions immediately after sky condition text */}
+              <span className="text-white font-black text-xl ml-3">
                 {isMetric ? fToCStr(slot!.weather!.tempF) : `${slot!.weather!.tempF}\u00b0`}
               </span>
               <span className="text-cyan-300 text-sm font-bold">
                 {isMetric ? `${slot!.weather!.windKt}kt` : `${ktToMph(slot!.weather!.windKt)}mph`}
                 <span className="text-white/40 text-xs ml-1">{slot!.weather!.windDir}</span>
               </span>
-              <ChevronDown
-                className={`w-4 h-4 text-white/40 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-              />
             </div>
+            <ChevronDown
+              className={`w-4 h-4 text-white/40 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+            />
           </button>
 
           {/* Expandable forecast panels */}
@@ -700,10 +700,11 @@ function PortSlotCard({
               expanded ? "max-h-[1400px] opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <div className="px-4 py-4 space-y-5">
+            {/* Ample spacing between summary bar, hourly header, and hourly cards */}
+            <div className="px-4 py-5 space-y-6">
               {/* Today's hourly */}
               <div>
-                <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">
+                <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-4">
                   Today's Forecast -- Hour by Hour (6 AM to 10 PM)
                 </p>
                 <HourlyForecast slots={slot!.weather!.hourlyToday} isMetric={isMetric} />
@@ -807,32 +808,32 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
   return (
     <div className="space-y-6">
       {/* Section header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-            <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
-          </div>
-          <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
-          <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
-          <p className="text-white/50 text-sm mt-1 max-w-md">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+          <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
+        </div>
+        <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
+        <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
+        <div className="flex items-center justify-between flex-wrap gap-3 mt-2">
+          <p className="text-white/50 text-sm max-w-md">
             Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
           </p>
-        </div>
-        {/* Units toggle */}
-        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold self-start">
-          <button
-            onClick={() => setLocalMetric(false)}
-            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            US Standard
-          </button>
-          <button
-            onClick={() => setLocalMetric(true)}
-            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            Metric
-          </button>
+          {/* Units toggle -- sits inline with the instruction text, clearly part of the port tool */}
+          <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+            <button
+              onClick={() => setLocalMetric(false)}
+              className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            >
+              US Standard
+            </button>
+            <button
+              onClick={() => setLocalMetric(true)}
+              className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            >
+              Metric
+            </button>
+          </div>
         </div>
       </div>
 
