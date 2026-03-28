@@ -389,38 +389,46 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
     <div className="w-full overflow-x-auto">
       <div
         className="grid gap-1"
-        style={{ gridTemplateColumns: `repeat(${slots.length}, minmax(62px, 1fr))`, minWidth: `${slots.length * 62}px` }}
+        style={{ gridTemplateColumns: `repeat(${slots.length}, minmax(68px, 1fr))`, minWidth: `${slots.length * 68}px` }}
       >
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-2 px-1 gap-0.5 min-w-0"
+            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-3 px-1 gap-1 min-w-0"
           >
+            {/* Time label */}
             <span className="text-amber-100/70 text-[11px] font-bold w-full text-center">{slot.label}</span>
-            <SkyIcon condition={slot.condition} className="w-6 h-6 text-yellow-300 flex-shrink-0" />
+            {/* Cloud cover icon + % at top -- realistic emoji icon reflecting actual cloud amount */}
+            <span className="text-[15px] leading-none">{cloudCoverIcon(slot.cloudCover)}</span>
+            <span className="text-white/70 text-[10px] font-bold">{slot.cloudCover}%</span>
+            {/* Realistic sky condition icon */}
+            <SkyIcon condition={slot.condition} className="w-7 h-7 text-yellow-300 flex-shrink-0" />
+            {/* Temperature */}
             <span className="text-white font-black text-[13px] leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
             </span>
+            {/* Wind speed + direction */}
             <span className="text-cyan-300 text-[11px] font-bold w-full text-center">
               {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
             </span>
             <span className="text-white/50 text-[10px] w-full text-center">{slot.windDir}</span>
+            {/* Rain chance */}
             <span className="text-blue-300 text-[11px] font-bold">{slot.rainChance}%</span>
+            {/* Humidity */}
             <span className="text-white/60 text-[10px]">{slot.humidity}% hum</span>
-            <span className="text-yellow-200 text-[10px]">UV {slot.uvIndex}</span>
-            <span className="text-white/70 text-[11px]" title={`Cloud cover: ${slot.cloudCover}%`}>{cloudCoverIcon(slot.cloudCover)} {slot.cloudCover}%</span>
-            <span className="text-green-300 text-[10px]">{slot.visibility}km vis</span>
-            <span className="text-teal-300 text-[10px]">{slot.seaState}</span>
+            {/* Visibility */}
+            <span className="text-green-300 text-[10px]">{isMetric ? `${slot.visibility}km` : `${Math.round(slot.visibility * 0.621)}mi`} vis</span>
+            {/* Sea state (wind-wave height estimate) */}
+            <span className="text-teal-300 text-[10px] font-bold">{slot.seaState}</span>
           </div>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
         <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
         <span className="text-white/60 text-xs font-bold">hum = humidity</span>
-        <span className="text-yellow-200 text-xs font-bold">UV = UV index</span>
         <span className="text-white/70 text-xs font-bold">cloud % = cloud cover</span>
         <span className="text-green-300 text-xs font-bold">vis = visibility</span>
-        <span className="text-teal-300 text-xs font-bold">sea state</span>
+        <span className="text-teal-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
       </div>
     </div>
   );
@@ -458,16 +466,19 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                   {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
                 </p>
                 <p className="text-blue-300 text-base font-extrabold">{day.rainChance}%</p>
-                {day.uvIndex != null && <p className="text-yellow-200 text-sm font-bold">UV {day.uvIndex}</p>}
+                {/* Sea state = wind-wave height estimate based on wind speed */}
                 {day.seaState && <p className="text-teal-300 text-sm font-bold">{day.seaState}</p>}
               </div>
               {(() => {
-                // Use swellHeightFt if available, fall back to waveHeightFt
+                // Swell height from marine API (actual swell, not wind-wave estimate)
+                // swellHeightFt preferred; fall back to waveHeightFt
+                // isMetric toggle controls display unit -- never show both at once
                 const displayHt = day.swellHeightFt ?? day.waveHeightFt;
                 if (displayHt == null) return null;
                 return (
                   <>
                     <div className="border-t border-white/10 my-2" />
+                    {/* Swell height: ft in US standard, m in metric -- one value only */}
                     <p className="text-teal-300 text-sm font-extrabold leading-snug">
                       {isMetric ? swellFtToM(displayHt) : `${displayHt}ft`}
                     </p>
@@ -482,11 +493,10 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
       </div>
       <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
         <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
-        {hasWave && <span className="text-teal-300 text-xs font-bold">ft/m = swell ht</span>}
+        <span className="text-teal-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
+        {hasWave && <span className="text-teal-300 text-xs font-bold">ft/m = swell ht (marine API)</span>}
         {hasWave && <span className="text-teal-400/70 text-xs font-bold">dir = swell dir</span>}
         {hasWave && <span className="text-white/50 text-xs font-bold">s = period</span>}
-        <span className="text-yellow-200 text-xs font-bold">UV = UV index</span>
-        <span className="text-teal-300 text-xs font-bold">sea state shown</span>
       </div>
     </div>
   );
