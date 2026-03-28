@@ -350,26 +350,26 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
     return <p className="text-white/30 text-xs py-2">Hourly data unavailable for this port.</p>;
   }
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="flex gap-2 min-w-max">
+    <div className="w-full">
+      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${slots.length}, 1fr)` }}>
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-xl px-3 py-3 min-w-[64px]"
+            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-xl py-3 px-1"
           >
             <span className="text-amber-100/70 text-xs font-bold mb-1">{slot.label}</span>
-            <SkyIcon condition={slot.condition} className="w-5 h-5 text-yellow-300 mb-1" />
+            <SkyIcon condition={slot.condition} className="w-6 h-6 text-yellow-300 mb-1" />
             <span className="text-white font-black text-base leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
             </span>
             <div className="mt-1.5 text-center">
-              <span className="text-cyan-300 text-[11px] font-bold block">
+              <span className="text-cyan-300 text-xs font-bold block">
                 {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
               </span>
               <span className="text-white/40 text-[10px]">{slot.windDir}</span>
             </div>
             {slot.rainChance > 0 && (
-              <span className="text-blue-300 text-[11px] font-bold mt-1">{slot.rainChance}%</span>
+              <span className="text-blue-300 text-xs font-bold mt-1">{slot.rainChance}%</span>
             )}
           </div>
         ))}
@@ -388,33 +388,33 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
   return (
     <div>
       <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">5-Day Forecast</p>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-3">
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
-            <div key={day.date} className="text-center bg-white/5 border border-white/10 rounded-xl py-3 px-1">
-              <p className="text-white/60 text-xs font-extrabold mb-1">{DAY_NAMES[d.getDay()]}</p>
-              <SkyIcon condition={day.condition} className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
-              <p className="text-white text-sm font-extrabold">
+            <div key={day.date} className="text-center bg-white/5 border border-white/10 rounded-xl py-5 px-2">
+              <p className="text-white/70 text-sm font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
+              <SkyIcon condition={day.condition} className="w-9 h-9 text-yellow-300 mx-auto mb-2" />
+              <p className="text-white text-xl font-extrabold leading-tight">
                 {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
               </p>
-              <p className="text-white/50 text-xs font-bold">
+              <p className="text-white/50 text-sm font-bold mb-2">
                 {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
               </p>
-              <div className="border-t border-white/10 my-1.5" />
-              <p className="text-cyan-300 text-xs font-extrabold">{day.windDir}</p>
-              <p className="text-white/80 text-xs font-bold">
+              <div className="border-t border-white/10 my-2" />
+              <p className="text-cyan-300 text-sm font-extrabold">{day.windDir}</p>
+              <p className="text-white/80 text-sm font-bold">
                 {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
               </p>
-              <p className="text-blue-300 text-xs font-extrabold">{day.rainChance}%</p>
+              <p className="text-blue-300 text-sm font-extrabold">{day.rainChance}%</p>
               {hasWave && day.swellHeightFt != null && (
                 <>
-                  <div className="border-t border-white/10 my-1.5" />
-                  <p className="text-teal-300 text-[11px] font-extrabold leading-snug">
+                  <div className="border-t border-white/10 my-2" />
+                  <p className="text-teal-300 text-sm font-extrabold leading-snug">
                     {isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}
                   </p>
-                  {day.swellDir && <p className="text-teal-400/70 text-[10px] leading-snug">{day.swellDir}</p>}
-                  {day.swellPeriod && <p className="text-white/50 text-[10px] leading-snug">{day.swellPeriod}s</p>}
+                  {day.swellDir && <p className="text-teal-400/70 text-xs font-bold leading-snug">{day.swellDir}</p>}
+                  {day.swellPeriod && <p className="text-white/50 text-xs font-bold leading-snug">{day.swellPeriod}s</p>}
                 </>
               )}
             </div>
