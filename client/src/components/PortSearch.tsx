@@ -455,7 +455,8 @@ function PortSlotCard({
   query: string;
   selectedPort: typeof PORT_LIST[0] | null;
   onQueryChange: (q: string, port: typeof PORT_LIST[0] | null) => void;
-  onClear: () => void;
+    onClear: () => void;
+    onGetForecast: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -533,9 +534,8 @@ function PortSlotCard({
               onKeyDown={e => {
                 if (e.key === "Enter") {
                   setOpen(false);
-                  // Enter key on a slot: let the parent's shared button handle it,
-                  // but if a suggestion is already selected fire it immediately
-                  if (selectedPort) onQueryChange(selectedPort.name, selectedPort);
+                  // Enter key fires all filled slots -- same as clicking Get Forecast
+                  onGetForecast();
                 }
               }}
               placeholder="Type a port name..."
@@ -569,7 +569,18 @@ function PortSlotCard({
             )}
           </div>
 
-          {/* No per-slot button -- the shared Get Forecast button below fires all slots */}
+          {/* Per-slot Get Forecast button */}
+          <button
+            onClick={onGetForecast}
+            disabled={!query.trim()}
+            className={`shrink-0 px-4 py-3 rounded-xl text-sm font-black tracking-wide transition-all ${
+              query.trim()
+                ? "bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30"
+                : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
+            }`}
+          >
+            Get Forecast
+          </button>
         </div>
       </div>
 
@@ -774,6 +785,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
               setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
             }}
             onClear={() => handleClear(i)}
+            onGetForecast={handleGetAllForecasts}
           />
         ))}
       </div>
