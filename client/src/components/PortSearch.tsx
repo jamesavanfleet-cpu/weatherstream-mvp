@@ -5,82 +5,128 @@ import {
 } from "lucide-react";
 
 // ============================================================
-// PORT MASTER LIST -- 68 verified ports with lat/lon -- v2
+// PORT MASTER LIST -- v3: corrected terminal coords + island/city aliases
+// Last updated: 2026-03-28
 // ============================================================
 export const PORT_LIST: { name: string; lat: number; lon: number; region: string }[] = [
-  // Caribbean
-  { name: "Miami",           lat: 25.77,  lon: -80.19, region: "Caribbean" },
-  { name: "Key West",        lat: 24.56,  lon: -81.78, region: "Caribbean" },
-  { name: "Nassau",          lat: 25.04,  lon: -77.35, region: "Caribbean" },
-  { name: "Bimini",          lat: 25.73,  lon: -79.29, region: "Caribbean" },
-  { name: "Freeport",        lat: 26.53,  lon: -78.70, region: "Caribbean" },
-  { name: "Berry Islands",   lat: 25.63,  lon: -77.83, region: "Caribbean" },
-  { name: "San Juan",        lat: 18.47,  lon: -66.12, region: "Caribbean" },
-  { name: "St. Thomas",      lat: 18.34,  lon: -64.93, region: "Caribbean" },
-  { name: "St. Croix",       lat: 17.73,  lon: -64.73, region: "Caribbean" },
-  { name: "St. Kitts",       lat: 17.30,  lon: -62.72, region: "Caribbean" },
-  { name: "Antigua",         lat: 17.12,  lon: -61.85, region: "Caribbean" },
-  { name: "Barbados",        lat: 13.10,  lon: -59.62, region: "Caribbean" },
-  { name: "St. Lucia",       lat: 13.91,  lon: -60.98, region: "Caribbean" },
-  { name: "Martinique",      lat: 14.67,  lon: -61.01, region: "Caribbean" },
-  { name: "St. Maarten",     lat: 18.07,  lon: -63.06, region: "Caribbean" },
-  { name: "Turks & Caicos",  lat: 21.46,  lon: -71.14, region: "Caribbean" },
-  { name: "Cozumel",         lat: 20.51,  lon: -86.95, region: "Caribbean" },
-  { name: "Costa Maya",      lat: 18.73,  lon: -87.71, region: "Caribbean" },
-  { name: "Roatan",          lat: 16.32,  lon: -86.53, region: "Caribbean" },
-  { name: "Belize City",     lat: 17.25,  lon: -88.77, region: "Caribbean" },
-  { name: "Grand Cayman",    lat: 19.29,  lon: -81.38, region: "Caribbean" },
-  { name: "Ocho Rios",       lat: 18.41,  lon: -77.10, region: "Caribbean" },
-  { name: "Falmouth",        lat: 18.50,  lon: -77.66, region: "Caribbean" },
-  { name: "Aruba",           lat: 12.52,  lon: -70.03, region: "Caribbean" },
-  { name: "Curacao",         lat: 12.11,  lon: -68.93, region: "Caribbean" },
-  { name: "Bonaire",         lat: 12.20,  lon: -68.26, region: "Caribbean" },
-  { name: "Dominica",        lat: 15.30,  lon: -61.39, region: "Caribbean" },
-  { name: "La Romana",       lat: 18.43,  lon: -68.97, region: "Caribbean" },
-  { name: "Puerto Plata",    lat: 19.80,  lon: -70.69, region: "Caribbean" },
-  { name: "Samana",          lat: 19.21,  lon: -69.34, region: "Caribbean" },
-  { name: "Santo Domingo",   lat: 18.47,  lon: -69.90, region: "Caribbean" },
-  { name: "Cartagena",       lat: 10.39,  lon: -75.48, region: "Caribbean" },
-  { name: "CocoCay",         lat: 25.83,  lon: -77.67, region: "Caribbean" },
-  // Western Mediterranean
-  { name: "Barcelona",       lat: 41.38,  lon:   2.18, region: "Mediterranean" },
-  { name: "Valencia",        lat: 39.47,  lon:  -0.38, region: "Mediterranean" },
-  { name: "Palma",           lat: 39.57,  lon:   2.65, region: "Mediterranean" },
-  { name: "Ibiza",           lat: 38.91,  lon:   1.43, region: "Mediterranean" },
-  { name: "Malaga",          lat: 36.72,  lon:  -4.42, region: "Mediterranean" },
-  { name: "Cadiz",           lat: 36.53,  lon:  -6.30, region: "Mediterranean" },
-  { name: "Lisbon",          lat: 38.72,  lon:  -9.14, region: "Mediterranean" },
-  { name: "Marseille",       lat: 43.30,  lon:   5.37, region: "Mediterranean" },
-  { name: "Nice",            lat: 43.70,  lon:   7.27, region: "Mediterranean" },
-  { name: "Monaco",          lat: 43.73,  lon:   7.42, region: "Mediterranean" },
-  { name: "Genoa",           lat: 44.41,  lon:   8.93, region: "Mediterranean" },
-  { name: "La Spezia",       lat: 44.10,  lon:   9.82, region: "Mediterranean" },
-  { name: "Livorno",         lat: 43.55,  lon:  10.31, region: "Mediterranean" },
-  { name: "Civitavecchia",   lat: 42.09,  lon:  11.80, region: "Mediterranean" },
-  { name: "Naples",          lat: 40.85,  lon:  14.27, region: "Mediterranean" },
-  { name: "Sardinia",        lat: 39.22,  lon:   9.11, region: "Mediterranean" },
-  { name: "Corsica",         lat: 42.04,  lon:   9.01, region: "Mediterranean" },
-  { name: "Split",           lat: 43.51,  lon:  16.44, region: "Mediterranean" },
-  { name: "Dubrovnik",       lat: 42.65,  lon:  18.09, region: "Mediterranean" },
-  { name: "Venice",          lat: 45.44,  lon:  12.33, region: "Mediterranean" },
-  // Eastern Mediterranean
-  { name: "Athens",          lat: 37.94,  lon:  23.64, region: "Mediterranean" },
-  { name: "Santorini",       lat: 36.39,  lon:  25.46, region: "Mediterranean" },
-  { name: "Mykonos",         lat: 37.45,  lon:  25.33, region: "Mediterranean" },
-  { name: "Rhodes",          lat: 36.43,  lon:  28.22, region: "Mediterranean" },
-  { name: "Corfu",           lat: 39.62,  lon:  19.92, region: "Mediterranean" },
-  { name: "Istanbul",        lat: 41.01,  lon:  28.98, region: "Mediterranean" },
-  { name: "Izmir",           lat: 38.42,  lon:  27.14, region: "Mediterranean" },
-  { name: "Cyprus",          lat: 34.92,  lon:  33.63, region: "Mediterranean" },
-  { name: "Haifa",           lat: 32.82,  lon:  34.99, region: "Mediterranean" },
-  { name: "Alexandria",      lat: 31.20,  lon:  29.92, region: "Mediterranean" },
-  // Eastern Pacific
-  { name: "Ensenada",        lat: 31.87,  lon: -116.60, region: "Pacific" },
-  { name: "Cabo San Lucas",  lat: 22.89,  lon: -109.91, region: "Pacific" },
-  { name: "Mazatlan",        lat: 23.24,  lon: -106.41, region: "Pacific" },
-  { name: "Puerto Vallarta", lat: 20.65,  lon: -105.22, region: "Pacific" },
-  { name: "Manzanillo",      lat: 19.05,  lon: -104.32, region: "Pacific" },
-  { name: "Huatulco",        lat: 15.74,  lon:  -96.13, region: "Pacific" },
+  // ---- Caribbean ----
+  { name: "Miami",                  lat: 25.7753, lon: -80.1698, region: "Caribbean" },
+  { name: "Key West",               lat: 24.5551, lon: -81.7800, region: "Caribbean" },
+  // Nassau / Prince George Wharf
+  { name: "Nassau",                 lat: 25.0780, lon: -77.3390, region: "Caribbean" },
+  { name: "Bimini",                 lat: 25.7300, lon: -79.2900, region: "Caribbean" },
+  { name: "Freeport",               lat: 26.5285, lon: -78.6960, region: "Caribbean" },
+  { name: "Berry Islands",          lat: 25.7380, lon: -77.8400, region: "Caribbean" },
+  { name: "San Juan",               lat: 18.4655, lon: -66.1057, region: "Caribbean" },
+  { name: "St. Thomas",             lat: 18.3381, lon: -64.9312, region: "Caribbean" },
+  // St. Croix -- port is Frederiksted
+  { name: "St. Croix",              lat: 17.7130, lon: -64.8830, region: "Caribbean" },
+  { name: "Frederiksted",           lat: 17.7130, lon: -64.8830, region: "Caribbean" },
+  // St. Kitts -- port is Basseterre (Port Zante)
+  { name: "St. Kitts",              lat: 17.2983, lon: -62.7260, region: "Caribbean" },
+  { name: "Basseterre",             lat: 17.2983, lon: -62.7260, region: "Caribbean" },
+  // Antigua -- port is St. John's (Heritage Quay)
+  { name: "Antigua",                lat: 17.1175, lon: -61.8456, region: "Caribbean" },
+  { name: "St. John's",             lat: 17.1175, lon: -61.8456, region: "Caribbean" },
+  // Barbados -- port is Bridgetown Cruise Terminal
+  { name: "Barbados",               lat: 13.1000, lon: -59.6167, region: "Caribbean" },
+  { name: "Bridgetown",             lat: 13.1000, lon: -59.6167, region: "Caribbean" },
+  // St. Lucia -- port is Castries
+  { name: "St. Lucia",              lat: 14.0101, lon: -60.9875, region: "Caribbean" },
+  { name: "Castries",               lat: 14.0101, lon: -60.9875, region: "Caribbean" },
+  // Martinique -- port is Fort-de-France
+  { name: "Martinique",             lat: 14.6037, lon: -61.0722, region: "Caribbean" },
+  { name: "Fort-de-France",         lat: 14.6037, lon: -61.0722, region: "Caribbean" },
+  // St. Maarten -- port is Philipsburg (Dr. A.C. Wathey Pier)
+  { name: "St. Maarten",            lat: 18.0236, lon: -63.0458, region: "Caribbean" },
+  { name: "Philipsburg",            lat: 18.0236, lon: -63.0458, region: "Caribbean" },
+  // Turks & Caicos -- port is Grand Turk Cruise Center
+  { name: "Turks & Caicos",         lat: 21.4667, lon: -71.1389, region: "Caribbean" },
+  { name: "Grand Turk",             lat: 21.4667, lon: -71.1389, region: "Caribbean" },
+  { name: "Cozumel",                lat: 20.5088, lon: -86.9468, region: "Caribbean" },
+  // Costa Maya -- actual town is Mahahual
+  { name: "Costa Maya",             lat: 18.7070, lon: -87.7130, region: "Caribbean" },
+  { name: "Mahahual",               lat: 18.7070, lon: -87.7130, region: "Caribbean" },
+  // Roatan -- main port is Coxen Hole / Mahogany Bay
+  { name: "Roatan",                 lat: 16.3167, lon: -86.5333, region: "Caribbean" },
+  { name: "Coxen Hole",             lat: 16.3167, lon: -86.5333, region: "Caribbean" },
+  { name: "Belize City",            lat: 17.2510, lon: -88.7670, region: "Caribbean" },
+  // Grand Cayman -- port is George Town
+  { name: "Grand Cayman",           lat: 19.2869, lon: -81.3674, region: "Caribbean" },
+  { name: "George Town",            lat: 19.2869, lon: -81.3674, region: "Caribbean" },
+  { name: "Ocho Rios",              lat: 18.4083, lon: -77.1028, region: "Caribbean" },
+  { name: "Falmouth",               lat: 18.4956, lon: -77.6583, region: "Caribbean" },
+  // Aruba -- port is Oranjestad
+  { name: "Aruba",                  lat: 12.5186, lon: -70.0358, region: "Caribbean" },
+  { name: "Oranjestad",             lat: 12.5186, lon: -70.0358, region: "Caribbean" },
+  // Curacao -- port is Willemstad (Mega Pier)
+  { name: "Curacao",                lat: 12.1084, lon: -68.9335, region: "Caribbean" },
+  { name: "Willemstad",             lat: 12.1084, lon: -68.9335, region: "Caribbean" },
+  // Bonaire -- port is Kralendijk
+  { name: "Bonaire",                lat: 12.1500, lon: -68.2700, region: "Caribbean" },
+  { name: "Kralendijk",             lat: 12.1500, lon: -68.2700, region: "Caribbean" },
+  // Dominica -- port is Roseau
+  { name: "Dominica",               lat: 15.3017, lon: -61.3881, region: "Caribbean" },
+  { name: "Roseau",                 lat: 15.3017, lon: -61.3881, region: "Caribbean" },
+  { name: "La Romana",              lat: 18.4275, lon: -68.9722, region: "Caribbean" },
+  { name: "Puerto Plata",           lat: 19.7936, lon: -70.6878, region: "Caribbean" },
+  { name: "Samana",                 lat: 19.2075, lon: -69.3356, region: "Caribbean" },
+  { name: "Santo Domingo",          lat: 18.4725, lon: -69.8853, region: "Caribbean" },
+  { name: "Cartagena",              lat: 10.3910, lon: -75.4794, region: "Caribbean" },
+  { name: "CocoCay",                lat: 25.8300, lon: -77.6700, region: "Caribbean" },
+  // ---- Western Mediterranean ----
+  { name: "Barcelona",              lat: 41.3500, lon:   2.1700, region: "Mediterranean" },
+  { name: "Valencia",               lat: 39.4500, lon:  -0.3200, region: "Mediterranean" },
+  // Palma de Mallorca
+  { name: "Palma",                  lat: 39.5700, lon:   2.6500, region: "Mediterranean" },
+  { name: "Palma de Mallorca",      lat: 39.5700, lon:   2.6500, region: "Mediterranean" },
+  // Ibiza -- port is Ibiza Town
+  { name: "Ibiza",                  lat: 38.9100, lon:   1.4300, region: "Mediterranean" },
+  { name: "Ibiza Town",             lat: 38.9100, lon:   1.4300, region: "Mediterranean" },
+  { name: "Malaga",                 lat: 36.7200, lon:  -4.4200, region: "Mediterranean" },
+  { name: "Cadiz",                  lat: 36.5300, lon:  -6.3000, region: "Mediterranean" },
+  { name: "Lisbon",                 lat: 38.7200, lon:  -9.1400, region: "Mediterranean" },
+  { name: "Marseille",              lat: 43.3000, lon:   5.3700, region: "Mediterranean" },
+  { name: "Nice",                   lat: 43.7000, lon:   7.2700, region: "Mediterranean" },
+  { name: "Monaco",                 lat: 43.7300, lon:   7.4200, region: "Mediterranean" },
+  { name: "Genoa",                  lat: 44.4100, lon:   8.9300, region: "Mediterranean" },
+  { name: "La Spezia",              lat: 44.1000, lon:   9.8200, region: "Mediterranean" },
+  { name: "Livorno",                lat: 43.5500, lon:  10.3100, region: "Mediterranean" },
+  { name: "Civitavecchia",          lat: 42.0900, lon:  11.8000, region: "Mediterranean" },
+  { name: "Naples",                 lat: 40.8500, lon:  14.2700, region: "Mediterranean" },
+  // Sardinia -- main cruise port is Cagliari
+  { name: "Sardinia",               lat: 39.2238, lon:   9.1217, region: "Mediterranean" },
+  { name: "Cagliari",               lat: 39.2238, lon:   9.1217, region: "Mediterranean" },
+  // Corsica -- main cruise port is Ajaccio
+  { name: "Corsica",                lat: 41.9194, lon:   8.7386, region: "Mediterranean" },
+  { name: "Ajaccio",                lat: 41.9194, lon:   8.7386, region: "Mediterranean" },
+  { name: "Split",                  lat: 43.5100, lon:  16.4400, region: "Mediterranean" },
+  { name: "Dubrovnik",              lat: 42.6500, lon:  18.0900, region: "Mediterranean" },
+  { name: "Venice",                 lat: 45.4400, lon:  12.3300, region: "Mediterranean" },
+  // ---- Eastern Mediterranean ----
+  // Athens -- cruise port is Piraeus
+  { name: "Athens",                 lat: 37.9475, lon:  23.6430, region: "Mediterranean" },
+  { name: "Piraeus",                lat: 37.9475, lon:  23.6430, region: "Mediterranean" },
+  // Santorini -- port is Athinios / Fira
+  { name: "Santorini",              lat: 36.3932, lon:  25.4615, region: "Mediterranean" },
+  { name: "Fira",                   lat: 36.3932, lon:  25.4615, region: "Mediterranean" },
+  { name: "Mykonos",                lat: 37.4500, lon:  25.3300, region: "Mediterranean" },
+  { name: "Rhodes",                 lat: 36.4300, lon:  28.2200, region: "Mediterranean" },
+  { name: "Corfu",                  lat: 39.6200, lon:  19.9200, region: "Mediterranean" },
+  { name: "Istanbul",               lat: 41.0100, lon:  28.9800, region: "Mediterranean" },
+  { name: "Izmir",                  lat: 38.4200, lon:  27.1400, region: "Mediterranean" },
+  // Cyprus -- main cruise port is Limassol
+  { name: "Cyprus",                 lat: 34.6786, lon:  33.0413, region: "Mediterranean" },
+  { name: "Limassol",               lat: 34.6786, lon:  33.0413, region: "Mediterranean" },
+  { name: "Haifa",                  lat: 32.8200, lon:  34.9900, region: "Mediterranean" },
+  { name: "Alexandria",             lat: 31.2000, lon:  29.9200, region: "Mediterranean" },
+  // ---- Eastern Pacific ----
+  { name: "Ensenada",               lat: 31.8700, lon: -116.6000, region: "Pacific" },
+  { name: "Cabo San Lucas",         lat: 22.8900, lon: -109.9100, region: "Pacific" },
+  { name: "Mazatlan",               lat: 23.2400, lon: -106.4100, region: "Pacific" },
+  { name: "Puerto Vallarta",        lat: 20.6500, lon: -105.2200, region: "Pacific" },
+  { name: "Manzanillo",             lat: 19.0500, lon: -104.3200, region: "Pacific" },
+  { name: "Huatulco",               lat: 15.7400, lon:  -96.1300, region: "Pacific" },
 ];
 
 // ============================================================
@@ -475,14 +521,16 @@ function PortSlotCard({
               type="text"
               value={query}
               onChange={e => {
-                setQuery(e.target.value);
-                setSelectedPort(null); // clear selection if user edits
+                onQueryChange(e.target.value, null); // lift query up, clear selection
                 setOpen(true);
               }}
               onFocus={() => { if (query.length >= 1) setOpen(true); }}
               onKeyDown={e => {
                 if (e.key === "Enter") {
-                  handleGetForecast();
+                  setOpen(false);
+                  // Enter key on a slot: let the parent's shared button handle it,
+                  // but if a suggestion is already selected fire it immediately
+                  if (selectedPort) onQueryChange(selectedPort.name, selectedPort);
                 }
               }}
               placeholder="Type a port name..."
