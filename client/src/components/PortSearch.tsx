@@ -743,31 +743,6 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         ))}
       </div>
 
-      {/* Shared action row: Get Forecast + Back */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <button
-          onClick={handleGetAllForecasts}
-          disabled={!anyQueryFilled}
-          className={`flex-1 sm:flex-none px-8 py-3.5 rounded-xl text-sm font-black tracking-wide transition-all ${
-            anyQueryFilled
-              ? "bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30"
-              : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
-          }`}
-        >
-          Get Forecast
-        </button>
-        {forecastsLoaded && (
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-all"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-        )}
-      </div>
     </div>
   );
 }
