@@ -312,52 +312,32 @@ const MED_ROUTES = [
 // --- Eastern Pacific Routes ---
 const PACIFIC_ROUTES = [
   {
-    name: "Ensenada",
+    name: "Eastern Pacific",
     slug: "eastern-pacific",
-    image: "/locations/ensenada.jpg",
-    temp: 65,
-    seas: "4-6 ft",
-    wind: "15-22 kt",
-    rain: "10%",
-    status: "Moderate",
-    gradient: "from-slate-500/20 to-blue-600/20",
-    intel: "NW swell running 4-6 ft with a 14-second period -- comfortable offshore but watch the harbor entrance. Afternoon thermal winds pick up to 20+ kt in the afternoon along the Baja coast. Overnight conditions settle considerably. Fuel and provisions readily available."
-  },
-  {
-    name: "Cabo San Lucas",
-    slug: "eastern-pacific",
-    image: "/locations/cabo-san-lucas.jpg",
+    image: "/locations/eastern-pacific.jpg",
     temp: 78,
     seas: "2-4 ft",
     wind: "10-15 kt",
-    rain: "2%",
-    status: "Excellent",
-    gradient: "from-amber-500/20 to-orange-500/20",
-    intel: "The Cape region is in a favorable pattern. Pacific swell is wrapping around the tip but staying below 4 ft at the anchorage. Sea of Cortez side is glass-calm. Excellent visibility for diving at the arch. Light NW breeze in the mornings, calm by afternoon."
-  },
-  {
-    name: "Mazatlan",
-    slug: "eastern-pacific",
-    image: "/locations/mazatlan.jpg",
-    temp: 82,
-    seas: "2-3 ft",
-    wind: "8-12 kt",
-    rain: "3%",
-    status: "Perfect",
-    gradient: "from-yellow-500/20 to-amber-500/20",
-    intel: "Mazatlan is enjoying classic Sea of Cortez winter conditions. Light winds, minimal swell, and outstanding visibility. The Stone Island anchorage is perfectly calm. Excellent conditions for the crossing to La Paz or heading north toward the Tres Marias Islands."
-  },
-  {
-    name: "Puerto Vallarta",
-    slug: "eastern-pacific",
-    image: "/locations/puerto-vallarta.jpg",
-    temp: 84,
-    seas: "2-4 ft",
-    wind: "10-16 kt",
     rain: "5%",
     status: "Excellent",
-    gradient: "from-emerald-500/20 to-teal-500/20",
-    intel: "Banderas Bay is one of the most protected anchorages on the Pacific coast of Mexico. Afternoon sea breeze is building to 15 kt by 2 PM, ideal for sailing. Yelapa and the southern bay anchorages are calm. Chacala and Punta Mita are excellent day-trip destinations this week."
+    gradient: "from-amber-500/20 to-orange-500/20",
+    intel: "California High driving persistent NW winds and swell down the Baja coast. Cabo San Lucas tip conditions favorable with Pacific swell wrapping below 4 ft. Sea of Cortez ports -- Mazatlan and Puerto Vallarta -- calm with afternoon sea breezes. Plan Baja coast passages for early morning to avoid afternoon thermal winds 20-30 kt."
+  },
+];
+
+// --- Southeast Alaska Routes ---
+const ALASKA_ROUTES = [
+  {
+    name: "Southeast Alaska",
+    slug: "southeast-alaska",
+    image: "/locations/southeast-alaska.jpg",
+    temp: 45,
+    seas: "2-4 ft",
+    wind: "10-20 kt",
+    rain: "30%",
+    status: "Good",
+    gradient: "from-slate-500/20 to-cyan-600/20",
+    intel: "Inside Passage conditions moderate with SE winds 15-20 kt in the lower channels. Juneau and Ketchikan seeing typical Southeast Alaska overcast with light rain. Tracy Arm Fjord ice conditions favorable for glacier viewing. Skagway and Sitka calm. Seattle departure conditions good."
   },
 ];
 
@@ -841,9 +821,12 @@ export default function Home() {
   const [hoveredPacific, setHoveredPacific] = useState<number | null>(null);
   const [visibleMed, setVisibleMed] = useState<Set<number>>(new Set());
   const [hoveredMed, setHoveredMed] = useState<number | null>(null);
+  const [visibleAlaska, setVisibleAlaska] = useState<Set<number>>(new Set());
+  const [hoveredAlaska, setHoveredAlaska] = useState<number | null>(null);
   const cruiseRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pacificRefs = useRef<(HTMLDivElement | null)[]>([]);
   const medRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const alaskaRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
   const [liveOffset, setLiveOffset] = useState(0);
   const [liveExiting, setLiveExiting] = useState(false);
@@ -1044,6 +1027,29 @@ export default function Home() {
       { threshold: [0, 0.3, 0.5, 0.7, 0.9], rootMargin: '-20% 0px -20% 0px' }
     );
     medRefs.current.forEach((ref) => { if (ref) observer.observe(ref); });
+    return () => observer.disconnect();
+  }, []);
+  // Scroll-triggered intel expansion for Alaska cards
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const index = alaskaRefs.current.indexOf(entry.target as HTMLDivElement);
+          if (index === -1) return;
+          setVisibleAlaska(prev => {
+            const newSet = new Set(prev);
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
+              newSet.add(index);
+            } else {
+              newSet.delete(index);
+            }
+            return newSet;
+          });
+        });
+      },
+      { threshold: [0, 0.3, 0.5, 0.7, 0.9], rootMargin: '-20% 0px -20% 0px' }
+    );
+    alaskaRefs.current.forEach((ref) => { if (ref) observer.observe(ref); });
     return () => observer.disconnect();
   }, []);
 
@@ -1513,6 +1519,33 @@ export default function Home() {
                 visiblePacific,
                 hoveredPacific,
                 setHoveredPacific
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Southeast Alaska Section */}
+      <section className="py-8 relative overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-3xl opacity-30" />
+        <div className="container relative z-10">
+          <div className="text-center mb-5">
+            <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
+              Southeast Alaska Cruise Weather
+            </h3>
+            <p className="text-xl text-white/70 max-w-2xl mx-auto">
+              Inside Passage from Seattle to Skagway -- complete forecasts for Juneau, Ketchikan, Sitka, Tracy Arm, and beyond
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
+            {ALASKA_ROUTES.map((route, i) =>
+              renderRouteCard(
+                route as typeof CRUISE_ROUTES[0],
+                i,
+                alaskaRefs,
+                visibleAlaska,
+                hoveredAlaska,
+                setHoveredAlaska
               )
             )}
           </div>
