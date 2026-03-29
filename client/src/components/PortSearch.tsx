@@ -330,18 +330,18 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                   <span className="text-2xl leading-none">{cloudCoverIcon(day.cloudCover ?? 0)}</span>
                   <span className="text-white/70 text-xs font-bold mt-0.5">{day.cloudCover ?? 0}%</span>
                 </div>
-                <p className="text-white text-3xl font-extrabold leading-tight">
+                <p className="text-white text-xl sm:text-3xl font-extrabold leading-tight">
                   {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
                 </p>
-                <p className="text-white/50 text-xl font-bold mb-3">
+                <p className="text-white/50 text-sm sm:text-xl font-bold mb-3">
                   {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
                 </p>
               </div>
               <div className="border-t border-white/10 my-2" />
               <div>
                 <p className="text-cyan-300 text-base font-extrabold">{day.windDir}</p>
-                <p className="text-white/80 text-base font-bold">
-                  {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
+                <p className="text-white/80 font-bold leading-tight">
+                  <span className="text-base">{isMetric ? day.windKt : ktToMph(day.windKt)}</span><span className="text-[10px] sm:text-sm font-semibold ml-px">{isMetric ? 'kt' : 'mph'}</span>
                 </p>
                 <p className="text-blue-300 text-base font-extrabold">{day.rainChance}%</p>
                 {/* Sea state = wind-wave height estimate -- orange to contrast with teal swell */}
