@@ -387,6 +387,7 @@ function PortSlotCard({
   slotIndex,
   slot,
   isMetric,
+  onSetMetric,
   query,
   selectedPort,
   onQueryChange,
@@ -396,11 +397,12 @@ function PortSlotCard({
   slotIndex: number;
   slot: PortSlot | null;
   isMetric: boolean;
+  onSetMetric: (v: boolean) => void;
   query: string;
   selectedPort: typeof PORT_LIST[0] | null;
   onQueryChange: (q: string, port: typeof PORT_LIST[0] | null) => void;
-    onClear: () => void;
-    onGetForecast: () => void;
+  onClear: () => void;
+  onGetForecast: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -465,8 +467,8 @@ function PortSlotCard({
           {labels[slotIndex]}
         </label>
 
-        <div className="flex gap-2 max-w-xl">
-          {/* Typeahead input -- constrained width, not full page */}
+        <div className="flex gap-2 items-center w-full">
+          {/* Typeahead input */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
             <input
@@ -529,6 +531,22 @@ function PortSlotCard({
           >
             Get Forecast
           </button>
+
+          {/* Units toggle -- right end of each port row */}
+          <div className="ml-auto flex-shrink-0 flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+            <button
+              onClick={() => onSetMetric(false)}
+              className={`px-3 py-1.5 transition-colors ${!isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            >
+              US Standard
+            </button>
+            <button
+              onClick={() => onSetMetric(true)}
+              className={`px-3 py-1.5 transition-colors ${isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+            >
+              Metric
+            </button>
+          </div>
         </div>
       </div>
 
@@ -712,6 +730,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
             slotIndex={i}
             slot={slots[i]}
             isMetric={localMetric}
+            onSetMetric={setLocalMetric}
             query={queries[i]}
             selectedPort={selectedPorts[i]}
             onQueryChange={(q, port) => {
@@ -724,7 +743,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         ))}
       </div>
 
-      {/* Shared action row: Get Forecast + Back + Units toggle */}
+      {/* Shared action row: Get Forecast + Back */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={handleGetAllForecasts}
@@ -748,21 +767,6 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
             Back
           </button>
         )}
-        {/* Units toggle -- sits inline with Get Forecast button, right side */}
-        <div className="ml-auto flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
-          <button
-            onClick={() => setLocalMetric(false)}
-            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            US Standard
-          </button>
-          <button
-            onClick={() => setLocalMetric(true)}
-            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            Metric
-          </button>
-        </div>
       </div>
     </div>
   );
