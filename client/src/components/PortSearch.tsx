@@ -243,7 +243,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode` +
     `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability,relativehumidity_2m,uv_index,cloudcover,visibility` +
-    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode,uv_index_max,windspeed_10m_max` +
+    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode,uv_index_max,windspeed_10m_max,cloudcover_mean` +
     `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=8`;
 
   const marineUrl =
@@ -355,7 +355,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
       swellPeriod:   md?.swell_wave_period_max?.[i] != null ? Math.round(md.swell_wave_period_max[i]) : null,
       humidity: null,
       uvIndex: d.uv_index_max?.[i] != null ? Math.round(d.uv_index_max[i] * 10) / 10 : null,
-      cloudCover: null,
+      cloudCover: d.cloudcover_mean?.[i] != null ? Math.round(d.cloudcover_mean[i]) : null,
       visibility: null,
       seaState: seaStateFromWind(wKt),
     };
@@ -447,7 +447,11 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
               <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-2 px-1">
               <div>
                 <p className="text-white/70 text-base font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
-                <SkyIcon condition={day.condition} className="w-14 h-14 text-yellow-300 mx-auto mb-2" />
+                {/* Cloud cover emoji + % -- matches hourly card style, no SVG icon */}
+                <div className="flex flex-col items-center mb-2">
+                  <span className="text-2xl leading-none">{cloudCoverIcon(day.cloudCover ?? 0)}</span>
+                  <span className="text-white/70 text-xs font-bold mt-0.5">{day.cloudCover ?? 0}%</span>
+                </div>
                 <p className="text-white text-3xl font-extrabold leading-tight">
                   {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
                 </p>
@@ -803,23 +807,21 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
 
   return (
     <div className="space-y-6">
-      {/* Section header */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-          <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
+      {/* Section header -- title on left, units toggle pinned to top-right */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+            <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
+          </div>
+          <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
+          <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
+          <p className="text-white/50 text-sm mt-2 max-w-md">
+            Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+          </p>
         </div>
-        <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
-        <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
-        <p className="text-white/50 text-sm mt-2 max-w-md">
-          Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
-        </p>
-      </div>
-
-      {/* Units toggle -- sits directly above the port input boxes */}
-      <div className="flex items-center gap-3">
-        <span className="text-white/40 text-xs font-semibold">Units:</span>
-        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+        {/* Units toggle -- top-right of section header */}
+        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold flex-shrink-0">
           <button
             onClick={() => setLocalMetric(false)}
             className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
