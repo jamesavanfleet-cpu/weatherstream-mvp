@@ -5,7 +5,7 @@
 //   Add one line: { name: "Port Name", lat: XX.XXXX, lon: XX.XXXX, region: "Region" }
 //   That is ALL. Nothing else needs to change anywhere in the codebase.
 //   Regions: "Caribbean" | "Bahamas" | "Mediterranean" | "Pacific" | "Alaska"
-// Last updated: 2026-03-28
+// Last updated: 2026-03-29
 // ============================================================
 
 export type Port = { name: string; lat: number; lon: number; region: string };
@@ -46,6 +46,11 @@ export const PORT_LIST: Port[] = [
   { name: "Barbados",               lat: 13.1000, lon:  -59.6200, region: "Caribbean" },
   { name: "St. Vincent",            lat: 13.1600, lon:  -61.2300, region: "Caribbean" },
   { name: "Grenada",                lat: 12.0560, lon:  -61.7488, region: "Caribbean" },
+  // Southern Caribbean -- ABC islands and Colombia
+  { name: "Aruba",                  lat: 12.5200, lon:  -70.0300, region: "Caribbean" },
+  { name: "Bonaire",                lat: 12.2000, lon:  -68.2700, region: "Caribbean" },
+  { name: "Cartagena",              lat: 10.3900, lon:  -75.4800, region: "Caribbean" },
+  { name: "Curacao",                lat: 12.1100, lon:  -68.9300, region: "Caribbean" },
   // ---- Eastern Pacific ----
   { name: "Ensenada",               lat: 31.8700, lon: -116.6000, region: "Pacific" },
   { name: "Cabo San Lucas",         lat: 22.8900, lon: -109.9100, region: "Pacific" },
@@ -89,8 +94,9 @@ export const PORT_LIST: Port[] = [
   { name: "Dubrovnik",              lat: 42.6500, lon:   18.0900, region: "Mediterranean" },
   { name: "Venice",                 lat: 45.4400, lon:   12.3300, region: "Mediterranean" },
   // ---- Eastern Mediterranean ----
-  // Athens -- cruise port is Piraeus
+  // Athens -- cruise port is Piraeus; both names resolve to same coords
   { name: "Athens",                 lat: 37.9475, lon:   23.6430, region: "Mediterranean" },
+  { name: "Athens (Piraeus)",       lat: 37.9475, lon:   23.6430, region: "Mediterranean" },
   { name: "Piraeus",                lat: 37.9475, lon:   23.6430, region: "Mediterranean" },
   // Santorini -- port is Athinios / Fira
   { name: "Santorini",              lat: 36.3932, lon:   25.4615, region: "Mediterranean" },
