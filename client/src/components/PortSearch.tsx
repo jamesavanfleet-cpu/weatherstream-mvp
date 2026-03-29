@@ -467,7 +467,7 @@ function PortSlotCard({
           {labels[slotIndex]}
         </label>
 
-        <div className="flex gap-2 items-center w-full">
+        <div className="flex gap-2 items-center max-w-xl">
           {/* Typeahead input */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
@@ -533,7 +533,7 @@ function PortSlotCard({
           </button>
 
           {/* Units toggle -- right end of each port row */}
-          <div className="ml-auto flex-shrink-0 flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+          <div className="flex-shrink-0 flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
             <button
               onClick={() => onSetMetric(false)}
               className={`px-3 py-1.5 transition-colors ${!isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
