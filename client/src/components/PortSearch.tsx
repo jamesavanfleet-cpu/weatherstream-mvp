@@ -419,11 +419,14 @@ function PortSlotCard({
     if (!slot && !query) setOpen(false);
   }, [slot, query]);
 
+  // Normalize: strip periods so "St Maarten" matches "St. Maarten", "Turks Caicos" matches "Turks & Caicos", etc.
+  const normStr = (s: string) => s.toLowerCase().replace(/[.&]/g, "").replace(/\s+/g, " ").trim();
+  const qNorm = normStr(query);
   const suggestions = query.length >= 1
-    ? PORT_LIST.filter(p =>
-        p.name.toLowerCase().startsWith(query.toLowerCase()) ||
-        p.name.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
+    ? PORT_LIST.filter(p => {
+        const pNorm = normStr(p.name);
+        return pNorm.startsWith(qNorm) || pNorm.includes(qNorm);
+      }).slice(0, 8)
     : [];
 
   const handlePickSuggestion = (port: typeof PORT_LIST[0]) => {
@@ -483,6 +486,7 @@ function PortSlotCard({
                 }
               }}
               placeholder="Type a port name..."
+              autoComplete="off"
               className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-9 py-3 text-white text-sm placeholder-white/30 focus:border-cyan-400/60 focus:outline-none transition-colors"
             />
             {query && (
@@ -639,14 +643,16 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
   }, []);
 
   // Resolve a query string to a port entry via fuzzy match
+  // Normalizes punctuation so "St Maarten" matches "St. Maarten", "Turks Caicos" matches "Turks & Caicos", etc.
+  const normStr2 = (s: string) => s.toLowerCase().replace(/[.&]/g, "").replace(/\s+/g, " ").trim();
   const resolvePort = (q: string, preSelected: typeof PORT_LIST[0] | null) => {
     if (preSelected) return preSelected;
-    const lower = q.trim().toLowerCase();
+    const lower = normStr2(q);
     if (!lower) return null;
     return (
-      PORT_LIST.find(p => p.name.toLowerCase() === lower) ??
-      PORT_LIST.find(p => p.name.toLowerCase().startsWith(lower)) ??
-      PORT_LIST.find(p => p.name.toLowerCase().includes(lower)) ??
+      PORT_LIST.find(p => normStr2(p.name) === lower) ??
+      PORT_LIST.find(p => normStr2(p.name).startsWith(lower)) ??
+      PORT_LIST.find(p => normStr2(p.name).includes(lower)) ??
       null
     );
   };
@@ -685,34 +691,17 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
 
   return (
     <div className="space-y-6">
-      {/* Section header -- title on left, units toggle pinned to top-right */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-            <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
-          </div>
-          <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
-          <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
-          <p className="text-white/50 text-sm mt-2 max-w-md">
-            Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
-          </p>
+      {/* Section header */}
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
+          <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
         </div>
-        {/* Units toggle -- top-right of section header */}
-        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold flex-shrink-0">
-          <button
-            onClick={() => setLocalMetric(false)}
-            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            US Standard
-          </button>
-          <button
-            onClick={() => setLocalMetric(true)}
-            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-          >
-            Metric
-          </button>
-        </div>
+        <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
+        <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
+        <p className="text-white/50 text-sm mt-2 max-w-md">
+          Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+        </p>
       </div>
 
       {/* 4 port slots stacked vertically */}
@@ -735,7 +724,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         ))}
       </div>
 
-      {/* Shared action row: Get Forecast + Back */}
+      {/* Shared action row: Get Forecast + Back + Units toggle */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={handleGetAllForecasts}
@@ -759,6 +748,21 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
             Back
           </button>
         )}
+        {/* Units toggle -- sits inline with Get Forecast button, right side */}
+        <div className="ml-auto flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+          <button
+            onClick={() => setLocalMetric(false)}
+            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+          >
+            US Standard
+          </button>
+          <button
+            onClick={() => setLocalMetric(true)}
+            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+          >
+            Metric
+          </button>
+        </div>
       </div>
     </div>
   );
