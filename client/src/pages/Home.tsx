@@ -1217,6 +1217,7 @@ export default function Home() {
               Forecast Briefings, your cruise forecast at every port call, and breaking storm analysis with the former Chief Meteorologist
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, Eastern Pacific, and Alaska.
             </p>
+            <div className="h-8" />
             <div className="flex gap-3">
               <Button
                 size="lg"
@@ -1377,7 +1378,7 @@ export default function Home() {
       )}
 
       {/* Cruise Itinerary Finder */}
-      <section className="pt-2 pb-8 relative overflow-hidden">
+      <section className="pt-16 pb-8 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-cyan-600/10 rounded-full blur-3xl opacity-20 pointer-events-none" />
         <div className="container relative z-10">
           <PortSearch isMetric={isMetric} />

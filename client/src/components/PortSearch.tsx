@@ -401,8 +401,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
             {/* Cloud cover icon + % at top -- realistic emoji icon reflecting actual cloud amount */}
             <span className="text-[15px] leading-none">{cloudCoverIcon(slot.cloudCover)}</span>
             <span className="text-white/70 text-[10px] font-bold">{slot.cloudCover}%</span>
-            {/* Realistic sky condition icon */}
-            <SkyIcon condition={slot.condition} className="w-7 h-7 text-yellow-300 flex-shrink-0" />
+            {/* SkyIcon removed -- cloud cover emoji already conveys sky condition */}
             {/* Temperature */}
             <span className="text-white font-black text-[13px] leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
@@ -416,10 +415,8 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
             <span className="text-blue-300 text-[11px] font-bold">{slot.rainChance}%</span>
             {/* Humidity */}
             <span className="text-white/60 text-[10px]">{slot.humidity}% hum</span>
-            {/* Visibility */}
-            <span className="text-green-300 text-[10px]">{isMetric ? `${slot.visibility}km` : `${Math.round(slot.visibility * 0.621)}mi`} vis</span>
-            {/* Sea state (wind-wave height estimate) */}
-            <span className="text-teal-300 text-[10px] font-bold">{slot.seaState}</span>
+            {/* Sea state (wind-wave height estimate) -- orange to distinguish from swell */}
+            <span className="text-orange-300 text-[10px] font-bold">{slot.seaState}</span>
           </div>
         ))}
       </div>
@@ -427,8 +424,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
         <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
         <span className="text-white/60 text-xs font-bold">hum = humidity</span>
         <span className="text-white/70 text-xs font-bold">cloud % = cloud cover</span>
-        <span className="text-green-300 text-xs font-bold">vis = visibility</span>
-        <span className="text-teal-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
+        <span className="text-orange-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
       </div>
     </div>
   );
@@ -466,8 +462,8 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                   {isMetric ? `${day.windKt}kt` : `${ktToMph(day.windKt)}mph`}
                 </p>
                 <p className="text-blue-300 text-base font-extrabold">{day.rainChance}%</p>
-                {/* Sea state = wind-wave height estimate based on wind speed */}
-                {day.seaState && <p className="text-teal-300 text-sm font-bold">{day.seaState}</p>}
+                {/* Sea state = wind-wave height estimate -- orange to contrast with teal swell */}
+                {day.seaState && <p className="text-orange-300 text-sm font-bold">{day.seaState}</p>}
               </div>
               {(() => {
                 // Swell height from marine API (actual swell, not wind-wave estimate)
@@ -493,7 +489,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
       </div>
       <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
         <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
-        <span className="text-teal-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
+        <span className="text-orange-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
         {hasWave && <span className="text-teal-300 text-xs font-bold">ft/m = swell ht (marine API)</span>}
         {hasWave && <span className="text-teal-400/70 text-xs font-bold">dir = swell dir</span>}
         {hasWave && <span className="text-white/50 text-xs font-bold">s = period</span>}
@@ -584,8 +580,8 @@ function PortSlotCard({
           {labels[slotIndex]}
         </label>
 
-        <div className="flex gap-2">
-          {/* Typeahead input */}
+        <div className="flex gap-2 max-w-xl">
+          {/* Typeahead input -- constrained width, not full page */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
             <input
@@ -815,25 +811,27 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         </div>
         <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
         <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
-        <div className="flex items-center justify-between flex-wrap gap-3 mt-2">
-          <p className="text-white/50 text-sm max-w-md">
-            Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
-          </p>
-          {/* Units toggle -- sits inline with the instruction text, clearly part of the port tool */}
-          <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
-            <button
-              onClick={() => setLocalMetric(false)}
-              className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-            >
-              US Standard
-            </button>
-            <button
-              onClick={() => setLocalMetric(true)}
-              className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-            >
-              Metric
-            </button>
-          </div>
+        <p className="text-white/50 text-sm mt-2 max-w-md">
+          Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+        </p>
+      </div>
+
+      {/* Units toggle -- sits directly above the port input boxes */}
+      <div className="flex items-center gap-3">
+        <span className="text-white/40 text-xs font-semibold">Units:</span>
+        <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+          <button
+            onClick={() => setLocalMetric(false)}
+            className={`px-3 py-1.5 transition-colors ${!localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+          >
+            US Standard
+          </button>
+          <button
+            onClick={() => setLocalMetric(true)}
+            className={`px-3 py-1.5 transition-colors ${localMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+          >
+            Metric
+          </button>
         </div>
       </div>
 
