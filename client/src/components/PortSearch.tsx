@@ -519,34 +519,38 @@ function PortSlotCard({
             )}
           </div>
 
-          {/* Per-slot Get Forecast button */}
-          <button
-            onClick={onGetForecast}
-            disabled={!query.trim()}
-            className={`shrink-0 px-4 py-3 rounded-xl text-sm font-black tracking-wide transition-all ${
-              query.trim()
-                ? "bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30"
-                : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
-            }`}
-          >
-            Get Forecast
-          </button>
+          {/* Per-slot Get Forecast button -- hidden once forecast is loaded */}
+          {!hasForecast && (
+            <button
+              onClick={onGetForecast}
+              disabled={!query.trim()}
+              className={`shrink-0 px-4 py-3 rounded-xl text-sm font-black tracking-wide transition-all ${
+                query.trim()
+                  ? "bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30"
+                  : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
+              }`}
+            >
+              Get Forecast
+            </button>
+          )}
 
-          {/* Units toggle -- right end of each port row */}
-          <div className="flex-shrink-0 flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
-            <button
-              onClick={() => onSetMetric(false)}
-              className={`px-3 py-1.5 transition-colors ${!isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-            >
-              US Standard
-            </button>
-            <button
-              onClick={() => onSetMetric(true)}
-              className={`px-3 py-1.5 transition-colors ${isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
-            >
-              Metric
-            </button>
-          </div>
+          {/* Units toggle -- shown only after forecast is loaded */}
+          {hasForecast && (
+            <div className="flex-shrink-0 flex rounded-lg overflow-hidden border border-white/10 text-xs font-semibold">
+              <button
+                onClick={() => onSetMetric(false)}
+                className={`px-3 py-1.5 transition-colors ${!isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+              >
+                US Standard
+              </button>
+              <button
+                onClick={() => onSetMetric(true)}
+                className={`px-3 py-1.5 transition-colors ${isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
+              >
+                Metric
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
