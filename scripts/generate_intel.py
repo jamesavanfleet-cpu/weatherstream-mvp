@@ -219,7 +219,7 @@ def call_groq(region: dict, weather_summary: str) -> str:
         f"(ports: {ports_list}) for {today}. "
         f"Base it on this live weather data for {region['rep_port']}: {weather_summary} "
         f"Write 3-4 sentences in a direct, professional mariner's voice. "
-        f"Include actionable tips for cruise passengers, yacht captains, or fishing captains. "
+        f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity -- those topics belong on a different platform. Focus only on what cruise passengers need to know: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Mention specific ports or anchorage conditions where relevant. "
         f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. "
         f"CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only: "
