@@ -1679,12 +1679,12 @@ export default function Home() {
       {/* Biography Section */}
       <section className="py-20 relative border-t border-white/5">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-blue-900/10" />
-        {/* Full-width layout: filmstrip | bio card */}
-        <div className="relative z-10 flex flex-col lg:flex-row gap-0 items-stretch min-h-[700px]">
+        {/* Bio card -- centered now that filmstrip is removed */}
+        <div className="relative z-10 flex justify-center px-4">
 
 
           {/* Bio card */}
-          <div className="flex-1 container lg:pl-8 xl:pl-10 flex items-center">
+          <div className="w-full max-w-5xl flex items-center">
           <div className="w-full max-w-4xl glass-dark rounded-3xl p-8 md:p-12 border border-white/10 shadow-2xl">
             <div className="flex flex-col md:flex-row gap-10 items-center md:items-start">
               <div className="w-full md:w-1/3 flex-shrink-0">
