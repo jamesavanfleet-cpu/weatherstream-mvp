@@ -272,7 +272,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-4 px-1.5 gap-1.5 min-w-0"
+            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-6 px-1.5 gap-3 min-w-0"
           >
             {/* Time label */}
             <span className="text-amber-100/70 text-xs font-bold w-full text-center">{slot.label}</span>
