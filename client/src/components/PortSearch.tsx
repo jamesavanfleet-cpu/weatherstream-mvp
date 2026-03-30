@@ -322,7 +322,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
-              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-4 px-1.5">
+              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-6 px-1.5">
               <div>
                 <p className="text-white/70 text-base font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
                 {/* Cloud cover emoji + % -- matches hourly card style, no SVG icon */}
@@ -337,13 +337,13 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                   {isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}
                 </p>
               </div>
-              <div className="border-t border-white/10 my-2" />
-              <div>
+              <div className="border-t border-white/10 my-3" />
+              <div className="flex flex-col gap-2">
                 <p className="text-cyan-300 text-base font-extrabold">{day.windDir}</p>
                 <p className="text-white/80 font-bold leading-tight">
                   <span className="text-base">{isMetric ? day.windKt : ktToMph(day.windKt)}</span><span className="text-[10px] sm:text-sm font-semibold ml-px">{isMetric ? 'kt' : 'mph'}</span>
                 </p>
-                <p className="text-blue-300 text-lg font-extrabold flex flex-col items-center leading-none gap-0.5">{day.rainChance}%<span className="text-xs font-bold opacity-90 leading-tight">rain chance</span></p>
+                <p className="text-blue-300 text-lg font-extrabold flex flex-col items-center leading-none gap-1">{day.rainChance}%<span className="text-xs font-bold opacity-90 leading-tight">rain chance</span></p>
                 {/* Sea state = wind-wave height estimate -- orange to contrast with teal swell */}
                 {day.seaState && <p className="text-orange-300 text-sm font-bold">{day.seaState}</p>}
               </div>
@@ -355,7 +355,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                 if (displayHt == null) return null;
                 return (
                   <>
-                    <div className="border-t border-white/10 my-2" />
+                    <div className="border-t border-white/10 my-3" />
                     {/* Swell height: ft in US standard, m in metric -- one value only */}
                     <p className="text-teal-300 text-sm font-extrabold leading-snug">
                       {isMetric ? swellFtToM(displayHt) : `${displayHt}ft`}
