@@ -137,7 +137,7 @@ interface PortLiveData {
   swellPeriodS: number | null;
   swellDirDeg: number | null;
   fetchedAt: number; // epoch ms
-  hourlyForecast: HourlyForecastSlot[]; // next 12 hours
+  hourlyForecast: HourlyForecastSlot[]; // next 24 hours (slots 0-11 = first 12hr, slots 12-23 = second 12hr)
 }
 
 const portDataCache: Record<string, PortLiveData> = {};
@@ -150,13 +150,13 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
   const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,dew_point_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,pressure_msl` +
     `&hourly=pressure_msl,temperature_2m,wind_speed_10m,wind_direction_10m,precipitation_probability` +
-    `&past_hours=2&forecast_hours=14` +
+    `&past_hours=2&forecast_hours=26` +
     `&wind_speed_unit=kn&temperature_unit=celsius&timezone=auto`;
 
   const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
     `&current=wave_height,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction` +
     `&hourly=wave_height,swell_wave_height,swell_wave_direction,swell_wave_period` +
-    `&past_hours=2&forecast_hours=14` +
+    `&past_hours=2&forecast_hours=26` +
     `&timezone=auto`;
 
   const [wxRes, marineRes] = await Promise.allSettled([
@@ -174,14 +174,27 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
     if (arr.length >= 2) pressurePrev = arr[arr.length - 2];
   }
 
-  // Build next-12-hour forecast slots starting from current hour
+  // Build next-24-hour forecast slots starting from the NEXT hour in the port's local timezone.
+  // Open-Meteo returns times in the port's local timezone (timezone=auto), so we must
+  // compute the local "now" hour using utc_offset_seconds from the API response -- NOT
+  // new Date().toISOString() which is always UTC and causes the start to land hours late.
   const hourlyForecast: HourlyForecastSlot[] = [];
   if (wx?.hourly?.time) {
-    const nowIso = new Date().toISOString().slice(0, 13); // 'YYYY-MM-DDTHH'
+    const utcOffsetSec: number = wx.utc_offset_seconds ?? 0;
+    // Current epoch ms adjusted to port local time, then truncated to the current local hour
+    const localNowMs = Date.now() + utcOffsetSec * 1000;
+    const localNowHourMs = Math.floor(localNowMs / (3600 * 1000)) * (3600 * 1000);
+    // The next hour starts one full hour after the current local hour
+    const nextHourMs = localNowHourMs + 3600 * 1000;
+    // Build a local ISO prefix 'YYYY-MM-DDTHH' for the next hour
+    const nextHourIso = new Date(nextHourMs).toISOString().slice(0, 13);
     const times: string[] = wx.hourly.time;
-    const startIdx = times.findIndex((t: string) => t.slice(0, 13) >= nowIso);
-    if (startIdx >= 0) {
-      for (let i = startIdx; i < Math.min(startIdx + 12, times.length); i++) {
+    // Find the index whose time string matches the next local hour
+    const startIdx = times.findIndex((t: string) => t.slice(0, 13) === nextHourIso);
+    // Fallback: if exact match not found, use the first future slot
+    const fallbackIdx = startIdx >= 0 ? startIdx : times.findIndex((t: string) => t.slice(0, 13) > nextHourIso);
+    if (fallbackIdx >= 0) {
+      for (let i = fallbackIdx; i < Math.min(fallbackIdx + 24, times.length); i++) {
         const mIdx = marine?.hourly?.time
           ? (marine.hourly.time as string[]).findIndex((t: string) => t === times[i])
           : -1;
@@ -431,6 +444,7 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
   const [error, setError] = useState(false);
   const [isMetric, setIsMetric] = useState(isMetricProp);
   const [showForecast, setShowForecast] = useState(false);
+  const [show24HourForecast, setShow24HourForecast] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -691,113 +705,235 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
                 </div>
               </div>
 
-              {/* 12-Hour Forecast toggle button */}
-              <div className="mt-2">
-                <button
-                  onClick={() => setShowForecast(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-                >
-                  <span className="text-cyan-400 text-sm font-semibold tracking-wide">12-Hour Forecast</span>
-                  <span className="text-white/40 text-xs">{showForecast ? 'Hide' : 'Show'}</span>
-                </button>
+              {/* Forecast buttons row */}
+              <div className="mt-2 space-y-2">
 
-                {showForecast && data.hourlyForecast.length > 0 && (
-                  <div className="mt-3 overflow-x-auto">
-                    <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">12-Hour Forecast</p>
-                    <table className="w-full min-w-[560px] text-center border-collapse">
-                      <thead>
-                        <tr>
-                          {data.hourlyForecast.map((slot) => {
-                            const d = new Date(slot.time);
-                            const hr = d.getHours();
-                            const label = hr === 0 ? '12a' : hr < 12 ? `${hr}a` : hr === 12 ? '12p' : `${hr - 12}p`;
-                            return (
-                              <th key={slot.time} className="pb-2 text-white/60 font-semibold text-xs px-1" style={{minWidth:'44px'}}>{label}</th>
-                            );
-                          })}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* Temperature */}
-                        <tr className="border-t border-white/5">
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className="py-2 text-white font-black text-sm px-1">
-                              {isMetric ? `${slot.tempC.toFixed(0)}°` : `${cToF(slot.tempC)}°`}
-                            </td>
-                          ))}
-                        </tr>
-                        {/* Wind direction */}
-                        <tr>
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className="py-1 text-cyan-400 font-semibold text-xs px-1">
-                              {degToCompass(slot.windDir)}
-                            </td>
-                          ))}
-                        </tr>
-                        {/* Wind speed */}
-                        <tr>
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className="py-1 text-white/80 text-xs px-1">
-                              {isMetric
-                                ? `${slot.windSpeedKt.toFixed(0)}kt`
-                                : `${Math.round(slot.windSpeedKt * 1.15078)}mph`}
-                            </td>
-                          ))}
-                        </tr>
-                        {/* Rain chance */}
-                        <tr>
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className={`py-1 text-xs font-semibold px-1 ${
-                              slot.precipPct >= 80 ? 'text-red-400' :
-                              slot.precipPct >= 60 ? 'text-orange-400' :
-                              slot.precipPct >= 45 ? 'text-yellow-400' :
-                              slot.precipPct >= 30 ? 'text-amber-200/80' :
-                              slot.precipPct >= 10 ? 'text-white/55' :
-                              'text-white/30'
-                            }`}>
-                              {slot.precipPct}%
-                            </td>
-                          ))}
-                        </tr>
-                        {/* Divider */}
-                        <tr><td colSpan={12} className="py-1"><div className="border-t border-white/10" /></td></tr>
-                        {/* Wave height */}
-                        <tr>
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className="py-1 text-cyan-300 font-semibold text-xs px-1">
-                              {slot.waveHeightM !== null
-                                ? isMetric ? `${slot.waveHeightM.toFixed(1)}m` : `${mToFt(slot.waveHeightM)}ft`
-                                : '--'}
-                            </td>
-                          ))}
-                        </tr>
-                        {/* Swell direction */}
-                        <tr>
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className="py-1 text-cyan-400 text-xs px-1">
-                              {slot.swellDirDeg !== null ? degToCompass(slot.swellDirDeg) : '--'}
-                            </td>
-                          ))}
-                        </tr>
-                        {/* Swell period */}
-                        <tr>
-                          {data.hourlyForecast.map((slot) => (
-                            <td key={slot.time} className="py-1 text-white/50 text-xs px-1">
-                              {slot.swellPeriodS !== null ? `${slot.swellPeriodS.toFixed(0)}s` : '--'}
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                    <div className="flex gap-4 mt-3 flex-wrap">
-                      <span className="text-cyan-400 text-[10px]">ft = wave ht</span>
-                      <span className="text-cyan-400 text-[10px]">dir = swell dir</span>
-                      <span className="text-white/40 text-[10px]">s = period</span>
-                      <span className="text-amber-200/70 text-[10px]">% = precip prob</span>
-                      <span className="text-white/40 text-[10px]">wind = dir / speed</span>
-                    </div>
+                {/* 12-Hour Forecast */}
+                <div>
+                  <button
+                    onClick={() => setShowForecast(v => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <span className="text-cyan-400 text-sm font-semibold tracking-wide">12-Hour Forecast</span>
+                    <span className="text-white/40 text-xs">{showForecast ? 'Hide' : 'Show'}</span>
+                  </button>
+
+                  {showForecast && data.hourlyForecast.length > 0 && (() => {
+                    const slots12 = data.hourlyForecast.slice(0, 12);
+                    return (
+                      <div className="mt-3 overflow-x-auto">
+                        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">12-Hour Forecast</p>
+                        <table className="w-full min-w-[560px] text-center border-collapse">
+                          <thead>
+                            <tr>
+                              {slots12.map((slot) => {
+                                const timeStr = slot.time;
+                                const hr = parseInt(timeStr.slice(11, 13), 10);
+                                const label = hr === 0 ? '12a' : hr < 12 ? `${hr}a` : hr === 12 ? '12p' : `${hr - 12}p`;
+                                return (
+                                  <th key={slot.time} className="pb-2 text-white/60 font-semibold text-xs px-1" style={{minWidth:'44px'}}>{label}</th>
+                                );
+                              })}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Temperature */}
+                            <tr className="border-t border-white/5">
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className="py-2 text-white font-black text-sm px-1">
+                                  {isMetric ? `${slot.tempC.toFixed(0)}°` : `${cToF(slot.tempC)}°`}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* Wind direction */}
+                            <tr>
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className="py-1 text-cyan-400 font-semibold text-xs px-1">
+                                  {degToCompass(slot.windDir)}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* Wind speed */}
+                            <tr>
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className="py-1 text-white/80 text-xs px-1">
+                                  {isMetric
+                                    ? `${slot.windSpeedKt.toFixed(0)}kt`
+                                    : `${Math.round(slot.windSpeedKt * 1.15078)}mph`}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* Rain chance */}
+                            <tr>
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className={`py-1 text-xs font-semibold px-1 ${
+                                  slot.precipPct >= 80 ? 'text-red-400' :
+                                  slot.precipPct >= 60 ? 'text-orange-400' :
+                                  slot.precipPct >= 45 ? 'text-yellow-400' :
+                                  slot.precipPct >= 30 ? 'text-amber-200/80' :
+                                  slot.precipPct >= 10 ? 'text-white/55' :
+                                  'text-white/30'
+                                }`}>
+                                  {slot.precipPct}%
+                                </td>
+                              ))}
+                            </tr>
+                            {/* Divider */}
+                            <tr><td colSpan={12} className="py-1"><div className="border-t border-white/10" /></td></tr>
+                            {/* Wave height */}
+                            <tr>
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className="py-1 text-cyan-300 font-semibold text-xs px-1">
+                                  {slot.waveHeightM !== null
+                                    ? isMetric ? `${slot.waveHeightM.toFixed(1)}m` : `${mToFt(slot.waveHeightM)}ft`
+                                    : '--'}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* Swell direction */}
+                            <tr>
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className="py-1 text-cyan-400 text-xs px-1">
+                                  {slot.swellDirDeg !== null ? degToCompass(slot.swellDirDeg) : '--'}
+                                </td>
+                              ))}
+                            </tr>
+                            {/* Swell period */}
+                            <tr>
+                              {slots12.map((slot) => (
+                                <td key={slot.time} className="py-1 text-white/50 text-xs px-1">
+                                  {slot.swellPeriodS !== null ? `${slot.swellPeriodS.toFixed(0)}s` : '--'}
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
+                        <div className="flex gap-4 mt-3 flex-wrap">
+                          <span className="text-cyan-400 text-[10px]">ft = wave ht</span>
+                          <span className="text-cyan-400 text-[10px]">dir = swell dir</span>
+                          <span className="text-white/40 text-[10px]">s = period</span>
+                          <span className="text-amber-200/70 text-[10px]">% = precip prob</span>
+                          <span className="text-white/40 text-[10px]">wind = dir / speed</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* 24-Hour Forecast (hours 13-24) */}
+                {data.hourlyForecast.length > 12 && (
+                  <div>
+                    <button
+                      onClick={() => setShow24HourForecast(v => !v)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <span className="text-cyan-400 text-sm font-semibold tracking-wide">24-Hour Forecast</span>
+                      <span className="text-white/40 text-xs">{show24HourForecast ? 'Hide' : 'Show'}</span>
+                    </button>
+
+                    {show24HourForecast && (() => {
+                      const slots24 = data.hourlyForecast.slice(12, 24);
+                      return (
+                        <div className="mt-3 overflow-x-auto">
+                          <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-3">Hours 13 - 24</p>
+                          <table className="w-full min-w-[560px] text-center border-collapse">
+                            <thead>
+                              <tr>
+                                {slots24.map((slot) => {
+                                  const timeStr = slot.time;
+                                  const hr = parseInt(timeStr.slice(11, 13), 10);
+                                  const label = hr === 0 ? '12a' : hr < 12 ? `${hr}a` : hr === 12 ? '12p' : `${hr - 12}p`;
+                                  return (
+                                    <th key={slot.time} className="pb-2 text-white/60 font-semibold text-xs px-1" style={{minWidth:'44px'}}>{label}</th>
+                                  );
+                                })}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {/* Temperature */}
+                              <tr className="border-t border-white/5">
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className="py-2 text-white font-black text-sm px-1">
+                                    {isMetric ? `${slot.tempC.toFixed(0)}°` : `${cToF(slot.tempC)}°`}
+                                  </td>
+                                ))}
+                              </tr>
+                              {/* Wind direction */}
+                              <tr>
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className="py-1 text-cyan-400 font-semibold text-xs px-1">
+                                    {degToCompass(slot.windDir)}
+                                  </td>
+                                ))}
+                              </tr>
+                              {/* Wind speed */}
+                              <tr>
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className="py-1 text-white/80 text-xs px-1">
+                                    {isMetric
+                                      ? `${slot.windSpeedKt.toFixed(0)}kt`
+                                      : `${Math.round(slot.windSpeedKt * 1.15078)}mph`}
+                                  </td>
+                                ))}
+                              </tr>
+                              {/* Rain chance */}
+                              <tr>
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className={`py-1 text-xs font-semibold px-1 ${
+                                    slot.precipPct >= 80 ? 'text-red-400' :
+                                    slot.precipPct >= 60 ? 'text-orange-400' :
+                                    slot.precipPct >= 45 ? 'text-yellow-400' :
+                                    slot.precipPct >= 30 ? 'text-amber-200/80' :
+                                    slot.precipPct >= 10 ? 'text-white/55' :
+                                    'text-white/30'
+                                  }`}>
+                                    {slot.precipPct}%
+                                  </td>
+                                ))}
+                              </tr>
+                              {/* Divider */}
+                              <tr><td colSpan={12} className="py-1"><div className="border-t border-white/10" /></td></tr>
+                              {/* Wave height */}
+                              <tr>
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className="py-1 text-cyan-300 font-semibold text-xs px-1">
+                                    {slot.waveHeightM !== null
+                                      ? isMetric ? `${slot.waveHeightM.toFixed(1)}m` : `${mToFt(slot.waveHeightM)}ft`
+                                      : '--'}
+                                  </td>
+                                ))}
+                              </tr>
+                              {/* Swell direction */}
+                              <tr>
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className="py-1 text-cyan-400 text-xs px-1">
+                                    {slot.swellDirDeg !== null ? degToCompass(slot.swellDirDeg) : '--'}
+                                  </td>
+                                ))}
+                              </tr>
+                              {/* Swell period */}
+                              <tr>
+                                {slots24.map((slot) => (
+                                  <td key={slot.time} className="py-1 text-white/50 text-xs px-1">
+                                    {slot.swellPeriodS !== null ? `${slot.swellPeriodS.toFixed(0)}s` : '--'}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                          <div className="flex gap-4 mt-3 flex-wrap">
+                            <span className="text-cyan-400 text-[10px]">ft = wave ht</span>
+                            <span className="text-cyan-400 text-[10px]">dir = swell dir</span>
+                            <span className="text-white/40 text-[10px]">s = period</span>
+                            <span className="text-amber-200/70 text-[10px]">% = precip prob</span>
+                            <span className="text-white/40 text-[10px]">wind = dir / speed</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
+
               </div>
 
               <p className="text-white/25 text-xs text-right">
