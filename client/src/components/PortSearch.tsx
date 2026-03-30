@@ -278,7 +278,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
             <span className="text-amber-100/70 text-[11px] font-bold w-full text-center">{slot.label}</span>
             {/* Cloud cover icon + % at top -- realistic emoji icon reflecting actual cloud amount */}
             <span className="text-[15px] leading-none">{cloudCoverIcon(slot.cloudCover)}</span>
-            <span className="text-white/70 text-[10px] font-bold">{slot.cloudCover}%<span className="sm:hidden text-[8px] font-normal ml-0.5 opacity-70"> cld</span></span>
+            <span className="text-white/70 text-[10px] font-bold flex flex-col items-center leading-none gap-0">{slot.cloudCover}%<span className="text-[8px] font-normal opacity-70 leading-tight">cloud</span><span className="text-[8px] font-normal opacity-70 leading-tight">cover</span></span>
             {/* SkyIcon removed -- cloud cover emoji already conveys sky condition */}
             {/* Temperature */}
             <span className="text-white font-black text-[13px] leading-none">
@@ -290,9 +290,9 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
             </span>
             <span className="text-white/50 text-[10px] w-full text-center">{slot.windDir}</span>
             {/* Rain chance */}
-            <span className="text-blue-300 text-[11px] font-bold">{slot.rainChance}%<span className="sm:hidden text-[8px] font-normal ml-0.5 opacity-70"> rain</span></span>
+            <span className="text-blue-300 text-[11px] font-bold flex flex-col items-center leading-none gap-0">{slot.rainChance}%<span className="text-[9px] font-bold opacity-90 leading-tight">rain chance</span></span>
             {/* Humidity */}
-            <span className="text-white/60 text-[10px]">{slot.humidity}% hum</span>
+            <span className="text-white/60 text-[9px]">{slot.humidity}%<span className="text-[8px] font-normal opacity-70 ml-0.5">hum</span></span>
             {/* Sea state (wind-wave height estimate) -- orange to distinguish from swell */}
             <span className="text-orange-300 text-[10px] font-bold">{slot.seaState}</span>
           </div>
@@ -328,7 +328,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                 {/* Cloud cover emoji + % -- matches hourly card style, no SVG icon */}
                 <div className="flex flex-col items-center mb-2">
                   <span className="text-2xl leading-none">{cloudCoverIcon(day.cloudCover ?? 0)}</span>
-                  <span className="text-white/70 text-xs font-bold mt-0.5">{day.cloudCover ?? 0}%<span className="sm:hidden text-[9px] font-normal ml-0.5 opacity-70"> cld</span></span>
+                  <span className="text-white/70 text-xs font-bold mt-0.5 flex flex-col items-center leading-none gap-0">{day.cloudCover ?? 0}%<span className="text-[9px] font-normal opacity-70 leading-tight">cloud</span><span className="text-[9px] font-normal opacity-70 leading-tight">cover</span></span>
                 </div>
                 <p className="text-white text-xl sm:text-3xl font-extrabold leading-tight">
                   {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
@@ -343,7 +343,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                 <p className="text-white/80 font-bold leading-tight">
                   <span className="text-base">{isMetric ? day.windKt : ktToMph(day.windKt)}</span><span className="text-[10px] sm:text-sm font-semibold ml-px">{isMetric ? 'kt' : 'mph'}</span>
                 </p>
-                <p className="text-blue-300 text-base font-extrabold">{day.rainChance}%<span className="sm:hidden text-[9px] font-normal ml-0.5 opacity-70"> rain</span></p>
+                <p className="text-blue-300 text-base font-extrabold flex flex-col items-center leading-none gap-0">{day.rainChance}%<span className="text-[10px] font-bold opacity-90 leading-tight">rain chance</span></p>
                 {/* Sea state = wind-wave height estimate -- orange to contrast with teal swell */}
                 {day.seaState && <p className="text-orange-300 text-sm font-bold">{day.seaState}</p>}
               </div>
