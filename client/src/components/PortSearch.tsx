@@ -462,7 +462,7 @@ function PortSlotCard({
   const hasForecast = slot?.weather && !slot.loading && !slot.error;
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+    <div className="bg-white/5 border border-white/10 rounded-2xl">
       {/* Search row */}
       <div className="p-4">
         <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2 mb-2">
@@ -506,7 +506,11 @@ function PortSlotCard({
                 }
               }}
               placeholder="Type a port name..."
-              autoComplete="off"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              data-form-type="other"
               className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-9 py-3 text-white text-sm placeholder-white/30 focus:border-cyan-400/60 focus:outline-none transition-colors"
             />
             {query && (
