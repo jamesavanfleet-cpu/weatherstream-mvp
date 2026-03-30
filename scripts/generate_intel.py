@@ -221,7 +221,7 @@ def call_groq(region: dict, weather_summary: str) -> str:
         f"Write 3-4 sentences in a direct, professional mariner's voice. "
         f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity -- those topics belong on a different platform. Focus only on what cruise passengers need to know: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Mention specific ports or anchorage conditions where relevant. "
-        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. "
+        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. Do NOT mention current or specific temperatures (e.g., 59 degrees, 67F) as they date the briefing and reduce credibility -- focus on wind, rain, visibility, sea state, and sky conditions instead. "
         f"CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only: "
         f"TROPICAL CYCLONES (NHC, 1-minute sustained winds): "
         f"'Tropical Wave' = trough or cyclonic curvature in trade-wind easterlies, no closed circulation, no wind threshold. "
