@@ -409,7 +409,7 @@ function PortSlotCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const labels = ["Port 1", "Port 2", "Port 3", "Port 4"];
+  const labels = ["Destination 1", "Destination 2", "Destination 3", "Destination 4", "Destination 5"];
 
   // Auto-expand when new weather data arrives
   useEffect(() => {
@@ -630,10 +630,10 @@ interface PortSearchProps { isMetric: boolean; }
 
 export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps) {
   const [localMetric, setLocalMetric] = useState(parentIsMetric);
-  const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null, null]);
-  // Lifted query state so the shared Get Forecast button can read all 4 inputs
-  const [queries, setQueries] = useState<string[]>(["" , "", "", ""]);
-  const [selectedPorts, setSelectedPorts] = useState<(typeof PORT_LIST[0] | null)[]>([null, null, null, null]);
+  const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null, null, null]);
+  // Lifted query state so the shared Get Forecast button can read all 5 inputs
+  const [queries, setQueries] = useState<string[]>(["" , "", "", "", ""]);
+  const [selectedPorts, setSelectedPorts] = useState<(typeof PORT_LIST[0] | null)[]>([null, null, null, null, null]);
   // Whether any forecast has been loaded -- controls Back button visibility
   const [forecastsLoaded, setForecastsLoaded] = useState(false);
 
@@ -697,9 +697,9 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
 
   // Back button: clear all forecasts and queries, return to input view
   const handleBack = () => {
-    setSlots([null, null, null, null]);
-    setQueries(["", "", "", ""]);
-    setSelectedPorts([null, null, null, null]);
+    setSlots([null, null, null, null, null]);
+    setQueries(["", "", "", "", ""]);
+    setSelectedPorts([null, null, null, null, null]);
     setForecastsLoaded(false);
   };
 
@@ -722,13 +722,13 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
         <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
         <p className="text-white/50 text-sm mt-2 max-w-md">
-          Type up to 4 ports, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+          Type up to 5 destinations, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
         </p>
       </div>
 
-      {/* 4 port slots stacked vertically */}
+      {/* 5 destination slots stacked vertically */}
       <div className="space-y-4">
-        {[0, 1, 2, 3].map(i => (
+        {[0, 1, 2, 3, 4].map(i => (
           <PortSlotCard
             key={i}
             slotIndex={i}
