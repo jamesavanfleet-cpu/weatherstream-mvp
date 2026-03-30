@@ -406,6 +406,7 @@ function PortSlotCard({
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
+  const [activeIdx, setActiveIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -424,7 +425,7 @@ function PortSlotCard({
   // Normalize: strip periods so "St Maarten" matches "St. Maarten", "Turks Caicos" matches "Turks & Caicos", etc.
   const normStr = (s: string) => s.toLowerCase().replace(/[.&]/g, "").replace(/\s+/g, " ").trim();
   const qNorm = normStr(query);
-  const suggestions = query.length >= 1
+  const suggestions = query.length >= 3
     ? PORT_LIST.filter(p => {
         const pNorm = normStr(p.name);
         return pNorm.startsWith(qNorm) || pNorm.includes(qNorm);
@@ -434,11 +435,13 @@ function PortSlotCard({
   const handlePickSuggestion = (port: typeof PORT_LIST[0]) => {
     onQueryChange(port.name, port);
     setOpen(false);
+    setActiveIdx(-1);
   };
 
   const handleClear = () => {
     onQueryChange("", null);
     setOpen(false);
+    setActiveIdx(-1);
     onClear();
   };
 
@@ -477,14 +480,29 @@ function PortSlotCard({
               value={query}
               onChange={e => {
                 onQueryChange(e.target.value, null); // lift query up, clear selection
+                setActiveIdx(-1);
                 setOpen(true);
               }}
-              onFocus={() => { if (query.length >= 1) setOpen(true); }}
+              onFocus={() => { if (query.length >= 3) setOpen(true); }}
               onKeyDown={e => {
-                if (e.key === "Enter") {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveIdx(prev => Math.min(prev + 1, suggestions.length - 1));
+                  setOpen(true);
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveIdx(prev => Math.max(prev - 1, -1));
+                } else if (e.key === "Enter") {
+                  if (open && activeIdx >= 0 && suggestions[activeIdx]) {
+                    handlePickSuggestion(suggestions[activeIdx]);
+                  } else {
+                    setOpen(false);
+                    // Enter key fires all filled slots -- same as clicking Get Forecast
+                    onGetForecast();
+                  }
+                } else if (e.key === "Escape") {
                   setOpen(false);
-                  // Enter key fires all filled slots -- same as clicking Get Forecast
-                  onGetForecast();
+                  setActiveIdx(-1);
                 }
               }}
               placeholder="Type a port name..."
@@ -505,11 +523,16 @@ function PortSlotCard({
                 ref={listRef}
                 className="absolute z-50 w-full mt-1 bg-[#0c1a30] border border-cyan-400/30 rounded-lg shadow-xl overflow-hidden"
               >
-                {suggestions.map(port => (
+                {suggestions.map((port, idx) => (
                   <button
                     key={port.name}
                     onMouseDown={() => handlePickSuggestion(port)}
-                    className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-cyan-400/10 hover:text-white flex items-center justify-between transition-colors"
+                    onMouseEnter={() => setActiveIdx(idx)}
+                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors ${
+                      idx === activeIdx
+                        ? "bg-cyan-400/20 text-white"
+                        : "text-white/80 hover:bg-cyan-400/10 hover:text-white"
+                    }`}
                   >
                     <span>{port.name}</span>
                     <span className="text-white/30 text-xs">{port.region}</span>
