@@ -266,35 +266,35 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
   return (
     <div className="w-full overflow-x-auto">
       <div
-        className="grid gap-1"
-        style={{ gridTemplateColumns: `repeat(${slots.length}, minmax(68px, 1fr))`, minWidth: `${slots.length * 68}px` }}
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${slots.length}, minmax(82px, 1fr))`, minWidth: `${slots.length * 82}px` }}
       >
         {slots.map(slot => (
           <div
             key={slot.hour}
-            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-3 px-1 gap-1 min-w-0"
+            className="flex flex-col items-center bg-white/5 border border-white/10 rounded-lg py-4 px-1.5 gap-1.5 min-w-0"
           >
             {/* Time label */}
-            <span className="text-amber-100/70 text-[11px] font-bold w-full text-center">{slot.label}</span>
+            <span className="text-amber-100/70 text-xs font-bold w-full text-center">{slot.label}</span>
             {/* Cloud cover icon + % at top -- realistic emoji icon reflecting actual cloud amount */}
-            <span className="text-[15px] leading-none">{cloudCoverIcon(slot.cloudCover)}</span>
-            <span className="text-white/70 text-[10px] font-bold flex flex-col items-center leading-none gap-0">{slot.cloudCover}%<span className="text-[8px] font-normal opacity-70 leading-tight">cloud</span><span className="text-[8px] font-normal opacity-70 leading-tight">cover</span></span>
+            <span className="text-[17px] leading-none">{cloudCoverIcon(slot.cloudCover)}</span>
+            <span className="text-white/70 text-xs font-bold flex flex-col items-center leading-none gap-0.5">{slot.cloudCover}%<span className="text-[10px] font-bold opacity-80 leading-tight">cloud</span><span className="text-[10px] font-bold opacity-80 leading-tight">cover</span></span>
             {/* SkyIcon removed -- cloud cover emoji already conveys sky condition */}
             {/* Temperature */}
-            <span className="text-white font-black text-[13px] leading-none">
+            <span className="text-white font-black text-sm leading-none">
               {isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}
             </span>
             {/* Wind speed + direction */}
-            <span className="text-cyan-300 text-[11px] font-bold w-full text-center">
+            <span className="text-cyan-300 text-xs font-bold w-full text-center">
               {isMetric ? `${slot.windKt}kt` : `${ktToMph(slot.windKt)}mph`}
             </span>
-            <span className="text-white/50 text-[10px] w-full text-center">{slot.windDir}</span>
+            <span className="text-white/50 text-[11px] font-semibold w-full text-center">{slot.windDir}</span>
             {/* Rain chance */}
-            <span className="text-blue-300 text-[11px] font-bold flex flex-col items-center leading-none gap-0">{slot.rainChance}%<span className="text-[9px] font-bold opacity-90 leading-tight">rain chance</span></span>
+            <span className="text-blue-300 text-sm font-bold flex flex-col items-center leading-none gap-0.5">{slot.rainChance}%<span className="text-[11px] font-bold opacity-90 leading-tight">rain chance</span></span>
             {/* Humidity */}
-            <span className="text-white/60 text-[9px]">{slot.humidity}%<span className="text-[8px] font-normal opacity-70 ml-0.5">hum</span></span>
+            <span className="text-white/60 text-[10px]">{slot.humidity}%<span className="text-[9px] font-normal opacity-70 ml-0.5">hum</span></span>
             {/* Sea state (wind-wave height estimate) -- orange to distinguish from swell */}
-            <span className="text-orange-300 text-[10px] font-bold">{slot.seaState}</span>
+            <span className="text-orange-300 text-[11px] font-bold">{slot.seaState}</span>
           </div>
         ))}
       </div>
@@ -322,13 +322,13 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
-              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-2 px-1">
+              <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-4 px-1.5">
               <div>
                 <p className="text-white/70 text-base font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
                 {/* Cloud cover emoji + % -- matches hourly card style, no SVG icon */}
                 <div className="flex flex-col items-center mb-2">
                   <span className="text-2xl leading-none">{cloudCoverIcon(day.cloudCover ?? 0)}</span>
-                  <span className="text-white/70 text-xs font-bold mt-0.5 flex flex-col items-center leading-none gap-0">{day.cloudCover ?? 0}%<span className="text-[9px] font-normal opacity-70 leading-tight">cloud</span><span className="text-[9px] font-normal opacity-70 leading-tight">cover</span></span>
+                  <span className="text-white/70 text-xs font-bold mt-1 flex flex-col items-center leading-none gap-0.5">{day.cloudCover ?? 0}%<span className="text-[10px] font-bold opacity-80 leading-tight">cloud</span><span className="text-[10px] font-bold opacity-80 leading-tight">cover</span></span>
                 </div>
                 <p className="text-white text-xl sm:text-3xl font-extrabold leading-tight">
                   {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
@@ -343,7 +343,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                 <p className="text-white/80 font-bold leading-tight">
                   <span className="text-base">{isMetric ? day.windKt : ktToMph(day.windKt)}</span><span className="text-[10px] sm:text-sm font-semibold ml-px">{isMetric ? 'kt' : 'mph'}</span>
                 </p>
-                <p className="text-blue-300 text-base font-extrabold flex flex-col items-center leading-none gap-0">{day.rainChance}%<span className="text-[10px] font-bold opacity-90 leading-tight">rain chance</span></p>
+                <p className="text-blue-300 text-lg font-extrabold flex flex-col items-center leading-none gap-0.5">{day.rainChance}%<span className="text-xs font-bold opacity-90 leading-tight">rain chance</span></p>
                 {/* Sea state = wind-wave height estimate -- orange to contrast with teal swell */}
                 {day.seaState && <p className="text-orange-300 text-sm font-bold">{day.seaState}</p>}
               </div>
