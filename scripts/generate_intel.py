@@ -186,26 +186,32 @@ def wmo_to_text(code: int) -> str:
 
 
 def build_weather_summary(wx: dict) -> str:
+    """
+    Build a weather summary string for the AI prompt.
+    IMPORTANT: Temperature values are intentionally excluded from this summary.
+    The AI briefing must never mention current or forecast temperatures -- they
+    date the briefing and erode credibility. Wind, sky condition, sea state, and
+    rain probability are the only parameters passed to the AI.
+    """
     c = wx["current"]
     d = wx["daily"]
-    temp_f = c_to_f(c["temperature_2m"])
+    # Temperature is fetched but deliberately NOT included in the summary string
     wind_kt = ms_to_kt(c["wind_speed_10m"])
     wind_dir = deg_to_compass(c["wind_direction_10m"])
     cond = wmo_to_text(c["weathercode"])
     rain = c.get("precipitation_probability", 0) or 0
 
-    # 3-day outlook
+    # 3-day outlook -- wind, sky condition, and rain probability only (no temperatures)
     outlook_parts = []
     for i in range(min(3, len(d["time"]))):
-        max_f = c_to_f(d["temperature_2m_max"][i])
         w_kt = ms_to_kt(d["wind_speed_10m_max"][i])
         w_dir = deg_to_compass(d["wind_direction_10m_dominant"][i])
         r = d["precipitation_probability_max"][i] or 0
         cond_d = wmo_to_text(d["weathercode"][i])
-        outlook_parts.append(f"Day {i+1}: {max_f}F, {w_dir} {w_kt}kt, {cond_d}, {r}% rain")
+        outlook_parts.append(f"Day {i+1}: {w_dir} {w_kt}kt, {cond_d}, {r}% rain")
 
     return (
-        f"Current: {temp_f}F, {wind_dir} {wind_kt}kt, {cond}, {rain}% rain chance. "
+        f"Conditions: {wind_dir} {wind_kt}kt, {cond}, {rain}% rain chance. "
         f"3-day outlook: {'; '.join(outlook_parts)}."
     )
 
@@ -221,7 +227,12 @@ def call_groq(region: dict, weather_summary: str) -> str:
         f"Write 3-4 sentences in a direct, professional mariner's voice. "
         f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity -- those topics belong on a different platform. Focus only on what cruise passengers need to know: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Mention specific ports or anchorage conditions where relevant. "
-        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. Do NOT mention current or specific temperatures (e.g., 59 degrees, 67F) as they date the briefing and reduce credibility -- focus on wind, rain, visibility, sea state, and sky conditions instead. "
+        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. "
+        f"ABSOLUTE RULE -- TEMPERATURES: You must NEVER include any temperature value of any kind in this briefing. "
+        f"This means no current temperatures, no forecast high or low temperatures, no feels-like values, no dew point values, and no heat index values. "
+        f"Do not write phrases like 'temperatures in the 70s', 'mild temperatures', 'warm at 80 degrees', '59F', '25C', or any variation. "
+        f"The briefing is a forward-looking threat and hazard summary only. Describe wind speed and direction, rain probability, visibility, sea state, and sky conditions. "
+        f"Temperatures are displayed separately in the live conditions section of the site and must never appear in this briefing. "
         f"CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only: "
         f"TROPICAL CYCLONES (NHC, 1-minute sustained winds): "
         f"'Tropical Wave' = trough or cyclonic curvature in trade-wind easterlies, no closed circulation, no wind threshold. "
@@ -322,6 +333,69 @@ def call_groq(region: dict, weather_summary: str) -> str:
     raise RuntimeError("Groq API failed after 4 attempts")
 
 
+def strip_temperatures(text: str) -> str:
+    """
+    Post-generation temperature filter (Layer 2 backstop).
+    Scans the AI-generated briefing text for any temperature value and removes
+    the entire sentence containing it. Logs a warning to stderr if anything is
+    stripped so the removal is visible in the GitHub Actions run log.
+
+    Patterns detected (case-insensitive):
+      - Numeric + degree symbol + F or C  (e.g. 59F, 59°F, 25C, 25°C)
+      - Numeric + space + degrees + F or C  (e.g. 59 degrees F)
+      - Numeric + space + degrees  (e.g. 59 degrees)
+      - Descriptive temperature phrases  (e.g. "temperatures in the 70s",
+        "mild temperatures", "warm temperatures", "cool temperatures",
+        "temperature of", "temperature near", "temperature around")
+    """
+    import re
+    # Patterns that indicate a temperature value or description is present.
+    # These are intentionally broad -- any sentence matching ANY pattern is removed.
+    TEMP_PATTERNS = [
+        r"\b\d+\s*\u00b0?\s*[FCfc]\b",              # 59F, 59°F, 25C, 25°C
+        r"\b\d+\s+degrees?\s+[FCfc]\b",             # 59 degrees F
+        r"\b\d+\s+degrees?\b",                       # 59 degrees
+        r"\btemperatures?\b",                        # any use of the word temperature/temperatures
+        r"\bin\s+the\s+\d+0s?\b",                   # in the 70s, in the 80s
+        r"\b(?:mild|warm|cool|cold|hot|chilly|balmy)\s+(?:air|conditions|weather)\b",  # warm conditions
+        r"\bhigh\s+(?:near|around|of)\s+\d",        # high near 85
+        r"\blow\s+(?:near|around|of)\s+\d",         # low near 70
+    ]
+    combined = re.compile("|".join(TEMP_PATTERNS), re.IGNORECASE)
+
+    # Split into sentences, filter out any that contain a temperature pattern
+    # Use a sentence splitter that preserves abbreviations like kt, mph, etc.
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    clean = []
+    stripped_count = 0
+    for sentence in sentences:
+        if combined.search(sentence):
+            stripped_count += 1
+            print(
+                f"  [TEMP FILTER] Removed sentence containing temperature: {sentence[:120]}",
+                file=sys.stderr
+            )
+        else:
+            clean.append(sentence)
+
+    if stripped_count:
+        print(
+            f"  [TEMP FILTER] WARNING: {stripped_count} sentence(s) stripped from briefing. "
+            f"Review the Groq prompt if this happens frequently.",
+            file=sys.stderr
+        )
+
+    result = " ".join(clean).strip()
+    # If the filter removed everything (edge case), return a safe fallback
+    if not result:
+        print(
+            "  [TEMP FILTER] ERROR: All sentences were stripped -- returning safe fallback.",
+            file=sys.stderr
+        )
+        return "No briefing available at this time."
+    return result
+
+
 def main():
     if not GROQ_API_KEY:
         print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
@@ -347,7 +421,12 @@ def main():
             # Validate: must be a non-empty string of at least 20 characters
             if not intel or len(intel.strip()) < 20:
                 raise ValueError(f"Groq returned suspiciously short response: {repr(intel)}")
-            output["regions"][region["slug"]] = intel.strip()
+            # --- LAYER 2: Post-generation temperature filter ---
+            # Hard mechanical backstop: remove any sentence that contains a temperature
+            # value regardless of what the AI produced. This catches any slip-through
+            # that the prompt rules did not prevent.
+            intel = strip_temperatures(intel.strip())
+            output["regions"][region["slug"]] = intel
             print(f"  OK: {intel[:80]}...", file=sys.stderr)
         except Exception as e:
             print(f"  ERROR: {e}", file=sys.stderr)
