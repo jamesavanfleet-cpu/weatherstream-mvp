@@ -422,14 +422,27 @@ function PortSlotCard({
     if (!slot && !query) setOpen(false);
   }, [slot, query]);
 
-  // Normalize: strip periods so "St Maarten" matches "St. Maarten", "Turks Caicos" matches "Turks & Caicos", etc.
-  const normStr = (s: string) => s.toLowerCase().replace(/[.&]/g, "").replace(/\s+/g, " ").trim();
+  // Normalize: canonicalize "Saint" -> "st", strip periods/ampersands, collapse whitespace.
+  // This means "Saint Maarten", "St. Maarten", "St Maarten" all normalize to "st maarten"
+  // and match any port whose name or alias normalizes the same way.
+  const normStr = (s: string) =>
+    s.toLowerCase()
+      .replace(/\bsaint\b/g, "st")
+      .replace(/[.&]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   const qNorm = normStr(query);
+  // Check if a port matches the query -- searches both primary name and all aliases
+  const portMatches = (p: typeof PORT_LIST[0]): boolean => {
+    const pNorm = normStr(p.name);
+    if (pNorm.startsWith(qNorm) || pNorm.includes(qNorm)) return true;
+    return (p.aliases ?? []).some(a => {
+      const aNorm = normStr(a);
+      return aNorm.startsWith(qNorm) || aNorm.includes(qNorm);
+    });
+  };
   const suggestions = query.length >= 3
-    ? PORT_LIST.filter(p => {
-        const pNorm = normStr(p.name);
-        return pNorm.startsWith(qNorm) || pNorm.includes(qNorm);
-      }).slice(0, 8)
+    ? PORT_LIST.filter(portMatches).slice(0, 8)
     : [];
 
   const handlePickSuggestion = (port: typeof PORT_LIST[0]) => {
@@ -691,17 +704,36 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       });
   }, []);
 
-  // Resolve a query string to a port entry via fuzzy match
-  // Normalizes punctuation so "St Maarten" matches "St. Maarten", "Turks Caicos" matches "Turks & Caicos", etc.
-  const normStr2 = (s: string) => s.toLowerCase().replace(/[.&]/g, "").replace(/\s+/g, " ").trim();
+  // Resolve a query string to a port entry.
+  // Normalizes "Saint" -> "st", strips periods/ampersands, collapses whitespace.
+  // Searches both primary name and aliases in priority order:
+  //   1. Exact match on name or alias
+  //   2. Name/alias starts with query
+  //   3. Name/alias contains query
+  const normStr2 = (s: string) =>
+    s.toLowerCase()
+      .replace(/\bsaint\b/g, "st")
+      .replace(/[.&]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   const resolvePort = (q: string, preSelected: typeof PORT_LIST[0] | null) => {
     if (preSelected) return preSelected;
     const lower = normStr2(q);
     if (!lower) return null;
+    // Helper: does this port match at the given level?
+    const nameOrAliasEquals    = (p: typeof PORT_LIST[0]) =>
+      normStr2(p.name) === lower ||
+      (p.aliases ?? []).some(a => normStr2(a) === lower);
+    const nameOrAliasStartsWith = (p: typeof PORT_LIST[0]) =>
+      normStr2(p.name).startsWith(lower) ||
+      (p.aliases ?? []).some(a => normStr2(a).startsWith(lower));
+    const nameOrAliasIncludes  = (p: typeof PORT_LIST[0]) =>
+      normStr2(p.name).includes(lower) ||
+      (p.aliases ?? []).some(a => normStr2(a).includes(lower));
     return (
-      PORT_LIST.find(p => normStr2(p.name) === lower) ??
-      PORT_LIST.find(p => normStr2(p.name).startsWith(lower)) ??
-      PORT_LIST.find(p => normStr2(p.name).includes(lower)) ??
+      PORT_LIST.find(nameOrAliasEquals) ??
+      PORT_LIST.find(nameOrAliasStartsWith) ??
+      PORT_LIST.find(nameOrAliasIncludes) ??
       null
     );
   };
