@@ -22,6 +22,16 @@ export const PORT_LIST: Port[] = [
   // ---- Caribbean ----
   { name: "Miami",                  lat: 25.7753, lon:  -80.1698, region: "Caribbean" },
   { name: "Key West",               lat: 24.5551, lon:  -81.7800, region: "Caribbean" },
+  { name: "Port Everglades",        lat: 26.0833, lon:  -80.1167, region: "Caribbean",
+    aliases: ["Fort Lauderdale", "Fort Lauderdale Port", "Port Everglades Fort Lauderdale"] },
+  { name: "Port Canaveral",         lat: 28.4083, lon:  -80.6167, region: "Caribbean",
+    aliases: ["Cape Canaveral", "Canaveral", "Port Canaveral Florida"] },
+  { name: "Tampa Bay",              lat: 27.9333, lon:  -82.4500, region: "Caribbean",
+    aliases: ["Tampa", "Tampa Florida", "Tampa Port"] },
+  { name: "Jacksonville",           lat: 30.3322, lon:  -81.6557, region: "Caribbean",
+    aliases: ["Jacksonville Florida", "JAXPORT", "Jacksonville Port"] },
+  { name: "Havana",                 lat: 23.1367, lon:  -82.3589, region: "Caribbean",
+    aliases: ["La Habana", "Havana Cuba", "Habana"] },
 
   // ---- Bahamas ----
   // Nassau / Prince George Wharf -- also resolves for New Providence island

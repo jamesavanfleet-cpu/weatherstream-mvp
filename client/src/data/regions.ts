@@ -21,6 +21,29 @@ export interface Region {
 
 export const REGIONS: Region[] = [
   {
+    slug: "central-caribbean",
+    name: "Central Caribbean",
+    intel: "The Central Caribbean encompasses Florida departure ports, Cuba, Jamaica, Grand Cayman, and the Dominican Republic. Florida Gulf and Atlantic coasts see variable winds influenced by the Bermuda High and passing frontal systems. The Florida Straits between Miami and Cuba see strong current and can funnel NE winds 20-30 kt during winter cold fronts. Havana and the north Cuban coast are sheltered from the prevailing E trades. Grand Cayman sits exposed to swells from multiple directions -- check carefully for any active weather to the north or east. Jamaica's north coast ports at Ocho Rios and Falmouth occasionally see northerly swell wrap around the island during winter cold front passages. The Dominican Republic's north coast at Puerto Plata is exposed to Atlantic swell; the south coast at La Romana and Santo Domingo is more protected. Samaná Bay on the northeast coast is a spectacular deep-water anchorage.",
+    image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+    gradient: "from-sky-500/20 to-cyan-500/20",
+    ports: [
+      { name: "Falmouth",          lat: 18.49, lon: -77.66, marineLat: 18.52, marineLon: -77.66 },
+      { name: "Grand Cayman",      lat: 19.29, lon: -81.38 },
+      { name: "Havana",            lat: 23.14, lon: -82.36 },
+      { name: "Jacksonville",      lat: 30.33, lon: -81.66 },
+      { name: "Key West",          lat: 24.56, lon: -81.78 },
+      { name: "La Romana",         lat: 18.4274, lon: -68.9726 },
+      { name: "Miami",             lat: 25.77, lon: -80.19 },
+      { name: "Ocho Rios",         lat: 18.41, lon: -77.10 },
+      { name: "Port Canaveral",    lat: 28.41, lon: -80.62 },
+      { name: "Port Everglades",   lat: 26.08, lon: -80.12 },
+      { name: "Puerto Plata",      lat: 19.7967, lon: -70.6833 },
+      { name: "Saman\u00e1",             lat: 19.2061, lon: -69.3363 },
+      { name: "Santo Domingo",     lat: 18.4861, lon: -69.9312 },
+      { name: "Tampa Bay",         lat: 27.94, lon: -82.45 },
+    ],
+  },
+  {
     slug: "eastern-caribbean",
     name: "Eastern Caribbean",
     intel: "ENE trade winds 15-20 kt with 3-5 ft seas across the eastern chain. San Juan and St. Thomas seeing typical trade wind conditions with good visibility. St. Maarten and Antigua well-positioned for leeward anchorages on the western sides. Turks and Caicos exposed to open Atlantic swell on the north shore; Providenciales south coast calm. Barbados windward east coast fully exposed; Carlisle Bay and Bridgetown on the leeward west coast are calm and well-protected. St. Lucia, Martinique, and Dominica seeing afternoon squalls on the windward volcanic peaks  --  plan arrivals before morning hours. St. Vincent and the Grenadines offer excellent leeward anchorages. Visibility outstanding at 80+ ft throughout.",
@@ -32,11 +55,7 @@ export const REGIONS: Region[] = [
       { name: "Dominica",          lat: 15.30, lon: -61.39 },
       { name: "Grenada",           lat: 12.11, lon: -61.68 },
       { name: "Martinique",        lat: 14.64, lon: -61.02 },
-      { name: "La Romana",         lat: 18.4274, lon: -68.9726 },
-      { name: "Puerto Plata",        lat: 19.7967, lon: -70.6833 },
-      { name: "Saman\u00e1",              lat: 19.2061, lon: -69.3363 },
       { name: "San Juan",          lat: 18.47, lon: -66.12 },
-      { name: "Santo Domingo",      lat: 18.4861, lon: -69.9312 },
       { name: "St. Croix",         lat: 17.73, lon: -64.73 },
       { name: "St. Kitts",         lat: 17.30, lon: -62.72 },
       { name: "St. Lucia",         lat: 13.91, lon: -60.98 },
@@ -49,16 +68,13 @@ export const REGIONS: Region[] = [
   {
     slug: "western-caribbean",
     name: "Western Caribbean",
-    intel: "Light to moderate E-SE winds 10-15 kt across the western Caribbean with seas 2-4 ft. Cozumel and Costa Maya seeing calm conditions on the leeward western shores. Roatan and the Bay Islands benefiting from the Honduran mountains blocking the prevailing trades. Grand Cayman flat and calm on the western side. Jamaica's north coast ports  --  Ocho Rios and Falmouth  --  occasionally see northerly swell wrap around the island during winter cold front passages. The Bay of Honduras around Roatan and Belize is generally calmer than the open Caribbean. Grand Cayman sits in the center of the Caribbean Sea with exposure to swells from multiple directions  --  check the forecast carefully for any active weather to the north or east.",
+    intel: "Light to moderate E-SE winds 10-15 kt across the western Caribbean with seas 2-4 ft. Cozumel and Costa Maya seeing calm conditions on the leeward western shores. Roatan and the Bay Islands benefiting from the Honduran mountains blocking the prevailing trades. The Bay of Honduras around Roatan and Belize is generally calmer than the open Caribbean.",
     image: "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7uKRTFIx5OB/sandbox/KmIDdlWnVqsNKICKmf9H1h-img-2_1771041480000_na1fn_Y2FyaWJiZWFuLWNydWlzZS1zdW5zZXQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWE9MRWRnOXlabGc3dUtSVEZJeDVPQi9zYW5kYm94L0ttSURkbFduVnFzTktJQ0ttZjlIMWgtaW1nLTJfMTc3MTA0MTQ4MDAwMF9uYTFmbl9ZMkZ5YVdKaVpXRnVMV055ZFdselpTMXpkVzV6WlhRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=q7HRCQyQ~-w~C5w33nY2ql2sG3uXJCzYOhBWvxdtDbze05vqRtYbS1MyRLwFD-TcVNJiFFpZJHcV2VwV~1q2R3cALqcMsvdGRwHnu21~weD8Sbi-uWiSdqPpU9WlWn2TKGKSeggtUFRQyfGACZXSWEN8fFARTbR6zzad3L~CHbe4XhsMPFnsc3p-wyMqi~d0BXyI285CVEa7MEblcdb65PW9fdjkfHT~qRlFn6r07oCoZ0-QNyv5bieV7Uc3tjnaZPINOxgUEUae~nkcYOMaSW3rbEpaeOPirXqd8MTpAakVSef6F4V~VkghbCiPu~VmHDnSaWoQ6uLrTOXc4UCehA__",
     gradient: "from-orange-500/20 to-pink-500/20",
     ports: [
       { name: "Belize City",       lat: 17.25, lon: -88.77, marineLat: 17.25, marineLon: -87.80 }, // east of Belize Barrier Reef
       { name: "Costa Maya",        lat: 18.73, lon: -87.71, sublabel: "Mahahual" },
       { name: "Cozumel",           lat: 20.51, lon: -86.95 },
-      { name: "Falmouth",          lat: 18.49, lon: -77.66, marineLat: 18.52, marineLon: -77.66 }, // 2 nmi north, open north coast of Jamaica
-      { name: "Grand Cayman",      lat: 19.29, lon: -81.38 },
-      { name: "Ocho Rios",         lat: 18.41, lon: -77.10 },
       { name: "Roatan",            lat: 16.32, lon: -86.53 },
     ],
   },
