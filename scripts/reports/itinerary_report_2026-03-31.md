@@ -2,21 +2,21 @@
 **My Cruising Weather -- www.mycruisingweather.com**
 
 **Report Period:** March 24 -- March 31, 2026
-**Generated:** March 31, 2026 at 11:05 PM UTC
+**Generated:** March 31, 2026 at 11:10 PM UTC
 **Source:** CruiseMapper.com (automated verification)
 
 ---
 
 ## Summary
 
-This report covers **1 verification run(s)** conducted between March 24 and March 31, 2026. A total of **66 ship sailings** were checked against CruiseMapper.com.
+This report covers **2 verification run(s)** conducted between March 24 and March 31, 2026. A total of **132 ship sailings** were checked against CruiseMapper.com.
 
-**66 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
+**83 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
 
 | Category | Count |
 |---|---|
-| Itineraries corrected (wrong ports or dates) | 8 |
-| New sailings added from CruiseMapper | 58 |
+| Itineraries corrected (wrong ports or dates) | 18 |
+| New sailings added from CruiseMapper | 65 |
 | Errors (CruiseMapper fetch failures) | 0 |
 
 ---
@@ -32,12 +32,27 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Galveston > Galveston
 - **Corrected to:** Galveston > At Sea > Cozumel > Progreso > At Sea > Galveston
 
+**Carnival Breeze** -- Departure 2026-04-11 _(detected 2026-03-31)_
+
+- **Was:** Galveston > Galveston
+- **Corrected to:** Galveston > At Sea > Cozumel > Progreso > At Sea > Galveston
+
 **Carnival Freedom** -- Departure 2026-04-06 _(detected 2026-03-27)_
 
 - **Was:** Port Canaveral > Port Canaveral
 - **Corrected to:** Port Canaveral > Celebration Key > Half Moon Cay > Nassau > At Sea > Port Canaveral
 
+**Carnival Freedom** -- Departure 2026-04-11 _(detected 2026-03-31)_
+
+- **Was:** Port Canaveral > Port Canaveral
+- **Corrected to:** Port Canaveral > At Sea > Half Moon Cay > Nassau > Celebration Key > Port Canaveral
+
 ### Celebrity Cruises
+
+**Celebrity Apex** -- Departure 2026-04-18 _(detected 2026-03-31)_
+
+- **Was:** Port Canaveral > Key West > Grand Turk > Port Canaveral
+- **Corrected to:** Port Canaveral > Key West > Bimini > At Sea > Puerto Plata > Grand Turk > At Sea > Port Canaveral
 
 **Celebrity Beyond** -- Departure 2026-04-05 _(detected 2026-03-27)_
 
@@ -61,6 +76,13 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Galveston > Perfect Day at CocoCay > Roatan > Cozumel > Galveston
 - **Corrected to:** Galveston > At Sea > At Sea > Perfect Day at CocoCay > Roatan > Cozumel > At Sea > Galveston
 
+### Norwegian Cruise Line
+
+**Norwegian Encore** -- Departure 2026-04-11 _(detected 2026-03-31)_
+
+- **Was:** Miami > At Sea > At Sea > Cartagena > Colombia > Panama City > At Sea > At Sea > Puntarenas > At Sea > Puerto Quetzal > At Sea > Acapulco > At Sea > Puerto Vallarta > Cabo San Lucas > At Sea > At Sea > San Francisco > San Francisco
+- **Corrected to:** Miami > At Sea > At Sea > Cartagena > Colombia > Panama City > At Sea > At Sea > Puntarenas > At Sea > Puerto Quetzal > At Sea > Acapulco > At Sea > Puerto Vallarta > Cabo San Lucas > At Sea > At Sea > San Francisco > At Sea > At Sea > Astoria OR > Victoria BC > Seattle
+
 ### Princess Cruises
 
 **Caribbean Princess** -- Departure 2026-03-29 _(detected 2026-03-27)_
@@ -68,12 +90,44 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Fort Lauderdale > Princess Cays > At Sea > San Juan > St. Kitts > Castries > St. Lucia > Fort-de-France > Martinique > St. John's > Antigua > At Sea > At Sea > Fort Lauderdale
 - **Corrected to:** Fort Lauderdale > Princess Cays > At Sea > San Juan > St. Kitts > Castries > St. Lucia > Fort-de-France > Martinique > St. John's > Antigua > At Sea > At Sea > Fort Lauderdale > Princess Cays > At Sea > St. Thomas > St. Maarten > St. John's > Antigua > St. Kitts > Tortola > At Sea > At Sea > Fort Lauderdale
 
+**Caribbean Princess** -- Departure 2026-03-29 _(detected 2026-03-31)_
+
+- **Was:** Fort Lauderdale > Princess Cays > At Sea > San Juan > St. Kitts > Castries > St. Lucia > Fort-de-France > Martinique > St. John's > Antigua > At Sea > At Sea > Fort Lauderdale > Princess Cays > At Sea > St. Thomas > St. Maarten > St. John's > Antigua > St. Kitts > Tortola > At Sea > At Sea > Fort Lauderdale
+- **Corrected to:** Fort Lauderdale > Princess Cays > At Sea > San Juan > St. Kitts > Castries > St. Lucia > Fort-de-France > Martinique > St. John's > Antigua > At Sea > At Sea > Fort Lauderdale
+
+**Caribbean Princess** -- Departure 2026-03-29 _(detected 2026-03-31)_
+
+- **Was:** Fort Lauderdale > Princess Cays > At Sea > San Juan > St. Kitts > Castries > St. Lucia > Fort-de-France > Martinique > St. John's > Antigua > At Sea > At Sea > Fort Lauderdale
+- **Corrected to:** Fort Lauderdale > Princess Cays > At Sea > San Juan > St. Kitts > Castries > St. Lucia > Fort-de-France > Martinique > St. John's > Antigua > At Sea > At Sea > Fort Lauderdale > Princess Cays > At Sea > St. Thomas > St. Maarten > St. John's > Antigua > St. Kitts > Tortola > At Sea > At Sea > Fort Lauderdale
+
+### Royal Caribbean
+
+**Freedom of the Seas** -- Departure 2026-04-09 _(detected 2026-03-31)_
+
+- **Was:** Miami > Getaway Cruise > Miami
+- **Corrected to:** Miami > Nassau > At Sea > At Sea > Miami
+
+**Icon of the Seas** -- Departure 2026-04-18 _(detected 2026-03-31)_
+
+- **Was:** Miami > Perfect Day > Miami
+- **Corrected to:** Miami > At Sea > Perfect Day at CocoCay > Roatan > Cozumel > At Sea > Perfect Day at CocoCay > Miami
+
+**Navigator of the Seas** -- Departure 2026-04-06 _(detected 2026-03-31)_
+
+- **Was:** Los Angeles > Catalina Ensenada Cruise > Los Angeles
+- **Corrected to:** Los Angeles > Catalina Island > At Sea > Ensenada > Los Angeles
+
 ### Virgin Voyages
 
 **Scarlet Lady** -- Departure 2026-04-10 _(detected 2026-03-27)_
 
 - **Was:** Miami > Dominican Daze > Miami
 - **Corrected to:** Miami > At Sea > Puerto Plata > At Sea > Bimini > Miami
+
+**Scarlet Lady** -- Departure 2026-04-15 _(detected 2026-03-31)_
+
+- **Was:** Miami > Fire Sunset Soires > Miami
+- **Corrected to:** Miami > At Sea > Key West > Bimini > Miami
 
 ## New Sailings Added
 
@@ -92,7 +146,10 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Carnival Vista | 2026-04-12 | 6 days, round-trip Eastern Caribbean |
 | Mardi Gras | 2026-03-28 | 7 days, round-trip Eastern Caribbean |
 | Mardi Gras | 2026-04-04 | 7 days, round-trip Western Caribbean |
+| Mardi Gras | 2026-04-04 | 7 days, round-trip Western Caribbean |
 | Mardi Gras | 2026-04-11 | 7 days, round-trip Eastern Caribbean |
+| Mardi Gras | 2026-04-11 | 7 days, round-trip Eastern Caribbean |
+| Mardi Gras | 2026-04-18 | 7 days, round-trip Eastern Caribbean |
 
 ### Celebrity Cruises
 
@@ -110,6 +167,7 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Disney Wish | 2026-03-27 | 3 days, round-trip Bahamian Cruise From Port Canaveral |
 | Disney Wish | 2026-03-30 | 4 days, round-trip Bahamian Cruise From Port Canaveral |
 | Disney Wish | 2026-04-03 | 3 days, round-trip Bahamian Cruise From Port Canaveral |
+| Disney Wish | 2026-04-06 | 4 days, round-trip Bahamian Cruise From Port Canaveral |
 
 ### MSC Cruises
 
@@ -127,6 +185,7 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Norwegian Getaway | 2026-03-27 | 3 days, round-trip Bahamas Round-trip Miami Nassau |
 | Norwegian Getaway | 2026-03-30 | 4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau |
 | Norwegian Getaway | 2026-04-03 | 3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau |
+| Norwegian Getaway | 2026-04-06 | 4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau |
 
 ### Princess Cruises
 
@@ -142,6 +201,7 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Adventure of the Seas | 2026-03-28 | 6 days, round-trip Western Caribbean  Perfect Day |
 | Adventure of the Seas | 2026-04-03 | 8 days, round-trip Eastern Caribbean Cruise |
 | Adventure of the Seas | 2026-04-11 | 6 days, round-trip Western Caribbean  Perfect Day |
+| Adventure of the Seas | 2026-04-17 | 8 days, round-trip Eastern Caribbean Cruise |
 | Allure of the Seas | 2026-03-29 | 7 days, round-trip Western Caribbean Cruise |
 | Allure of the Seas | 2026-04-05 | 7 days, round-trip Western Caribbean Cruise |
 | Allure of the Seas | 2026-04-12 | 7 days, round-trip Western Caribbean Cruise |
@@ -157,6 +217,7 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Mariner of the Seas | 2026-03-26 | 4 days, round-trip Western Caribbean Cruise |
 | Mariner of the Seas | 2026-03-30 | 10 days, round-trip Western Caribbean Cruise |
 | Mariner of the Seas | 2026-04-09 | 4 days, round-trip Western Caribbean Cruise |
+| Mariner of the Seas | 2026-04-13 | 5 days, round-trip Western Caribbean Cruise |
 | Navigator of the Seas | 2026-03-27 | 3 days, round-trip Ensenada Cruise |
 | Navigator of the Seas | 2026-03-30 | 4 days, round-trip Catalina  Ensenada Cruise |
 | Navigator of the Seas | 2026-04-03 | 3 days, round-trip Ensenada Cruise |
