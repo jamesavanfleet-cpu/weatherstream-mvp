@@ -158,6 +158,40 @@ export const PORT_LIST: Port[] = [
   { name: "Falmouth",               lat: 18.4900, lon:  -77.6600, region: "Caribbean" },
   { name: "Ocho Rios",              lat: 18.4100, lon:  -77.1000, region: "Caribbean" },
 
+  // ---- Dominican Republic (Hispaniola) ----
+  // Puerto Plata -- north coast DR; Amber Cove (Carnival) and Taino Bay (MSC/Royal) are both cruise piers here
+  { name: "Puerto Plata",           lat: 19.7967, lon:  -70.6833, region: "Caribbean",
+    aliases: [
+      "Amber Cove",                 // Carnival cruise pier marketing name
+      "Taino Bay",                  // MSC / Royal Caribbean cruise pier marketing name
+      "Amber Cove Puerto Plata",
+      "Taino Bay Puerto Plata",
+      "Puerto Plata Dominican Republic",
+      "Puerto Plata DR",
+    ] },
+  { name: "Saman\u00e1",                 lat: 19.2061, lon:  -69.3363, region: "Caribbean",
+    aliases: [
+      "Samana",
+      "Santa Barbara de Samana",
+      "Saman\u00e1 Bay",
+      "Samana Bay",
+      "Samana Dominican Republic",
+      "Samana DR",
+    ] },
+  { name: "La Romana",              lat: 18.4274, lon:  -68.9726, region: "Caribbean",
+    aliases: [
+      "La Romana Dominican Republic",
+      "La Romana DR",
+      "Casa de Campo",              // upscale resort area adjacent to La Romana port
+    ] },
+  { name: "Santo Domingo",          lat: 18.4861, lon:  -69.9312, region: "Caribbean",
+    aliases: [
+      "Santo Domingo Dominican Republic",
+      "Santo Domingo DR",
+      "Ciudad Colonial",
+      "Sans Souci Port",
+    ] },
+
   // ---- Eastern Caribbean ----
   { name: "San Juan",               lat: 18.4655, lon:  -66.1057, region: "Caribbean" },
   { name: "St. Thomas",             lat: 18.3430, lon:  -64.9307, region: "Caribbean",
