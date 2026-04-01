@@ -23,13 +23,12 @@ export const REGIONS: Region[] = [
   {
     slug: "central-caribbean",
     name: "Central Caribbean",
-    intel: "The Central Caribbean encompasses Florida departure ports, Cuba, Jamaica, Grand Cayman, and the Dominican Republic. Florida Gulf and Atlantic coasts see variable winds influenced by the Bermuda High and passing frontal systems. The Florida Straits between Miami and Cuba see strong current and can funnel NE winds 20-30 kt during winter cold fronts. Havana and the north Cuban coast are sheltered from the prevailing E trades. Grand Cayman sits exposed to swells from multiple directions -- check carefully for any active weather to the north or east. Jamaica's north coast ports at Ocho Rios and Falmouth occasionally see northerly swell wrap around the island during winter cold front passages. The Dominican Republic's north coast at Puerto Plata is exposed to Atlantic swell; the south coast at La Romana and Santo Domingo is more protected. Samaná Bay on the northeast coast is a spectacular deep-water anchorage.",
+    intel: "The Central Caribbean encompasses Florida departure ports, Cuba, Jamaica, Grand Cayman, and the Dominican Republic. Florida Gulf and Atlantic coasts see variable winds influenced by the Bermuda High and passing frontal systems. The Florida Straits between Miami and Cuba see strong current and can funnel NE winds 20-30 kt during winter cold fronts. Grand Cayman sits exposed to swells from multiple directions -- check carefully for any active weather to the north or east. Jamaica's north coast ports at Ocho Rios and Falmouth occasionally see northerly swell wrap around the island during winter cold front passages. The Dominican Republic's north coast at Puerto Plata is exposed to Atlantic swell; the south coast at La Romana and Santo Domingo is more protected. Samaná Bay on the northeast coast is a spectacular deep-water anchorage.",
     image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
     gradient: "from-sky-500/20 to-cyan-500/20",
     ports: [
       { name: "Falmouth",          lat: 18.49, lon: -77.66, marineLat: 18.52, marineLon: -77.66 },
       { name: "Grand Cayman",      lat: 19.29, lon: -81.38 },
-      { name: "Havana",            lat: 23.14, lon: -82.36 },
       { name: "Jacksonville",      lat: 30.33, lon: -81.66 },
       { name: "Key West",          lat: 24.56, lon: -81.78 },
       { name: "La Romana",         lat: 18.4274, lon: -68.9726 },

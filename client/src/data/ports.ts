@@ -30,8 +30,6 @@ export const PORT_LIST: Port[] = [
     aliases: ["Tampa", "Tampa Florida", "Tampa Port"] },
   { name: "Jacksonville",           lat: 30.3322, lon:  -81.6557, region: "Caribbean",
     aliases: ["Jacksonville Florida", "JAXPORT", "Jacksonville Port"] },
-  { name: "Havana",                 lat: 23.1367, lon:  -82.3589, region: "Caribbean",
-    aliases: ["La Habana", "Havana Cuba", "Habana"] },
 
   // ---- Bahamas ----
   // Nassau / Prince George Wharf -- also resolves for New Providence island

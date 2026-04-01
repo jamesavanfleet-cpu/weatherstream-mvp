@@ -65,7 +65,6 @@ const LIVE_DATA = [
   { location: "Grand Cayman", sublabel: null, lat: 19.29, lon: -81.38, temp: 84, condition: "Sunny", icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
   { location: "Grenada", sublabel: null, lat: 12.11, lon: -61.68, temp: 83, condition: "Sunny", icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
   { location: "Haifa", sublabel: "Israel", lat: 32.82, lon: 34.99, temp: 67, condition: "Sunny", icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
-  { location: "Havana", sublabel: "Cuba", lat: 23.1367, lon: -82.3589, temp: 82, condition: "Sunny", icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
   { location: "Huatulco", sublabel: "Oaxaca, Mexico", lat: 15.74, lon: -96.13, temp: 86, condition: "Sunny", icon: ThermometerSun, color: "from-amber-400 to-orange-500" },
   { location: "Ibiza", sublabel: "Spain", lat: 38.91, lon: 1.43, temp: 62, condition: "Clear", icon: Sparkles, color: "from-yellow-400 to-orange-400" },
   { location: "Istanbul", sublabel: "Turkey", lat: 41.01, lon: 28.98, temp: 54, condition: "Partly Cloudy", icon: Cloud, color: "from-indigo-500 to-violet-500" },
@@ -249,28 +248,6 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
 // --- Caribbean Cruise Routes ---
 const CRUISE_ROUTES = [
   {
-    name: "Eastern Caribbean",
-    image: TROPICAL_BEACH,
-    temp: 84,
-    seas: "2-3 ft",
-    wind: "10-15 kt",
-    rain: "5%",
-    status: "Perfect",
-    gradient: "from-emerald-500/20 to-cyan-500/20",
-    intel: "High pressure dominating the region through the weekend. Expect light trade winds and calm seas -- ideal for tender operations in St. Thomas and St. Maarten. UV index will be extreme, so remind passengers about sun protection."
-  },
-  {
-    name: "Western Caribbean",
-    image: CRUISE_SUNSET,
-    temp: 86,
-    seas: "3-4 ft",
-    wind: "12-18 kt",
-    rain: "10%",
-    status: "Excellent",
-    gradient: "from-orange-500/20 to-pink-500/20",
-    intel: "Typical pattern with easterly flow. Cozumel and Grand Cayman will see afternoon sea breezes -- perfect beach weather. Watch for isolated showers near Jamaica's Blue Mountains in the late afternoon, but they'll stay inland."
-  },
-  {
     name: "Bahamas",
     image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
     temp: 77,
@@ -280,6 +257,29 @@ const CRUISE_ROUTES = [
     status: "Very Good",
     gradient: "from-blue-500/20 to-purple-500/20",
     intel: "Cold front passed through yesterday -- cooler temps but crystal-clear visibility. Seas building slightly on the Atlantic side, but western anchorages (Nassau, Freeport) remain protected. Great conditions for snorkeling and diving with 100+ ft visibility."
+  },
+  {
+    slug: "central-caribbean",
+    name: "Central Caribbean",
+    image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+    temp: 82,
+    seas: "2-4 ft",
+    wind: "10-15 kt",
+    rain: "10%",
+    status: "Excellent",
+    gradient: "from-sky-500/20 to-cyan-500/20",
+    intel: "Florida departure ports and the Central Caribbean corridor seeing favorable conditions. Grand Cayman and Jamaica's north coast ports calm with light easterly flow. Florida Straits clear with no frontal activity. Dominican Republic ports on the south coast well-protected; north coast at Puerto Plata seeing light Atlantic swell 2-3 ft."
+  },
+  {
+    name: "Eastern Caribbean",
+    image: TROPICAL_BEACH,
+    temp: 84,
+    seas: "2-3 ft",
+    wind: "10-15 kt",
+    rain: "5%",
+    status: "Perfect",
+    gradient: "from-emerald-500/20 to-cyan-500/20",
+    intel: "High pressure dominating the region through the weekend. Expect light trade winds and calm seas -- ideal for tender operations in St. Thomas and St. Maarten. UV index will be extreme, so remind passengers about sun protection."
   },
   {
     name: "Southern Caribbean",
@@ -293,16 +293,15 @@ const CRUISE_ROUTES = [
     intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curacao enjoying persistent easterlies -- perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
   },
   {
-    slug: "central-caribbean",
-    name: "Central Caribbean",
-    image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
-    temp: 82,
-    seas: "2-4 ft",
-    wind: "10-15 kt",
+    name: "Western Caribbean",
+    image: CRUISE_SUNSET,
+    temp: 86,
+    seas: "3-4 ft",
+    wind: "12-18 kt",
     rain: "10%",
     status: "Excellent",
-    gradient: "from-sky-500/20 to-cyan-500/20",
-    intel: "Florida departure ports and the Central Caribbean corridor seeing favorable conditions. Grand Cayman and Jamaica's north coast ports calm with light easterly flow. Florida Straits clear with no frontal activity. Dominican Republic ports on the south coast well-protected; north coast at Puerto Plata seeing light Atlantic swell 2-3 ft."
+    gradient: "from-orange-500/20 to-pink-500/20",
+    intel: "Typical pattern with easterly flow. Cozumel and Grand Cayman will see afternoon sea breezes -- perfect beach weather. Watch for isolated showers near Jamaica's Blue Mountains in the late afternoon, but they'll stay inland."
   },
 ];
 
