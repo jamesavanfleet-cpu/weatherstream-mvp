@@ -711,7 +711,11 @@ def commit_and_deploy(changes: list[str]) -> None:
             cwd=REPO_DIR, check=True, capture_output=True, env=env
         )
 
-        deploy_script = """
+        src_hash = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=REPO_DIR, capture_output=True, text=True
+        ).stdout.strip()
+        deploy_script = f"""
 set -e
 cd /tmp
 rm -rf gh-pages-deploy-auto
@@ -721,10 +725,18 @@ git init
 git remote add origin https://github.com/jamesavanfleet-cpu/weatherstream-mvp.git
 git fetch origin gh-pages
 git reset --hard origin/gh-pages
+# Preserve live data files before overwriting
+for f in live_conditions.json briefing_video.json; do
+  [ -f "$f" ] && cp "$f" "/tmp/deploy_preserve_$f"
+done
 cp -r /home/ubuntu/vanfleet-wx/dist/public/* .
 cp /home/ubuntu/vanfleet-wx/client/public/cruise_itineraries.json .
+# Restore preserved live data files
+for f in live_conditions.json briefing_video.json; do
+  [ -f "/tmp/deploy_preserve_$f" ] && cp "/tmp/deploy_preserve_$f" "$f" && rm "/tmp/deploy_preserve_$f"
+done
 git add -A
-git commit -m "Deploy: auto-verify itineraries from CruiseMapper"
+git commit -m "Deploy: auto-deploy from main branch commit {src_hash}"
 git push origin HEAD:gh-pages
 """
         subprocess.run(["bash", "-c", deploy_script], check=True, capture_output=True)
