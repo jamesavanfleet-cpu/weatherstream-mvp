@@ -5,11 +5,12 @@
 #
 # IMPORTANT: The following files are PERSISTENT and are NEVER overwritten by this deploy script.
 # They are managed by their own dedicated update scripts:
-#   briefing_video.json    -- updated only via update_briefing_video.sh
 #   live_conditions.json   -- updated by hourly_conditions.sh
 #   intel.json             -- updated by generate_intel.py
 #   top_story.json         -- updated by generate_top_story.py
 #   cruise_itineraries.json -- updated by dedicated itinerary script
+# NOTE: briefing_video.json is NOT preserved -- it is managed in main branch
+# and deployed fresh each time so new briefing videos take effect immediately.
 
 set -e
 
@@ -46,7 +47,7 @@ git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
 
 # Preserve persistent data files before clearing old build artifacts
 # These files must NEVER be overwritten by a code deploy
-PRESERVE_FILES="briefing_video.json live_conditions.json intel.json top_story.json cruise_itineraries.json"
+PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json"
 for PFILE in $PRESERVE_FILES; do
   if [ -f "$PFILE" ]; then
     cp "$PFILE" "/tmp/deploy_preserve_${PFILE}"

@@ -55,6 +55,19 @@ interface LiveForecastDay {
   rainChance: number;
   condition: string;
   waveHeightFt: number | null;
+  sunrise: string | null;
+  sunset: string | null;
+  rainMorning: number | null;
+  rainAfternoon: number | null;
+  rainEvening: number | null;
+  rainOvernight: number | null;
+  hourly: { time: string; tempF: number; windKt: number; rainChance: number; condition: string }[];
+  sevenDay: { date: string; maxF: number; minF: number; condition: string; rainChance: number; windKt: number; windDir: string }[];
+  dewF: number | null;
+  humidity: number | null;
+  gustKt: number | null;
+  swellFt: number | null;
+  swellDir: string | null;
 }
 
 interface PopupData {
@@ -190,16 +203,24 @@ function resolvePort(q: string): typeof PORT_LIST[0] | null {
 // ============================================================
 async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: string): Promise<LiveForecastDay | null> {
   try {
-    const url =
+    const dailyUrl =
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-      `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
+      `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,` +
+      `precipitation_probability_max,weathercode,sunrise,sunset` +
+      `&hourly=temperature_2m,wind_speed_10m,precipitation_probability,weathercode,dewpoint_2m,relativehumidity_2m,windgusts_10m` +
       `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16`;
     const marineUrl =
       `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
-      `&daily=wave_height_max&length_unit=imperial&timezone=auto&forecast_days=16`;
+      `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant` +
+      `&hourly=wave_height` +
+      `&length_unit=imperial&timezone=auto&forecast_days=16`;
+    // Moonrise/moonset via astronomy API
+    const astroUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&daily=sunrise,sunset&timezone=auto&forecast_days=16`;
 
     const [weatherRes, marineRes] = await Promise.allSettled([
-      fetch(url).then(r => r.json()),
+      fetch(dailyUrl).then(r => r.json()),
       fetch(marineUrl).then(r => r.json()),
     ]);
 
@@ -208,19 +229,91 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
     if (!weather || weather.error) return null;
 
     const d = weather.daily;
-    const idx = (d.time as string[]).indexOf(dateStr);
-    if (idx === -1) return null;
+    const h = weather.hourly;
+    const dayIdx = (d.time as string[]).indexOf(dateStr);
+    if (dayIdx === -1) return null;
+
+    // Parse sunrise/sunset to local time string
+    function fmtTime(iso: string | null): string | null {
+      if (!iso) return null;
+      const dt = new Date(iso);
+      return dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    }
+
+    // Hourly data for the target date (24 hours)
+    const hourlyTimes: string[] = h.time ?? [];
+    const dayHours = hourlyTimes
+      .map((t, i) => ({ t, i }))
+      .filter(({ t }) => t.startsWith(dateStr))
+      .map(({ t, i }) => ({
+        time: new Date(t).toLocaleTimeString("en-US", { hour: "numeric", hour12: true }),
+        tempF: cToF(h.temperature_2m[i]),
+        windKt: msToKt(h.wind_speed_10m[i]),
+        rainChance: h.precipitation_probability[i] ?? 0,
+        condition: wmoToCondition(h.weathercode[i]),
+      }));
+
+    // Rain chance by time of day (morning 6-12, afternoon 12-18, evening 18-22, overnight 22-6)
+    function avgRain(startH: number, endH: number): number | null {
+      const vals = hourlyTimes
+        .map((t, i) => ({ hour: new Date(t).getHours(), val: h.precipitation_probability[i] ?? 0, t }))
+        .filter(({ t, hour }) => t.startsWith(dateStr) && hour >= startH && hour < endH)
+        .map(({ val }) => val);
+      if (!vals.length) return null;
+      return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    }
+
+    // 5-day forecast centered on the target date
+    const allDates: string[] = d.time ?? [];
+    const centerIdx = dayIdx;
+    const startIdx = Math.max(0, centerIdx - 2);
+    const endIdx = Math.min(allDates.length - 1, centerIdx + 2);
+    const sevenDay = [];
+    for (let i = startIdx; i <= endIdx; i++) {
+      sevenDay.push({
+        date: allDates[i],
+        maxF: cToF(d.temperature_2m_max[i]),
+        minF: cToF(d.temperature_2m_min[i]),
+        condition: wmoToCondition(d.weathercode[i]),
+        rainChance: d.precipitation_probability_max[i] ?? 0,
+        windKt: msToKt(d.wind_speed_10m_max[i]),
+        windDir: degToCompass(d.wind_direction_10m_dominant[i]),
+      });
+    }
+
+    // Dew point and humidity for the noon hour of the target date
+    const noonIdx = hourlyTimes.findIndex(t => t === `${dateStr}T12:00`);
+    const dewF = noonIdx >= 0 ? cToF(h.dewpoint_2m[noonIdx]) : null;
+    const humidity = noonIdx >= 0 ? Math.round(h.relativehumidity_2m[noonIdx]) : null;
+    const gustKt = noonIdx >= 0 ? msToKt(h.windgusts_10m[noonIdx]) : null;
 
     return {
       date: dateStr,
-      maxF: cToF(d.temperature_2m_max[idx]),
-      minF: cToF(d.temperature_2m_min[idx]),
-      windKt: msToKt(d.wind_speed_10m_max[idx]),
-      windDir: degToCompass(d.wind_direction_10m_dominant[idx]),
-      rainChance: d.precipitation_probability_max[idx] ?? 0,
-      condition: wmoToCondition(d.weathercode[idx]),
-      waveHeightFt: marine?.daily?.wave_height_max?.[idx] != null
-        ? Math.round(marine.daily.wave_height_max[idx] * 10) / 10
+      maxF: cToF(d.temperature_2m_max[dayIdx]),
+      minF: cToF(d.temperature_2m_min[dayIdx]),
+      windKt: msToKt(d.wind_speed_10m_max[dayIdx]),
+      windDir: degToCompass(d.wind_direction_10m_dominant[dayIdx]),
+      rainChance: d.precipitation_probability_max[dayIdx] ?? 0,
+      condition: wmoToCondition(d.weathercode[dayIdx]),
+      waveHeightFt: marine?.daily?.wave_height_max?.[dayIdx] != null
+        ? Math.round(marine.daily.wave_height_max[dayIdx] * 10) / 10
+        : null,
+      sunrise: fmtTime(d.sunrise?.[dayIdx] ?? null),
+      sunset: fmtTime(d.sunset?.[dayIdx] ?? null),
+      rainMorning: avgRain(6, 12),
+      rainAfternoon: avgRain(12, 18),
+      rainEvening: avgRain(18, 22),
+      rainOvernight: avgRain(22, 30),
+      hourly: dayHours,
+      sevenDay,
+      dewF,
+      humidity,
+      gustKt,
+      swellFt: marine?.daily?.swell_wave_height_max?.[dayIdx] != null
+        ? Math.round(marine.daily.swell_wave_height_max[dayIdx] * 10) / 10
+        : null,
+      swellDir: marine?.daily?.swell_wave_direction_dominant?.[dayIdx] != null
+        ? degToCompass(marine.daily.swell_wave_direction_dominant[dayIdx])
         : null,
     };
   } catch {
@@ -278,7 +371,7 @@ function PortAutocomplete({
         }}
         placeholder={placeholder}
         disabled={disabled}
-        autoComplete="off"
+        autoComplete="new-password"
         className={`w-full rounded-lg px-4 py-3 text-base focus:outline-none disabled:opacity-50 ${
           isSeaDay
             ? "bg-blue-500/10 border border-blue-400/20 text-blue-300 placeholder-blue-300/50 focus:border-blue-400/60"
@@ -308,15 +401,19 @@ function PortAutocomplete({
 // ============================================================
 function ForecastPopup({ data, onClose }: { data: PopupData; onClose: () => void }) {
   const phase = getMoonPhase(data.date);
+  const [showHourly, setShowHourly] = useState(false);
+  const [showFiveDay, setShowFiveDay] = useState(false);
+
+  const live = data.liveData;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-2 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-sm bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-md bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-white/5 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 bg-white/5 border-b border-white/10 flex-shrink-0">
           <div>
             <div className="flex items-center gap-2">
               {data.isSeaDay
@@ -331,92 +428,239 @@ function ForecastPopup({ data, onClose }: { data: PopupData; onClose: () => void
           </button>
         </div>
 
-        {/* Moon phase */}
-        <div className="px-5 py-2 bg-white/3 border-b border-white/10 flex items-center gap-2">
-          <span className="text-lg">{moonEmoji(phase)}</span>
-          <span className="text-white/60 text-sm">{phase}</span>
-        </div>
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1">
 
-        {/* Body */}
-        <div className="px-5 py-4">
-          {data.loading && (
-            <div className="text-white/50 text-sm text-center py-4">Loading forecast...</div>
-          )}
-
-          {!data.loading && isPastDate(data.date) && (
-            <div className="text-white/50 text-sm text-center py-4 italic">
-              This day has already occurred. No weather forecast available.
+          {/* Moon phase + sunrise/sunset row */}
+          <div className="px-5 py-3 bg-white/3 border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">{moonEmoji(phase)}</span>
+                <span className="text-white/70 text-sm font-semibold">{phase}</span>
+              </div>
+              {live && (live.sunrise || live.sunset) && (
+                <div className="flex items-center gap-3 text-xs text-white/50">
+                  {live.sunrise && <span>&#9728; {live.sunrise}</span>}
+                  {live.sunset && <span>&#9790; {live.sunset}</span>}
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {!data.loading && !isPastDate(data.date) && data.liveData && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                Live 16-Day Forecast
+          {/* Body */}
+          <div className="px-5 py-4 space-y-4">
+
+            {data.loading && (
+              <div className="text-white/50 text-sm text-center py-4">Loading forecast...</div>
+            )}
+
+            {!data.loading && isPastDate(data.date) && (
+              <div className="text-white/50 text-sm text-center py-4 italic">
+                This day has already occurred. No weather forecast available.
               </div>
-              <div className="flex items-center gap-3">
-                <SkyIcon condition={data.liveData.condition} className="w-8 h-8 text-amber-300" />
-                <div>
-                  <div className="text-white font-black text-2xl">{data.liveData.maxF}&deg; / {data.liveData.minF}&deg;F</div>
-                  <div className="text-white/60 text-sm">{data.liveData.condition}</div>
+            )}
+
+            {/* LIVE FORECAST */}
+            {!data.loading && !isPastDate(data.date) && live && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                  Live 16-Day Forecast
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="bg-white/5 rounded-lg px-3 py-2">
-                  <div className="text-white/50 text-xs">Wind</div>
-                  <div className="text-cyan-300 font-bold">{data.liveData.windKt} kt {data.liveData.windDir}</div>
+
+                {/* Condition + temp */}
+                <div className="flex items-center gap-3">
+                  <SkyIcon condition={live.condition} className="w-8 h-8 text-amber-300" />
+                  <div>
+                    <div className="text-white font-black text-2xl">{live.maxF}&deg; / {live.minF}&deg;F</div>
+                    <div className="text-white/60 text-sm">{live.condition}</div>
+                  </div>
                 </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2">
-                  <div className="text-white/50 text-xs">Rain Chance</div>
-                  <div className="text-blue-300 font-bold">{data.liveData.rainChance}%</div>
+
+                {/* Atmosphere */}
+                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Atmosphere</div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {live.dewF != null && (
+                    <div className="bg-white/5 rounded-lg px-3 py-2">
+                      <div className="text-white/50 text-xs">Dew Point</div>
+                      <div className="text-white font-bold">{live.dewF}&deg;F</div>
+                    </div>
+                  )}
+                  {live.humidity != null && (
+                    <div className="bg-white/5 rounded-lg px-3 py-2">
+                      <div className="text-white/50 text-xs">Humidity</div>
+                      <div className="text-white font-bold">{live.humidity}%</div>
+                    </div>
+                  )}
                 </div>
-                {data.liveData.waveHeightFt != null && (
-                  <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
-                    <div className="text-white/50 text-xs">Wave Height</div>
-                    <div className="text-orange-300 font-bold">{data.liveData.waveHeightFt} ft</div>
+
+                {/* Wind */}
+                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Wind</div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="text-white/50 text-xs">Direction</div>
+                    <div className="text-cyan-300 font-bold">{live.windDir}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="text-white/50 text-xs">Speed</div>
+                    <div className="text-cyan-300 font-bold">{live.windKt} kt</div>
+                  </div>
+                  {live.gustKt != null && (
+                    <div className="bg-white/5 rounded-lg px-3 py-2">
+                      <div className="text-white/50 text-xs">Gusts</div>
+                      <div className="text-cyan-300 font-bold">{live.gustKt} kt</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Marine */}
+                {(live.waveHeightFt != null || live.swellFt != null) && (
+                  <>
+                    <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Marine</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {live.waveHeightFt != null && (
+                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                          <div className="text-white/50 text-xs">Wave Height</div>
+                          <div className="text-orange-300 font-bold">{live.waveHeightFt} ft</div>
+                        </div>
+                      )}
+                      {live.swellFt != null && (
+                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                          <div className="text-white/50 text-xs">Swell</div>
+                          <div className="text-orange-300 font-bold">{live.swellFt} ft{live.swellDir ? ` from ${live.swellDir}` : ""}</div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Rain by time of day */}
+                {(live.rainMorning != null || live.rainAfternoon != null) && (
+                  <>
+                    <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Rain Chance by Period</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {live.rainMorning != null && (
+                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                          <div className="text-white/50 text-xs">Morning</div>
+                          <div className="text-blue-300 font-bold">{live.rainMorning}%</div>
+                        </div>
+                      )}
+                      {live.rainAfternoon != null && (
+                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                          <div className="text-white/50 text-xs">Afternoon</div>
+                          <div className="text-blue-300 font-bold">{live.rainAfternoon}%</div>
+                        </div>
+                      )}
+                      {live.rainEvening != null && (
+                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                          <div className="text-white/50 text-xs">Evening</div>
+                          <div className="text-blue-300 font-bold">{live.rainEvening}%</div>
+                        </div>
+                      )}
+                      {live.rainOvernight != null && (
+                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                          <div className="text-white/50 text-xs">Overnight</div>
+                          <div className="text-blue-300 font-bold">{live.rainOvernight}%</div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* 24-hour hourly forecast accordion */}
+                {live.hourly.length > 0 && (
+                  <div className="border border-white/10 rounded-xl overflow-hidden">
+                    <button
+                      className="w-full flex items-center justify-between px-4 py-3 text-cyan-300 font-semibold text-sm hover:bg-white/5 transition-colors"
+                      onClick={() => setShowHourly(h => !h)}
+                    >
+                      <span>24-Hour Forecast</span>
+                      <span className="text-white/40 text-xs">{showHourly ? "Hide" : "Show"}</span>
+                    </button>
+                    {showHourly && (
+                      <div className="border-t border-white/10 divide-y divide-white/5">
+                        {live.hourly.map((hr, i) => (
+                          <div key={i} className="flex items-center justify-between px-4 py-2 text-xs">
+                            <span className="text-white/50 w-16">{hr.time}</span>
+                            <span className="text-white font-semibold">{hr.tempF}&deg;F</span>
+                            <span className="text-cyan-300">{hr.windKt} kt</span>
+                            <span className="text-blue-300">{hr.rainChance}%</span>
+                            <span className="text-white/60 text-right">{hr.condition}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 5-day forecast accordion */}
+                {live.sevenDay.length > 0 && (
+                  <div className="border border-white/10 rounded-xl overflow-hidden">
+                    <button
+                      className="w-full flex items-center justify-between px-4 py-3 text-cyan-300 font-semibold text-sm hover:bg-white/5 transition-colors"
+                      onClick={() => setShowFiveDay(f => !f)}
+                    >
+                      <span>5-Day Forecast</span>
+                      <span className="text-white/40 text-xs">{showFiveDay ? "Hide" : "Show"}</span>
+                    </button>
+                    {showFiveDay && (
+                      <div className="border-t border-white/10 divide-y divide-white/5">
+                        {live.sevenDay.map((day, i) => (
+                          <div key={i} className={`flex items-center justify-between px-4 py-2 text-xs ${day.date === data.date ? "bg-cyan-400/10" : ""}`}>
+                            <span className={`w-20 font-semibold ${day.date === data.date ? "text-cyan-300" : "text-white/70"}`}>
+                              {formatDateDisplay(day.date)}
+                            </span>
+                            <span className="text-white">{day.maxF}&deg; / {day.minF}&deg;F</span>
+                            <span className="text-cyan-300">{day.windKt} kt {day.windDir}</span>
+                            <span className="text-blue-300">{day.rainChance}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
 
-          {!data.loading && !isPastDate(data.date) && !data.liveData && data.climateData && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                Climate Averages (beyond 16-day window)
+            {/* CLIMATE AVERAGES (beyond 16-day window) */}
+            {!data.loading && !isPastDate(data.date) && !live && data.climateData && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                  Climate Averages (beyond 16-day window)
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="text-white/50 text-xs">Avg High / Low</div>
+                    <div className="text-white font-bold">{data.climateData.hiF}&deg; / {data.climateData.loF}&deg;F</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="text-white/50 text-xs">Humidity</div>
+                    <div className="text-white font-bold">{data.climateData.hum}%</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="text-white/50 text-xs">Wind</div>
+                    <div className="text-cyan-300 font-bold">{data.climateData.windKt} kt {data.climateData.windDir}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="text-white/50 text-xs">Rain Chance</div>
+                    <div className="text-blue-300 font-bold">{data.climateData.rain}%</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
+                    <div className="text-white/50 text-xs">Avg Seas</div>
+                    <div className="text-orange-300 font-bold">{data.climateData.seaFt} ft</div>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="bg-white/5 rounded-lg px-3 py-2">
-                  <div className="text-white/50 text-xs">Avg High / Low</div>
-                  <div className="text-white font-bold">{data.climateData.hiF}&deg; / {data.climateData.loF}&deg;F</div>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2">
-                  <div className="text-white/50 text-xs">Humidity</div>
-                  <div className="text-white font-bold">{data.climateData.hum}%</div>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2">
-                  <div className="text-white/50 text-xs">Wind</div>
-                  <div className="text-cyan-300 font-bold">{data.climateData.windKt} kt {data.climateData.windDir}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2">
-                  <div className="text-white/50 text-xs">Rain Chance</div>
-                  <div className="text-blue-300 font-bold">{data.climateData.rain}%</div>
-                </div>
-                <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
-                  <div className="text-white/50 text-xs">Avg Seas</div>
-                  <div className="text-orange-300 font-bold">{data.climateData.seaFt} ft</div>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
 
-          {!data.loading && !isPastDate(data.date) && !data.liveData && !data.climateData && (
-            <div className="text-white/50 text-sm text-center py-4 italic">
-              No forecast data available for this location.
-            </div>
-          )}
+            {!data.loading && !isPastDate(data.date) && !live && !data.climateData && (
+              <div className="text-white/50 text-sm text-center py-4 italic">
+                No forecast data available for this location.
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     </div>
@@ -514,31 +758,49 @@ export default function RouteMap() {
 
     const latlngs: L.LatLngTuple[] = [];
 
+    // Group stops by location key (rounded to 3 decimal places) to detect same-port duplicates
+    const locationGroups = new Map<string, { stops: typeof validStops; indices: number[] }>();
+    validStops.forEach((stop, idx) => {
+      const key = `${stop.lat!.toFixed(3)},${stop.lon!.toFixed(3)}`;
+      if (!locationGroups.has(key)) locationGroups.set(key, { stops: [], indices: [] });
+      locationGroups.get(key)!.stops.push(stop);
+      locationGroups.get(key)!.indices.push(idx + 1);
+    });
+
     validStops.forEach((stop, idx) => {
       const lat = stop.lat!;
       const lon = stop.lon!;
       latlngs.push([lat, lon]);
 
+      const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+      const group = locationGroups.get(key)!;
+
+      // Only render one marker per unique location (skip duplicates)
+      if (group.indices[0] !== idx + 1) return;
+
       const color = stop.isSeaDay ? "#60a5fa" : "#22d3ee";
+      const label = group.indices.join(", ");
+      // Wider badge when showing multiple stop numbers
+      const badgeW = group.indices.length > 1 ? Math.max(36, label.length * 9 + 12) : 28;
       const icon = L.divIcon({
         className: "",
         html: `<div style="
           background:${color};
           border:2px solid white;
-          border-radius:50%;
-          width:28px;height:28px;
+          border-radius:${group.indices.length > 1 ? "14px" : "50%"};
+          width:${badgeW}px;height:28px;
           display:flex;align-items:center;justify-content:center;
-          font-weight:900;font-size:13px;color:#0f172a;
+          font-weight:900;font-size:12px;color:#0f172a;
           box-shadow:0 2px 8px rgba(0,0,0,0.5);
-          cursor:pointer;
-        ">${idx + 1}</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+          cursor:pointer;white-space:nowrap;padding:0 4px;
+        ">${label}</div>`,
+        iconSize: [badgeW, 28],
+        iconAnchor: [badgeW / 2, 14],
       });
 
       const marker = L.marker([lat, lon], { icon })
         .addTo(map)
-        .on("click", () => handleMarkerClick(stop));
+        .on("click", () => handleMarkerClick(group.stops[0]));
 
       markersRef.current.push(marker);
     });
