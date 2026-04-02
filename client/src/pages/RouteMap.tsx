@@ -30,60 +30,6 @@ interface PortStop {
   isSeaDay: boolean;
 }
 
-interface HourlySlot {
-  hour: number;
-  label: string;
-  tempF: number;
-  windKt: number;
-  windDir: string;
-  rainChance: number;
-  condition: string;
-  wmoCode: number;
-  humidity: number;
-  uvIndex: number;
-  cloudCover: number;
-  visibility: number;
-  seaState: string;
-}
-
-interface DayForecast {
-  date: string;
-  maxF: number;
-  minF: number;
-  windKt: number;
-  windDir: string;
-  rainChance: number;
-  condition: string;
-  waveHeightFt: number | null;
-  swellHeightFt: number | null;
-  swellDir: string | null;
-  swellPeriod: number | null;
-  humidity: number | null;
-  uvIndex: number | null;
-  cloudCover: number | null;
-  visibility: number | null;
-  seaState: string;
-}
-
-interface FullForecastData {
-  tempF: number;
-  windKt: number;
-  windDir: string;
-  condition: string;
-  hourlyToday: HourlySlot[];
-  forecast: DayForecast[];
-}
-
-interface PopupData {
-  portName: string;
-  dates: string[]; // Multiple dates if same port appears more than once
-  lat: number;
-  lon: number;
-  isSeaDay: boolean;
-  loading: boolean;
-  forecastData: FullForecastData | null;
-}
-
 interface ClimateMonth {
   m: number;
   hiF: number;
@@ -100,6 +46,28 @@ interface ClimateData {
   months: ClimateMonth[];
 }
 
+interface LiveForecastDay {
+  date: string;
+  maxF: number;
+  minF: number;
+  windKt: number;
+  windDir: string;
+  rainChance: number;
+  condition: string;
+  waveHeightFt: number | null;
+}
+
+interface PopupData {
+  portName: string;
+  date: string;
+  lat: number;
+  lon: number;
+  isSeaDay: boolean;
+  liveData: LiveForecastDay | null;
+  climateData: ClimateMonth | null;
+  loading: boolean;
+}
+
 // ============================================================
 // Helpers
 // ============================================================
@@ -109,45 +77,6 @@ function degToCompass(deg: number): string {
 }
 function msToKt(ms: number): number { return Math.round(ms * 1.94384); }
 function cToF(c: number): number { return Math.round(c * 9 / 5 + 32); }
-function ktToMph(kt: number): number { return Math.round(kt * 1.15078); }
-function fToCStr(f: number): string { return Math.round((f - 32) * 5 / 9) + "\u00b0C"; }
-function swellFtToM(ft: number | null): string | null {
-  if (ft == null) return null;
-  return (ft * 0.3048).toFixed(1) + "m";
-}
-
-function seaStateFromWind(ktSpeed: number): string {
-  if (ktSpeed <= 6) return "< 1 ft";
-  if (ktSpeed <= 10) return "1-2 ft";
-  if (ktSpeed <= 16) return "2-4 ft";
-  if (ktSpeed <= 21) return "4-6 ft";
-  if (ktSpeed <= 27) return "6-9 ft";
-  return "9+ ft";
-}
-
-function wmoToCondition(code: number): string {
-  if (code === 0) return "Clear";
-  if (code <= 2) return "Partly Cloudy";
-  if (code === 3) return "Overcast";
-  if (code <= 49) return "Fog";
-  if (code <= 59) return "Drizzle";
-  if (code <= 69) return "Rain";
-  if (code <= 79) return "Snow";
-  if (code <= 82) return "Rain Showers";
-  if (code <= 84) return "Heavy Showers";
-  if (code <= 99) return "Thunderstorm";
-  return "Unknown";
-}
-
-function SkyIcon({ condition, className }: { condition: string; className?: string }) {
-  const c = condition.toLowerCase();
-  if (c.includes("thunder")) return <CloudLightning className={className} />;
-  if (c.includes("rain") || c.includes("shower") || c.includes("drizzle")) return <CloudRain className={className} />;
-  if (c.includes("snow")) return <Snowflake className={className} />;
-  if (c.includes("fog")) return <Eye className={className} />;
-  if (c.includes("partly") || c.includes("overcast") || c.includes("cloudy")) return <Cloud className={className} />;
-  return <Sun className={className} />;
-}
 
 function generateId(): string {
   return Math.random().toString(36).slice(2, 9);
@@ -193,12 +122,14 @@ function moonEmoji(phase: string): string {
   return map[phase] ?? "\uD83C\uDF11";
 }
 
-function cloudCoverIcon(pct: number): string {
-  if (pct <= 10) return "\u2600\ufe0f";
-  if (pct <= 30) return "\uD83C\uDF24\uFE0F";
-  if (pct <= 60) return "\u26C5";
-  if (pct <= 85) return "\uD83C\uDF25\uFE0F";
-  return "\u2601\ufe0f";
+function isWithin16Days(dateStr: string): boolean {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const target = new Date(y, m - 1, d);
+  const diffDays = (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays >= 0 && diffDays <= 16;
 }
 
 function isPastDate(dateStr: string): boolean {
@@ -208,6 +139,30 @@ function isPastDate(dateStr: string): boolean {
   const [y, m, d] = dateStr.split("-").map(Number);
   const target = new Date(y, m - 1, d);
   return target < today;
+}
+
+function wmoToCondition(code: number): string {
+  if (code === 0) return "Clear";
+  if (code <= 2) return "Partly Cloudy";
+  if (code === 3) return "Overcast";
+  if (code <= 49) return "Fog";
+  if (code <= 59) return "Drizzle";
+  if (code <= 69) return "Rain";
+  if (code <= 79) return "Snow";
+  if (code <= 82) return "Rain Showers";
+  if (code <= 84) return "Heavy Showers";
+  if (code <= 99) return "Thunderstorm";
+  return "Unknown";
+}
+
+function SkyIcon({ condition, className }: { condition: string; className?: string }) {
+  const c = condition.toLowerCase();
+  if (c.includes("thunder")) return <CloudLightning className={className} />;
+  if (c.includes("rain") || c.includes("shower") || c.includes("drizzle")) return <CloudRain className={className} />;
+  if (c.includes("snow")) return <Snowflake className={className} />;
+  if (c.includes("fog")) return <Eye className={className} />;
+  if (c.includes("partly") || c.includes("overcast") || c.includes("cloudy")) return <Cloud className={className} />;
+  return <Sun className={className} />;
 }
 
 function normStr(s: string): string {
@@ -231,129 +186,46 @@ function resolvePort(q: string): typeof PORT_LIST[0] | null {
 }
 
 // ============================================================
-// Fetch full forecast data for a port (matching PortSearch pattern)
+// Live forecast fetch for a specific date
 // ============================================================
-async function fetchPortData(lat: number, lon: number): Promise<FullForecastData> {
-  const weatherUrl =
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode` +
-    `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability,relativehumidity_2m,uv_index,cloudcover,visibility` +
-    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode,uv_index_max,windspeed_10m_max,cloudcover_mean` +
-    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=8`;
+async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: string): Promise<LiveForecastDay | null> {
+  try {
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
+      `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16`;
+    const marineUrl =
+      `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
+      `&daily=wave_height_max&length_unit=imperial&timezone=auto&forecast_days=16`;
 
-  const marineUrl =
-    `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
-    `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
-    `&length_unit=imperial&timezone=auto&forecast_days=8`;
+    const [weatherRes, marineRes] = await Promise.allSettled([
+      fetch(url).then(r => r.json()),
+      fetch(marineUrl).then(r => r.json()),
+    ]);
 
-  const [weatherRes, marineRes] = await Promise.allSettled([
-    fetch(weatherUrl).then(r => r.json()),
-    fetch(marineUrl).then(r => r.json()),
-  ]);
+    const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
+    const marine = marineRes.status === "fulfilled" ? marineRes.value : null;
+    if (!weather || weather.error) return null;
 
-  const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
-  const marine  = marineRes.status  === "fulfilled" ? marineRes.value  : null;
+    const d = weather.daily;
+    const idx = (d.time as string[]).indexOf(dateStr);
+    if (idx === -1) return null;
 
-  if (!weather || weather.error) throw new Error("Weather fetch failed");
-
-  const c = weather.current;
-  const d = weather.daily;
-  const h = weather.hourly;
-  const md = marine?.daily ?? null;
-
-  const currentWindKt = msToKt(c.wind_speed_10m);
-
-  const apiTimezone: string = weather.timezone ?? "UTC";
-  const todayLocalDate = new Date().toLocaleDateString("en-CA", { timeZone: apiTimezone });
-
-  const TARGET_HOURS_TODAY = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
-  const labelMap: Record<number, string> = {
-    6:"6a",7:"7a",8:"8a",9:"9a",10:"10a",11:"11a",
-    12:"12p",13:"1p",14:"2p",15:"3p",16:"4p",17:"5p",18:"6p",19:"7p",
-    20:"8p",21:"9p",22:"10p"
-  };
-
-  const hourlySlots: HourlySlot[] = [];
-  const seenHours = new Set<number>();
-
-  if (h?.time) {
-    (h.time as string[]).forEach((isoTime: string, idx: number) => {
-      const datePart = isoTime.slice(0, 10);
-      const hourPart = parseInt(isoTime.slice(11, 13), 10);
-
-      let effectiveHour: number | null = null;
-
-      if (datePart === todayLocalDate && TARGET_HOURS_TODAY.includes(hourPart)) {
-        effectiveHour = hourPart;
-      }
-
-      if (effectiveHour === null) return;
-      if (seenHours.has(effectiveHour)) return;
-      seenHours.add(effectiveHour);
-
-      const tempF = cToF(h.temperature_2m[idx] ?? 20);
-      const wKt = msToKt(h.wind_speed_10m[idx] ?? 0);
-      const wDir = degToCompass(h.wind_direction_10m[idx] ?? 0);
-      const wmo = h.weathercode[idx] ?? 0;
-      const rain = h.precipitation_probability[idx] ?? 0;
-      const hum = h.relativehumidity_2m?.[idx] ?? 0;
-      const uv = h.uv_index?.[idx] ?? 0;
-      const cc = h.cloudcover?.[idx] ?? 0;
-      const vis = h.visibility?.[idx] ?? 0;
-      const visKm = Math.round(vis / 100) / 10;
-
-      hourlySlots.push({
-        hour: effectiveHour,
-        label: labelMap[effectiveHour] ?? `${effectiveHour}:00`,
-        tempF,
-        windKt: wKt,
-        windDir: wDir,
-        rainChance: rain,
-        condition: wmoToCondition(wmo),
-        wmoCode: wmo,
-        humidity: hum,
-        uvIndex: Math.round(uv * 10) / 10,
-        cloudCover: cc,
-        visibility: visKm,
-        seaState: seaStateFromWind(wKt),
-      });
-    });
-  }
-
-  hourlySlots.sort((a, b) => a.hour - b.hour);
-
-  const forecast: DayForecast[] = (d.time as string[]).slice(1, 8).map((dateStr: string, rawIdx: number) => {
-    const i = rawIdx + 1;
-    const wKt = msToKt(d.wind_speed_10m_max[i]);
-    const swellDeg = md?.swell_wave_direction_dominant?.[i];
     return {
       date: dateStr,
-      maxF: cToF(d.temperature_2m_max[i]),
-      minF: cToF(d.temperature_2m_min[i]),
-      windKt: wKt,
-      windDir: degToCompass(d.wind_direction_10m_dominant[i]),
-      rainChance: d.precipitation_probability_max[i] ?? 0,
-      condition: wmoToCondition(d.weathercode[i]),
-      waveHeightFt:  md?.wave_height_max?.[i]       != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
-      swellHeightFt: md?.swell_wave_height_max?.[i] != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
-      swellDir:      swellDeg != null ? degToCompass(swellDeg) : null,
-      swellPeriod:   md?.swell_wave_period_max?.[i] != null ? Math.round(md.swell_wave_period_max[i]) : null,
-      humidity: null,
-      uvIndex: d.uv_index_max?.[i] != null ? Math.round(d.uv_index_max[i] * 10) / 10 : null,
-      cloudCover: d.cloudcover_mean?.[i] != null ? Math.round(d.cloudcover_mean[i]) : null,
-      visibility: null,
-      seaState: seaStateFromWind(wKt),
+      maxF: cToF(d.temperature_2m_max[idx]),
+      minF: cToF(d.temperature_2m_min[idx]),
+      windKt: msToKt(d.wind_speed_10m_max[idx]),
+      windDir: degToCompass(d.wind_direction_10m_dominant[idx]),
+      rainChance: d.precipitation_probability_max[idx] ?? 0,
+      condition: wmoToCondition(d.weathercode[idx]),
+      waveHeightFt: marine?.daily?.wave_height_max?.[idx] != null
+        ? Math.round(marine.daily.wave_height_max[idx] * 10) / 10
+        : null,
     };
-  });
-
-  return {
-    tempF: cToF(c.temperature_2m),
-    windKt: currentWindKt,
-    windDir: degToCompass(c.wind_direction_10m),
-    condition: wmoToCondition(c.weathercode),
-    hourlyToday: hourlySlots,
-    forecast,
-  };
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================
@@ -401,7 +273,7 @@ function PortAutocomplete({
         value={value}
         onChange={e => onChange(e.target.value)}
         onFocus={() => {
-          if (isSeaDay) return;
+          if (isSeaDay) return; // let the onChange handler clear Sea Day first
           if (value.length >= 2 && suggestions.length > 0) setOpen(true);
         }}
         placeholder={placeholder}
@@ -432,112 +304,15 @@ function PortAutocomplete({
 }
 
 // ============================================================
-// Hourly forecast panel
-// ============================================================
-function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: boolean }) {
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-2 px-1">
-      {slots.map((slot, idx) => (
-        <div
-          key={idx}
-          className="flex-shrink-0 w-20 bg-white/5 border border-white/10 rounded-xl p-2.5 text-center"
-        >
-          <p className="text-white/50 text-xs font-bold mb-1.5">{slot.label}</p>
-          <p className="text-white font-black text-lg mb-1">{isMetric ? fToCStr(slot.tempF) : `${slot.tempF}\u00b0`}</p>
-          <SkyIcon condition={slot.condition} className="w-5 h-5 text-amber-300 mx-auto mb-1" />
-          <p className="text-white/70 text-xs font-bold mb-0.5">{slot.windKt} kt {slot.windDir}</p>
-          <p className="text-blue-300 text-xs font-bold mb-0.5">{slot.rainChance}%</p>
-          <p className="text-white/50 text-xs font-bold">{cloudCoverIcon(slot.cloudCover)} {slot.cloudCover}%</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ============================================================
-// 7-day forecast panel
-// ============================================================
-function SevenDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: boolean }) {
-  const hasWave = days.some(d => d.swellHeightFt != null);
-
-  return (
-    <div className="space-y-2">
-      {days.map((day, idx) => {
-        const dt = new Date(day.date + "T12:00:00");
-        const dayName = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dt.getDay()];
-        const monthDay = `${dt.getMonth() + 1}/${dt.getDate()}`;
-
-        return (
-          <div key={idx} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-3">
-            <div className="w-16 flex-shrink-0">
-              <p className="text-white font-bold text-sm">{dayName}</p>
-              <p className="text-white/50 text-xs">{monthDay}</p>
-            </div>
-            <div className="flex-1 grid grid-cols-6 gap-2 items-center text-center">
-              <div>
-                <SkyIcon condition={day.condition} className="w-5 h-5 text-amber-300 mx-auto mb-0.5" />
-                <p className="text-white/70 text-xs">{day.condition.split(" ")[0]}</p>
-              </div>
-              <div>
-                <p className="text-white font-black text-sm">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
-                <p className="text-white/50 text-xs">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
-              </div>
-              <div>
-                <p className="text-cyan-300 text-xs font-bold">{day.windKt} kt</p>
-                <p className="text-cyan-400/70 text-xs font-bold">{day.windDir}</p>
-              </div>
-              <div>
-                <p className="text-blue-300 text-xs font-bold">{day.rainChance}%</p>
-                <p className="text-white/50 text-xs">{cloudCoverIcon(day.cloudCover ?? 0)}</p>
-              </div>
-              <div>
-                <p className="text-orange-300 text-xs font-bold">{day.seaState}</p>
-              </div>
-              <div>
-                {day.swellHeightFt != null && (
-                  <>
-                    <p className="text-teal-300 text-xs font-bold">
-                      {isMetric ? swellFtToM(day.swellHeightFt) : `${day.swellHeightFt}ft`}
-                    </p>
-                    {day.swellDir && <p className="text-teal-400/70 text-xs font-bold">{day.swellDir}</p>}
-                    {day.swellPeriod && <p className="text-white/50 text-xs font-bold">{day.swellPeriod}s</p>}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-      {hasWave && (
-        <div className="flex gap-4 text-xs font-bold px-2">
-          <span className="text-orange-300">orange = wind-wave estimate</span>
-          <span className="text-teal-300">teal = swell height (marine API)</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================
 // Forecast popup card
 // ============================================================
-function ForecastPopup({ data, climateDb, onClose }: { data: PopupData; climateDb: Record<string, ClimateData>; onClose: () => void }) {
-  const [isMetric, setIsMetric] = useState(false);
-  const [hourlyOpen, setHourlyOpen] = useState(false);
-  const [sevenDayOpen, setSevenDayOpen] = useState(false);
-
-  const firstDate = data.dates[0] ?? "";
-  const phase = getMoonPhase(firstDate);
-
-  const climateEntry = climateDb[data.portName];
-  const climateMonth = climateEntry && firstDate
-    ? climateEntry.months.find(m => m.m === new Date(firstDate + "T12:00:00").getMonth() + 1)
-    : null;
+function ForecastPopup({ data, onClose }: { data: PopupData; onClose: () => void }) {
+  const phase = getMoonPhase(data.date);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-sm bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -549,132 +324,95 @@ function ForecastPopup({ data, climateDb, onClose }: { data: PopupData; climateD
                 : <MapPin className="w-4 h-4 text-cyan-400" />}
               <span className="text-white font-bold text-lg">{data.portName}</span>
             </div>
-            <div className="text-white/50 text-sm mt-0.5">
-              {data.dates.map(formatDateDisplay).join(", ")}
-            </div>
+            <div className="text-white/50 text-sm mt-0.5">{formatDateDisplay(data.date)}</div>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Unit toggle */}
-        <div className="px-5 py-2 bg-white/3 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{moonEmoji(phase)}</span>
-            <span className="text-white/60 text-sm">{phase}</span>
-          </div>
-          <button
-            onClick={() => setIsMetric(!isMetric)}
-            className="text-xs font-bold text-white/60 hover:text-white border border-white/20 rounded px-2 py-1"
-          >
-            {isMetric ? "Metric" : "US Standard"}
-          </button>
+        {/* Moon phase */}
+        <div className="px-5 py-2 bg-white/3 border-b border-white/10 flex items-center gap-2">
+          <span className="text-lg">{moonEmoji(phase)}</span>
+          <span className="text-white/60 text-sm">{phase}</span>
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-5 py-4">
           {data.loading && (
             <div className="text-white/50 text-sm text-center py-4">Loading forecast...</div>
           )}
 
-          {!data.loading && isPastDate(firstDate) && (
+          {!data.loading && isPastDate(data.date) && (
             <div className="text-white/50 text-sm text-center py-4 italic">
               This day has already occurred. No weather forecast available.
             </div>
           )}
 
-          {!data.loading && !isPastDate(firstDate) && data.forecastData && (
-            <>
-              {/* Current conditions summary */}
+          {!data.loading && !isPastDate(data.date) && data.liveData && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                Live 16-Day Forecast
+              </div>
               <div className="flex items-center gap-3">
-                <SkyIcon condition={data.forecastData.condition} className="w-10 h-10 text-amber-300" />
+                <SkyIcon condition={data.liveData.condition} className="w-8 h-8 text-amber-300" />
                 <div>
-                  <div className="text-white font-black text-3xl">
-                    {isMetric ? fToCStr(data.forecastData.tempF) : `${data.forecastData.tempF}\u00b0F`}
+                  <div className="text-white font-black text-2xl">{data.liveData.maxF}&deg; / {data.liveData.minF}&deg;F</div>
+                  <div className="text-white/60 text-sm">{data.liveData.condition}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-white/5 rounded-lg px-3 py-2">
+                  <div className="text-white/50 text-xs">Wind</div>
+                  <div className="text-cyan-300 font-bold">{data.liveData.windKt} kt {data.liveData.windDir}</div>
+                </div>
+                <div className="bg-white/5 rounded-lg px-3 py-2">
+                  <div className="text-white/50 text-xs">Rain Chance</div>
+                  <div className="text-blue-300 font-bold">{data.liveData.rainChance}%</div>
+                </div>
+                {data.liveData.waveHeightFt != null && (
+                  <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
+                    <div className="text-white/50 text-xs">Wave Height</div>
+                    <div className="text-orange-300 font-bold">{data.liveData.waveHeightFt} ft</div>
                   </div>
-                  <div className="text-white/60 text-sm">{data.forecastData.condition}</div>
-                </div>
+                )}
               </div>
-
-              {/* Wind */}
-              <div className="bg-white/5 rounded-lg px-3 py-2">
-                <div className="text-white/50 text-xs">Wind</div>
-                <div className="text-cyan-300 font-bold">
-                  {isMetric ? Math.round(data.forecastData.windKt * 1.852) : data.forecastData.windKt} {isMetric ? "km/h" : "kt"} {data.forecastData.windDir}
-                </div>
-              </div>
-
-              {/* Hourly forecast accordion */}
-              {data.forecastData.hourlyToday.length > 0 && (
-                <div className="border border-white/10 rounded-xl overflow-hidden">
-                  <button
-                    onClick={() => setHourlyOpen(!hourlyOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
-                  >
-                    <span className="text-white font-bold text-sm">12-Hour Forecast</span>
-                    {hourlyOpen ? <ChevronUp className="w-4 h-4 text-white/60" /> : <ChevronDown className="w-4 h-4 text-white/60" />}
-                  </button>
-                  {hourlyOpen && (
-                    <div className="p-3 bg-white/3">
-                      <HourlyForecast slots={data.forecastData.hourlyToday} isMetric={isMetric} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 7-day forecast accordion */}
-              {data.forecastData.forecast.length > 0 && (
-                <div className="border border-white/10 rounded-xl overflow-hidden">
-                  <button
-                    onClick={() => setSevenDayOpen(!sevenDayOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
-                  >
-                    <span className="text-white font-bold text-sm">7-Day Forecast</span>
-                    {sevenDayOpen ? <ChevronUp className="w-4 h-4 text-white/60" /> : <ChevronDown className="w-4 h-4 text-white/60" />}
-                  </button>
-                  {sevenDayOpen && (
-                    <div className="p-3 bg-white/3">
-                      <SevenDayForecast days={data.forecastData.forecast} isMetric={isMetric} />
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+            </div>
           )}
 
-          {!data.loading && !isPastDate(firstDate) && !data.forecastData && climateMonth && (
+          {!data.loading && !isPastDate(data.date) && !data.liveData && data.climateData && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                Climate Averages
+                Climate Averages (beyond 16-day window)
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="bg-white/5 rounded-lg px-3 py-2">
                   <div className="text-white/50 text-xs">Avg High / Low</div>
-                  <div className="text-white font-bold">{climateMonth.hiF}&deg; / {climateMonth.loF}&deg;F</div>
+                  <div className="text-white font-bold">{data.climateData.hiF}&deg; / {data.climateData.loF}&deg;F</div>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2">
                   <div className="text-white/50 text-xs">Humidity</div>
-                  <div className="text-white font-bold">{climateMonth.hum}%</div>
+                  <div className="text-white font-bold">{data.climateData.hum}%</div>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2">
                   <div className="text-white/50 text-xs">Wind</div>
-                  <div className="text-cyan-300 font-bold">{climateMonth.windKt} kt {climateMonth.windDir}</div>
+                  <div className="text-cyan-300 font-bold">{data.climateData.windKt} kt {data.climateData.windDir}</div>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2">
                   <div className="text-white/50 text-xs">Rain Chance</div>
-                  <div className="text-blue-300 font-bold">{climateMonth.rain}%</div>
+                  <div className="text-blue-300 font-bold">{data.climateData.rain}%</div>
                 </div>
                 <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
                   <div className="text-white/50 text-xs">Avg Seas</div>
-                  <div className="text-orange-300 font-bold">{climateMonth.seaFt} ft</div>
+                  <div className="text-orange-300 font-bold">{data.climateData.seaFt} ft</div>
                 </div>
               </div>
             </div>
           )}
 
-          {!data.loading && !isPastDate(firstDate) && !data.forecastData && !climateMonth && (
+          {!data.loading && !isPastDate(data.date) && !data.liveData && !data.climateData && (
             <div className="text-white/50 text-sm text-center py-4 italic">
               No forecast data available for this location.
             </div>
@@ -724,6 +462,7 @@ export default function RouteMap() {
         }
       } catch {}
     } else {
+      // Load from localStorage
       const saved = localStorage.getItem("routeMapItinerary");
       if (saved) {
         try {
@@ -737,7 +476,7 @@ export default function RouteMap() {
   // Initialize map after plotted
   useEffect(() => {
     if (!plotted || !mapContainerRef.current) return;
-    if (mapRef.current) return;
+    if (mapRef.current) return; // already initialized
 
     const map = L.map(mapContainerRef.current, {
       center: [25, -75],
@@ -748,7 +487,7 @@ export default function RouteMap() {
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
-        attribution: "Tiles &copy; Esri",
+        attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
         maxZoom: 18,
       }
     ).addTo(map);
@@ -765,72 +504,88 @@ export default function RouteMap() {
   }, [stops, plotted]);
 
   const renderMapMarkers = useCallback((map: L.Map) => {
+    // Clear old markers and polyline
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
     if (polylineRef.current) { polylineRef.current.remove(); polylineRef.current = null; }
 
-    const validStops = stops.filter(s => s.lat != null && s.lon != null && s.date);
+    const validStops = stops.filter(s => s.lat != null && s.lon != null);
     if (validStops.length === 0) return;
 
-    // Group stops by port name to create combined markers
-    const portGroups: Record<string, { lat: number; lon: number; dates: string[]; stopNumbers: number[]; isSeaDay: boolean }> = {};
-    validStops.forEach((s, idx) => {
-      const key = s.portName;
-      if (!portGroups[key]) {
-        portGroups[key] = { lat: s.lat!, lon: s.lon!, dates: [], stopNumbers: [], isSeaDay: s.isSeaDay };
-      }
-      portGroups[key].dates.push(s.date);
-      portGroups[key].stopNumbers.push(idx + 1);
-    });
+    const latlngs: L.LatLngTuple[] = [];
 
-    Object.entries(portGroups).forEach(([portName, group]) => {
+    validStops.forEach((stop, idx) => {
+      const lat = stop.lat!;
+      const lon = stop.lon!;
+      latlngs.push([lat, lon]);
+
+      const color = stop.isSeaDay ? "#60a5fa" : "#22d3ee";
       const icon = L.divIcon({
-        html: `<div style="background:${group.isSeaDay ? "#3b82f6" : "#06b6d4"}; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; border:2px solid white;">${group.stopNumbers.join(", ")}</div>`,
         className: "",
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        html: `<div style="
+          background:${color};
+          border:2px solid white;
+          border-radius:50%;
+          width:28px;height:28px;
+          display:flex;align-items:center;justify-content:center;
+          font-weight:900;font-size:13px;color:#0f172a;
+          box-shadow:0 2px 8px rgba(0,0,0,0.5);
+          cursor:pointer;
+        ">${idx + 1}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
       });
 
-      const marker = L.marker([group.lat, group.lon], { icon }).addTo(map);
-      marker.on("click", () => handleMarkerClick(portName, group.lat, group.lon, group.dates, group.isSeaDay));
+      const marker = L.marker([lat, lon], { icon })
+        .addTo(map)
+        .on("click", () => handleMarkerClick(stop));
+
       markersRef.current.push(marker);
     });
 
-    const coords: [number, number][] = validStops.map(s => [s.lat!, s.lon!]);
-    const polyline = L.polyline(coords, {
-      color: "#06b6d4",
-      weight: 2,
-      opacity: 0.7,
-      dashArray: "5, 10",
-    }).addTo(map);
-    polylineRef.current = polyline;
+    // Draw route line
+    if (latlngs.length > 1) {
+      polylineRef.current = L.polyline(latlngs, {
+        color: "#22d3ee",
+        weight: 2.5,
+        opacity: 0.7,
+        dashArray: "6 4",
+      }).addTo(map);
+    }
 
-    map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+    // Fit map to bounds
+    if (latlngs.length === 1) {
+      map.setView(latlngs[0], 7);
+    } else {
+      map.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+    }
   }, [stops]);
 
-  const handleMarkerClick = async (portName: string, lat: number, lon: number, dates: string[], isSeaDay: boolean) => {
+  const handleMarkerClick = useCallback(async (stop: PortStop) => {
+    if (!stop.lat || !stop.lon || !stop.date) return;
+
+    const month = parseInt(stop.date.split("-")[1], 10);
+    const climateEntry = climateDb[stop.portName];
+    const climateMonth = climateEntry?.months?.find(m => m.m === month) ?? null;
+
     setPopup({
-      portName,
-      dates,
-      lat,
-      lon,
-      isSeaDay,
-      loading: true,
-      forecastData: null,
+      portName: stop.portName,
+      date: stop.date,
+      lat: stop.lat,
+      lon: stop.lon,
+      isSeaDay: stop.isSeaDay,
+      liveData: null,
+      climateData: climateMonth,
+      loading: isWithin16Days(stop.date) && !isPastDate(stop.date),
     });
 
-    try {
-      const data = await fetchPortData(lat, lon);
-      setPopup(prev => prev ? { ...prev, loading: false, forecastData: data } : null);
-    } catch {
-      setPopup(prev => prev ? { ...prev, loading: false } : null);
+    if (isWithin16Days(stop.date) && !isPastDate(stop.date)) {
+      const live = await fetchLiveForecastForDate(stop.lat, stop.lon, stop.date);
+      setPopup(prev => prev ? { ...prev, liveData: live, loading: false } : null);
     }
-  };
+  }, [climateDb]);
 
-  const updateStop = (id: string, updates: Partial<PortStop>) => {
-    setStops(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
-  };
-
+  // ---- Stop management ----
   const addStop = () => {
     setStops(prev => [...prev, { id: generateId(), portName: "", lat: null, lon: null, date: "", isSeaDay: false }]);
   };
@@ -839,14 +594,27 @@ export default function RouteMap() {
     setStops(prev => prev.filter(s => s.id !== id));
   };
 
+  const updateStop = (id: string, patch: Partial<PortStop>) => {
+    setStops(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+  };
+
   const handlePortChange = (id: string, val: string) => {
-    updateStop(id, { portName: val });
+    const port = resolvePort(val);
+    updateStop(id, {
+      portName: val,
+      lat: port?.lat ?? null,
+      lon: port?.lon ?? null,
+    });
+  };
+
+  const handlePortBlur = (id: string, val: string) => {
     const port = resolvePort(val);
     if (port) updateStop(id, { portName: port.name, lat: port.lat, lon: port.lon });
   };
 
   const handleDateChange = (id: string, date: string) => {
     updateStop(id, { date });
+    // Auto-sort chronologically after a short delay
     setTimeout(() => {
       setStops(prev => {
         const withDates = prev.filter(s => s.date);
@@ -858,13 +626,9 @@ export default function RouteMap() {
   };
 
   const handlePlot = () => {
-    console.log('handlePlot called, stops:', stops);
     const valid = stops.filter(s => s.portName.trim() && s.date);
-    console.log('valid stops:', valid, 'length:', valid.length);
-    if (valid.length < 1) {
-      console.log('Validation failed: no valid stops');
-      return;
-    }
+    if (valid.length < 1) return;
+    // Resolve any unresolved ports
     const resolved = stops.map(s => {
       if (!s.lat && s.portName) {
         const p = resolvePort(s.portName);
@@ -910,6 +674,7 @@ export default function RouteMap() {
     return (
       <div className="min-h-screen bg-slate-950 text-white">
         <div className="max-w-xl mx-auto px-4 py-8">
+          {/* Header */}
           <div className="mb-8">
             <a href="/" className="flex items-center gap-2 text-white/50 hover:text-white text-sm mb-6 no-underline">
               <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -926,9 +691,11 @@ export default function RouteMap() {
             </p>
           </div>
 
+          {/* Stops */}
           <div className="space-y-4">
             {stops.map((stop, idx) => (
               <div key={stop.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+                {/* Stop header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-7 h-7 rounded-full bg-cyan-400/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-black text-sm">
@@ -939,6 +706,7 @@ export default function RouteMap() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Sea day toggle */}
                     <button
                       onClick={() => updateStop(stop.id, { isSeaDay: !stop.isSeaDay, portName: stop.isSeaDay ? "" : "Sea Day", lat: null, lon: null })}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
@@ -958,9 +726,11 @@ export default function RouteMap() {
                   </div>
                 </div>
 
+                {/* Port input -- always editable; typing while Sea Day is active clears it */}
                 <PortAutocomplete
                   value={stop.isSeaDay ? "Sea Day" : stop.portName}
                   onChange={val => {
+                    // If Sea Day is active and user starts typing something other than "Sea Day", clear it
                     if (stop.isSeaDay) {
                       const typed = val.replace(/^Sea Day/i, "").trim();
                       if (typed.length > 0) {
@@ -976,6 +746,7 @@ export default function RouteMap() {
                   isSeaDay={stop.isSeaDay}
                 />
 
+                {/* Date input -- blurs on change to dismiss native calendar picker */}
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
                   <input
@@ -993,6 +764,7 @@ export default function RouteMap() {
             ))}
           </div>
 
+          {/* Add stop button */}
           <button
             onClick={addStop}
             className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors text-sm font-semibold"
@@ -1000,6 +772,7 @@ export default function RouteMap() {
             <Plus className="w-4 h-4" /> Add Another Port
           </button>
 
+          {/* Plot button */}
           <button
             onClick={handlePlot}
             disabled={!stops.some(s => s.portName.trim() && s.date)}
@@ -1015,6 +788,7 @@ export default function RouteMap() {
   // ---- Render: map view ----
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+      {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-white/10 backdrop-blur-sm z-10 flex-shrink-0">
         <button
           onClick={handleBack}
@@ -1043,9 +817,38 @@ export default function RouteMap() {
         </div>
       </div>
 
-      <div ref={mapContainerRef} className="flex-1 w-full" />
+      {/* Map */}
+      <div ref={mapContainerRef} className="flex-1" style={{ minHeight: "60vh" }} />
 
-      {popup && <ForecastPopup data={popup} climateDb={climateDb} onClose={() => setPopup(null)} />}
+      {/* Itinerary strip below map */}
+      <div className="bg-slate-900/95 border-t border-white/10 px-4 py-3 flex-shrink-0">
+        <div className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Tap a marker to see the forecast</div>
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {stops.filter(s => s.portName).map((stop, idx) => (
+            <button
+              key={stop.id}
+              onClick={() => handleMarkerClick(stop)}
+              className="flex-shrink-0 flex flex-col items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 min-w-[90px] transition-colors"
+            >
+              <span className="w-6 h-6 rounded-full bg-cyan-400/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-black text-xs">
+                {idx + 1}
+              </span>
+              {stop.isSeaDay
+                ? <Anchor className="w-3.5 h-3.5 text-blue-400" />
+                : <MapPin className="w-3.5 h-3.5 text-cyan-400" />}
+              <span className="text-white text-xs font-semibold text-center leading-tight max-w-[80px] truncate">{stop.portName}</span>
+              {stop.date && (
+                <span className="text-white/40 text-[10px] text-center">
+                  {formatDateDisplay(stop.date)}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Forecast popup */}
+      {popup && <ForecastPopup data={popup} onClose={() => setPopup(null)} />}
     </div>
   );
 }
