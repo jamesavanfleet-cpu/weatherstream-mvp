@@ -236,11 +236,13 @@ function PortAutocomplete({
   onChange,
   placeholder,
   disabled,
+  isSeaDay,
 }: {
   value: string;
   onChange: (val: string) => void;
   placeholder: string;
   disabled?: boolean;
+  isSeaDay?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<typeof PORT_LIST>([]);
   const [open, setOpen] = useState(false);
@@ -270,10 +272,17 @@ function PortAutocomplete({
         type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
-        onFocus={() => value.length >= 2 && suggestions.length > 0 && setOpen(true)}
+        onFocus={() => {
+          if (isSeaDay) return; // let the onChange handler clear Sea Day first
+          if (value.length >= 2 && suggestions.length > 0) setOpen(true);
+        }}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 text-base focus:outline-none focus:border-cyan-400/60 disabled:opacity-50"
+        className={`w-full rounded-lg px-4 py-3 text-base focus:outline-none disabled:opacity-50 ${
+          isSeaDay
+            ? "bg-blue-500/10 border border-blue-400/20 text-blue-300 placeholder-blue-300/50 focus:border-blue-400/60"
+            : "bg-white/10 border border-white/20 text-white placeholder-white/40 focus:border-cyan-400/60"
+        }`}
       />
       {open && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-800 border border-white/20 rounded-lg shadow-xl max-h-56 overflow-y-auto">
@@ -716,28 +725,36 @@ export default function RouteMap() {
                   </div>
                 </div>
 
-                {/* Port input */}
-                {!stop.isSeaDay && (
-                  <PortAutocomplete
-                    value={stop.portName}
-                    onChange={val => handlePortChange(stop.id, val)}
-                    placeholder="Type a port name..."
-                  />
-                )}
-                {stop.isSeaDay && (
-                  <div className="flex items-center gap-2 px-4 py-3 bg-blue-500/10 border border-blue-400/20 rounded-lg">
-                    <Anchor className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-300 text-sm font-semibold">Sea Day</span>
-                  </div>
-                )}
+                {/* Port input -- always editable; typing while Sea Day is active clears it */}
+                <PortAutocomplete
+                  value={stop.isSeaDay ? "Sea Day" : stop.portName}
+                  onChange={val => {
+                    // If Sea Day is active and user starts typing something other than "Sea Day", clear it
+                    if (stop.isSeaDay) {
+                      const typed = val.replace(/^Sea Day/i, "").trim();
+                      if (typed.length > 0) {
+                        updateStop(stop.id, { isSeaDay: false, portName: typed, lat: null, lon: null });
+                      } else if (val === "") {
+                        updateStop(stop.id, { isSeaDay: false, portName: "", lat: null, lon: null });
+                      }
+                    } else {
+                      handlePortChange(stop.id, val);
+                    }
+                  }}
+                  placeholder={stop.isSeaDay ? "Sea Day -- type to override" : "Type a port name..."}
+                  isSeaDay={stop.isSeaDay}
+                />
 
-                {/* Date input */}
+                {/* Date input -- blurs on change to dismiss native calendar picker */}
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
                   <input
                     type="date"
                     value={stop.date}
-                    onChange={e => handleDateChange(stop.id, e.target.value)}
+                    onChange={e => {
+                      handleDateChange(stop.id, e.target.value);
+                      (e.target as HTMLInputElement).blur();
+                    }}
                     className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-base focus:outline-none focus:border-cyan-400/60"
                     style={{ colorScheme: "dark" }}
                   />
