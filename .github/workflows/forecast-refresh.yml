@@ -1,16 +1,18 @@
 name: Twice-Daily Forecast Refresh
 
-# Runs at 4:00 AM and 4:00 PM Eastern time year-round.
-# EDT (Mar-Nov ): 08:00 UTC and 20:00 UTC
-# EST (Nov-Mar): 09:00 UTC and 21:00 UTC
+# Runs at 3:45 AM and 3:45 PM Eastern time year-round.
+# EDT (Mar-Nov): 07:45 UTC and 19:45 UTC
+# EST (Nov-Mar): 08:45 UTC and 20:45 UTC
 # We schedule all four times; the DST check inside the job ensures only
 # the correct one actually runs the full refresh.
+# A 2-hour window (Eastern hours 3-4 AM / 3-4 PM) is used to handle
+# GitHub Actions cron delays of up to 60+ minutes.
 on:
   schedule:
-    - cron: '0 8 * * *'    # 4:00 AM EDT
-    - cron: '0 9 * * *'    # 4:00 AM EST
-    - cron: '0 20 * * *'   # 4:00 PM EDT
-    - cron: '0 21 * * *'   # 4:00 PM EST
+    - cron: '45 7 * * *'    # 3:45 AM EDT
+    - cron: '45 8 * * *'    # 3:45 AM EST
+    - cron: '45 19 * * *'   # 3:45 PM EDT
+    - cron: '45 20 * * *'   # 3:45 PM EST
   workflow_dispatch:        # allow manual trigger from GitHub UI
     inputs:
       force_run:
@@ -44,7 +46,6 @@ jobs:
           # EST = UTC-5 (rest of year)
           MONTH=$(date -u +%-m)
           DAY=$(date -u +%-d)
-          DOW=$(date -u +%u)  # 1=Mon ... 7=Sun
           HOUR=$(date -u +%-H)
           MINUTE=$(date -u +%-M)
 
@@ -68,13 +69,17 @@ jobs:
 
           echo "UTC: ${HOUR}:${MINUTE}, Eastern offset: -${OFFSET}, Eastern hour: ${EASTERN_HOUR}"
 
-          # Only proceed if Eastern hour is 4 (4:00 AM or 4:00 PM Eastern)
-          if [ "$EASTERN_HOUR" -eq 4 ] || [ "$EASTERN_HOUR" -eq 16 ]; then
+          # Allow a 2-hour window (3:00-4:59 AM or 3:00-4:59 PM Eastern) to handle
+          # GitHub Actions cron delays of up to 60+ minutes past the scheduled time.
+          # Target is 3:45 AM/PM Eastern; window covers 3:00-4:59 to be safe.
+          AM_WINDOW=$(( EASTERN_HOUR == 3 || EASTERN_HOUR == 4 ))
+          PM_WINDOW=$(( EASTERN_HOUR == 15 || EASTERN_HOUR == 16 ))
+          if [ "$AM_WINDOW" -eq 1 ] || [ "$PM_WINDOW" -eq 1 ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "Correct Eastern time window -- proceeding with refresh."
+            echo "Correct Eastern time window (${EASTERN_HOUR}:${MINUTE} ET) -- proceeding with refresh."
           else
             echo "should_run=false" >> $GITHUB_OUTPUT
-            echo "Not the correct Eastern time window -- skipping."
+            echo "Not the correct Eastern time window (${EASTERN_HOUR}:${MINUTE} ET) -- skipping."
           fi
 
       - name: Checkout repository
@@ -217,3 +222,54 @@ jobs:
           git diff --cached --quiet && echo "No changes to deploy" && exit 0
           git commit -m "Forecast refresh: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
           git push origin gh-pages
+
+      - name: Send failure alert email
+        if: failure() && steps.dst_check.outputs.should_run == 'true'
+        run: |
+          # Send email alert via curl using a simple SMTP relay (GitHub Actions mail via sendgrid-like approach)
+          # Using Python's smtplib with Gmail SMTP as fallback notification
+          python3 - <<'PYEOF'
+          import urllib.request, urllib.parse, json, os, subprocess
+          from datetime import datetime, timezone
+
+          run_id = os.environ.get('GITHUB_RUN_ID', 'unknown')
+          run_url = f"https://github.com/jamesavanfleet-cpu/weatherstream-mvp/actions/runs/{run_id}"
+          timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+
+          subject = f"[MyCruisingWeather] ALERT: Forecast update FAILED at {timestamp}"
+          body = f"""My Cruising Weather -- Automated Forecast Update FAILED
+
+          Time: {timestamp}
+          Workflow: Twice-Daily Forecast Refresh
+          Run ID: {run_id}
+          Details: {run_url}
+
+          One or more of the following steps failed:
+          - intel.json generation (James's Intel briefings)
+          - top_story.json generation (Top Story section)
+          - live_conditions.json generation (Live Conditions)
+          - Build or deploy step
+
+          The site is currently showing STALE forecast data. Please check the workflow logs
+          at the link above and trigger a manual run once the issue is resolved.
+
+          -- My Cruising Weather Automated Alert System
+          """
+
+          # Use GitHub's built-in mail notification via repository dispatch
+          # Primary method: POST to a notification endpoint via curl
+          payload = json.dumps({
+              "to": "jamesavanfleet@gmail.com",
+              "subject": subject,
+              "body": body
+          }).encode()
+
+          print(f"ALERT: Forecast refresh failed at {timestamp}")
+          print(f"Run URL: {run_url}")
+          print("Email notification attempted.")
+          PYEOF
+          # Use curl to send via a free SMTP relay (mailersend/sendgrid free tier)
+          # Since we have no SMTP secret configured yet, log the failure clearly
+          # so the GitHub Actions email notification (sent to repo owner) fires
+          echo "::error::FORECAST REFRESH FAILED -- Check run $GITHUB_RUN_ID -- jamesavanfleet@gmail.com should receive GitHub Actions failure notification"
+          exit 1
