@@ -803,7 +803,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       {/* Or divider + instruction line above port slots */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-white/10" />
-        <span className="text-amber-200/80 text-3xl font-bold tracking-widest uppercase">Or</span>
+        <span className="text-amber-200/80 text-lg font-bold tracking-widest uppercase">Or</span>
         <div className="flex-1 h-px bg-white/10" />
       </div>
       <p className="text-white/50 text-sm max-w-md">
