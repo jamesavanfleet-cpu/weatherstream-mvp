@@ -18,6 +18,8 @@
           history.replaceState(null, null, redirect);
         }
         // Also handle ?p= query param from 404.html redirect
+        // GitHub Pages 404.html converts /route-map?itinerary=X to /?p=/route-map&q=itinerary=X
+        // We reconstruct the correct URL so the React router sees the right path.
         var l = window.location;
         if (l.search) {
           var q = {};
@@ -26,17 +28,12 @@
             q[a[0]] = a.slice(1).join('=').replace(/~and~/g, '&');
           });
           if (q.p !== undefined) {
-            // If navigating to route-map with an itinerary in the hash, save it to sessionStorage
-            // so RouteMap.tsx can read it after the SPA navigates to /route-map
-            if (q.p === '/route-map' && l.hash && l.hash.indexOf('itinerary=') !== -1) {
-              var hashMatch = l.hash.match(/[#&]itinerary=([^&]+)/);
-              if (hashMatch) {
-                sessionStorage.setItem('sharedItinerary', decodeURIComponent(hashMatch[1]));
-              }
-            }
+            // q.p is the intended path (e.g. '/route-map')
+            // q.q is the intended query string (e.g. 'itinerary=BASE64')
+            // The site is at the root of the domain, so use q.p directly as the path.
             window.history.replaceState(
               null, null,
-              l.pathname.split('/').slice(0, 2).join('/') + (q.p || '') +
+              (q.p || '/') +
               (q.q ? ('?' + q.q) : '') +
               l.hash
             );
