@@ -57,6 +57,8 @@ interface LiveForecastDay {
   waveHeightFt: number | null;
   sunrise: string | null;
   sunset: string | null;
+  moonrise: string | null;
+  moonset: string | null;
   rainMorning: number | null;
   rainAfternoon: number | null;
   rainEvening: number | null;
@@ -79,6 +81,9 @@ interface PopupData {
   liveData: LiveForecastDay | null;
   climateData: ClimateMonth | null;
   loading: boolean;
+  // For combined markers: all stops at this location
+  allStops?: PortStop[];
+  activeStopIdx?: number;
 }
 
 // ============================================================
@@ -206,7 +211,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
     const dailyUrl =
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
       `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,` +
-      `precipitation_probability_max,weathercode,sunrise,sunset` +
+      `precipitation_probability_max,weathercode,sunrise,sunset,moonrise,moonset` +
       `&hourly=temperature_2m,wind_speed_10m,precipitation_probability,weathercode,dewpoint_2m,relativehumidity_2m,windgusts_10m` +
       `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16`;
     const marineUrl =
@@ -300,6 +305,8 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
         : null,
       sunrise: fmtTime(d.sunrise?.[dayIdx] ?? null),
       sunset: fmtTime(d.sunset?.[dayIdx] ?? null),
+      moonrise: fmtTime(d.moonrise?.[dayIdx] ?? null),
+      moonset: fmtTime(d.moonset?.[dayIdx] ?? null),
       rainMorning: avgRain(6, 12),
       rainAfternoon: avgRain(12, 18),
       rainEvening: avgRain(18, 22),
@@ -399,7 +406,7 @@ function PortAutocomplete({
 // ============================================================
 // Forecast popup card
 // ============================================================
-function ForecastPopup({ data, onClose }: { data: PopupData; onClose: () => void }) {
+function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClose: () => void; onSwitchStop?: (stop: PortStop, idx: number) => void }) {
   const phase = getMoonPhase(data.date);
   const [showHourly, setShowHourly] = useState(false);
   const [showFiveDay, setShowFiveDay] = useState(false);
@@ -427,24 +434,69 @@ function ForecastPopup({ data, onClose }: { data: PopupData; onClose: () => void
             <X className="w-5 h-5" />
           </button>
         </div>
+        {/* Tab toggle for combined markers (same port, multiple dates) */}
+        {data.allStops && data.allStops.length > 1 && (
+          <div className="flex gap-1 px-5 py-2 bg-white/3 border-b border-white/10 flex-shrink-0 overflow-x-auto">
+            {data.allStops.map((s, i) => (
+              <button
+                key={s.id}
+                onClick={() => onSwitchStop && onSwitchStop(s, i)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                  data.activeStopIdx === i
+                    ? "bg-cyan-400/20 border-cyan-400/40 text-cyan-300"
+                    : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-current/20 flex items-center justify-center font-black" style={{fontSize: "10px"}}>{i + 1}</span>
+                {formatDateDisplay(s.date)}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1">
 
-          {/* Moon phase + sunrise/sunset row */}
+          {/* Moon phase + sunrise/sunset/moonrise/moonset row */}
           <div className="px-5 py-3 bg-white/3 border-b border-white/10">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-base">{moonEmoji(phase)}</span>
                 <span className="text-white/70 text-sm font-semibold">{phase}</span>
               </div>
-              {live && (live.sunrise || live.sunset) && (
-                <div className="flex items-center gap-3 text-xs text-white/50">
-                  {live.sunrise && <span>&#9728; {live.sunrise}</span>}
-                  {live.sunset && <span>&#9790; {live.sunset}</span>}
-                </div>
-              )}
             </div>
+            {live && (live.sunrise || live.sunset || live.moonrise || live.moonset) && (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                {live.sunrise && (
+                  <div className="flex items-center gap-1.5 text-amber-300">
+                    <Sun className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="text-white/50 w-16">Sunrise</span>
+                    <span className="font-semibold">{live.sunrise}</span>
+                  </div>
+                )}
+                {live.sunset && (
+                  <div className="flex items-center gap-1.5 text-orange-300">
+                    <Sun className="w-3.5 h-3.5 flex-shrink-0 opacity-60" />
+                    <span className="text-white/50 w-14">Sunset</span>
+                    <span className="font-semibold">{live.sunset}</span>
+                  </div>
+                )}
+                {live.moonrise && (
+                  <div className="flex items-center gap-1.5 text-slate-300">
+                    <span className="text-base leading-none flex-shrink-0">{moonEmoji(phase)}</span>
+                    <span className="text-white/50 w-16">Moonrise</span>
+                    <span className="font-semibold">{live.moonrise}</span>
+                  </div>
+                )}
+                {live.moonset && (
+                  <div className="flex items-center gap-1.5 text-slate-400">
+                    <span className="text-base leading-none flex-shrink-0 opacity-60">{moonEmoji(phase)}</span>
+                    <span className="text-white/50 w-14">Moonset</span>
+                    <span className="font-semibold">{live.moonset}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Body */}
@@ -800,7 +852,7 @@ export default function RouteMap() {
 
       const marker = L.marker([lat, lon], { icon })
         .addTo(map)
-        .on("click", () => handleMarkerClick(group.stops[0]));
+        .on("click", () => handleMarkerClick(group.stops[0], group.stops));
 
       markersRef.current.push(marker);
     });
@@ -823,7 +875,7 @@ export default function RouteMap() {
     }
   }, [stops]);
 
-  const handleMarkerClick = useCallback(async (stop: PortStop) => {
+  const handleMarkerClick = useCallback(async (stop: PortStop, allStops?: PortStop[]) => {
     if (!stop.lat || !stop.lon || !stop.date) return;
 
     const month = parseInt(stop.date.split("-")[1], 10);
@@ -839,6 +891,8 @@ export default function RouteMap() {
       liveData: null,
       climateData: climateMonth,
       loading: isWithin16Days(stop.date) && !isPastDate(stop.date),
+      allStops: allStops && allStops.length > 1 ? allStops : undefined,
+      activeStopIdx: 0,
     });
 
     if (isWithin16Days(stop.date) && !isPastDate(stop.date)) {
@@ -1110,7 +1164,31 @@ export default function RouteMap() {
       </div>
 
       {/* Forecast popup */}
-      {popup && <ForecastPopup data={popup} onClose={() => setPopup(null)} />}
+      {popup && (
+        <ForecastPopup
+          data={popup}
+          onClose={() => setPopup(null)}
+          onSwitchStop={async (stop, idx) => {
+            const month = parseInt(stop.date.split("-")[1], 10);
+            const climateEntry = climateDb[stop.portName];
+            const climateMonth = climateEntry?.months?.find(m => m.m === month) ?? null;
+            setPopup(prev => prev ? {
+              ...prev,
+              portName: stop.portName,
+              date: stop.date,
+              isSeaDay: stop.isSeaDay,
+              liveData: null,
+              climateData: climateMonth,
+              loading: isWithin16Days(stop.date) && !isPastDate(stop.date),
+              activeStopIdx: idx,
+            } : null);
+            if (stop.lat && stop.lon && isWithin16Days(stop.date) && !isPastDate(stop.date)) {
+              const live = await fetchLiveForecastForDate(stop.lat, stop.lon, stop.date);
+              setPopup(prev => prev ? { ...prev, liveData: live, loading: false } : null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
