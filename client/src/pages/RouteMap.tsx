@@ -944,13 +944,19 @@ export default function RouteMap() {
     });
 
     // ---- Maritime routing: insert waypoints to keep lines over water ----
-    // Checks if a straight line between two points passes through a land bounding box
-    // by sampling 10 points along the segment and checking each against land boxes.
-    function linePassesThroughBox(
+    // Returns true only if the INTERIOR of the segment (excluding endpoints) passes through the box.
+    // Endpoints are excluded because coastal ports sit on the edge of land boxes and should never
+    // trigger a false-positive waypoint insertion.
+    function lineInteriorCrossesBox(
       fLat: number, fLon: number, tLat: number, tLon: number,
       boxMinLat: number, boxMaxLat: number, boxMinLon: number, boxMaxLon: number
     ): boolean {
-      for (let t = 0.05; t <= 0.95; t += 0.1) {
+      // Skip if either endpoint is inside the box -- that means the port itself is on this coast
+      const startInBox = fLat >= boxMinLat && fLat <= boxMaxLat && fLon >= boxMinLon && fLon <= boxMaxLon;
+      const endInBox   = tLat >= boxMinLat && tLat <= boxMaxLat && tLon >= boxMinLon && tLon <= boxMaxLon;
+      if (startInBox || endInBox) return false;
+      // Sample 18 interior points (t = 0.05 to 0.95)
+      for (let t = 0.05; t <= 0.95; t += 0.05) {
         const lat = fLat + (tLat - fLat) * t;
         const lon = fLon + (tLon - fLon) * t;
         if (lat >= boxMinLat && lat <= boxMaxLat && lon >= boxMinLon && lon <= boxMaxLon) return true;
@@ -958,49 +964,62 @@ export default function RouteMap() {
       return false;
     }
 
+    // Approximate great-circle distance in km between two lat/lon points
+    function approxDistKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
     function maritimeRoute(from: L.LatLngTuple, to: L.LatLngTuple): L.LatLngTuple[] {
       const [fLat, fLon] = from;
       const [tLat, tLon] = to;
 
-      // Yucatan Peninsula: 14-23.5°N, 86.5-92.5°W (expanded to catch all crossing angles)
-      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 14, 23.5, -92.5, -86.5)) {
-        // Determine routing side based on average longitude
+      // Minimum distance guard: segments under 120 km are short coastal hops already over water
+      if (approxDistKm(fLat, fLon, tLat, tLon) < 120) return [from, to];
+
+      // Yucatan Peninsula interior: 14-23.5°N, 86.5-92.5°W
+      // (Cozumel at 86.9W and Cancun at 86.8W are just outside the east edge -- intentional)
+      if (lineInteriorCrossesBox(fLat, fLon, tLat, tLon, 14, 23.5, -92.5, -86.5)) {
         const avgLon = (fLon + tLon) / 2;
         const avgLat = (fLat + tLat) / 2;
         let waypoint: L.LatLngTuple;
         if (avgLon < -90) {
-          // Coming from Gulf (west of 90W): route via open Gulf water, staying north of peninsula tip
-          waypoint = [23.5, -90.5]; // Open Gulf, clearly north of Yucatan tip
+          waypoint = [23.5, -90.5]; // Open Gulf, north of Yucatan tip
         } else if (avgLat > 21) {
-          // Coming from north into Caribbean side: route via open water east of peninsula
           waypoint = [21.5, -85.5]; // Open Caribbean, east of Cozumel
         } else {
-          // Route between Caribbean ports south of Yucatan: route via open Caribbean
           waypoint = [15.5, -83.0]; // Open Caribbean south of peninsula
         }
         return [from, waypoint, to];
       }
 
-      // Cuba: 19.5-23.5°N, 74-85°W
-      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 19.5, 23.5, -85, -74)) {
+      // Cuba interior: 19.8-23°N, 75-84.5°W
+      // (Tightened east edge to 84.5W so ports near western Cuba tip are excluded)
+      if (lineInteriorCrossesBox(fLat, fLon, tLat, tLon, 19.8, 23, -84.5, -75)) {
         const waypoint: L.LatLngTuple = [20.0, -74.5];
         return [from, waypoint, to];
       }
 
-      // Central America / Belize / Honduras: 14-18°N, 83-90°W
-      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 14, 18, -90, -83)) {
+      // Central America / Belize / Honduras interior: 14-18°N, 83.5-89.5°W
+      if (lineInteriorCrossesBox(fLat, fLon, tLat, tLon, 14, 18, -89.5, -83.5)) {
         const waypoint: L.LatLngTuple = [15.5, -82.0];
         return [from, waypoint, to];
       }
 
-      // Florida peninsula: 24-31°N, 80-82°W
-      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 24, 31, -82, -80)) {
+      // Florida peninsula interior: 25.5-30.5°N, 80.6-82.5°W
+      // Tightened east edge to 80.6W so Miami (80.2W) and Fort Lauderdale (80.1W) are excluded.
+      // Only true interior-of-Florida crossings will trigger this.
+      if (lineInteriorCrossesBox(fLat, fLon, tLat, tLon, 25.5, 30.5, -82.5, -80.6)) {
         const waypoint: L.LatLngTuple = [27.0, -79.5];
         return [from, waypoint, to];
       }
 
-      // Mexico / Baja California: 22-32°N, 105-117°W
-      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 22, 32, -117, -105)) {
+      // Mexico / Baja California interior: 22-32°N, 105-117°W
+      if (lineInteriorCrossesBox(fLat, fLon, tLat, tLon, 22, 32, -117, -105)) {
         const waypoint: L.LatLngTuple = [26.0, -110.0];
         return [from, waypoint, to];
       }
