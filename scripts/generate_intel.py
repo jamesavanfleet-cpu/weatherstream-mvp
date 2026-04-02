@@ -22,12 +22,28 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 
 REGIONS = [
     {
+        "slug": "us-ports",
+        "name": "US Ports",
+        "rep_port": "Charleston, South Carolina",
+        "lat": 32.78,
+        "lon": -79.93,
+        "ports": ["Baltimore", "Boston", "Bayonne", "Brooklyn", "Charleston", "Galveston", "Houston", "Jacksonville", "Long Beach", "Los Angeles", "Manhattan", "Miami", "New Orleans", "Norfolk", "Port Canaveral", "Port Everglades", "San Diego", "San Francisco", "Savannah", "Tampa Bay"],
+    },
+    {
+        "slug": "bahamas-central-caribbean",
+        "name": "Bahamas and Central Caribbean",
+        "rep_port": "Nassau, Bahamas",
+        "lat": 25.04,
+        "lon": -77.35,
+        "ports": ["Nassau", "Freeport", "Bimini", "Berry Islands", "Key West", "Grand Cayman", "Ocho Rios", "Falmouth", "Puerto Plata", "La Romana", "Santo Domingo", "Samaná"],
+    },
+    {
         "slug": "eastern-caribbean",
         "name": "Eastern Caribbean",
         "rep_port": "San Juan, Puerto Rico",
         "lat": 18.47,
         "lon": -66.12,
-        "ports": ["San Juan", "St. Thomas", "St. Croix", "St. Maarten", "St. Kitts", "Antigua", "Turks & Caicos"],
+        "ports": ["San Juan", "St. Thomas", "St. Croix", "St. Maarten", "St. Kitts", "Antigua"],
     },
     {
         "slug": "western-caribbean",
@@ -35,15 +51,7 @@ REGIONS = [
         "rep_port": "Cozumel, Mexico",
         "lat": 20.51,
         "lon": -86.95,
-        "ports": ["Cozumel", "Costa Maya", "Roatan", "Belize City", "Grand Cayman", "Ocho Rios", "Falmouth"],
-    },
-    {
-        "slug": "bahamas",
-        "name": "Bahamas",
-        "rep_port": "Nassau, Bahamas",
-        "lat": 25.04,
-        "lon": -77.35,
-        "ports": ["Nassau", "Freeport", "Bimini", "Berry Islands", "Turks & Caicos"],
+        "ports": ["Cozumel", "Costa Maya", "Roatan", "Belize City"],
     },
     {
         "slug": "southern-caribbean",
@@ -52,14 +60,6 @@ REGIONS = [
         "lat": 12.52,
         "lon": -70.03,
         "ports": ["Aruba", "Curacao", "Bonaire", "Cartagena"],
-    },
-    {
-        "slug": "central-caribbean",
-        "name": "US Ports and Central Caribbean",
-        "rep_port": "Grand Cayman",
-        "lat": 19.29,
-        "lon": -81.38,
-        "ports": ["Roatan", "Belize City", "Grand Cayman", "Cozumel", "Costa Maya"],
     },
     {
         "slug": "lesser-antilles",
