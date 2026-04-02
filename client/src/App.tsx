@@ -1,8 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { useEffect } from "react";
-import { Route, Router as WouterRouter, Switch, useLocation } from "wouter";
+import { Route, Router as WouterRouter, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import BookBriefing from "./pages/BookBriefing";
@@ -13,24 +12,21 @@ import RouteMap from "./pages/RouteMap";
 // Strip trailing slash from Vite's BASE_URL for wouter base path compatibility
 const basePath = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-// Detects sessionStorage.sharedItinerary set by index.html SPA redirect handler
-// and navigates to /route-map so the itinerary loads correctly from a shared link
-function SharedRouteRedirect() {
-  const [, navigate] = useLocation();
-  useEffect(() => {
-    if (sessionStorage.getItem("sharedItinerary")) {
-      navigate("/route-map");
-    }
-  }, [navigate]);
-  return null;
+// HomeOrRouteMap: synchronously checks sessionStorage at render time.
+// If a shared itinerary was stored by the index.html SPA redirect handler,
+// render RouteMap directly instead of Home so the shared route loads immediately.
+function HomeOrRouteMap() {
+  if (sessionStorage.getItem("sharedItinerary")) {
+    return <RouteMap />;
+  }
+  return <Home />;
 }
 
 function Router() {
   return (
     <WouterRouter base={basePath}>
-      <SharedRouteRedirect />
       <Switch>
-        <Route path={"/"} component={Home} />
+        <Route path={"/"} component={HomeOrRouteMap} />
         <Route path={"/book-briefing"} component={BookBriefing} />
         <Route path={"/region/:slug"} component={RegionDetail} />
         <Route path={"/route-map"} component={RouteMap} />
