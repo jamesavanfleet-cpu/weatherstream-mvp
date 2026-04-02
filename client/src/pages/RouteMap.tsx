@@ -867,12 +867,18 @@ export default function RouteMap() {
       } catch {}
     }
 
-    // 3. Legacy ?itinerary= query param (old shared links)
+    // 3. ?itinerary= query param (shared links via URL)
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("itinerary");
     if (encoded) {
       try {
-        const decoded: PortStop[] = JSON.parse(atob(encoded));
+        // Try Unicode-safe decoding first (new format), fall back to plain atob for legacy links
+        let decoded: PortStop[];
+        try {
+          decoded = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+        } catch {
+          decoded = JSON.parse(atob(encoded));
+        }
         if (Array.isArray(decoded) && decoded.length > 0) {
           setStops(decoded);
           setPlotted(true);
@@ -1154,7 +1160,8 @@ export default function RouteMap() {
     // GitHub Pages 404.html converts /route-map?itinerary=X to /?p=/route-map&q=itinerary=X
     // and the index.html SPA script reconstructs it as /route-map?itinerary=X
     // which RouteMap reads from window.location.search on mount.
-    const encoded = btoa(JSON.stringify(stops));
+    // Use Unicode-safe base64 encoding so port names and IDs with special characters encode correctly.
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(stops))));
     const url = `${window.location.origin}/route-map?itinerary=${encoded}`;
     if (navigator.share) {
       navigator.share({ title: "My Cruise Route -- My Cruising Weather", url }).catch(() => {});
