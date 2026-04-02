@@ -406,6 +406,7 @@ function PortAutocomplete({
         }}
         placeholder={placeholder}
         disabled={disabled}
+        autoComplete="off"
         className={`w-full rounded-lg px-4 py-3 text-base focus:outline-none disabled:opacity-50 ${
           isSeaDay
             ? "bg-blue-500/10 border border-blue-400/20 text-blue-300 placeholder-blue-300/50 focus:border-blue-400/60"
@@ -857,8 +858,13 @@ export default function RouteMap() {
   };
 
   const handlePlot = () => {
+    console.log('handlePlot called, stops:', stops);
     const valid = stops.filter(s => s.portName.trim() && s.date);
-    if (valid.length < 1) return;
+    console.log('valid stops:', valid, 'length:', valid.length);
+    if (valid.length < 1) {
+      console.log('Validation failed: no valid stops');
+      return;
+    }
     const resolved = stops.map(s => {
       if (!s.lat && s.portName) {
         const p = resolvePort(s.portName);
