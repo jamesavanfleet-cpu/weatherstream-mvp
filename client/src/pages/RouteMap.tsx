@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MapPin, Calendar, Plus, Trash2, ArrowLeft, Save, Share2, Anchor, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, X, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Calendar, Plus, Trash2, ArrowLeft, Save, Share2, Anchor, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, X, ChevronDown, ChevronUp, Thermometer, Droplets, Wind, Waves } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -214,19 +214,29 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       `precipitation_probability_max,weathercode,sunrise,sunset,moonrise,moonset` +
       `&hourly=temperature_2m,wind_speed_10m,precipitation_probability,weathercode,dewpoint_2m,relativehumidity_2m,windgusts_10m` +
       `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16`;
+    // Marine API -- try exact coordinates first, fall back to slightly offshore if it errors
     const marineUrl =
       `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
       `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant` +
       `&hourly=wave_height` +
       `&length_unit=imperial&timezone=auto&forecast_days=16`;
-    // Moonrise/moonset via astronomy API
-    const astroUrl =
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-      `&daily=sunrise,sunset&timezone=auto&forecast_days=16`;
+    // Offshore fallback: nudge 0.3 degrees offshore for near-coast ports where marine API fails
+    const marineOffshoreUrl =
+      `https://marine-api.open-meteo.com/v1/marine?latitude=${(lat - 0.3).toFixed(4)}&longitude=${(lon - 0.3).toFixed(4)}` +
+      `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant` +
+      `&hourly=wave_height` +
+      `&length_unit=imperial&timezone=auto&forecast_days=16`;
 
     const [weatherRes, marineRes] = await Promise.allSettled([
       fetch(dailyUrl).then(r => r.json()),
-      fetch(marineUrl).then(r => r.json()),
+      fetch(marineUrl).then(r => r.json()).then(async (data) => {
+        // If marine API returns an error for this coordinate, try offshore fallback
+        if (data?.error) {
+          const fallback = await fetch(marineOffshoreUrl).then(r => r.json()).catch(() => null);
+          return fallback?.error ? null : fallback;
+        }
+        return data;
+      }).catch(() => null),
     ]);
 
     const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
@@ -715,25 +725,40 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   Climate Averages (beyond 16-day window)
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-white/5 rounded-lg px-3 py-2">
-                    <div className="text-white/50 text-xs">Avg High / Low</div>
-                    <div className="text-white font-bold">{dispTemp(data.climateData.hiF)} / {dispTemp(data.climateData.loF)}</div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
+                    <Thermometer className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                    <div>
+                      <div className="text-white/50 text-xs">Avg High / Low</div>
+                      <div className="text-white font-bold">{dispTemp(data.climateData.hiF)} / {dispTemp(data.climateData.loF)}</div>
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2">
-                    <div className="text-white/50 text-xs">Humidity</div>
-                    <div className="text-white font-bold">{data.climateData.hum}%</div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
+                    <Droplets className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                    <div>
+                      <div className="text-white/50 text-xs">Humidity</div>
+                      <div className="text-white font-bold">{data.climateData.hum}%</div>
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2">
-                    <div className="text-white/50 text-xs">Wind</div>
-                    <div className="text-cyan-300 font-bold">{dispWind(parseInt(data.climateData.windKt))} {data.climateData.windDir}</div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
+                    <Wind className="w-4 h-4 text-cyan-300 flex-shrink-0" />
+                    <div>
+                      <div className="text-white/50 text-xs">Wind</div>
+                      <div className="text-cyan-300 font-bold">{dispWind(parseInt(data.climateData.windKt))} {data.climateData.windDir}</div>
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2">
-                    <div className="text-white/50 text-xs">Rain Chance</div>
-                    <div className="text-blue-300 font-bold">{data.climateData.rain}%</div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
+                    <CloudRain className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                    <div>
+                      <div className="text-white/50 text-xs">Rain Chance</div>
+                      <div className="text-blue-300 font-bold">{data.climateData.rain}%</div>
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
-                    <div className="text-white/50 text-xs">Avg Seas</div>
-                    <div className="text-orange-300 font-bold">{dispHeight(data.climateData.seaFt)}</div>
+                  <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2 flex items-center gap-2">
+                    <Waves className="w-4 h-4 text-orange-300 flex-shrink-0" />
+                    <div>
+                      <div className="text-white/50 text-xs">Avg Seas</div>
+                      <div className="text-orange-300 font-bold">{dispHeight(data.climateData.seaFt)}</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -891,9 +916,73 @@ export default function RouteMap() {
       markersRef.current.push(marker);
     });
 
+    // ---- Maritime routing: insert waypoints to keep lines over water ----
+    // Checks if a straight line between two points passes through a land bounding box
+    // by sampling 10 points along the segment and checking each against land boxes.
+    function linePassesThroughBox(
+      fLat: number, fLon: number, tLat: number, tLon: number,
+      boxMinLat: number, boxMaxLat: number, boxMinLon: number, boxMaxLon: number
+    ): boolean {
+      for (let t = 0.05; t <= 0.95; t += 0.1) {
+        const lat = fLat + (tLat - fLat) * t;
+        const lon = fLon + (tLon - fLon) * t;
+        if (lat >= boxMinLat && lat <= boxMaxLat && lon >= boxMinLon && lon <= boxMaxLon) return true;
+      }
+      return false;
+    }
+
+    function maritimeRoute(from: L.LatLngTuple, to: L.LatLngTuple): L.LatLngTuple[] {
+      const [fLat, fLon] = from;
+      const [tLat, tLon] = to;
+
+      // Yucatan Peninsula: 14-22°N, 87-92°W
+      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 14, 22, -92, -87)) {
+        // Determine if coming from Gulf (west) or Caribbean (east)
+        const avgLon = (fLon + tLon) / 2;
+        const waypoint: L.LatLngTuple = avgLon < -89
+          ? [22.5, -90.0]  // Gulf side: route via open Gulf water north of Yucatan
+          : [20.5, -86.0]; // Caribbean side: route via open Caribbean east of Yucatan
+        return [from, waypoint, to];
+      }
+
+      // Cuba: 19.5-23.5°N, 74-85°W
+      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 19.5, 23.5, -85, -74)) {
+        const waypoint: L.LatLngTuple = [20.0, -74.5];
+        return [from, waypoint, to];
+      }
+
+      // Central America / Belize / Honduras: 14-18°N, 83-90°W
+      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 14, 18, -90, -83)) {
+        const waypoint: L.LatLngTuple = [15.5, -82.0];
+        return [from, waypoint, to];
+      }
+
+      // Florida peninsula: 24-31°N, 80-82°W
+      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 24, 31, -82, -80)) {
+        const waypoint: L.LatLngTuple = [27.0, -79.5];
+        return [from, waypoint, to];
+      }
+
+      // Mexico / Baja California: 22-32°N, 105-117°W
+      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 22, 32, -117, -105)) {
+        const waypoint: L.LatLngTuple = [26.0, -110.0];
+        return [from, waypoint, to];
+      }
+
+      return [from, to];
+    }
+
+    // Build the full routed polyline path
+    const routedPath: L.LatLngTuple[] = [];
+    for (let i = 0; i < latlngs.length - 1; i++) {
+      const segment = maritimeRoute(latlngs[i], latlngs[i + 1]);
+      if (i === 0) routedPath.push(segment[0]);
+      for (let j = 1; j < segment.length; j++) routedPath.push(segment[j]);
+    }
+
     // Draw route line
-    if (latlngs.length > 1) {
-      polylineRef.current = L.polyline(latlngs, {
+    if (routedPath.length > 1) {
+      polylineRef.current = L.polyline(routedPath, {
         color: "#22d3ee",
         weight: 2.5,
         opacity: 0.7,
