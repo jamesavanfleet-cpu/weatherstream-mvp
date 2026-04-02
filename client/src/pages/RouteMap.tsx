@@ -935,13 +935,22 @@ export default function RouteMap() {
       const [fLat, fLon] = from;
       const [tLat, tLon] = to;
 
-      // Yucatan Peninsula: 14-22°N, 87-92°W
-      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 14, 22, -92, -87)) {
-        // Determine if coming from Gulf (west) or Caribbean (east)
+      // Yucatan Peninsula: 14-23.5°N, 86.5-92.5°W (expanded to catch all crossing angles)
+      if (linePassesThroughBox(fLat, fLon, tLat, tLon, 14, 23.5, -92.5, -86.5)) {
+        // Determine routing side based on average longitude
         const avgLon = (fLon + tLon) / 2;
-        const waypoint: L.LatLngTuple = avgLon < -89
-          ? [22.5, -90.0]  // Gulf side: route via open Gulf water north of Yucatan
-          : [20.5, -86.0]; // Caribbean side: route via open Caribbean east of Yucatan
+        const avgLat = (fLat + tLat) / 2;
+        let waypoint: L.LatLngTuple;
+        if (avgLon < -90) {
+          // Coming from Gulf (west of 90W): route via open Gulf water, staying north of peninsula tip
+          waypoint = [23.5, -90.5]; // Open Gulf, clearly north of Yucatan tip
+        } else if (avgLat > 21) {
+          // Coming from north into Caribbean side: route via open water east of peninsula
+          waypoint = [21.5, -85.5]; // Open Caribbean, east of Cozumel
+        } else {
+          // Route between Caribbean ports south of Yucatan: route via open Caribbean
+          waypoint = [15.5, -83.0]; // Open Caribbean south of peninsula
+        }
         return [from, waypoint, to];
       }
 
@@ -1237,7 +1246,7 @@ export default function RouteMap() {
             onClick={addStop}
             className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors text-sm font-semibold"
           >
-            <Plus className="w-4 h-4" /> Add Another Port
+            <Plus className="w-4 h-4" /> Add Another Port / Sea Day
           </button>
 
           {/* Plot button */}
