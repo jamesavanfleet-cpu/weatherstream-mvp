@@ -1150,10 +1150,12 @@ export default function RouteMap() {
   };
 
   const handleShare = () => {
-    // Encode itinerary into URL hash fragment -- preserved by GitHub Pages SPA routing
-    // Hash fragments are never sent to the server so they survive gh-pages redirects
+    // Encode itinerary as ?itinerary= query param.
+    // GitHub Pages 404.html converts /route-map?itinerary=X to /?p=/route-map&q=itinerary=X
+    // and the index.html SPA script reconstructs it as /route-map?itinerary=X
+    // which RouteMap reads from window.location.search on mount.
     const encoded = btoa(JSON.stringify(stops));
-    const url = `${window.location.origin}/route-map#itinerary=${encoded}`;
+    const url = `${window.location.origin}/route-map?itinerary=${encoded}`;
     if (navigator.share) {
       navigator.share({ title: "My Cruise Route -- My Cruising Weather", url }).catch(() => {});
     } else {
