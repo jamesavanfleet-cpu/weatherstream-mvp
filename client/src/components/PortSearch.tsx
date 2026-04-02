@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   MapPin, Search, X,
   Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown
@@ -787,13 +787,13 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       </div>
 
       {/* Plot My Cruise Route button -- top of destination section */}
-      <a
+      <Link
         href="/route-map"
         className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-bold text-base tracking-wide hover:bg-cyan-400/20 transition-colors cursor-pointer no-underline"
         style={{ textDecoration: 'none' }}
       >
         <span>&#9654;</span> Plot My Cruise Route
-      </a>
+      </Link>
 
       {/* 5 destination slots stacked vertically */}
       <div className="space-y-4">
