@@ -4,7 +4,7 @@
 // HOW TO ADD A PORT:
 //   Add one line: { name: "Port Name", lat: XX.XXXX, lon: XX.XXXX, region: "Region" }
 //   That is ALL. Nothing else needs to change anywhere in the codebase.
-//   Regions: "Caribbean" | "Bahamas" | "Mediterranean" | "Pacific" | "Alaska"
+//   Regions: "Caribbean" | "Bahamas" | "Mediterranean" | "Pacific" | "Alaska" | "US Homeport"
 //
 // ALIASES (optional):
 //   aliases: ["alt name 1", "alt name 2", ...]
@@ -13,23 +13,104 @@
 //   in addition to the primary name. The primary name is always what displays
 //   in the forecast card header.
 //
-// Last updated: 2026-03-31
+// ============================================================
+// !! PERMANENT PROTECTION -- DO NOT REMOVE ANY PORT !!
+// ============================================================
+// Once a port has been approved and added to this list it MUST NEVER be removed.
+// The GitHub Actions workflow (.github/workflows/port-guard.yml) enforces this
+// automatically on every push: if any port in the APPROVED_PORTS list inside
+// that workflow is missing from this file, the build will fail and the deploy
+// will be blocked. Adding new ports is always welcome; removing them is not.
+// ============================================================
+//
+// Last updated: 2026-04-02
 // ============================================================
 
 export type Port = { name: string; lat: number; lon: number; region: string; aliases?: string[] };
 
 export const PORT_LIST: Port[] = [
-  // ---- Caribbean ----
-  { name: "Miami",                  lat: 25.7753, lon:  -80.1698, region: "Caribbean" },
-  { name: "Key West",               lat: 24.5551, lon:  -81.7800, region: "Caribbean" },
-  { name: "Port Everglades",        lat: 26.0833, lon:  -80.1167, region: "Caribbean",
+  // ============================================================
+  // !! APPROVED US HOMEPORTS -- PERMANENT -- DO NOT REMOVE !!
+  // ============================================================
+  // These ports have been explicitly approved by the Chief Meteorologist.
+  // The port-guard GitHub Actions workflow verifies every one of these
+  // is present on every push. Removing any entry will break the build.
+  // ============================================================
+
+  // ---- US East Coast Homeports ----
+  { name: "Miami",                  lat: 25.7753, lon:  -80.1698, region: "US Homeport",
+    aliases: ["Miami Cruise Terminal", "PortMiami", "Port of Miami"] },
+  { name: "Port Everglades",        lat: 26.0833, lon:  -80.1167, region: "US Homeport",
     aliases: ["Fort Lauderdale", "Fort Lauderdale Port", "Port Everglades Fort Lauderdale"] },
-  { name: "Port Canaveral",         lat: 28.4083, lon:  -80.6167, region: "Caribbean",
+  { name: "Port Canaveral",         lat: 28.4083, lon:  -80.6167, region: "US Homeport",
     aliases: ["Cape Canaveral", "Canaveral", "Port Canaveral Florida"] },
-  { name: "Tampa Bay",              lat: 27.9333, lon:  -82.4500, region: "Caribbean",
+  { name: "Tampa Bay",              lat: 27.9333, lon:  -82.4500, region: "US Homeport",
     aliases: ["Tampa", "Tampa Florida", "Tampa Port"] },
-  { name: "Jacksonville",           lat: 30.3322, lon:  -81.6557, region: "Caribbean",
+  { name: "Jacksonville",           lat: 30.3322, lon:  -81.6557, region: "US Homeport",
     aliases: ["Jacksonville Florida", "JAXPORT", "Jacksonville Port"] },
+  { name: "Charleston",             lat: 32.7765, lon:  -79.9311, region: "US Homeport",
+    aliases: ["Charleston South Carolina", "Port of Charleston", "Charleston SC"] },
+  { name: "Savannah",               lat: 32.0835, lon:  -81.0998, region: "US Homeport",
+    aliases: ["Savannah Georgia", "Port of Savannah", "Savannah GA"] },
+  { name: "Norfolk",                lat: 36.8468, lon:  -76.2951, region: "US Homeport",
+    aliases: ["Norfolk Virginia", "Port of Virginia Norfolk", "Norfolk VA"] },
+  { name: "Baltimore",              lat: 39.2904, lon:  -76.6122, region: "US Homeport",
+    aliases: ["Baltimore Maryland", "Port of Baltimore", "Baltimore MD", "Cruise Maryland"] },
+  { name: "Manhattan",              lat: 40.7680, lon:  -74.0020, region: "US Homeport",
+    aliases: [
+      "New York Cruise Terminal",   // official terminal name
+      "Manhattan Cruise Terminal",
+      "Pier 88",
+      "Pier 90",
+      "New York",
+      "New York City",
+      "NYC",
+    ] },
+  { name: "Brooklyn",               lat: 40.6782, lon:  -74.0060, region: "US Homeport",
+    aliases: [
+      "Brooklyn Cruise Terminal",   // official terminal name
+      "Red Hook",                   // neighborhood where terminal is located
+      "Red Hook Brooklyn",
+      "Brooklyn Red Hook",
+    ] },
+  { name: "Bayonne",                lat: 40.6668, lon:  -74.1143, region: "US Homeport",
+    aliases: [
+      "Cape Liberty",               // official terminal name
+      "Cape Liberty Cruise Port",
+      "Cape Liberty Bayonne",
+      "Bayonne New Jersey",
+      "Bayonne NJ",
+    ] },
+  { name: "Boston",                 lat: 42.3601, lon:  -71.0589, region: "US Homeport",
+    aliases: ["Boston Massachusetts", "Black Falcon Cruise Terminal", "Boston MA"] },
+
+  // ---- US Gulf Coast Homeports ----
+  { name: "New Orleans",            lat: 29.9511, lon:  -90.0715, region: "US Homeport",
+    aliases: ["New Orleans Louisiana", "Port of New Orleans", "NOLA", "Julia Street Wharf"] },
+  { name: "Galveston",              lat: 29.3013, lon:  -94.7977, region: "US Homeport",
+    aliases: ["Galveston Texas", "Port of Galveston", "Galveston TX"] },
+  { name: "Houston",                lat: 29.7355, lon:  -95.0089, region: "US Homeport",
+    aliases: ["Houston Texas", "Bayport Cruise Terminal", "Houston Bayport", "Houston TX"] },
+
+  // ---- US West Coast Homeports ----
+  { name: "Los Angeles",            lat: 33.7361, lon: -118.2922, region: "US Homeport",
+    aliases: [
+      "San Pedro",                  // neighborhood where World Cruise Center is located
+      "World Cruise Center",
+      "Port of Los Angeles",
+      "LA Cruise Terminal",
+      "Los Angeles California",
+      "LA",
+    ] },
+  { name: "Long Beach",             lat: 33.7701, lon: -118.1937, region: "US Homeport",
+    aliases: ["Long Beach California", "Port of Long Beach", "Long Beach CA"] },
+  { name: "San Diego",              lat: 32.7157, lon: -117.1611, region: "US Homeport",
+    aliases: ["San Diego California", "B Street Pier", "San Diego Cruise Terminal", "San Diego CA"] },
+  { name: "San Francisco",          lat: 37.8044, lon: -122.4079, region: "US Homeport",
+    aliases: ["San Francisco California", "Pier 27", "San Francisco Cruise Terminal", "SF"] },
+
+  // ---- Caribbean ----
+  { name: "Key West",               lat: 24.5551, lon:  -81.7800, region: "Caribbean" },
 
   // ---- Bahamas ----
   // Nassau / Prince George Wharf -- also resolves for New Providence island

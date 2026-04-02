@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation } from "wouter";
 import {
   MapPin, Search, X,
   Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown
@@ -410,7 +411,7 @@ function PortSlotCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const labels = ["Destination 1", "Destination 2", "Destination 3", "Destination 4", "Destination 5"];
+  const labels = ["Departure Port", "Destination 1", "Destination 2", "Destination 3", "Destination 4"];
 
   // Auto-expand when new weather data arrives
   useEffect(() => {
@@ -784,6 +785,15 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
           Type up to 5 destinations, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
         </p>
       </div>
+
+      {/* Plot My Cruise Route button -- top of destination section */}
+      <a
+        href="/route-map"
+        className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-bold text-base tracking-wide hover:bg-cyan-400/20 transition-colors cursor-pointer no-underline"
+        style={{ textDecoration: 'none' }}
+      >
+        <span>&#9654;</span> Plot My Cruise Route
+      </a>
 
       {/* 5 destination slots stacked vertically */}
       <div className="space-y-4">
