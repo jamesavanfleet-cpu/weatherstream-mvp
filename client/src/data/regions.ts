@@ -24,7 +24,7 @@ export const REGIONS: Region[] = [
     slug: "us-ports",
     name: "US Ports",
     intel: "US homeports span the East Coast from Boston to Miami, the Gulf Coast from New Orleans to Houston, and the West Coast from San Diego to Seattle. East Coast ports from Boston south to the Carolinas see variable winds and seas driven by passing frontal systems and nor'easters in winter. Florida ports are influenced by the Bermuda High and afternoon sea breezes. Gulf Coast ports from Tampa Bay west to Galveston and Houston are sheltered from Atlantic swell but can see strong NE winds during winter cold front passages. West Coast ports from San Diego to San Francisco are dominated by the California High and persistent NW winds and swell.",
-    image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&h=600&fit=crop",
+    image: "/locations/us-ports.jpg",
     gradient: "from-blue-600/20 to-slate-500/20",
     ports: [
       { name: "Baltimore",         lat: 39.2904, lon: -76.6122, sublabel: "Maryland" },

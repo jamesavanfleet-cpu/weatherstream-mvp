@@ -250,7 +250,7 @@ const CRUISE_ROUTES = [
   {
     slug: "us-ports",
     name: "US Ports",
-    image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&h=600&fit=crop",
+    image: "/locations/us-ports.jpg",
     temp: 68,
     seas: "2-4 ft",
     wind: "10-20 kt",
