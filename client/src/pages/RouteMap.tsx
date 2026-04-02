@@ -832,26 +832,44 @@ export default function RouteMap() {
       .catch(() => {});
   }, []);
 
-  // Load saved itinerary from URL params on mount
+  // Load saved itinerary from URL hash on mount
+  // Hash fragments are preserved by GitHub Pages / gh-pages SPA routing
+  // Format: /route-map#itinerary=BASE64DATA
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get("itinerary");
-    if (encoded) {
+    // Check hash fragment first (shared links)
+    const hash = window.location.hash; // e.g. "#itinerary=BASE64..."
+    const hashMatch = hash.match(/[#&]itinerary=([^&]+)/);
+    if (hashMatch) {
       try {
-        const decoded: PortStop[] = JSON.parse(atob(encoded));
+        const decoded: PortStop[] = JSON.parse(atob(decodeURIComponent(hashMatch[1])));
         if (Array.isArray(decoded) && decoded.length > 0) {
           setStops(decoded);
           setPlotted(true);
+          // Clean the hash from the URL bar without triggering a reload
+          history.replaceState(null, "", window.location.pathname);
         }
       } catch {}
     } else {
-      // Load from localStorage
-      const saved = localStorage.getItem("routeMapItinerary");
-      if (saved) {
+      // Also support legacy ?itinerary= query param (old shared links)
+      const params = new URLSearchParams(window.location.search);
+      const encoded = params.get("itinerary");
+      if (encoded) {
         try {
-          const parsed: PortStop[] = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
+          const decoded: PortStop[] = JSON.parse(atob(encoded));
+          if (Array.isArray(decoded) && decoded.length > 0) {
+            setStops(decoded);
+            setPlotted(true);
+          }
         } catch {}
+      } else {
+        // Load from localStorage (user's own saved route)
+        const saved = localStorage.getItem("routeMapItinerary");
+        if (saved) {
+          try {
+            const parsed: PortStop[] = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
+          } catch {}
+        }
       }
     }
   }, []);
@@ -1115,14 +1133,19 @@ export default function RouteMap() {
   };
 
   const handleShare = () => {
+    // Encode itinerary into URL hash fragment -- preserved by GitHub Pages SPA routing
+    // Hash fragments are never sent to the server so they survive gh-pages redirects
     const encoded = btoa(JSON.stringify(stops));
-    const url = `${window.location.origin}${window.location.pathname}?itinerary=${encoded}`;
+    const url = `${window.location.origin}/route-map#itinerary=${encoded}`;
     if (navigator.share) {
-      navigator.share({ title: "My Cruise Route", url }).catch(() => {});
+      navigator.share({ title: "My Cruise Route -- My Cruising Weather", url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(url).then(() => {
         setShareMsg("Link copied!");
         setTimeout(() => setShareMsg(""), 2500);
+      }).catch(() => {
+        // Fallback: prompt with the URL if clipboard is not available
+        window.prompt("Copy this link to share your route:", url);
       });
     }
   };
