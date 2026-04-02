@@ -426,6 +426,31 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
   const [showHourly, setShowHourly] = useState(false);
   const [showFiveDay, setShowFiveDay] = useState(false);
   const [isMetric, setIsMetric] = useState(false);
+  const [sunMoon, setSunMoon] = useState<{ sunrise: string; sunset: string; moonrise: string; moonset: string } | null>(null);
+
+  // Always fetch sun/moon times independently from sunrise-sunset.org for any date
+  useEffect(() => {
+    if (!data.lat || !data.lon || !data.date || isPastDate(data.date)) return;
+    setSunMoon(null);
+    const url = `https://api.sunrise-sunset.org/json?lat=${data.lat}&lng=${data.lon}&date=${data.date}&formatted=0`;
+    fetch(url)
+      .then(r => r.json())
+      .then(json => {
+        if (json.status !== "OK") return;
+        const r = json.results;
+        function fmtUtc(iso: string): string {
+          const d = new Date(iso);
+          return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" });
+        }
+        setSunMoon({
+          sunrise: fmtUtc(r.sunrise),
+          sunset: fmtUtc(r.sunset),
+          moonrise: r.moonrise ? fmtUtc(r.moonrise) : "",
+          moonset: r.moonset ? fmtUtc(r.moonset) : "",
+        });
+      })
+      .catch(() => {});
+  }, [data.lat, data.lon, data.date]);
 
   const live = data.liveData;
 
@@ -443,7 +468,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-2 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-2xl bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -504,41 +529,43 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
           <div className="px-5 py-3 bg-white/3 border-b border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-base">{moonEmoji(phase)}</span>
-                <span className="text-white/70 text-sm font-semibold">{phase}</span>
+                <span className="text-xl">{moonEmoji(phase)}</span>
+                <span className="text-white/80 text-base font-bold">{phase}</span>
               </div>
             </div>
-            {live && (live.sunrise || live.sunset || live.moonrise || live.moonset) && (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                {live.sunrise && (
-                  <div className="flex items-center gap-1.5 text-amber-300">
-                    <Sun className="w-3.5 h-3.5 flex-shrink-0" />
+            {sunMoon ? (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                {sunMoon.sunrise && (
+                  <div className="flex items-center gap-2 text-amber-300">
+                    <Sun className="w-5 h-5 flex-shrink-0" />
                     <span className="text-white/50 w-16">Sunrise</span>
-                    <span className="font-semibold">{live.sunrise}</span>
+                    <span className="font-bold">{sunMoon.sunrise}</span>
                   </div>
                 )}
-                {live.sunset && (
-                  <div className="flex items-center gap-1.5 text-orange-300">
-                    <Sun className="w-3.5 h-3.5 flex-shrink-0 opacity-60" />
+                {sunMoon.sunset && (
+                  <div className="flex items-center gap-2 text-orange-300">
+                    <Sun className="w-5 h-5 flex-shrink-0 opacity-60" />
                     <span className="text-white/50 w-14">Sunset</span>
-                    <span className="font-semibold">{live.sunset}</span>
+                    <span className="font-bold">{sunMoon.sunset}</span>
                   </div>
                 )}
-                {live.moonrise && (
-                  <div className="flex items-center gap-1.5 text-slate-300">
-                    <span className="text-base leading-none flex-shrink-0">{moonEmoji(phase)}</span>
+                {sunMoon.moonrise && (
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <span className="text-xl leading-none flex-shrink-0">{moonEmoji(phase)}</span>
                     <span className="text-white/50 w-16">Moonrise</span>
-                    <span className="font-semibold">{live.moonrise}</span>
+                    <span className="font-bold">{sunMoon.moonrise}</span>
                   </div>
                 )}
-                {live.moonset && (
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <span className="text-base leading-none flex-shrink-0 opacity-60">{moonEmoji(phase)}</span>
+                {sunMoon.moonset && (
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <span className="text-xl leading-none flex-shrink-0 opacity-60">{moonEmoji(phase)}</span>
                     <span className="text-white/50 w-14">Moonset</span>
-                    <span className="font-semibold">{live.moonset}</span>
+                    <span className="font-bold">{sunMoon.moonset}</span>
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="text-white/30 text-xs">Loading sun &amp; moon times...</div>
             )}
           </div>
 
@@ -565,45 +592,45 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
 
                 {/* Condition + temp */}
                 <div className="flex items-center gap-3">
-                  <SkyIcon condition={live.condition} className="w-8 h-8 text-amber-300" />
+                  <SkyIcon condition={live.condition} className="w-12 h-12 text-amber-300" />
                   <div>
-                    <div className="text-white font-black text-2xl">{dispTemp(live.maxF)} / {dispTemp(live.minF)}</div>
-                    <div className="text-white/60 text-sm">{live.condition}</div>
+                    <div className="text-white font-black text-3xl">{dispTemp(live.maxF)} / {dispTemp(live.minF)}</div>
+                    <div className="text-white/60 text-base">{live.condition}</div>
                   </div>
                 </div>
 
                 {/* Atmosphere */}
-                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Atmosphere</div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Atmosphere</div>
+                <div className="grid grid-cols-2 gap-3 text-base">
                   {live.dewF != null && (
-                    <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="bg-white/5 rounded-xl px-4 py-3">
                       <div className="text-white/50 text-xs">Dew Point</div>
-                      <div className="text-white font-bold">{dispTemp(live.dewF!)}</div>
+                      <div className="text-white font-bold text-lg">{dispTemp(live.dewF!)}</div>
                     </div>
                   )}
                   {live.humidity != null && (
-                    <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="bg-white/5 rounded-xl px-4 py-3">
                       <div className="text-white/50 text-xs">Humidity</div>
-                      <div className="text-white font-bold">{live.humidity}%</div>
+                      <div className="text-white font-bold text-lg">{live.humidity}%</div>
                     </div>
                   )}
                 </div>
 
                 {/* Wind */}
-                <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Wind</div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Wind</div>
+                <div className="grid grid-cols-3 gap-3 text-base">
+                  <div className="bg-white/5 rounded-xl px-4 py-3">
                     <div className="text-white/50 text-xs">Direction</div>
-                    <div className="text-cyan-300 font-bold">{live.windDir}</div>
+                    <div className="text-cyan-300 font-bold text-lg">{live.windDir}</div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2">
+                  <div className="bg-white/5 rounded-xl px-4 py-3">
                     <div className="text-white/50 text-xs">Speed</div>
-                    <div className="text-cyan-300 font-bold">{dispWind(live.windKt)}</div>
+                    <div className="text-cyan-300 font-bold text-lg">{dispWind(live.windKt)}</div>
                   </div>
                   {live.gustKt != null && (
-                    <div className="bg-white/5 rounded-lg px-3 py-2">
+                    <div className="bg-white/5 rounded-xl px-4 py-3">
                       <div className="text-white/50 text-xs">Gusts</div>
-                      <div className="text-cyan-300 font-bold">{dispWind(live.gustKt!)}</div>
+                      <div className="text-cyan-300 font-bold text-lg">{dispWind(live.gustKt!)}</div>
                     </div>
                   )}
                 </div>
@@ -611,18 +638,18 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 {/* Marine */}
                 {(live.waveHeightFt != null || live.swellFt != null) && (
                   <>
-                    <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Marine</div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Marine</div>
+                    <div className="grid grid-cols-2 gap-3 text-base">
                       {live.waveHeightFt != null && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                        <div className="bg-white/5 rounded-xl px-4 py-3">
                           <div className="text-white/50 text-xs">Wave Height</div>
-                          <div className="text-orange-300 font-bold">{dispHeight(live.waveHeightFt!)}</div>
+                          <div className="text-orange-300 font-bold text-lg">{dispHeight(live.waveHeightFt!)}</div>
                         </div>
                       )}
                       {live.swellFt != null && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                        <div className="bg-white/5 rounded-xl px-4 py-3">
                           <div className="text-white/50 text-xs">Swell</div>
-                          <div className="text-orange-300 font-bold">{dispHeight(live.swellFt!)}{live.swellDir ? ` from ${live.swellDir}` : ""}</div>
+                          <div className="text-orange-300 font-bold text-lg">{dispHeight(live.swellFt!)}{live.swellDir ? ` from ${live.swellDir}` : ""}</div>
                         </div>
                       )}
                     </div>
@@ -632,30 +659,30 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 {/* Rain by time of day */}
                 {(live.rainMorning != null || live.rainAfternoon != null) && (
                   <>
-                    <div className="text-white/50 text-xs font-semibold uppercase tracking-wider pt-1">Rain Chance by Period</div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Rain Chance by Period</div>
+                    <div className="grid grid-cols-2 gap-3 text-base">
                       {live.rainMorning != null && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                        <div className="bg-white/5 rounded-xl px-4 py-3">
                           <div className="text-white/50 text-xs">Morning</div>
-                          <div className="text-blue-300 font-bold">{live.rainMorning}%</div>
+                          <div className="text-blue-300 font-bold text-lg">{live.rainMorning}%</div>
                         </div>
                       )}
                       {live.rainAfternoon != null && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                        <div className="bg-white/5 rounded-xl px-4 py-3">
                           <div className="text-white/50 text-xs">Afternoon</div>
-                          <div className="text-blue-300 font-bold">{live.rainAfternoon}%</div>
+                          <div className="text-blue-300 font-bold text-lg">{live.rainAfternoon}%</div>
                         </div>
                       )}
                       {live.rainEvening != null && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                        <div className="bg-white/5 rounded-xl px-4 py-3">
                           <div className="text-white/50 text-xs">Evening</div>
-                          <div className="text-blue-300 font-bold">{live.rainEvening}%</div>
+                          <div className="text-blue-300 font-bold text-lg">{live.rainEvening}%</div>
                         </div>
                       )}
                       {live.rainOvernight != null && (
-                        <div className="bg-white/5 rounded-lg px-3 py-2">
+                        <div className="bg-white/5 rounded-xl px-4 py-3">
                           <div className="text-white/50 text-xs">Overnight</div>
-                          <div className="text-blue-300 font-bold">{live.rainOvernight}%</div>
+                          <div className="text-blue-300 font-bold text-lg">{live.rainOvernight}%</div>
                         </div>
                       )}
                     </div>
@@ -724,40 +751,40 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
                   Climate Averages (beyond 16-day window)
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <Thermometer className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <Thermometer className="w-6 h-6 text-amber-300 flex-shrink-0" />
                     <div>
                       <div className="text-white/50 text-xs">Avg High / Low</div>
-                      <div className="text-white font-bold">{dispTemp(data.climateData.hiF)} / {dispTemp(data.climateData.loF)}</div>
+                      <div className="text-white font-bold text-lg">{dispTemp(data.climateData.hiF)} / {dispTemp(data.climateData.loF)}</div>
                     </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                  <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <Droplets className="w-6 h-6 text-blue-300 flex-shrink-0" />
                     <div>
                       <div className="text-white/50 text-xs">Humidity</div>
-                      <div className="text-white font-bold">{data.climateData.hum}%</div>
+                      <div className="text-white font-bold text-lg">{data.climateData.hum}%</div>
                     </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <Wind className="w-4 h-4 text-cyan-300 flex-shrink-0" />
+                  <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <Wind className="w-6 h-6 text-cyan-300 flex-shrink-0" />
                     <div>
                       <div className="text-white/50 text-xs">Wind</div>
-                      <div className="text-cyan-300 font-bold">{dispWind(parseInt(data.climateData.windKt))} {data.climateData.windDir}</div>
+                      <div className="text-cyan-300 font-bold text-lg">{dispWind(parseInt(data.climateData.windKt))} {data.climateData.windDir}</div>
                     </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <CloudRain className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                  <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <CloudRain className="w-6 h-6 text-blue-300 flex-shrink-0" />
                     <div>
                       <div className="text-white/50 text-xs">Rain Chance</div>
-                      <div className="text-blue-300 font-bold">{data.climateData.rain}%</div>
+                      <div className="text-blue-300 font-bold text-lg">{data.climateData.rain}%</div>
                     </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2 flex items-center gap-2">
-                    <Waves className="w-4 h-4 text-orange-300 flex-shrink-0" />
+                  <div className="bg-white/5 rounded-xl px-4 py-3 col-span-2 flex items-center gap-3">
+                    <Waves className="w-6 h-6 text-orange-300 flex-shrink-0" />
                     <div>
                       <div className="text-white/50 text-xs">Avg Seas</div>
-                      <div className="text-orange-300 font-bold">{dispHeight(data.climateData.seaFt)}</div>
+                      <div className="text-orange-300 font-bold text-lg">{dispHeight(data.climateData.seaFt)}</div>
                     </div>
                   </div>
                 </div>
