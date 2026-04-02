@@ -736,6 +736,7 @@ export default function RouteMap() {
   const polylineRef = useRef<L.Polyline | null>(null);
   const [saveMsg, setSaveMsg] = useState("");
   const [shareMsg, setShareMsg] = useState("");
+  const newStopRef = useRef<HTMLDivElement | null>(null);
 
   // Load climate database
   useEffect(() => {
@@ -904,6 +905,10 @@ export default function RouteMap() {
   // ---- Stop management ----
   const addStop = () => {
     setStops(prev => [...prev, { id: generateId(), portName: "", lat: null, lon: null, date: "", isSeaDay: false }]);
+    // Scroll to the new card after React re-renders
+    setTimeout(() => {
+      newStopRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
   };
 
   const removeStop = (id: string) => {
@@ -930,6 +935,19 @@ export default function RouteMap() {
 
   const handleDateChange = (id: string, date: string) => {
     updateStop(id, { date });
+    // Auto-fill the next undated stop with the following day
+    setStops(prev => {
+      const idx = prev.findIndex(s => s.id === id);
+      if (idx === -1 || !date) return prev;
+      const next = prev[idx + 1];
+      if (next && !next.date) {
+        const d = new Date(date + "T12:00:00");
+        d.setDate(d.getDate() + 1);
+        const nextDate = d.toISOString().slice(0, 10);
+        return prev.map((s, i) => i === idx + 1 ? { ...s, date: nextDate } : s);
+      }
+      return prev;
+    });
     // Auto-sort chronologically after a short delay
     setTimeout(() => {
       setStops(prev => {
@@ -1010,7 +1028,7 @@ export default function RouteMap() {
           {/* Stops */}
           <div className="space-y-4">
             {stops.map((stop, idx) => (
-              <div key={stop.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+              <div key={stop.id} ref={idx === stops.length - 1 ? newStopRef : null} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
                 {/* Stop header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
