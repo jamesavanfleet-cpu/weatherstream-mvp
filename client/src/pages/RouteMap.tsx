@@ -1325,17 +1325,29 @@ export default function RouteMap() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-[#e8d5b0] text-sm font-semibold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
           >
-            <Save className="w-4 h-4 flex-shrink-0" />
-            {saveMsg || "Save Route -- Reload anytime for the latest forecast"}
+            <Save className="w-4 h-4 flex-shrink-0 text-[#e8d5b0]" />
+            {saveMsg
+              ? <span className="text-[#e8d5b0] text-sm font-bold">{saveMsg}</span>
+              : <span className="flex items-baseline gap-1">
+                  <span className="text-[#e8d5b0] text-base font-bold">Save Route</span>
+                  <span className="text-[#a08860] text-xs font-medium">(Reload anytime for the latest forecast)</span>
+                </span>
+            }
           </button>
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-[#e8d5b0] text-sm font-semibold border border-cyan-400/30 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 transition-colors"
           >
-            <Share2 className="w-4 h-4 flex-shrink-0" />
-            {shareMsg || "Share Route -- Family and friends get the same forecast on their device"}
+            <Share2 className="w-4 h-4 flex-shrink-0 text-[#e8d5b0]" />
+            {shareMsg
+              ? <span className="text-[#e8d5b0] text-sm font-bold">{shareMsg}</span>
+              : <span className="flex items-baseline gap-1">
+                  <span className="text-[#e8d5b0] text-base font-bold">Share Route</span>
+                  <span className="text-[#a08860] text-xs font-medium">(Family and friends get the same forecast on their device)</span>
+                </span>
+            }
           </button>
         </div>
       </div>
