@@ -26,6 +26,14 @@
             q[a[0]] = a.slice(1).join('=').replace(/~and~/g, '&');
           });
           if (q.p !== undefined) {
+            // If navigating to route-map with an itinerary in the hash, save it to sessionStorage
+            // so RouteMap.tsx can read it after the SPA navigates to /route-map
+            if (q.p === '/route-map' && l.hash && l.hash.indexOf('itinerary=') !== -1) {
+              var hashMatch = l.hash.match(/[#&]itinerary=([^&]+)/);
+              if (hashMatch) {
+                sessionStorage.setItem('sharedItinerary', decodeURIComponent(hashMatch[1]));
+              }
+            }
             window.history.replaceState(
               null, null,
               l.pathname.split('/').slice(0, 2).join('/') + (q.p || '') +

@@ -832,12 +832,28 @@ export default function RouteMap() {
       .catch(() => {});
   }, []);
 
-  // Load saved itinerary from URL hash on mount
-  // Hash fragments are preserved by GitHub Pages / gh-pages SPA routing
-  // Format: /route-map#itinerary=BASE64DATA
+  // Load saved itinerary on mount -- checks multiple sources in priority order:
+  // 1. sessionStorage.sharedItinerary -- set by index.html when gh-pages redirects /route-map#itinerary=...
+  // 2. URL hash fragment -- #itinerary=BASE64 (direct navigation)
+  // 3. Legacy ?itinerary= query param (old shared links)
+  // 4. localStorage -- user's own saved route
   useEffect(() => {
-    // Check hash fragment first (shared links)
-    const hash = window.location.hash; // e.g. "#itinerary=BASE64..."
+    // 1. Check sessionStorage first (set by index.html SPA redirect handler for shared links)
+    const sessionShared = sessionStorage.getItem("sharedItinerary");
+    if (sessionShared) {
+      sessionStorage.removeItem("sharedItinerary"); // consume it
+      try {
+        const decoded: PortStop[] = JSON.parse(atob(sessionShared));
+        if (Array.isArray(decoded) && decoded.length > 0) {
+          setStops(decoded);
+          setPlotted(true);
+          return;
+        }
+      } catch {}
+    }
+
+    // 2. Check hash fragment (direct navigation to /route-map#itinerary=BASE64)
+    const hash = window.location.hash;
     const hashMatch = hash.match(/[#&]itinerary=([^&]+)/);
     if (hashMatch) {
       try {
@@ -845,32 +861,33 @@ export default function RouteMap() {
         if (Array.isArray(decoded) && decoded.length > 0) {
           setStops(decoded);
           setPlotted(true);
-          // Clean the hash from the URL bar without triggering a reload
           history.replaceState(null, "", window.location.pathname);
+          return;
         }
       } catch {}
-    } else {
-      // Also support legacy ?itinerary= query param (old shared links)
-      const params = new URLSearchParams(window.location.search);
-      const encoded = params.get("itinerary");
-      if (encoded) {
-        try {
-          const decoded: PortStop[] = JSON.parse(atob(encoded));
-          if (Array.isArray(decoded) && decoded.length > 0) {
-            setStops(decoded);
-            setPlotted(true);
-          }
-        } catch {}
-      } else {
-        // Load from localStorage (user's own saved route)
-        const saved = localStorage.getItem("routeMapItinerary");
-        if (saved) {
-          try {
-            const parsed: PortStop[] = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
-          } catch {}
+    }
+
+    // 3. Legacy ?itinerary= query param (old shared links)
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("itinerary");
+    if (encoded) {
+      try {
+        const decoded: PortStop[] = JSON.parse(atob(encoded));
+        if (Array.isArray(decoded) && decoded.length > 0) {
+          setStops(decoded);
+          setPlotted(true);
+          return;
         }
-      }
+      } catch {}
+    }
+
+    // 4. Load from localStorage (user's own saved route)
+    const saved = localStorage.getItem("routeMapItinerary");
+    if (saved) {
+      try {
+        const parsed: PortStop[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
+      } catch {}
     }
   }, []);
 
