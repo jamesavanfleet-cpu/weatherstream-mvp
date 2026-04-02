@@ -1,0 +1,64 @@
+name: Port Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "client/src/data/ports.ts"
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/data/ports.ts"
+
+jobs:
+  port-guard:
+    name: Verify all approved ports are present
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check approved ports
+        run: |
+          set -e
+          PORTS_FILE="client/src/data/ports.ts"
+          FAILED=0
+
+          APPROVED_PORTS=(
+            "Miami" "Port Everglades" "Port Canaveral" "Tampa Bay"
+            "Jacksonville" "Charleston" "Savannah" "Norfolk" "Baltimore"
+            "Manhattan" "Brooklyn" "Bayonne" "Boston"
+            "New Orleans" "Galveston" "Houston"
+            "Los Angeles" "Long Beach" "San Diego" "San Francisco"
+            "Seattle" "Juneau" "Ketchikan" "Sitka" "Skagway"
+            "Key West" "Nassau" "Bimini" "Freeport" "CocoCay"
+            "Grand Turk" "Cozumel" "Costa Maya" "Belize City"
+            "Roatan" "Grand Cayman" "Falmouth" "Ocho Rios"
+            "Puerto Plata" "La Romana" "Santo Domingo"
+            "San Juan" "St. Thomas" "St. Croix" "St. Maarten"
+            "St. Kitts" "Antigua" "Dominica" "Martinique"
+            "St. Lucia" "Barbados" "St. Vincent" "Grenada"
+            "Aruba" "Bonaire" "Cartagena" "Curacao"
+            "Ensenada" "Cabo San Lucas" "Mazatlan" "Puerto Vallarta"
+            "Barcelona" "Rome" "Naples" "Venice" "Santorini"
+            "Mykonos" "Athens" "Istanbul" "Dubrovnik" "Lisbon"
+          )
+
+          echo "Checking ${#APPROVED_PORTS[@]} approved ports..."
+
+          for PORT in "${APPROVED_PORTS[@]}"; do
+            if grep -q "\"$PORT\"" "$PORTS_FILE"; then
+              echo "  OK: $PORT"
+            else
+              echo "  MISSING: $PORT  <-- REMOVED!"
+              FAILED=1
+            fi
+          done
+
+          if [ $FAILED -eq 1 ]; then
+            echo "PORT GUARD FAILED: One or more approved ports are missing."
+            echo "Ports are permanent. Add the missing ports back to ports.ts."
+            exit 1
+          else
+            echo "All approved ports verified. Port guard passed."
+          fi
