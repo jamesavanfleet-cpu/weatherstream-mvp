@@ -977,19 +977,21 @@ export default function RouteMap() {
   };
 
   const handleDateChange = (id: string, date: string) => {
-    updateStop(id, { date });
-    // Auto-fill the next undated stop with the following day
+    // Single atomic update: set this stop's date AND auto-fill the next undated stop
     setStops(prev => {
       const idx = prev.findIndex(s => s.id === id);
-      if (idx === -1 || !date) return prev;
-      const next = prev[idx + 1];
-      if (next && !next.date) {
-        const d = new Date(date + "T12:00:00");
-        d.setDate(d.getDate() + 1);
-        const nextDate = d.toISOString().slice(0, 10);
-        return prev.map((s, i) => i === idx + 1 ? { ...s, date: nextDate } : s);
+      if (idx === -1) return prev;
+      let updated = prev.map(s => s.id === id ? { ...s, date } : s);
+      if (date) {
+        const next = updated[idx + 1];
+        if (next && !next.date) {
+          const d = new Date(date + "T12:00:00");
+          d.setDate(d.getDate() + 1);
+          const nextDate = d.toISOString().slice(0, 10);
+          updated = updated.map((s, i) => i === idx + 1 ? { ...s, date: nextDate } : s);
+        }
       }
-      return prev;
+      return updated;
     });
     // Auto-sort chronologically after a short delay
     setTimeout(() => {
