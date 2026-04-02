@@ -1306,17 +1306,17 @@ export default function RouteMap() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 text-xs font-semibold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-[#e8d5b0] text-sm font-semibold transition-colors"
           >
-            <Save className="w-3.5 h-3.5" />
-            {saveMsg || "Save"}
+            <Save className="w-4 h-4 flex-shrink-0" />
+            {saveMsg || "Save Route -- Reload anytime for the latest forecast"}
           </button>
           <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-semibold border border-cyan-400/30 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-[#e8d5b0] text-sm font-semibold border border-cyan-400/30 transition-colors"
           >
-            <Share2 className="w-3.5 h-3.5" />
-            {shareMsg || "Share"}
+            <Share2 className="w-4 h-4 flex-shrink-0" />
+            {shareMsg || "Share Route -- Family and friends get the same forecast on their device"}
           </button>
         </div>
       </div>
