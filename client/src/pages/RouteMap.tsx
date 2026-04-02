@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Calendar, Plus, Trash2, ArrowLeft, Save, Share2, Anchor, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, X, ChevronDown, ChevronUp, Thermometer, Droplets, Wind, Waves } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
+import { maritimeRoute } from "../utils/maritimeRouting";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -943,300 +944,30 @@ export default function RouteMap() {
       markersRef.current.push(marker);
     });
 
-    // ---- Maritime routing: insert waypoints to keep lines over water ----
-    // Returns true only if the INTERIOR of the segment (excluding endpoints) passes through the box.
-    // Endpoints are excluded because coastal ports sit on the edge of land boxes and should never
-    // trigger a false-positive waypoint insertion.
-    function lineInteriorCrossesBox(
-      fLat: number, fLon: number, tLat: number, tLon: number,
-      boxMinLat: number, boxMaxLat: number, boxMinLon: number, boxMaxLon: number
-    ): boolean {
-      // Skip if either endpoint is inside the box -- that means the port itself is on this coast
-      const startInBox = fLat >= boxMinLat && fLat <= boxMaxLat && fLon >= boxMinLon && fLon <= boxMaxLon;
-      const endInBox   = tLat >= boxMinLat && tLat <= boxMaxLat && tLon >= boxMinLon && tLon <= boxMaxLon;
-      if (startInBox || endInBox) return false;
-      // Sample 18 interior points (t = 0.05 to 0.95)
-      for (let t = 0.05; t <= 0.95; t += 0.05) {
-        const lat = fLat + (tLat - fLat) * t;
-        const lon = fLon + (tLon - fLon) * t;
-        if (lat >= boxMinLat && lat <= boxMaxLat && lon >= boxMinLon && lon <= boxMaxLon) return true;
-      }
-      return false;
-    }
+    // ---- Maritime routing: handled by ../utils/maritimeRouting.ts ----
+    // The utility uses a port-cluster gate system to keep lines over water.
 
-    // Approximate great-circle distance in km between two lat/lon points
-    function approxDistKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
+    // approxDistKm no longer needed here -- routing handled by maritimeRouting.ts
 
     // -----------------------------------------------------------------------
-    // GLOBAL SEA LANE ROUTING ENGINE
-    // Each obstacle entry: { box, waypoints[] }
-    // The engine picks the waypoint whose midpoint is closest to the direct
-    // segment midpoint -- i.e. the waypoint that deviates least from the
-    // intended heading while still clearing the obstacle.
-    // After inserting waypoints the engine recurses on each sub-segment so
-    // that routes crossing multiple obstacles (e.g. Galveston -> Roatan
-    // crossing both the Yucatan AND Central America) are fully resolved.
+    // Old bounding-box engine removed. See ../utils/maritimeRouting.ts
     // -----------------------------------------------------------------------
-    interface LandObstacle {
-      name: string;
-      // Bounding box [minLat, maxLat, minLon, maxLon]
-      box: [number, number, number, number];
-      // Candidate sea-lane waypoints -- engine picks the best one
-      waypoints: L.LatLngTuple[];
-    }
 
-    const LAND_OBSTACLES: LandObstacle[] = [
-      // ---- Caribbean & Gulf of Mexico ----
-      {
-        name: "Yucatan Peninsula",
-        // East edge at 86.5W keeps Cozumel (86.9W) and Cancun (86.8W) outside
-        box: [14.0, 23.5, -92.5, -86.5],
-        waypoints: [
-          [23.8, -90.5], // Open Gulf north of Yucatan tip (Gulf routes)
-          [21.5, -85.5], // Open Caribbean east of Cozumel (east-side routes)
-          [15.5, -83.0], // Open Caribbean south of peninsula (south routes)
-        ],
-      },
-      {
-        name: "Cuba",
-        box: [19.8, 23.2, -84.9, -74.0],
-        waypoints: [
-          [24.5, -79.5], // Florida Straits / north of Cuba
-          [19.5, -79.5], // South of Cuba (Jamaica Channel)
-          [20.0, -74.0], // East of Cuba (Windward Passage)
-        ],
-      },
-      {
-        name: "Hispaniola (Haiti/Dominican Republic)",
-        box: [17.5, 20.2, -74.5, -68.2],
-        waypoints: [
-          [21.0, -71.5], // North of Hispaniola (Atlantic)
-          [17.0, -71.5], // South of Hispaniola (Caribbean)
-          [20.0, -67.5], // East of Hispaniola (Mona Passage)
-        ],
-      },
-      {
-        name: "Puerto Rico",
-        box: [17.8, 18.6, -67.3, -65.5],
-        waypoints: [
-          [19.0, -66.5], // North of Puerto Rico
-          [17.5, -66.5], // South of Puerto Rico
-        ],
-      },
-      {
-        name: "Central America / Belize / Honduras",
-        box: [7.5, 18.5, -89.5, -82.5],
-        waypoints: [
-          [15.5, -82.0], // Open Caribbean east of Honduras
-          [9.0, -82.0],  // Open Caribbean east of Panama/Costa Rica
-        ],
-      },
-      {
-        name: "Florida Peninsula",
-        // East edge at 80.5W keeps Miami (80.2W) and Fort Lauderdale (80.1W) outside
-        box: [24.5, 31.0, -82.5, -80.5],
-        waypoints: [
-          [27.0, -79.5], // Atlantic side east of Florida
-          [24.0, -81.5], // Florida Keys / south of Florida tip
-        ],
-      },
-      {
-        name: "Jamaica",
-        box: [17.6, 18.6, -78.4, -76.1],
-        waypoints: [
-          [19.0, -77.5], // North of Jamaica
-          [17.2, -77.5], // South of Jamaica
-        ],
-      },
-      {
-        name: "Trinidad and Tobago",
-        box: [10.0, 11.4, -61.9, -60.5],
-        waypoints: [
-          [11.8, -61.2], // North of Trinidad
-          [9.8, -61.2],  // South of Trinidad
-        ],
-      },
-      // ---- North America ----
-      {
-        name: "Baja California",
-        box: [22.5, 32.5, -117.5, -109.5],
-        waypoints: [
-          [26.0, -110.0], // Sea of Cortez (east side)
-          [26.0, -118.5], // Pacific (west side)
-        ],
-      },
-      {
-        name: "Mexico mainland (Pacific coast)",
-        box: [15.0, 22.5, -105.5, -96.5],
-        waypoints: [
-          [20.0, -107.0], // Open Pacific west of Mexico
-        ],
-      },
-      {
-        name: "Alaska / BC panhandle",
-        box: [54.0, 60.0, -137.0, -129.5],
-        waypoints: [
-          [57.0, -136.0], // Inside Passage west channel
-          [57.0, -130.0], // Inside Passage east channel
-        ],
-      },
-      {
-        name: "Vancouver Island",
-        box: [48.3, 51.0, -128.5, -123.5],
-        waypoints: [
-          [49.5, -127.0], // West of Vancouver Island
-          [49.5, -123.0], // Inside Passage east of Vancouver Island
-        ],
-      },
-      // ---- Mediterranean ----
-      {
-        name: "Iberian Peninsula",
-        box: [36.0, 44.0, -9.5, -1.5],
-        waypoints: [
-          [44.5, -5.5],  // Bay of Biscay north
-          [35.5, -5.5],  // Strait of Gibraltar south
-          [40.0, -10.5], // Atlantic west of Portugal
-        ],
-      },
-      {
-        name: "Italian Peninsula",
-        box: [37.5, 44.5, 7.5, 16.5],
-        waypoints: [
-          [44.8, 7.0],   // Ligurian Sea / northwest Italy
-          [37.5, 12.5],  // Strait of Sicily / south of Italy
-          [40.0, 17.0],  // Adriatic / east of Italy
-        ],
-      },
-      {
-        name: "Sicily",
-        box: [36.6, 38.3, 12.4, 15.7],
-        waypoints: [
-          [38.5, 14.0],  // Tyrrhenian Sea north of Sicily
-          [36.3, 14.0],  // Strait of Sicily south
-        ],
-      },
-      {
-        name: "Sardinia",
-        box: [38.8, 41.3, 8.1, 9.8],
-        waypoints: [
-          [41.5, 9.0],   // North of Sardinia
-          [38.5, 9.0],   // South of Sardinia
-          [40.0, 7.5],   // West of Sardinia
-          [40.0, 10.5],  // East of Sardinia
-        ],
-      },
-      {
-        name: "Corsica",
-        box: [41.3, 43.1, 8.5, 9.6],
-        waypoints: [
-          [43.3, 9.0],   // North of Corsica
-          [41.2, 9.0],   // South of Corsica
-          [42.0, 8.2],   // West of Corsica
-          [42.0, 10.0],  // East of Corsica
-        ],
-      },
-      {
-        name: "Greece / Peloponnese",
-        box: [36.5, 41.8, 20.0, 26.5],
-        waypoints: [
-          [40.5, 19.5],  // Ionian Sea west of Greece
-          [36.0, 23.0],  // South of Peloponnese
-          [38.0, 27.0],  // Aegean Sea east of Greece
-        ],
-      },
-      {
-        name: "Crete",
-        box: [34.8, 35.7, 23.5, 26.4],
-        waypoints: [
-          [36.0, 25.0],  // North of Crete (Aegean)
-          [34.5, 25.0],  // South of Crete (Mediterranean)
-        ],
-      },
-      {
-        name: "Turkey (Anatolia)",
-        box: [36.0, 42.0, 26.0, 44.5],
-        waypoints: [
-          [41.5, 29.0],  // Bosphorus / Black Sea entrance
-          [36.5, 28.0],  // Aegean coast south
-          [36.5, 36.0],  // Eastern Mediterranean south coast
-        ],
-      },
-      {
-        name: "Cyprus",
-        box: [34.5, 35.8, 32.2, 34.7],
-        waypoints: [
-          [36.0, 33.5],  // North of Cyprus
-          [34.2, 33.5],  // South of Cyprus
-        ],
-      },
-      {
-        name: "North Africa coast (Tunisia / Libya)",
-        box: [30.0, 37.5, 8.0, 25.0],
-        waypoints: [
-          [37.8, 11.0],  // Strait of Sicily north
-          [33.0, 12.0],  // Open Mediterranean south of Sicily
-          [33.0, 20.0],  // Open Mediterranean south of Greece
-        ],
-      },
-    ];
-
-    // Recursion guard: maximum depth to prevent infinite loops
-    const MAX_ROUTING_DEPTH = 6;
-
-    function maritimeRoute(
-      from: L.LatLngTuple,
-      to: L.LatLngTuple,
-      depth: number = 0
-    ): L.LatLngTuple[] {
-      const [fLat, fLon] = from;
-      const [tLat, tLon] = to;
-
-      // Short coastal hops are already over water -- no routing needed
-      if (approxDistKm(fLat, fLon, tLat, tLon) < 80) return [from, to];
-
-      // Stop recursing if we have hit the depth limit
-      if (depth >= MAX_ROUTING_DEPTH) return [from, to];
-
-      // Midpoint of the direct segment -- used to pick the best waypoint
-      const midLat = (fLat + tLat) / 2;
-      const midLon = (fLon + tLon) / 2;
-
-      for (const obstacle of LAND_OBSTACLES) {
-        const [minLat, maxLat, minLon, maxLon] = obstacle.box;
-        if (!lineInteriorCrossesBox(fLat, fLon, tLat, tLon, minLat, maxLat, minLon, maxLon)) continue;
-
-        // Pick the waypoint that is closest to the direct segment midpoint
-        // (minimises deviation from intended heading)
-        let bestWp = obstacle.waypoints[0];
-        let bestDist = approxDistKm(midLat, midLon, bestWp[0], bestWp[1]);
-        for (const wp of obstacle.waypoints.slice(1)) {
-          const d = approxDistKm(midLat, midLon, wp[0], wp[1]);
-          if (d < bestDist) { bestDist = d; bestWp = wp; }
-        }
-
-        // Recurse on each sub-segment to handle multi-obstacle routes
-        const seg1 = maritimeRoute(from, bestWp, depth + 1);
-        const seg2 = maritimeRoute(bestWp, to, depth + 1);
-        // Merge: seg1 ends at bestWp, seg2 starts at bestWp -- avoid duplicate
-        return [...seg1, ...seg2.slice(1)];
-      }
-
-      return [from, to];
-    }
-
-    // Build the full routed polyline path
+    // Build the full routed polyline path using the sea gate routing engine
     const routedPath: L.LatLngTuple[] = [];
-    for (let i = 0; i < latlngs.length - 1; i++) {
-      const segment = maritimeRoute(latlngs[i], latlngs[i + 1]);
-      if (i === 0) routedPath.push(segment[0]);
-      for (let j = 1; j < segment.length; j++) routedPath.push(segment[j]);
+    for (let i = 0; i < validStops.length - 1; i++) {
+      const fromStop = validStops[i];
+      const toStop = validStops[i + 1];
+      const fromCoord: [number, number] = [fromStop.lat!, fromStop.lon!];
+      const toCoord: [number, number] = [toStop.lat!, toStop.lon!];
+      const segment = maritimeRoute(
+        fromStop.portName,
+        fromCoord,
+        toStop.portName,
+        toCoord
+      );
+      if (i === 0) routedPath.push(segment[0] as L.LatLngTuple);
+      for (let j = 1; j < segment.length; j++) routedPath.push(segment[j] as L.LatLngTuple);
     }
 
     // Draw route line
