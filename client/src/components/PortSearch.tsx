@@ -783,7 +783,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
         <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
         <p className="text-white/50 text-sm mt-2 max-w-md">
-          Type up to 5 destinations, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+          Enter your ports, plot them on a live map, and get a day-by-day forecast at every stop.
         </p>
       </div>
 
@@ -794,6 +794,16 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       >
         <span>&#9654;</span> Plot My Cruise Route
       </button>
+
+      {/* Or divider + instruction line above port slots */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-white/30 text-xs font-semibold tracking-widest uppercase">Or</span>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
+      <p className="text-white/50 text-sm max-w-md">
+        Type up to 5 destinations, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+      </p>
 
       {/* 5 destination slots stacked vertically */}
       <div className="space-y-4">
