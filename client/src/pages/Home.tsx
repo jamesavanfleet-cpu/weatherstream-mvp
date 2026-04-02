@@ -249,7 +249,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
 const CRUISE_ROUTES = [
   {
     name: "Bahamas",
-    image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
+    image: "/locations/bahamas.jpg",
     temp: 77,
     seas: "3-5 ft",
     wind: "15-20 kt",
@@ -260,7 +260,7 @@ const CRUISE_ROUTES = [
   },
   {
     slug: "central-caribbean",
-    name: "Central Caribbean",
+    name: "US Ports and Central Caribbean",
     image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop",
     temp: 82,
     seas: "2-4 ft",
@@ -406,7 +406,7 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Western Caribbean":  { lat: 19.3,   lon: -81.4  },
   "Bahamas":            { lat: 25.0,   lon: -77.4  },
   "Southern Caribbean": { lat: 12.5,   lon: -70.0  },
-  "Central Caribbean":  { lat: 19.3,   lon: -81.4  },
+  "US Ports and Central Caribbean":  { lat: 19.3,   lon: -81.4  },
   "Ensenada":           { lat: 31.87,  lon: -116.6  },
   "Cabo San Lucas":     { lat: 22.89,  lon: -109.91 },
   "Mazatlan":           { lat: 23.22,  lon: -106.42 },

@@ -69,7 +69,7 @@ REGIONS = [
     },
     {
         "slug": "central-caribbean",
-        "name": "Central Caribbean",
+        "name": "US Ports and Central Caribbean",
         "rep_port": "Grand Cayman",
         "lat": 19.29,
         "lon": -81.38,
