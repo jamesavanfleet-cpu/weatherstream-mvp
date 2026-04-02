@@ -379,6 +379,11 @@ function PortAutocomplete({
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="new-password"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-form-type="other"
+        data-lpignore="true"
         className={`w-full rounded-lg px-4 py-3 text-base focus:outline-none disabled:opacity-50 ${
           isSeaDay
             ? "bg-blue-500/10 border border-blue-400/20 text-blue-300 placeholder-blue-300/50 focus:border-blue-400/60"
@@ -410,8 +415,20 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
   const phase = getMoonPhase(data.date);
   const [showHourly, setShowHourly] = useState(false);
   const [showFiveDay, setShowFiveDay] = useState(false);
+  const [isMetric, setIsMetric] = useState(false);
 
   const live = data.liveData;
+
+  // Unit conversion helpers
+  function dispTemp(f: number): string {
+    return isMetric ? Math.round((f - 32) * 5 / 9) + "\u00b0C" : f + "\u00b0F";
+  }
+  function dispWind(kt: number): string {
+    return isMetric ? kt + " kt" : Math.round(kt * 1.15078) + " mph";
+  }
+  function dispHeight(ft: number): string {
+    return isMetric ? (ft * 0.3048).toFixed(1) + " m" : ft + " ft";
+  }
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-2 bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -430,9 +447,25 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
             </div>
             <div className="text-white/50 text-sm mt-0.5">{formatDateDisplay(data.date)}</div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg overflow-hidden border border-white/20 text-xs font-semibold">
+              <button
+                onClick={() => setIsMetric(false)}
+                className={`px-2.5 py-1.5 transition-colors ${!isMetric ? "bg-cyan-500 text-slate-900" : "bg-white/5 text-white/50 hover:text-white/80"}`}
+              >
+                US
+              </button>
+              <button
+                onClick={() => setIsMetric(true)}
+                className={`px-2.5 py-1.5 transition-colors ${isMetric ? "bg-cyan-500 text-slate-900" : "bg-white/5 text-white/50 hover:text-white/80"}`}
+              >
+                Metric
+              </button>
+            </div>
+            <button onClick={onClose} className="text-white/40 hover:text-white p-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         {/* Tab toggle for combined markers (same port, multiple dates) */}
         {data.allStops && data.allStops.length > 1 && (
@@ -524,7 +557,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 <div className="flex items-center gap-3">
                   <SkyIcon condition={live.condition} className="w-8 h-8 text-amber-300" />
                   <div>
-                    <div className="text-white font-black text-2xl">{live.maxF}&deg; / {live.minF}&deg;F</div>
+                    <div className="text-white font-black text-2xl">{dispTemp(live.maxF)} / {dispTemp(live.minF)}</div>
                     <div className="text-white/60 text-sm">{live.condition}</div>
                   </div>
                 </div>
@@ -535,7 +568,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   {live.dewF != null && (
                     <div className="bg-white/5 rounded-lg px-3 py-2">
                       <div className="text-white/50 text-xs">Dew Point</div>
-                      <div className="text-white font-bold">{live.dewF}&deg;F</div>
+                      <div className="text-white font-bold">{dispTemp(live.dewF!)}</div>
                     </div>
                   )}
                   {live.humidity != null && (
@@ -555,12 +588,12 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   </div>
                   <div className="bg-white/5 rounded-lg px-3 py-2">
                     <div className="text-white/50 text-xs">Speed</div>
-                    <div className="text-cyan-300 font-bold">{live.windKt} kt</div>
+                    <div className="text-cyan-300 font-bold">{dispWind(live.windKt)}</div>
                   </div>
                   {live.gustKt != null && (
                     <div className="bg-white/5 rounded-lg px-3 py-2">
                       <div className="text-white/50 text-xs">Gusts</div>
-                      <div className="text-cyan-300 font-bold">{live.gustKt} kt</div>
+                      <div className="text-cyan-300 font-bold">{dispWind(live.gustKt!)}</div>
                     </div>
                   )}
                 </div>
@@ -573,13 +606,13 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                       {live.waveHeightFt != null && (
                         <div className="bg-white/5 rounded-lg px-3 py-2">
                           <div className="text-white/50 text-xs">Wave Height</div>
-                          <div className="text-orange-300 font-bold">{live.waveHeightFt} ft</div>
+                          <div className="text-orange-300 font-bold">{dispHeight(live.waveHeightFt!)}</div>
                         </div>
                       )}
                       {live.swellFt != null && (
                         <div className="bg-white/5 rounded-lg px-3 py-2">
                           <div className="text-white/50 text-xs">Swell</div>
-                          <div className="text-orange-300 font-bold">{live.swellFt} ft{live.swellDir ? ` from ${live.swellDir}` : ""}</div>
+                          <div className="text-orange-300 font-bold">{dispHeight(live.swellFt!)}{live.swellDir ? ` from ${live.swellDir}` : ""}</div>
                         </div>
                       )}
                     </div>
@@ -634,8 +667,8 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                         {live.hourly.map((hr, i) => (
                           <div key={i} className="flex items-center justify-between px-4 py-2 text-xs">
                             <span className="text-white/50 w-16">{hr.time}</span>
-                            <span className="text-white font-semibold">{hr.tempF}&deg;F</span>
-                            <span className="text-cyan-300">{hr.windKt} kt</span>
+                            <span className="text-white font-semibold">{dispTemp(hr.tempF)}</span>
+                            <span className="text-cyan-300">{dispWind(hr.windKt)}</span>
                             <span className="text-blue-300">{hr.rainChance}%</span>
                             <span className="text-white/60 text-right">{hr.condition}</span>
                           </div>
@@ -662,8 +695,8 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                             <span className={`w-20 font-semibold ${day.date === data.date ? "text-cyan-300" : "text-white/70"}`}>
                               {formatDateDisplay(day.date)}
                             </span>
-                            <span className="text-white">{day.maxF}&deg; / {day.minF}&deg;F</span>
-                            <span className="text-cyan-300">{day.windKt} kt {day.windDir}</span>
+                            <span className="text-white">{dispTemp(day.maxF)} / {dispTemp(day.minF)}</span>
+                            <span className="text-cyan-300">{dispWind(day.windKt)} {day.windDir}</span>
                             <span className="text-blue-300">{day.rainChance}%</span>
                           </div>
                         ))}
@@ -684,7 +717,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="bg-white/5 rounded-lg px-3 py-2">
                     <div className="text-white/50 text-xs">Avg High / Low</div>
-                    <div className="text-white font-bold">{data.climateData.hiF}&deg; / {data.climateData.loF}&deg;F</div>
+                    <div className="text-white font-bold">{dispTemp(data.climateData.hiF)} / {dispTemp(data.climateData.loF)}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg px-3 py-2">
                     <div className="text-white/50 text-xs">Humidity</div>
@@ -692,7 +725,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   </div>
                   <div className="bg-white/5 rounded-lg px-3 py-2">
                     <div className="text-white/50 text-xs">Wind</div>
-                    <div className="text-cyan-300 font-bold">{data.climateData.windKt} kt {data.climateData.windDir}</div>
+                    <div className="text-cyan-300 font-bold">{dispWind(parseInt(data.climateData.windKt))} {data.climateData.windDir}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg px-3 py-2">
                     <div className="text-white/50 text-xs">Rain Chance</div>
@@ -700,7 +733,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   </div>
                   <div className="bg-white/5 rounded-lg px-3 py-2 col-span-2">
                     <div className="text-white/50 text-xs">Avg Seas</div>
-                    <div className="text-orange-300 font-bold">{data.climateData.seaFt} ft</div>
+                    <div className="text-orange-300 font-bold">{dispHeight(data.climateData.seaFt)}</div>
                   </div>
                 </div>
               </div>
@@ -904,7 +937,17 @@ export default function RouteMap() {
 
   // ---- Stop management ----
   const addStop = () => {
-    setStops(prev => [...prev, { id: generateId(), portName: "", lat: null, lon: null, date: "", isSeaDay: false }]);
+    setStops(prev => {
+      // Find the last stop that has a date and advance by 1 day
+      const lastDated = [...prev].reverse().find(s => s.date);
+      let defaultDate = "";
+      if (lastDated?.date) {
+        const d = new Date(lastDated.date + "T12:00:00");
+        d.setDate(d.getDate() + 1);
+        defaultDate = d.toISOString().slice(0, 10);
+      }
+      return [...prev, { id: generateId(), portName: "", lat: null, lon: null, date: defaultDate, isSeaDay: false }];
+    });
     // Scroll to the new card after React re-renders
     setTimeout(() => {
       newStopRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
