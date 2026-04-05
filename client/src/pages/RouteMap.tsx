@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Calendar, Plus, Trash2, ArrowLeft, Save, Share2, Anchor, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, X, ChevronDown, ChevronUp, Thermometer, Droplets, Wind, Waves } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
-import { maritimeRoute } from "../utils/maritimeRouting";
+import { maritimeRoute, ensureMaritimeRoutesLoaded } from "../utils/maritimeRouting";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -931,6 +931,16 @@ export default function RouteMap() {
       renderMapMarkers(mapRef.current);
     }
   }, [stops, plotted]);
+
+  // Once the maritime routes JSON finishes loading, re-render so pre-computed
+  // routes replace any gate-fallback lines that were drawn before the fetch completed.
+  useEffect(() => {
+    ensureMaritimeRoutesLoaded().then(() => {
+      if (mapRef.current && plotted) {
+        renderMapMarkers(mapRef.current);
+      }
+    });
+  }, [plotted]);
 
   const renderMapMarkers = useCallback((map: L.Map) => {
     // Clear old markers and polyline
