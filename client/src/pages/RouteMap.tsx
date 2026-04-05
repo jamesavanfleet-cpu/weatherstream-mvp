@@ -887,13 +887,18 @@ export default function RouteMap() {
       } catch {}
     }
 
-    // 4. Load from localStorage (user's own saved route)
-    const saved = localStorage.getItem("routeMapItinerary");
-    if (saved) {
-      try {
-        const parsed: PortStop[] = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
-      } catch {}
+    // 4. Load from localStorage ONLY if user explicitly saved the route
+    // A separate flag "routeMapSaved" is written by handleSave -- without it,
+    // we never auto-populate the form with old data the user did not intend to keep.
+    const wasSaved = localStorage.getItem("routeMapSaved") === "true";
+    if (wasSaved) {
+      const saved = localStorage.getItem("routeMapItinerary");
+      if (saved) {
+        try {
+          const parsed: PortStop[] = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
+        } catch {}
+      }
     }
   }, []);
 
@@ -1084,11 +1089,14 @@ export default function RouteMap() {
 
   const handlePortChange = (id: string, val: string) => {
     const port = resolvePort(val);
-    updateStop(id, {
+    // When the user clears the port name, also clear the date so no orphaned date remains
+    const patch: Partial<PortStop> = {
       portName: val,
       lat: port?.lat ?? null,
       lon: port?.lon ?? null,
-    });
+    };
+    if (!val.trim()) patch.date = "";
+    updateStop(id, patch);
   };
 
   const handlePortBlur = (id: string, val: string) => {
@@ -1151,6 +1159,8 @@ export default function RouteMap() {
 
   const handleSave = () => {
     localStorage.setItem("routeMapItinerary", JSON.stringify(stops));
+    // Write the explicit-save flag so the form reloads this itinerary on next visit
+    localStorage.setItem("routeMapSaved", "true");
     setSaveMsg("Saved!");
     setTimeout(() => setSaveMsg(""), 2000);
   };
@@ -1215,7 +1225,7 @@ export default function RouteMap() {
                   <div className="flex items-center gap-2">
                     {/* Sea day toggle */}
                     <button
-                      onClick={() => updateStop(stop.id, { isSeaDay: !stop.isSeaDay, portName: stop.isSeaDay ? "" : "Sea Day", lat: null, lon: null })}
+                      onClick={() => updateStop(stop.id, { isSeaDay: !stop.isSeaDay, portName: stop.isSeaDay ? "" : "Sea Day", lat: null, lon: null, ...(stop.isSeaDay ? { date: "" } : {}) })}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                         stop.isSeaDay
                           ? "bg-blue-500/20 border-blue-400/40 text-blue-300"
@@ -1243,7 +1253,8 @@ export default function RouteMap() {
                       if (typed.length > 0) {
                         updateStop(stop.id, { isSeaDay: false, portName: typed, lat: null, lon: null });
                       } else if (val === "") {
-                        updateStop(stop.id, { isSeaDay: false, portName: "", lat: null, lon: null });
+                        // Clearing Sea Day text back to empty -- clear date too so nothing is orphaned
+                        updateStop(stop.id, { isSeaDay: false, portName: "", lat: null, lon: null, date: "" });
                       }
                     } else {
                       handlePortChange(stop.id, val);
@@ -1253,20 +1264,22 @@ export default function RouteMap() {
                   isSeaDay={stop.isSeaDay}
                 />
 
-                {/* Date input -- blurs on change to dismiss native calendar picker */}
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
-                  <input
-                    type="date"
-                    value={stop.date}
-                    onChange={e => {
-                      handleDateChange(stop.id, e.target.value);
-                      (e.target as HTMLInputElement).blur();
-                    }}
-                    className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-base focus:outline-none focus:border-cyan-400/60"
-                    style={{ colorScheme: "dark" }}
-                  />
-                </div>
+                {/* Date input -- only shown once a port name has been entered or Sea Day is active */}
+                {(stop.portName.trim() || stop.isSeaDay) && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
+                    <input
+                      type="date"
+                      value={stop.date}
+                      onChange={e => {
+                        handleDateChange(stop.id, e.target.value);
+                        (e.target as HTMLInputElement).blur();
+                      }}
+                      className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-base focus:outline-none focus:border-cyan-400/60"
+                      style={{ colorScheme: "dark" }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
