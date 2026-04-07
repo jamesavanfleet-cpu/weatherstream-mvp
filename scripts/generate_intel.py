@@ -185,13 +185,15 @@ def wmo_to_text(code: int) -> str:
     return "mixed conditions"
 
 
-def build_weather_summary(wx: dict) -> str:
+def build_weather_summary(wx: dict) -> dict:
     """
-    Build a weather summary string for the AI prompt.
+    Build a structured weather data dict for the AI prompt.
     IMPORTANT: Temperature values are intentionally excluded from this summary.
     The AI briefing must never mention current or forecast temperatures -- they
     date the briefing and erode credibility. Wind, sky condition, sea state, and
     rain probability are the only parameters passed to the AI.
+    Returns a dict with 'summary' (string for prompt) and 'significant'
+    (list of alert strings for conditions meeting significance thresholds).
     """
     c = wx["current"]
     d = wx["daily"]
@@ -210,24 +212,67 @@ def build_weather_summary(wx: dict) -> str:
         cond_d = wmo_to_text(d["weathercode"][i])
         outlook_parts.append(f"Day {i+1}: {w_dir} {w_kt}kt, {cond_d}, {r}% rain")
 
-    return (
-        f"Conditions: {wind_dir} {wind_kt}kt, {cond}, {rain}% rain chance. "
+    summary = (
+        f"Current conditions: {wind_dir} {wind_kt}kt, {cond}, {rain}% rain chance. "
         f"3-day outlook: {'; '.join(outlook_parts)}."
     )
 
+    # Significant weather flags -- conditions that MUST lead the briefing
+    significant = []
+    if c["weathercode"] >= 80:  # rain showers or thunderstorms
+        significant.append(f"ACTIVE SIGNIFICANT WEATHER NOW: {cond} with {rain}% rain probability")
+    if wind_kt >= 20:
+        significant.append(f"ELEVATED WINDS NOW: {wind_dir} {wind_kt}kt")
+    for i in range(min(3, len(d["time"]))):
+        w_kt = ms_to_kt(d["wind_speed_10m_max"][i])
+        r = d["precipitation_probability_max"][i] or 0
+        cond_d = wmo_to_text(d["weathercode"][i])
+        day_label = "today" if i == 0 else f"Day {i+1}"
+        if d["weathercode"][i] >= 80:
+            significant.append(f"SIGNIFICANT WEATHER {day_label.upper()}: {cond_d}, {r}% rain probability")
+        elif r >= 40:
+            significant.append(f"ELEVATED RAIN CHANCE {day_label.upper()}: {r}% probability, {cond_d}")
+        if w_kt >= 20:
+            significant.append(f"ELEVATED WINDS {day_label.upper()}: {w_kt}kt")
 
-def call_groq(region: dict, weather_summary: str) -> str:
+    return {"summary": summary, "significant": significant}
+
+
+def call_groq(region: dict, weather_data: dict) -> str:
     today = date.today().strftime("%B %d, %Y")
     ports_list = ", ".join(region["ports"])
+    weather_summary = weather_data["summary"]
+    significant = weather_data["significant"]
+
+    # Build the significant weather lead block if any flags were raised
+    if significant:
+        sig_block = (
+            f"PRIORITY ALERT -- THE FOLLOWING SIGNIFICANT WEATHER CONDITIONS ARE ACTIVE OR FORECAST. "
+            f"YOU MUST LEAD THE BRIEFING WITH THESE CONDITIONS AND NAME THE SPECIFIC PORTS MOST AFFECTED: "
+            + " | ".join(significant) + " "
+        )
+    else:
+        sig_block = ""
+
     prompt = (
-        f"You are James Van Fleet, former Chief Meteorologist for Royal Caribbean with 30+ years of experience. "
-        f"Write a concise, practical daily weather intel briefing for the {region['name']} region "
+        f"You are a professional Chief Meteorologist with 30+ years of cruise industry experience. "
+        f"Write a daily weather intel briefing for cruise passengers and crew in the {region['name']} region "
         f"(ports: {ports_list}) for {today}. "
-        f"Base it on this live weather data for {region['rep_port']}: {weather_summary} "
-        f"Write 3-4 sentences in a direct, professional mariner's voice. "
-        f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity -- those topics belong on a different platform. Focus only on what cruise passengers need to know: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
-        f"Mention specific ports or anchorage conditions where relevant. "
-        f"Do not use em dashes. Do not start with 'I'. Do not mention the data source. "
+        f"{sig_block}"
+        f"Base every sentence on this live forecast data for {region['rep_port']}: {weather_summary} "
+        f"STRUCTURE REQUIREMENT: The briefing must address three time periods in order -- "
+        f"(1) what is happening today and its impact on port operations and shore excursions, "
+        f"(2) what to expect in the next 24-48 hours and which specific ports will be affected, "
+        f"(3) any developing trends or changes beyond 48 hours that cruise passengers should know about. "
+        f"Write 4-5 sentences. Start with 'Today'. Use a direct, first-person operational voice as if speaking directly to passengers and crew. "
+        f"ABSOLUTE RULES: "
+        f"Every sentence must reference a specific data point from the live forecast (wind speed/direction, rain probability, sky condition). "
+        f"You are FORBIDDEN from making any general, climatological, or typical-weather statements. "
+        f"Do NOT write anything like 'the Bahamas typically sees trade winds' or 'cold fronts can bring NW winds' or any statement about what weather is usually like. "
+        f"Only describe what the data says is happening or forecast for the next 3 days. "
+        f"Name specific ports when describing impacts. "
+        f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity. Focus only on: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
+        f"Do not use em dashes. Do not mention the data source. "
         f"ABSOLUTE RULE -- TEMPERATURES: You must NEVER include any temperature value of any kind in this briefing. "
         f"This means no current temperatures, no forecast high or low temperatures, no feels-like values, no dew point values, and no heat index values. "
         f"Do not write phrases like 'temperatures in the 70s', 'mild temperatures', 'warm at 80 degrees', '59F', '25C', or any variation. "
@@ -416,8 +461,8 @@ def main():
             time.sleep(5)
         try:
             wx = fetch_weather(region["lat"], region["lon"])
-            summary = build_weather_summary(wx)
-            intel = call_groq(region, summary)
+            weather_data = build_weather_summary(wx)
+            intel = call_groq(region, weather_data)
             # Validate: must be a non-empty string of at least 20 characters
             if not intel or len(intel.strip()) < 20:
                 raise ValueError(f"Groq returned suspiciously short response: {repr(intel)}")
