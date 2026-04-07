@@ -998,6 +998,7 @@ export default function Home() {
   const [selectedPort, setSelectedPort] = useState<typeof LIVE_DATA[0] | null>(null);
   type LiveCondEntry = { tempF: number; tempC: number; condition: string; wmo: number; windKt: number; windDir: number };
   const [liveConditionsData, setLiveConditionsData] = useState<Record<string, LiveCondEntry> | null>(null);
+  const [liveConditionsUpdatedAt, setLiveConditionsUpdatedAt] = useState<string | null>(null);
   const [briefingVideoOpen, setBriefingVideoOpen] = useState(false);
   const [briefingVideoUrl, setBriefingVideoUrl] = useState<string | null>(null);
   const [briefingVideoOrientation, setBriefingVideoOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
@@ -1039,8 +1040,16 @@ export default function Home() {
           if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
           return r.json();
         })
-        .then((d: { ports: Record<string, LiveCondEntry> }) => {
+        .then((d: { ports: Record<string, LiveCondEntry>; generated_at?: string }) => {
           if (d.ports) setLiveConditionsData(d.ports);
+          if (d.generated_at) {
+            const dt = new Date(d.generated_at);
+            const formatted = dt.toLocaleString('en-US', {
+              month: 'short', day: 'numeric', year: 'numeric',
+              hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC'
+            }) + ' UTC';
+            setLiveConditionsUpdatedAt(formatted);
+          }
         })
         .catch(() => { /* fall back to static LIVE_DATA values */ });
     };
@@ -1401,6 +1410,11 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">Live Conditions Now</span>
+                {liveConditionsUpdatedAt && (
+                  <span className="text-white/40 text-xs font-normal normal-case tracking-normal">
+                    Updated: {liveConditionsUpdatedAt}
+                  </span>
+                )}
               </div>
               {/* Units toggle for the live conditions strip */}
               <button
