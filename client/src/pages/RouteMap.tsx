@@ -1274,22 +1274,20 @@ export default function RouteMap() {
                   isSeaDay={stop.isSeaDay}
                 />
 
-                {/* Date input -- only shown once a port name has been entered or Sea Day is active */}
-                {(stop.portName.trim() || stop.isSeaDay) && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
-                    <input
-                      type="date"
-                      value={stop.date}
-                      onChange={e => {
-                        handleDateChange(stop.id, e.target.value);
-                        (e.target as HTMLInputElement).blur();
-                      }}
-                      className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-base focus:outline-none focus:border-cyan-400/60"
-                      style={{ colorScheme: "dark" }}
-                    />
-                  </div>
-                )}
+                {/* Date input -- always visible */}
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
+                  <input
+                    type="date"
+                    value={stop.date}
+                    onChange={e => {
+                      handleDateChange(stop.id, e.target.value);
+                      (e.target as HTMLInputElement).blur();
+                    }}
+                    className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-base focus:outline-none focus:border-cyan-400/60"
+                    style={{ colorScheme: "dark" }}
+                  />
+                </div>
               </div>
             ))}
           </div>

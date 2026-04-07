@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import {
-  MapPin, Search, X,
+  MapPin, Search, X, Calendar,
   Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown
 } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
@@ -408,6 +408,7 @@ function PortSlotCard({
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [date, setDate] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -592,6 +593,21 @@ function PortSlotCard({
               </button>
             </div>
           )}
+        </div>
+
+        {/* Date input -- always visible */}
+        <div className="flex items-center gap-2 mt-3">
+          <Calendar className="w-4 h-4 text-white/40 flex-shrink-0" />
+          <input
+            type="date"
+            value={date}
+            onChange={e => {
+              setDate(e.target.value);
+              (e.target as HTMLInputElement).blur();
+            }}
+            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400/60"
+            style={{ colorScheme: "dark" }}
+          />
         </div>
       </div>
 
