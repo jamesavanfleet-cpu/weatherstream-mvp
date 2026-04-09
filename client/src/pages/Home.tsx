@@ -250,18 +250,6 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
 // --- Caribbean Cruise Routes ---
 const CRUISE_ROUTES = [
   {
-    slug: "us-ports",
-    name: "US Ports",
-    image: "/locations/us-ports.jpg",
-    temp: 68,
-    seas: "2-4 ft",
-    wind: "10-20 kt",
-    rain: "15%",
-    status: "Good",
-    gradient: "from-blue-600/20 to-slate-500/20",
-    intel: "US homeports from Boston to Miami on the East Coast, New Orleans and Galveston on the Gulf, and San Diego to San Francisco on the West Coast. East Coast ports seeing variable conditions ahead of the next frontal system. Gulf Coast ports calm with light southerly flow. West Coast ports under the California High with NW winds 15-20 kt."
-  },
-  {
     slug: "bahamas-central-caribbean",
     name: "Bahamas, Bermuda and Central Caribbean",
     image: "/locations/bahamas.jpg",
@@ -294,6 +282,18 @@ const CRUISE_ROUTES = [
     status: "Excellent",
     gradient: "from-teal-500/20 to-emerald-500/20",
     intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curacao enjoying persistent easterlies -- perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
+  },
+  {
+    slug: "us-ports",
+    name: "US Ports",
+    image: "/locations/us-ports.jpg",
+    temp: 68,
+    seas: "2-4 ft",
+    wind: "10-20 kt",
+    rain: "15%",
+    status: "Good",
+    gradient: "from-blue-600/20 to-slate-500/20",
+    intel: "US homeports from Boston to Miami on the East Coast, New Orleans and Galveston on the Gulf, and San Diego to San Francisco on the West Coast. East Coast ports seeing variable conditions ahead of the next frontal system. Gulf Coast ports calm with light southerly flow. West Coast ports under the California High with NW winds 15-20 kt."
   },
   {
     name: "Western Caribbean",
