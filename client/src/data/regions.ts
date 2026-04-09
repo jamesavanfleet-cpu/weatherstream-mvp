@@ -51,12 +51,14 @@ export const REGIONS: Region[] = [
   },
   {
     slug: "bahamas-central-caribbean",
-    name: "Bahamas and Central Caribbean",
+    name: "Bahamas, Bermuda and Central Caribbean",
     intel: "Nassau and Freeport conditions depend heavily on the current synoptic pattern. Western Bahamas anchorages well-protected from the prevailing E-SE trades. Bimini and the Berry Islands offer excellent protected waters on their western sides. Atlantic-facing eastern shores can see 4-6 ft swells during active trade wind periods. Cold front passages in winter can bring brief NW winds 20-30 kt followed by crystal-clear visibility. The Florida Straits between Miami and Cuba see strong current and can funnel NE winds 20-30 kt during winter cold fronts. Grand Cayman sits exposed to swells from multiple directions -- check carefully for any active weather to the north or east. Jamaica's north coast ports at Ocho Rios and Falmouth occasionally see northerly swell wrap around the island during winter cold front passages. The Dominican Republic's north coast at Puerto Plata is exposed to Atlantic swell; the south coast at La Romana and Santo Domingo is more protected.",
     image: "/locations/bahamas.jpg",
     gradient: "from-blue-500/20 to-cyan-500/20",
     ports: [
       { name: "Berry Islands",     lat: 25.63, lon: -77.83, sublabel: "Cruise Lines' Private Islands" },
+      { name: "Bermuda -- Hamilton",          lat: 32.2948, lon: -64.7839, sublabel: "Bermuda" },
+      { name: "Bermuda -- Royal Naval Dockyard", lat: 32.3167, lon: -64.8333, sublabel: "Bermuda" },
       { name: "Bimini",            lat: 25.73, lon: -79.30 },
       { name: "Falmouth",          lat: 18.49, lon: -77.66, marineLat: 18.52, marineLon: -77.66 },
       { name: "Freeport",          lat: 26.53, lon: -78.70 },

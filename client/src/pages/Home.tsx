@@ -42,6 +42,8 @@ const LIVE_DATA = [
   { location: "Barbados", sublabel: null, lat: 13.10, lon: -59.62, temp: 82, condition: "Trade Winds", icon: Wind, color: "from-blue-500 to-indigo-500" },
   { location: "Barcelona", sublabel: "Spain", lat: 41.38, lon: 2.18, temp: 62, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-500 to-indigo-500" },
   { location: "Beirut", sublabel: "Lebanon", lat: 33.89, lon: 35.50, temp: 68, condition: "Sunny", icon: ThermometerSun, color: "from-amber-400 to-orange-400" },
+  { location: "Bermuda -- Hamilton", sublabel: "Bermuda", lat: 32.2948, lon: -64.7839, temp: 72, condition: "Partly Cloudy", icon: Cloud, color: "from-teal-400 to-cyan-500" },
+  { location: "Bermuda -- Royal Naval Dockyard", sublabel: "Bermuda", lat: 32.3167, lon: -64.8333, temp: 72, condition: "Partly Cloudy", icon: Cloud, color: "from-teal-500 to-blue-500" },
   { location: "Belize City", sublabel: null, lat: 17.25, lon: -88.77, temp: 84, condition: "Partly Cloudy", icon: Cloud, color: "from-green-500 to-teal-500" },
   { location: "Berry Islands", sublabel: "Cruise Lines' Private Islands", lat: 25.63, lon: -77.83, temp: 77, condition: "Sunny", icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
   { location: "Bimini", sublabel: null, lat: 25.73, lon: -79.30, temp: 76, condition: "Clear", icon: Sparkles, color: "from-sky-400 to-cyan-400" },
@@ -261,7 +263,7 @@ const CRUISE_ROUTES = [
   },
   {
     slug: "bahamas-central-caribbean",
-    name: "Bahamas and Central Caribbean",
+    name: "Bahamas, Bermuda and Central Caribbean",
     image: "/locations/bahamas.jpg",
     temp: 79,
     seas: "2-4 ft",
@@ -283,17 +285,6 @@ const CRUISE_ROUTES = [
     intel: "High pressure dominating the region through the weekend. Expect light trade winds and calm seas -- ideal for tender operations in St. Thomas and St. Maarten. UV index will be extreme, so remind passengers about sun protection."
   },
   {
-    name: "Western Caribbean",
-    image: CRUISE_SUNSET,
-    temp: 86,
-    seas: "3-4 ft",
-    wind: "12-18 kt",
-    rain: "10%",
-    status: "Excellent",
-    gradient: "from-orange-500/20 to-pink-500/20",
-    intel: "Typical pattern with easterly flow. Cozumel and Costa Maya will see afternoon sea breezes -- perfect beach weather. Watch for isolated showers near the Honduran mountains in the late afternoon, but they'll stay inland."
-  },
-  {
     name: "Southern Caribbean",
     image: "https://files.manuscdn.com/user_upload_by_module/session_file/110462184/INhsBOFIHROpOBep.jpg",
     temp: 85,
@@ -303,6 +294,17 @@ const CRUISE_ROUTES = [
     status: "Excellent",
     gradient: "from-teal-500/20 to-emerald-500/20",
     intel: "ABC islands sitting in the dry zone south of the hurricane belt. Aruba and Curacao enjoying persistent easterlies -- perfect for windsurfing and sailing. Bonaire's leeward coast is glass-calm for diving. Minimal rain expected all week, with visibility exceeding 100 ft underwater."
+  },
+  {
+    name: "Western Caribbean",
+    image: CRUISE_SUNSET,
+    temp: 86,
+    seas: "3-4 ft",
+    wind: "12-18 kt",
+    rain: "10%",
+    status: "Excellent",
+    gradient: "from-orange-500/20 to-pink-500/20",
+    intel: "Typical pattern with easterly flow. Cozumel and Costa Maya will see afternoon sea breezes -- perfect beach weather. Watch for isolated showers near the Honduran mountains in the late afternoon, but they'll stay inland."
   },
 ];
 

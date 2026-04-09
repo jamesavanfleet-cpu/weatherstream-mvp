@@ -117,6 +117,13 @@ export const PORT_LIST: Port[] = [
   { name: "Nassau",                 lat: 25.0780, lon:  -77.3390, region: "Bahamas",
     aliases: ["New Providence", "Nassau Bahamas", "Nassau New Providence"] },
 
+  // Bermuda -- Hamilton (capital) and Royal Naval Dockyard (main cruise terminal)
+  { name: "Bermuda -- Hamilton",     lat: 32.2948, lon:  -64.7839, region: "Bermuda",
+    aliases: ["Hamilton Bermuda", "Hamilton", "Bermuda Hamilton", "Bermuda capital"] },
+
+  { name: "Bermuda -- Royal Naval Dockyard", lat: 32.3167, lon: -64.8333, region: "Bermuda",
+    aliases: ["Royal Naval Dockyard", "Dockyard Bermuda", "Bermuda Dockyard", "King's Wharf", "Kings Wharf Bermuda"] },
+
   // Bimini -- North Bimini is Virgin Voyages' The Beach Club
   { name: "Bimini",                 lat: 25.7200, lon:  -79.2900, region: "Bahamas",
     aliases: ["Bimini Islands", "Bimini Bahamas"] },
