@@ -193,7 +193,7 @@ export const REGIONS: Region[] = [
   },
   {
     slug: "southeast-alaska",
-    name: "Southeast Alaska",
+    name: "Alaska",
     intel: "The Inside Passage from Seattle to Skagway is one of the most spectacular and weather-sensitive cruising routes in the world. Southeast Alaska sees frequent low pressure systems tracking in from the Gulf of Alaska, bringing SE winds 15-25 kt and persistent overcast with light rain. Juneau and Ketchikan are among the rainiest cities in North America -- plan for rain gear regardless of forecast. Tracy Arm Fjord requires careful navigation for ice conditions and bergy bits. Skagway at the head of Lynn Canal can see strong gap winds funneling through the mountains. Seattle departures are influenced by Pacific systems tracking through the Strait of Juan de Fuca. Sitka on the outer coast has full Pacific exposure -- check swell forecasts carefully. Summer season (June-August) offers the best conditions with long daylight hours.",
     image: "/locations/southeast-alaska.jpg",
     gradient: "from-slate-500/20 to-cyan-600/20",

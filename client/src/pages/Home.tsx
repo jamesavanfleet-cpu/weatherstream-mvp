@@ -363,7 +363,7 @@ const PACIFIC_ROUTES = [
 // --- Southeast Alaska Routes ---
 const ALASKA_ROUTES = [
   {
-    name: "Southeast Alaska",
+    name: "Alaska",
     slug: "southeast-alaska",
     image: "/locations/southeast-alaska.jpg",
     temp: 45,
@@ -1704,7 +1704,7 @@ export default function Home() {
         <div className="container relative z-10">
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Southeast Alaska Cruise Weather
+              Alaska Cruise Weather
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
               Inside Passage from Seattle to Skagway -- complete forecasts for Juneau, Ketchikan, Sitka, Tracy Arm, and beyond
