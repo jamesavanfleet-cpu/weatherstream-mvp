@@ -270,13 +270,14 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       }));
 
     // Rain chance by time of day (morning 6-12, afternoon 12-18, evening 18-22, overnight 22-6)
+    // Uses max (not average) to match the daily precipitation_probability_max field
     function avgRain(startH: number, endH: number): number | null {
       const vals = hourlyTimes
         .map((t, i) => ({ hour: new Date(t).getHours(), val: h.precipitation_probability[i] ?? 0, t }))
         .filter(({ t, hour }) => t.startsWith(dateStr) && hour >= startH && hour < endH)
         .map(({ val }) => val);
       if (!vals.length) return null;
-      return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+      return Math.max(...vals);
     }
 
     // 5-day forecast centered on the target date
