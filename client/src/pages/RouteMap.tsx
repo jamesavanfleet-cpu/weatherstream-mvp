@@ -65,7 +65,7 @@ interface LiveForecastDay {
   rainEvening: number | null;
   rainOvernight: number | null;
   hourly: { time: string; tempF: number; windKt: number; rainChance: number; condition: string }[];
-  sevenDay: { date: string; maxF: number; minF: number; condition: string; rainChance: number; windKt: number; windDir: string }[];
+  sevenDay: { date: string; maxF: number; minF: number; condition: string; rainChance: number; peakRainTimeOfDay: string; windKt: number; windDir: string }[];
   dewF: number | null;
   humidity: number | null;
   gustKt: number | null;
@@ -287,12 +287,34 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
     const endIdx = Math.min(allDates.length - 1, centerIdx + 2);
     const sevenDay = [];
     for (let i = startIdx; i <= endIdx; i++) {
+      // Find the peak rain hour for this day to label the time-of-day
+      let dayPeakTimeOfDay = "Afternoon";
+      const dayDateStr = allDates[i];
+      if (h?.time && h?.precipitation_probability) {
+        const dayHours: { hour: number; prob: number }[] = [];
+        (hourlyTimes as string[]).forEach((isoTime: string, idx: number) => {
+          if (isoTime.startsWith(dayDateStr)) {
+            dayHours.push({ hour: new Date(isoTime).getHours(), prob: h.precipitation_probability[idx] ?? 0 });
+          }
+        });
+        if (dayHours.length > 0) {
+          const peak = dayHours.reduce((best, cur) => cur.prob > best.prob ? cur : best, dayHours[0]);
+          dayPeakTimeOfDay = (() => {
+            const hr = peak.hour;
+            if (hr >= 6 && hr <= 11) return "Morning";
+            if (hr >= 12 && hr <= 17) return "Afternoon";
+            if (hr >= 18 && hr <= 21) return "Evening";
+            return "Overnight";
+          })();
+        }
+      }
       sevenDay.push({
         date: allDates[i],
         maxF: cToF(d.temperature_2m_max[i]),
         minF: cToF(d.temperature_2m_min[i]),
         condition: wmoToCondition(d.weathercode[i]),
         rainChance: d.precipitation_probability_max[i] ?? 0,
+        peakRainTimeOfDay: dayPeakTimeOfDay,
         windKt: msToKt(d.wind_speed_10m_max[i]),
         windDir: degToCompass(d.wind_direction_10m_dominant[i]),
       });
@@ -737,6 +759,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                             <span className="text-white">{dispTemp(day.maxF)} / {dispTemp(day.minF)}</span>
                             <span className="text-cyan-300">{dispWind(day.windKt)} {day.windDir}</span>
                             <span className="text-blue-300">{day.rainChance}%</span>
+                            <span className="text-yellow-400/80 text-xs">({day.peakRainTimeOfDay})</span>
                           </div>
                         ))}
                       </div>

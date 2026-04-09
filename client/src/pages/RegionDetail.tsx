@@ -90,6 +90,7 @@ interface DayForecast {
   windKt: number;
   windDir: string;
   rainChance: number;
+  peakRainTimeOfDay: string;
   condition: string;
   waveHeightFt: number | null;
   swellHeightFt: number | null;
@@ -179,6 +180,20 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
   const forecast: DayForecast[] = (d.time as string[]).map((dateStr: string, i: number) => {
     const wKt = msToKt(d.wind_speed_10m_max[i]);
     const swellDeg = md?.swell_wave_direction_dominant?.[i];
+    // Find the peak rain hour for this day to label the time-of-day
+    let dayPeakTimeOfDay = "Afternoon";
+    if (h?.time && h?.precipitation_probability) {
+      const dayHours: { hour: number; prob: number }[] = [];
+      (h.time as string[]).forEach((isoTime: string, idx: number) => {
+        if (isoTime.startsWith(dateStr)) {
+          dayHours.push({ hour: parseInt(isoTime.slice(11, 13), 10), prob: h.precipitation_probability[idx] ?? 0 });
+        }
+      });
+      if (dayHours.length > 0) {
+        const peak = dayHours.reduce((best, cur) => cur.prob > best.prob ? cur : best, dayHours[0]);
+        dayPeakTimeOfDay = hourToTimeOfDay(peak.hour);
+      }
+    }
     return {
       date: dateStr,
       maxF: cToF(d.temperature_2m_max[i]),
@@ -186,6 +201,7 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
       windKt: wKt,
       windDir: degToCompass(d.wind_direction_10m_dominant[i]),
       rainChance: d.precipitation_probability_max[i] ?? 0,
+      peakRainTimeOfDay: dayPeakTimeOfDay,
       condition: wmoToCondition(d.weathercode[i]),
       waveHeightFt:  md?.wave_height_max?.[i]       != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
       swellHeightFt: md?.swell_wave_height_max?.[i] != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,
@@ -332,6 +348,7 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
                         <p className="text-cyan-300 text-base mt-1 font-extrabold">{day.windDir}</p>
                         <p className="text-white/80 text-base font-bold">{day.windKt}kt</p>
                         <p className="text-purple-300 text-base font-extrabold">{day.rainChance}%</p>
+                        <p className="text-yellow-400/80 text-xs font-bold">({day.peakRainTimeOfDay})</p>
                         {hasWave && (
                           <>
                             <div className="border-t border-white/15 my-2" />
