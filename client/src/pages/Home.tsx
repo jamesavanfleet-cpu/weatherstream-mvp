@@ -406,7 +406,7 @@ const BRIEFING_CLIENTS = [
 // Coordinates for each route card -- used to fetch live wind direction
 const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "US Ports":                      { lat: 32.7,   lon: -79.9  },
-  "Bahamas and Central Caribbean": { lat: 24.0,   lon: -78.5  },
+  "Bahamas, Bermuda and Central Caribbean": { lat: 24.0,   lon: -78.5  },
   "Eastern Caribbean":             { lat: 18.0,   lon: -63.0  },
   "Western Caribbean":             { lat: 19.3,   lon: -87.5  },
   "Southern Caribbean":            { lat: 12.5,   lon: -70.0  },
