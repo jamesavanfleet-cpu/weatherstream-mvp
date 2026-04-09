@@ -200,6 +200,7 @@ export const REGIONS: Region[] = [
     image: "/locations/southeast-alaska.jpg",
     gradient: "from-slate-500/20 to-cyan-600/20",
     ports: [
+      { name: "Anchorage",         lat: 61.2181, lon: -149.9003 },
       { name: "Juneau",            lat: 58.30, lon: -134.42, marineLat: 58.20, marineLon: -134.80 },
       { name: "Ketchikan",         lat: 55.34, lon: -131.65, marineLat: 55.30, marineLon: -132.00 },
       { name: "Seattle",           lat: 47.61, lon: -122.33, marineLat: 47.60, marineLon: -122.60 },
