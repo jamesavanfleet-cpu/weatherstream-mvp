@@ -333,7 +333,7 @@ def call_llm(region: dict, weather_data: dict) -> str:
     payload = {
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 200,
+        "max_tokens": 400,  # raised from 200 -- prevents mid-sentence truncation
         "temperature": 0.7,
     }
     for attempt in range(4):
