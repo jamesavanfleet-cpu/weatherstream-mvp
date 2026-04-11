@@ -826,25 +826,48 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         Type up to 5 destinations, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
       </p>
 
-      {/* 5 destination slots stacked vertically */}
-      <div className="space-y-4">
-        {[0, 1, 2, 3, 4].map(i => (
-          <PortSlotCard
-            key={i}
-            slotIndex={i}
-            slot={slots[i]}
-            isMetric={localMetric}
-            onSetMetric={setLocalMetric}
-            query={queries[i]}
-            selectedPort={selectedPorts[i]}
-            onQueryChange={(q, port) => {
-              setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
-              setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
-            }}
-            onClear={() => handleClear(i)}
-            onGetForecast={handleGetAllForecasts}
-          />
-        ))}
+      {/* 5 destination slots -- single column on mobile, two columns on desktop */}
+      <div className="flex flex-col lg:flex-row lg:items-start lg:gap-4">
+        {/* Left column: Departure Port, Destination 1, Destination 2 */}
+        <div className="flex-1 space-y-4">
+          {[0, 1, 2].map(i => (
+            <PortSlotCard
+              key={i}
+              slotIndex={i}
+              slot={slots[i]}
+              isMetric={localMetric}
+              onSetMetric={setLocalMetric}
+              query={queries[i]}
+              selectedPort={selectedPorts[i]}
+              onQueryChange={(q, port) => {
+                setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
+                setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
+              }}
+              onClear={() => handleClear(i)}
+              onGetForecast={handleGetAllForecasts}
+            />
+          ))}
+        </div>
+        {/* Right column: Destination 3, Destination 4 */}
+        <div className="flex-1 space-y-4 mt-4 lg:mt-0">
+          {[3, 4].map(i => (
+            <PortSlotCard
+              key={i}
+              slotIndex={i}
+              slot={slots[i]}
+              isMetric={localMetric}
+              onSetMetric={setLocalMetric}
+              query={queries[i]}
+              selectedPort={selectedPorts[i]}
+              onQueryChange={(q, port) => {
+                setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
+                setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
+              }}
+              onClear={() => handleClear(i)}
+              onGetForecast={handleGetAllForecasts}
+            />
+          ))}
+        </div>
       </div>
 
     </div>
