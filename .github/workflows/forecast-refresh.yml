@@ -203,10 +203,9 @@ jobs:
           # Preserve CNAME and 404.html
           cp CNAME /tmp/cname-backup 2>/dev/null || true
           cp 404.html /tmp/404-backup 2>/dev/null || true
-          # Preserve existing forecast.json, cruise_itineraries.json, and briefing_video.json from gh-pages
+          # Preserve existing forecast.json and cruise_itineraries.json from gh-pages
           cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
           cp cruise_itineraries.json /tmp/cruise_itineraries-backup.json 2>/dev/null || true
-          cp briefing_video.json /tmp/briefing-video-backup.json 2>/dev/null || true
           # Replace assets and HTML
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
@@ -219,7 +218,6 @@ jobs:
           cp /tmp/404-backup 404.html 2>/dev/null || true
           cp /tmp/forecast-backup.json forecast.json 2>/dev/null || true
           cp /tmp/cruise_itineraries-backup.json cruise_itineraries.json 2>/dev/null || true
-          cp /tmp/briefing-video-backup.json briefing_video.json 2>/dev/null || true
           git add -A
           git diff --cached --quiet && echo "No changes to deploy" && exit 0
           git commit -m "Forecast refresh: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
