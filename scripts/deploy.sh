@@ -9,8 +9,7 @@
 #   intel.json             -- updated by generate_intel.py
 #   top_story.json         -- updated by generate_top_story.py
 #   cruise_itineraries.json -- updated by dedicated itinerary script
-# NOTE: briefing_video.json is NOT preserved -- it is managed in main branch
-# and deployed fresh each time so new briefing videos take effect immediately.
+#   briefing_video.json    -- updated manually via briefing_video.json on gh-pages
 
 set -e
 
@@ -47,7 +46,7 @@ git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
 
 # Preserve persistent data files before clearing old build artifacts
 # These files must NEVER be overwritten by a code deploy
-PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json"
+PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json briefing_video.json"
 for PFILE in $PRESERVE_FILES; do
   if [ -f "$PFILE" ]; then
     cp "$PFILE" "/tmp/deploy_preserve_${PFILE}"
