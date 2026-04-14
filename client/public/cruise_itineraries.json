@@ -278,32 +278,53 @@
             {
               "departure_date": "2026-05-01",
               "departure_port": "Port Canaveral",
-              "description": "7 nights, Caribbean",
+              "description": "8 days, round-trip Eastern Caribbean Cruise",
               "duration_days": 8,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-01",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Port Canaveral"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-02",
-                  "port": "Cruise",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-05-03",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-04",
+                  "port": "St. Croix"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-05",
+                  "port": "St. Maarten"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-06",
+                  "port": "San Juan"
+                },
+                {
+                  "day": 7,
+                  "date": "2026-05-07",
+                  "port": "At Sea"
                 },
                 {
                   "day": 8,
                   "date": "2026-05-08",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Nassau"
+                },
+                {
+                  "day": 9,
+                  "date": "2026-05-09",
+                  "port": "Port Canaveral"
                 }
               ]
             },
@@ -603,32 +624,28 @@
             {
               "departure_date": "2026-04-29",
               "departure_port": "Fort Lauderdale",
-              "description": "2 nights, Bahamas",
+              "description": "3 days, round-trip Bahamas  Perfect Day Cruise",
               "duration_days": 3,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-29",
-                  "port": "Fort Lauderdale",
-                  "sea_day": false,
-                  "lat": 26.1224,
-                  "lon": -80.1373
+                  "port": "Fort Lauderdale"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-30",
-                  "port": "Perfect Day Cruise",
-                  "sea_day": false,
-                  "lat": 26.1224,
-                  "lon": -80.1373
+                  "port": "Nassau"
                 },
                 {
                   "day": 3,
                   "date": "2026-05-01",
-                  "port": "Fort Lauderdale",
-                  "sea_day": false,
-                  "lat": 26.1224,
-                  "lon": -80.1373
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-02",
+                  "port": "Fort Lauderdale"
                 }
               ]
             },
@@ -1933,32 +1950,33 @@
             {
               "departure_date": "2026-04-23",
               "departure_port": "Miami",
-              "description": "3 nights, Bahamas",
+              "description": "4 days, round-trip Perfect Day Cococay  Bahamas",
               "duration_days": 4,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-23",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Miami"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-24",
-                  "port": "Perfect Day Cococay",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Nassau"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-25",
+                  "port": "At Sea"
                 },
                 {
                   "day": 4,
                   "date": "2026-04-26",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-27",
+                  "port": "Miami"
                 }
               ]
             },
@@ -3048,24 +3066,48 @@
             {
               "departure_date": "2026-05-02",
               "departure_port": "Miami",
-              "description": "6 nights, Caribbean",
+              "description": "7 days, round-trip Western Caribbean",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-02",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Miami"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-05-03",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-05-04",
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-05",
+                  "port": "Roatan"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-06",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-07",
+                  "port": "Cozumel"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-08",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "At Sea"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-09",
+                  "port": "Miami"
                 }
               ]
             },
@@ -4217,32 +4259,33 @@
             {
               "departure_date": "2026-04-23",
               "departure_port": "Galveston",
-              "description": "3 nights, Caribbean",
+              "description": "4 days, round-trip Western Caribbean Cruise",
               "duration_days": 4,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-23",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "Galveston"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-24",
-                  "port": "Cruise",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-25",
+                  "port": "Cozumel"
                 },
                 {
                   "day": 4,
                   "date": "2026-04-26",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "At Sea"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-27",
+                  "port": "Galveston"
                 }
               ]
             },
@@ -4704,80 +4747,96 @@
             {
               "departure_date": "2026-04-24",
               "departure_port": "Los Angeles",
-              "description": "6 nights, Caribbean",
+              "description": "7 days, round-trip Cabo, Vallarta  Mazatlan Cruise",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-24",
-                  "port": "Los Angeles",
-                  "sea_day": false,
-                  "lat": 33.7701,
-                  "lon": -118.1937
+                  "port": "Los Angeles"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-25",
-                  "port": "Cabo",
-                  "sea_day": false,
-                  "lat": 22.8905,
-                  "lon": -109.9167
+                  "port": "At Sea"
                 },
                 {
                   "day": 3,
                   "date": "2026-04-26",
-                  "port": "Vallarta Mazatlan Cruise",
-                  "sea_day": false,
-                  "lat": 25.0664,
-                  "lon": -111.5721
+                  "port": "Cabo San Lucas"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-27",
+                  "port": "Mazatlan"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-28",
+                  "port": "Puerto Vallarta"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-04-29",
+                  "port": "At Sea"
                 },
                 {
                   "day": 7,
                   "date": "2026-04-30",
-                  "port": "Los Angeles",
-                  "sea_day": false,
-                  "lat": 33.7701,
-                  "lon": -118.1937
+                  "port": "At Sea"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-01",
+                  "port": "Los Angeles"
                 }
               ]
             },
             {
               "departure_date": "2026-05-01",
               "departure_port": "Los Angeles",
-              "description": "6 nights, Caribbean",
+              "description": "7 days, round-trip Ensenada, Cabo  Mazatlan",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-01",
-                  "port": "Los Angeles",
-                  "sea_day": false,
-                  "lat": 33.7701,
-                  "lon": -118.1937
+                  "port": "Los Angeles"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-02",
-                  "port": "Ensenada",
-                  "sea_day": false,
-                  "lat": 31.8667,
-                  "lon": -116.596
+                  "port": "Ensenada"
                 },
                 {
                   "day": 3,
                   "date": "2026-05-03",
-                  "port": "Cabo Mazatlan",
-                  "sea_day": false,
-                  "lat": 32.2474,
-                  "lon": -116.9155
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-04",
+                  "port": "Cabo San Lucas"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-05",
+                  "port": "Mazatlan"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-06",
+                  "port": "At Sea"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-07",
-                  "port": "Los Angeles",
-                  "sea_day": false,
-                  "lat": 33.7701,
-                  "lon": -118.1937
+                  "port": "At Sea"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-08",
+                  "port": "Los Angeles"
                 }
               ]
             },
@@ -7725,6 +7784,39 @@
               ]
             },
             {
+              "departure_date": "2026-04-26",
+              "description": "4 days, round-trip Western Caribbean Cruise",
+              "duration_nights": 4,
+              "departure_port": "Miami",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-26",
+                  "port": "Miami"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-27",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-28",
+                  "port": "Cozumel"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-29",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-30",
+                  "port": "Miami"
+                }
+              ]
+            },
+            {
               "departure_date": "2026-05-03",
               "departure_port": "Galveston",
               "description": "6 nights, Caribbean",
@@ -8972,6 +9064,67 @@
               ]
             },
             {
+              "departure_date": "2026-04-17",
+              "description": "3 days, round-trip Bahamas  Perfect Day Cruise",
+              "duration_nights": 3,
+              "departure_port": "Miami",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-17",
+                  "port": "Miami"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-18",
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-19",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-20",
+                  "port": "Miami"
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-04-20",
+              "description": "4 days, round-trip Bahamas  Perfect Day Cruise",
+              "duration_nights": 4,
+              "departure_port": "Miami",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-20",
+                  "port": "Miami"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-21",
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-22",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-23",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-24",
+                  "port": "Miami"
+                }
+              ]
+            },
+            {
               "departure_date": "2026-04-24",
               "departure_port": "Miami",
               "description": "2 nights, Bahamas",
@@ -9422,48 +9575,76 @@
             {
               "departure_date": "2026-04-20",
               "departure_port": "Galveston",
-              "description": "4 nights, Caribbean",
+              "description": "5 days, round-trip Western Caribbean",
               "duration_days": 5,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-20",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "Galveston"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-21",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-22",
+                  "port": "Cozumel"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-23",
+                  "port": "Progreso"
                 },
                 {
                   "day": 5,
                   "date": "2026-04-24",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "At Sea"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-04-25",
+                  "port": "Galveston"
                 }
               ]
             },
             {
               "departure_date": "2026-04-25",
               "departure_port": "Galveston",
-              "description": "4 nights, Caribbean",
+              "description": "5 days, round-trip Western Caribbean",
               "duration_days": 5,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-25",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "Galveston"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-26",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-27",
+                  "port": "Cozumel"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-28",
+                  "port": "Progreso"
                 },
                 {
                   "day": 5,
                   "date": "2026-04-29",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "At Sea"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-04-30",
+                  "port": "Galveston"
                 }
               ]
             },
@@ -10662,48 +10843,76 @@
             {
               "departure_date": "2026-04-20",
               "departure_port": "Port Canaveral",
-              "description": "4 nights, Bahamas",
+              "description": "5 days, round-trip The Bahamas",
               "duration_days": 5,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-20",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Port Canaveral"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-21",
+                  "port": "Celebration Key"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-22",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-23",
+                  "port": "Half Moon Cay"
                 },
                 {
                   "day": 5,
                   "date": "2026-04-24",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "At Sea"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-04-25",
+                  "port": "Port Canaveral"
                 }
               ]
             },
             {
               "departure_date": "2026-04-25",
               "departure_port": "Port Canaveral",
-              "description": "4 nights, Bahamas",
+              "description": "5 days, round-trip The Bahamas",
               "duration_days": 5,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-25",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Port Canaveral"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-26",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-27",
+                  "port": "Half Moon Cay"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-28",
+                  "port": "Nassau"
                 },
                 {
                   "day": 5,
                   "date": "2026-04-29",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Celebration Key"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-04-30",
+                  "port": "Port Canaveral"
                 }
               ]
             },
@@ -15086,32 +15295,53 @@
             {
               "departure_date": "2026-05-08",
               "departure_port": "Southampton",
-              "description": "7 nights, Caribbean",
+              "description": "8 days, round-trip Norwegian Fjords",
               "duration_days": 8,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-08",
-                  "port": "Southampton",
-                  "sea_day": false,
-                  "lat": 50.9097,
-                  "lon": -1.4044
+                  "port": "Southampton"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-09",
-                  "port": "Norwegian Fjords",
-                  "sea_day": false,
-                  "lat": null,
-                  "lon": null
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-05-10",
+                  "port": "Bergen"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-11",
+                  "port": "Geiranger"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-12",
+                  "port": "Olden"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-13",
+                  "port": "Flam"
+                },
+                {
+                  "day": 7,
+                  "date": "2026-05-14",
+                  "port": "At Sea"
                 },
                 {
                   "day": 8,
                   "date": "2026-05-15",
-                  "port": "Southampton",
-                  "sea_day": false,
-                  "lat": 50.9097,
-                  "lon": -1.4044
+                  "port": "Zeebrugge"
+                },
+                {
+                  "day": 9,
+                  "date": "2026-05-16",
+                  "port": "Southampton"
                 }
               ]
             },
@@ -15584,40 +15814,48 @@
             {
               "departure_date": "2026-04-26",
               "departure_port": "Miami",
-              "description": "6 nights, Caribbean",
+              "description": "7 days, round-trip San Juan, Grand Turk  Perfect Day",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-26",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Miami"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-27",
-                  "port": "San Juan",
-                  "sea_day": false,
-                  "lat": 18.4655,
-                  "lon": -66.1057
+                  "port": "At Sea"
                 },
                 {
                   "day": 3,
                   "date": "2026-04-28",
-                  "port": "Grand Turk Perfect Day",
-                  "sea_day": false,
-                  "lat": 19.9247,
-                  "lon": -68.9229
+                  "port": "Puerto Plata"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-29",
+                  "port": "San Juan"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-30",
+                  "port": "Grand Turk"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-01",
+                  "port": "At Sea"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-02",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-03",
+                  "port": "Miami"
                 }
               ]
             },
@@ -19877,6 +20115,67 @@
               ]
             },
             {
+              "departure_date": "2026-04-17",
+              "description": "3 days, round-trip Bahamian Cruise From Port Canaveral",
+              "duration_nights": 3,
+              "departure_port": "Port Canaveral",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-17",
+                  "port": "Port Canaveral"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-18",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-19",
+                  "port": "Castaway Cay"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-20",
+                  "port": "Port Canaveral"
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-04-20",
+              "description": "4 days, round-trip Bahamian Cruise From Port Canaveral",
+              "duration_nights": 4,
+              "departure_port": "Port Canaveral",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-20",
+                  "port": "Port Canaveral"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-21",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-22",
+                  "port": "Castaway Cay"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-23",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-24",
+                  "port": "Port Canaveral"
+                }
+              ]
+            },
+            {
               "departure_date": "2026-04-24",
               "departure_port": "Port Canaveral",
               "description": "2 nights, Caribbean",
@@ -21962,80 +22261,96 @@
             {
               "departure_date": "2026-05-10",
               "departure_port": "Seattle",
-              "description": "6 nights, Alaska",
+              "description": "7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-10",
-                  "port": "Seattle",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "Seattle"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-11",
-                  "port": "Seattle Glacier Bay",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "At Sea"
                 },
                 {
                   "day": 3,
                   "date": "2026-05-12",
-                  "port": "Skagway Juneau",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "Juneau"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-13",
+                  "port": "Skagway"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-14",
+                  "port": "Glacier Bay"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-15",
+                  "port": "Ketchikan"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-16",
-                  "port": "Seattle",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "Victoria BC"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-17",
+                  "port": "Seattle"
                 }
               ]
             },
             {
               "departure_date": "2026-05-17",
               "departure_port": "Seattle",
-              "description": "6 nights, Alaska",
+              "description": "7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-17",
-                  "port": "Seattle",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "Seattle"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-18",
-                  "port": "Seattle Glacier Bay",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "At Sea"
                 },
                 {
                   "day": 3,
                   "date": "2026-05-19",
-                  "port": "Skagway Juneau",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "Juneau"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-20",
+                  "port": "Skagway"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-21",
+                  "port": "Glacier Bay"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-22",
+                  "port": "Ketchikan"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-23",
-                  "port": "Seattle",
-                  "sea_day": false,
-                  "lat": 47.6062,
-                  "lon": -122.3321
+                  "port": "Victoria BC"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-24",
+                  "port": "Seattle"
                 }
               ]
             },
@@ -23214,6 +23529,67 @@
                 {
                   "day": 5,
                   "date": "2026-04-17",
+                  "port": "Miami"
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-04-17",
+              "description": "3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
+              "duration_nights": 3,
+              "departure_port": "Miami",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-17",
+                  "port": "Miami"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-18",
+                  "port": "Great Stirrup Cay"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-19",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-20",
+                  "port": "Miami"
+                }
+              ]
+            },
+            {
+              "departure_date": "2026-04-20",
+              "description": "4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
+              "duration_nights": 4,
+              "departure_port": "Miami",
+              "ports": [
+                {
+                  "day": 1,
+                  "date": "2026-04-20",
+                  "port": "Miami"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-21",
+                  "port": "Great Stirrup Cay"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-22",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-23",
+                  "port": "Nassau"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-24",
                   "port": "Miami"
                 }
               ]
@@ -25962,64 +26338,121 @@
             {
               "departure_date": "2026-04-28",
               "departure_port": "Fort Lauderdale",
-              "description": "12 nights, Caribbean",
+              "description": "13 days, one-way from Fort Lauderdale to Port Canaveral",
               "duration_days": 13,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-28",
-                  "port": "Fort Lauderdale",
-                  "sea_day": false,
-                  "lat": 26.1224,
-                  "lon": -80.1373
+                  "port": "Fort Lauderdale"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-29",
-                  "port": "one-way from Fort Lauderdale to Port Canaveral",
-                  "sea_day": false,
-                  "lat": 26.1224,
-                  "lon": -80.1373
+                  "port": "Princess Cays"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-30",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-01",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-02",
+                  "port": "Aruba"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-03",
+                  "port": "Curacao"
+                },
+                {
+                  "day": 7,
+                  "date": "2026-05-04",
+                  "port": "Kralendijk Bonaire"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-05",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 9,
+                  "date": "2026-05-06",
+                  "port": "St. Maarten"
+                },
+                {
+                  "day": 10,
+                  "date": "2026-05-07",
+                  "port": "San Juan"
+                },
+                {
+                  "day": 11,
+                  "date": "2026-05-08",
+                  "port": "Puerto Plata"
+                },
+                {
+                  "day": 12,
+                  "date": "2026-05-09",
+                  "port": "At Sea"
                 },
                 {
                   "day": 13,
                   "date": "2026-05-10",
-                  "port": "Fort Lauderdale",
-                  "sea_day": false,
-                  "lat": 26.1224,
-                  "lon": -80.1373
+                  "port": "Nassau"
+                },
+                {
+                  "day": 14,
+                  "date": "2026-05-11",
+                  "port": "Port Canaveral"
                 }
               ]
             },
             {
               "departure_date": "2026-05-11",
               "departure_port": "Port Canaveral",
-              "description": "5 nights, Caribbean",
+              "description": "6 days, round-trip Eastern Caribbean with Turks  Caicos",
               "duration_days": 6,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-11",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Port Canaveral"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-12",
-                  "port": "with Turks Caicos",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "Nassau"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-05-13",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-14",
+                  "port": "Puerto Plata"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-15",
+                  "port": "Grand Turk"
                 },
                 {
                   "day": 6,
                   "date": "2026-05-16",
-                  "port": "Port Canaveral",
-                  "sea_day": false,
-                  "lat": 28.4158,
-                  "lon": -80.5998
+                  "port": "At Sea"
+                },
+                {
+                  "day": 7,
+                  "date": "2026-05-17",
+                  "port": "Port Canaveral"
                 }
               ]
             },
@@ -31035,24 +31468,48 @@
             {
               "departure_date": "2026-04-26",
               "departure_port": "Galveston",
-              "description": "6 nights, Caribbean",
+              "description": "7 days, round-trip Western Caribbean",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-26",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "Galveston"
+                },
+                {
+                  "day": 2,
+                  "date": "2026-04-27",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-28",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-29",
+                  "port": "Perfect Day at CocoCay"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-30",
+                  "port": "Roatan"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-01",
+                  "port": "Cozumel"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-02",
-                  "port": "Galveston",
-                  "sea_day": false,
-                  "lat": 29.3013,
-                  "lon": -94.7977
+                  "port": "At Sea"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-03",
+                  "port": "Galveston"
                 }
               ]
             },
@@ -32454,64 +32911,131 @@
             {
               "departure_date": "2026-04-26",
               "departure_port": "Miami",
-              "description": "13 nights, Caribbean",
+              "description": "14 days, one-way from Miami to Barcelona",
               "duration_days": 14,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-04-26",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Miami"
                 },
                 {
                   "day": 2,
                   "date": "2026-04-27",
-                  "port": "one-way from Miami to Barcelona",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-04-28",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-04-29",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-04-30",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-01",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 7,
+                  "date": "2026-05-02",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-03",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 9,
+                  "date": "2026-05-04",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 10,
+                  "date": "2026-05-05",
+                  "port": "Las Palmas de Gran Canaria"
+                },
+                {
+                  "day": 11,
+                  "date": "2026-05-06",
+                  "port": "At Sea"
+                },
+                {
+                  "day": 12,
+                  "date": "2026-05-07",
+                  "port": "Casablanca"
+                },
+                {
+                  "day": 13,
+                  "date": "2026-05-08",
+                  "port": "At Sea"
                 },
                 {
                   "day": 14,
                   "date": "2026-05-09",
-                  "port": "Miami",
-                  "sea_day": false,
-                  "lat": 25.7617,
-                  "lon": -80.1918
+                  "port": "Alicante, Spain"
+                },
+                {
+                  "day": 15,
+                  "date": "2026-05-10",
+                  "port": "Barcelona"
                 }
               ]
             },
             {
               "departure_date": "2026-05-10",
               "departure_port": "Barcelona",
-              "description": "6 nights, Caribbean",
+              "description": "7 days, one-way from Barcelona to Piraeus-Athens",
               "duration_days": 7,
               "ports": [
                 {
                   "day": 1,
                   "date": "2026-05-10",
-                  "port": "Barcelona",
-                  "sea_day": false,
-                  "lat": 41.3851,
-                  "lon": 2.1734
+                  "port": "Barcelona"
                 },
                 {
                   "day": 2,
                   "date": "2026-05-11",
-                  "port": "one-way from Barcelona to Piraeus-Athens",
-                  "sea_day": false,
-                  "lat": 41.3851,
-                  "lon": 2.1734
+                  "port": "At Sea"
+                },
+                {
+                  "day": 3,
+                  "date": "2026-05-12",
+                  "port": "Civitavecchia-Rome"
+                },
+                {
+                  "day": 4,
+                  "date": "2026-05-13",
+                  "port": "Salerno"
+                },
+                {
+                  "day": 5,
+                  "date": "2026-05-14",
+                  "port": "Catania"
+                },
+                {
+                  "day": 6,
+                  "date": "2026-05-15",
+                  "port": "At Sea"
                 },
                 {
                   "day": 7,
                   "date": "2026-05-16",
-                  "port": "Barcelona",
-                  "sea_day": false,
-                  "lat": 41.3851,
-                  "lon": 2.1734
+                  "port": "Mykonos Island"
+                },
+                {
+                  "day": 8,
+                  "date": "2026-05-17",
+                  "port": "Piraeus-Athens"
                 }
               ]
             },
