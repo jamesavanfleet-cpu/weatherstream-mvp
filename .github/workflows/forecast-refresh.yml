@@ -1,19 +1,18 @@
 name: Twice-Daily Forecast Refresh
 
-# Runs at 3:45 AM and 3:45 PM Eastern time year-round.
-# EDT (Mar-Nov): 07:45 UTC and 19:45 UTC
-# EST (Nov-Mar): 08:45 UTC and 20:45 UTC
-# We schedule all four times; the DST check inside the job ensures only
-# the correct one actually runs the full refresh.
-# A 2-hour window (Eastern hours 3-4 AM / 3-4 PM) is used to handle
-# GitHub Actions cron delays of up to 60+ minutes.
+# Runs at 4:00 AM and 3:45 PM Eastern time year-round.
+# EDT (Mar-Nov): 08:00 UTC and 19:45 UTC
+# EST (Nov-Mar): 09:00 UTC and 20:45 UTC
+# We schedule all four times; the job now validates the currently active
+# DST-aware cron expression and allows a wider 3-hour execution window
+# (3:00-5:59 ET and 3:00-5:59 PM ET) to tolerate GitHub Actions delays.
 on:
   schedule:
-    - cron: '45 7 * * *'    # 3:45 AM EDT
-    - cron: '45 8 * * *'    # 3:45 AM EST
+    - cron: '0 8 * * *'     # 4:00 AM EDT
+    - cron: '0 9 * * *'     # 4:00 AM EST
     - cron: '45 19 * * *'   # 3:45 PM EDT
     - cron: '45 20 * * *'   # 3:45 PM EST
-  workflow_dispatch:        # allow manual trigger from GitHub UI
+  workflow_dispatch:
     inputs:
       force_run:
         description: 'Force run regardless of time window (for testing)'
@@ -36,51 +35,112 @@ jobs:
         run: |
           # Allow force override for manual testing
           if [ "${{ github.event.inputs.force_run }}" = "true" ]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "cycle=forced" >> "$GITHUB_OUTPUT"
             echo "Force run requested -- proceeding with refresh."
             exit 0
           fi
 
-          # Determine current UTC offset for Eastern time
-          # EDT = UTC-4 (second Sunday March through first Sunday November)
-          # EST = UTC-5 (rest of year)
-          MONTH=$(date -u +%-m)
-          DAY=$(date -u +%-d)
-          HOUR=$(date -u +%-H)
-          MINUTE=$(date -u +%-M)
+          EVENT_NAME="${{ github.event_name }}"
+          SCHEDULE_EXPR="${{ github.event.schedule }}"
+          ET_HOUR=$(TZ=America/New_York date +%-H)
+          ET_MINUTE=$(TZ=America/New_York date +%-M)
+          ET_DATE=$(TZ=America/New_York date +%F)
+          ET_TZ=$(TZ=America/New_York date +%Z)
+          UTC_HOUR=$(date -u +%-H)
+          UTC_MINUTE=$(date -u +%-M)
 
-          # DST check: EDT active second Sunday of March through first Sunday of November
-          EDT=0
-          if [ "$MONTH" -ge 4 ] && [ "$MONTH" -le 10 ]; then
-            EDT=1
-          elif [ "$MONTH" -eq 3 ] && [ "$DAY" -ge 8 ]; then
-            EDT=1
-          elif [ "$MONTH" -eq 11 ] && [ "$DAY" -lt 8 ]; then
-            EDT=1
-          fi
-          if [ "$EDT" -eq 1 ]; then
-            OFFSET=4   # EDT = UTC-4
+          if [ "$ET_TZ" = "EDT" ]; then
+            ACTIVE_AM_CRON='0 8 * * *'
+            ACTIVE_PM_CRON='45 19 * * *'
           else
-            OFFSET=5   # EST = UTC-5
+            ACTIVE_AM_CRON='0 9 * * *'
+            ACTIVE_PM_CRON='45 20 * * *'
           fi
 
-          # Convert current UTC to Eastern
-          EASTERN_HOUR=$(( (HOUR - OFFSET + 24) % 24 ))
+          AM_WINDOW=0
+          PM_WINDOW=0
+          if [ "$ET_HOUR" -ge 3 ] && [ "$ET_HOUR" -le 5 ]; then
+            AM_WINDOW=1
+          fi
+          if [ "$ET_HOUR" -ge 15 ] && [ "$ET_HOUR" -le 17 ]; then
+            PM_WINDOW=1
+          fi
 
-          echo "UTC: ${HOUR}:${MINUTE}, Eastern offset: -${OFFSET}, Eastern hour: ${EASTERN_HOUR}"
+          echo "UTC: ${UTC_HOUR}:${UTC_MINUTE}, ET: ${ET_HOUR}:${ET_MINUTE} ${ET_TZ}, ET date: ${ET_DATE}"
+          echo "Triggered by event=${EVENT_NAME}, schedule='${SCHEDULE_EXPR}'"
+          echo "Active cron pair: AM=${ACTIVE_AM_CRON}, PM=${ACTIVE_PM_CRON}"
 
-          # Allow a 2-hour window (3:00-4:59 AM or 3:00-4:59 PM Eastern) to handle
-          # GitHub Actions cron delays of up to 60+ minutes past the scheduled time.
-          # Target is 3:45 AM/PM Eastern; window covers 3:00-4:59 to be safe.
-          AM_WINDOW=$(( EASTERN_HOUR == 3 || EASTERN_HOUR == 4 ))
-          PM_WINDOW=$(( EASTERN_HOUR == 15 || EASTERN_HOUR == 16 ))
-          if [ "$AM_WINDOW" -eq 1 ] || [ "$PM_WINDOW" -eq 1 ]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "Correct Eastern time window (${EASTERN_HOUR}:${MINUTE} ET) -- proceeding with refresh."
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            if [ "$SCHEDULE_EXPR" = "$ACTIVE_AM_CRON" ]; then
+              echo "cycle=am" >> "$GITHUB_OUTPUT"
+              if [ "$AM_WINDOW" -eq 1 ]; then
+                echo "should_run=true" >> "$GITHUB_OUTPUT"
+                echo "Correct AM run window (${ET_HOUR}:${ET_MINUTE} ET) -- proceeding with refresh."
+              else
+                echo "should_run=false" >> "$GITHUB_OUTPUT"
+                echo "Active AM cron fired outside allowed window (${ET_HOUR}:${ET_MINUTE} ET) -- skipping."
+              fi
+            elif [ "$SCHEDULE_EXPR" = "$ACTIVE_PM_CRON" ]; then
+              echo "cycle=pm" >> "$GITHUB_OUTPUT"
+              if [ "$PM_WINDOW" -eq 1 ]; then
+                echo "should_run=true" >> "$GITHUB_OUTPUT"
+                echo "Correct PM run window (${ET_HOUR}:${ET_MINUTE} ET) -- proceeding with refresh."
+              else
+                echo "should_run=false" >> "$GITHUB_OUTPUT"
+                echo "Active PM cron fired outside allowed window (${ET_HOUR}:${ET_MINUTE} ET) -- skipping."
+              fi
+            else
+              echo "cycle=inactive_schedule" >> "$GITHUB_OUTPUT"
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              echo "Inactive seasonal cron '${SCHEDULE_EXPR}' for current timezone ${ET_TZ} -- skipping."
+            fi
           else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            echo "Not the correct Eastern time window (${EASTERN_HOUR}:${MINUTE} ET) -- skipping."
+            echo "cycle=manual" >> "$GITHUB_OUTPUT"
+            if [ "$AM_WINDOW" -eq 1 ] || [ "$PM_WINDOW" -eq 1 ]; then
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+              echo "Manual run launched inside an allowed Eastern window -- proceeding."
+            else
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              echo "Manual run launched outside allowed Eastern windows -- skipping unless force_run=true."
+            fi
           fi
+
+      - name: Fail loudly if AM intel is still stale after the morning window
+        if: steps.dst_check.outputs.should_run != 'true' && github.event_name == 'schedule'
+        run: |
+          ET_HOUR=$(TZ=America/New_York date +%-H)
+          ET_DATE=$(TZ=America/New_York date +%F)
+
+          if [ "$ET_HOUR" -lt 6 ] || [ "$ET_HOUR" -ge 12 ]; then
+            echo "Outside the morning stale-data guard window -- no AM stale check needed."
+            exit 0
+          fi
+
+          echo "Checking live intel freshness for ET date ${ET_DATE} after the AM window."
+          curl -fsS "https://www.mycruisingweather.com/intel.json?ts=$(date +%s)" -o /tmp/live-intel.json
+          export ET_DATE
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          expected_date = os.environ['ET_DATE']
+          with open('/tmp/live-intel.json', 'r', encoding='utf-8') as fh:
+              data = json.load(fh)
+
+          generated = data.get('generated', '')
+          generated_utc = data.get('generated_utc', '')
+          if generated != expected_date:
+              print(
+                  f"ERROR: Live intel is stale after the AM refresh window. "
+                  f"Expected generated={expected_date}, found generated={generated}, generated_utc={generated_utc}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(f"Live intel is current for ET date {expected_date}: generated={generated}, generated_utc={generated_utc}")
+          PYEOF
 
       - name: Checkout repository
         if: steps.dst_check.outputs.should_run == 'true'
@@ -101,22 +161,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install Python dependencies
         if: steps.dst_check.outputs.should_run == 'true'
         run: pip install aiohttp
+
       - name: Setup Node.js
         if: steps.dst_check.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Install pnpm
         if: steps.dst_check.outputs.should_run == 'true'
         uses: pnpm/action-setup@v3
         with:
           version: 9
+
       - name: Install Node dependencies
         if: steps.dst_check.outputs.should_run == 'true'
         run: pnpm install --no-frozen-lockfile
+
       - name: Generate fresh intel.json
         if: steps.dst_check.outputs.should_run == 'true'
         env:
@@ -131,6 +196,45 @@ jobs:
             exit 1
           fi
           echo "intel.json OK"
+
+      - name: Validate generated intel freshness
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          ET_DATE=$(TZ=America/New_York date +%F)
+          UTC_DATE=$(date -u +%F)
+          export ET_DATE UTC_DATE
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          with open('client/public/intel.json', 'r', encoding='utf-8') as fh:
+              data = json.load(fh)
+
+          generated = data.get('generated', '')
+          generated_utc = data.get('generated_utc', '')
+          expected_et_date = os.environ['ET_DATE']
+          expected_utc_date = os.environ['UTC_DATE']
+
+          if generated != expected_et_date:
+              print(
+                  f"ERROR: Generated intel date mismatch. expected ET date {expected_et_date}, found {generated}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          if not generated_utc.startswith(expected_utc_date):
+              print(
+                  f"ERROR: Generated intel UTC timestamp mismatch. expected prefix {expected_utc_date}, found {generated_utc}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(
+              f"Generated intel freshness validated: generated={generated}, generated_utc={generated_utc}"
+          )
+          PYEOF
+
       - name: Generate fresh top_story.json
         if: steps.dst_check.outputs.should_run == 'true'
         env:
@@ -155,6 +259,7 @@ jobs:
           assert d['mediterranean'].get('headline'), 'Empty mediterranean headline'
           print('top_story.json validated OK')
           "
+
       - name: Generate fresh live_conditions.json
         if: steps.dst_check.outputs.should_run == 'true'
         run: |
@@ -167,9 +272,11 @@ jobs:
             exit 1
           fi
           echo "live_conditions.json OK"
+
       - name: Build production bundle
         if: steps.dst_check.outputs.should_run == 'true'
         run: pnpm run build:pages
+
       - name: Validate build output
         if: steps.dst_check.outputs.should_run == 'true'
         run: |
@@ -185,6 +292,7 @@ jobs:
             exit 1
           fi
           echo "Build output validated OK"
+
       - name: Deploy to gh-pages
         if: steps.dst_check.outputs.should_run == 'true'
         run: |
@@ -224,7 +332,7 @@ jobs:
           git push origin gh-pages
 
       - name: Send failure alert email
-        if: failure() && steps.dst_check.outputs.should_run == 'true'
+        if: failure()
         run: |
           # Send email alert via curl using a simple SMTP relay (GitHub Actions mail via sendgrid-like approach)
           # Using Python's smtplib with Gmail SMTP as fallback notification
@@ -249,8 +357,9 @@ jobs:
           - top_story.json generation (Top Story section)
           - live_conditions.json generation (Live Conditions)
           - Build or deploy step
+          - AM stale-data guard detected that the live intel remained out of date
 
-          The site is currently showing STALE forecast data. Please check the workflow logs
+          The site may be showing STALE forecast data. Please check the workflow logs
           at the link above and trigger a manual run once the issue is resolved.
 
           -- My Cruising Weather Automated Alert System
