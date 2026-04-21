@@ -4,7 +4,7 @@
 # Steps:
 #   1. Generate all region intel briefings (intel.json)
 #   2. Generate top story headline + paragraph (top_story.json)
-#   3. Rebuild Vite site with VITE_BASE_PATH=/
+#   3. Rebuild Vite site with VITE_BASE_PATH=/weatherstream-mvp/
 #   4. Force-push dist/public to gh-pages
 #   5. Commit intel.json and top_story.json back to main
 set -e
@@ -35,20 +35,20 @@ fi
 echo "top_story.json OK" | tee -a "$LOG_FILE"
 
 # ── Step 3: Build the site ────────────────────────────────────────────────────
-echo "[3/5] Building site (VITE_BASE_PATH=/)..." | tee -a "$LOG_FILE"
-VITE_BASE_PATH=/ pnpm run build:pages >> "$LOG_FILE" 2>&1
+echo "[3/5] Building site (VITE_BASE_PATH=/weatherstream-mvp/)..." | tee -a "$LOG_FILE"
+VITE_BASE_PATH=/weatherstream-mvp/ pnpm run build:pages >> "$LOG_FILE" 2>&1
 if [ $? -ne 0 ]; then
   echo "ERROR: build failed" | tee -a "$LOG_FILE"
   exit 1
 fi
 
 # Validate build output
-if grep -q "weatherstream-mvp" dist/public/index.html; then
-  echo "ERROR: index.html has wrong base path. Aborting deploy." | tee -a "$LOG_FILE"
+if ! grep -q 'href="/weatherstream-mvp/' dist/public/index.html && ! grep -q 'src="/weatherstream-mvp/' dist/public/index.html; then
+  echo "ERROR: index.html missing /weatherstream-mvp/ base path. Aborting deploy." | tee -a "$LOG_FILE"
   exit 1
 fi
-if ! grep -q 'src="/assets/' dist/public/index.html; then
-  echo "ERROR: index.html missing /assets/ reference. Aborting deploy." | tee -a "$LOG_FILE"
+if ! grep -q 'src="/weatherstream-mvp/assets/' dist/public/index.html; then
+  echo "ERROR: index.html missing /weatherstream-mvp/assets/ reference. Aborting deploy." | tee -a "$LOG_FILE"
   exit 1
 fi
 echo "Build validation passed." | tee -a "$LOG_FILE"
@@ -89,8 +89,8 @@ for PFILE in $PRESERVE_FILES; do
 done
 
 # Final safety check
-if grep -q "weatherstream-mvp" index.html; then
-  echo "ERROR: Deployed index.html still has wrong base path. Aborting." | tee -a "$LOG_FILE"
+if ! grep -q 'href="/weatherstream-mvp/' index.html && ! grep -q 'src="/weatherstream-mvp/' index.html; then
+  echo "ERROR: Deployed index.html is missing /weatherstream-mvp/ base path. Aborting." | tee -a "$LOG_FILE"
   exit 1
 fi
 
