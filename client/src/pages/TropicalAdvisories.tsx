@@ -48,6 +48,28 @@ interface NWSAlert {
   geometry: GeoJSON.Geometry | null;
 }
 
+// ── NHC types ────────────────────────────────────────────────────────────────
+interface NHCStorm {
+  id: string;          // e.g. "al012026"
+  name: string;        // e.g. "HURRICANE BERYL"
+  basin: string;       // "al" | "ep" | "cp"
+  classification: string; // "TD" | "TS" | "HU" | "MH" | "PTC" | "DB"
+  lat: number;
+  lon: number;
+  maxWindMph: number;
+  movement: string;
+  pressure: number;
+  headline: string;
+  advisoryTime: string;
+  advisoryNumber: string;
+}
+
+type OutlookMode = "off" | "2day" | "7day";
+
+// CORS proxy for NHC endpoints that lack Access-Control-Allow-Origin
+const ALLORIGINS = (url: string) =>
+  `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
 // ── Color helpers ─────────────────────────────────────────────────────────────
 function alertColor(severity: string): string {
   switch (severity) {
@@ -345,6 +367,112 @@ function AlertCard({
   );
 }
 
+// ── NHC storm classification helpers ────────────────────────────────────────
+function stormSymbol(cls: string): string {
+  // Returns a single character matching NHC track point convention
+  switch (cls.toUpperCase()) {
+    case "TD": case "DB": case "LO": return "D";
+    case "TS": return "S";
+    case "HU": return "H";
+    case "MH": return "M";
+    case "PTC": case "EX": case "SD": case "SS": return "P";
+    default: return "X";
+  }
+}
+
+function stormSymbolColor(cls: string): string {
+  switch (cls.toUpperCase()) {
+    case "TD": case "DB": case "LO": return "#FFD700";  // Yellow -- Depression
+    case "TS":                        return "#4169E1";  // Blue -- Tropical Storm
+    case "HU":                        return "#FF0000";  // Red -- Hurricane
+    case "MH":                        return "#8B0000";  // Dark Red -- Major Hurricane
+    case "PTC": case "EX":            return "#7B9BB5";  // Gray -- Post-tropical
+    default:                          return "#00D4FF";
+  }
+}
+
+// ── NHC storm fetch ───────────────────────────────────────────────────────────
+async function fetchNHCStorms(): Promise<NHCStorm[]> {
+  try {
+    const res = await fetch(
+      ALLORIGINS("https://www.nhc.noaa.gov/CurrentStorms.json"),
+      { headers: { "User-Agent": "MyCruisingWeather/1.0" } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const active: NHCStorm[] = [];
+    for (const s of (data.activeStorms ?? [])) {
+      // Each storm has id, name, classification, lat, lon, maxWindMph, movement, pressure
+      active.push({
+        id: s.id ?? "",
+        name: s.name ?? "UNNAMED",
+        basin: (s.id ?? "").slice(0, 2).toLowerCase(),
+        classification: s.classification ?? "TD",
+        lat: parseFloat(s.latitudeNumeric ?? s.lat ?? 0),
+        lon: parseFloat(s.longitudeNumeric ?? s.lon ?? 0),
+        maxWindMph: parseInt(s.maxWindMph ?? s.maxWindSpeed ?? 0, 10),
+        movement: s.movementDesc ?? s.movement ?? "",
+        pressure: parseInt(s.minPressureMb ?? s.pressure ?? 0, 10),
+        headline: s.headline ?? s.name ?? "",
+        advisoryTime: s.advisoryDate ?? s.advisoryTime ?? "",
+        advisoryNumber: s.advisoryNumber ?? "",
+      });
+    }
+    return active;
+  } catch {
+    return [];
+  }
+}
+
+// ── Storm track markers on the Leaflet map ────────────────────────────────────
+function StormMarkersLayer({ storms }: { storms: NHCStorm[] }) {
+  const map = useMap();
+  const markersRef = useRef<L.Marker[]>([]);
+
+  useEffect(() => {
+    // Remove old markers
+    markersRef.current.forEach(m => { try { map.removeLayer(m); } catch { /* ignore */ } });
+    markersRef.current = [];
+
+    storms.forEach(storm => {
+      if (!storm.lat || !storm.lon) return;
+      const sym = stormSymbol(storm.classification);
+      const col = stormSymbolColor(storm.classification);
+      // Build an SVG div icon matching NHC track point style
+      const svgIcon = L.divIcon({
+        className: "",
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        html: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="16" r="13" fill="${col}" fill-opacity="0.85" stroke="#000" stroke-width="1.5"/>
+  <text x="16" y="21" text-anchor="middle" font-family="monospace" font-size="13" font-weight="700" fill="#000">${sym}</text>
+</svg>`,
+      });
+      const marker = L.marker([storm.lat, storm.lon], { icon: svgIcon, zIndexOffset: 500 });
+      const windKt = Math.round(storm.maxWindMph * 0.868976);
+      marker.bindTooltip(
+        `<div style="font-family:monospace;font-size:13px;line-height:1.5;padding:4px 8px;background:#0D1520;border:1px solid ${col};color:#E8F4FF;min-width:180px">
+  <div style="font-weight:700;color:${col};font-size:14px;margin-bottom:4px">${storm.name}</div>
+  <div>${storm.classification} &bull; Advisory #${storm.advisoryNumber}</div>
+  <div>Max winds: ${storm.maxWindMph} mph (${windKt} kt)</div>
+  ${storm.pressure ? `<div>Pressure: ${storm.pressure} mb</div>` : ""}
+  ${storm.movement ? `<div>Movement: ${storm.movement}</div>` : ""}
+  ${storm.advisoryTime ? `<div style="color:#7B9BB5;font-size:11px;margin-top:4px">${storm.advisoryTime}</div>` : ""}
+</div>`,
+        { permanent: false, direction: "top", offset: [0, -18], opacity: 1 }
+      );
+      marker.addTo(map);
+      markersRef.current.push(marker);
+    });
+
+    return () => {
+      markersRef.current.forEach(m => { try { map.removeLayer(m); } catch { /* ignore */ } });
+    };
+  }, [storms, map]);
+
+  return null;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function TropicalAdvisories() {
   const [, navigate] = useLocation();
@@ -356,6 +484,13 @@ export default function TropicalAdvisories() {
   const [showGulfStream, setShowGulfStream] = useState(false);
   const [showZoneForecasts, setShowZoneForecasts] = useState(false);
   const [basemap, setBasemap] = useState<"street" | "satellite">("street");
+
+  // NHC tropical outlook toggle: off | 2day | 7day
+  const [outlookMode, setOutlookMode] = useState<OutlookMode>("off");
+
+  // NHC active storms
+  const [nhcStorms, setNhcStorms] = useState<NHCStorm[]>([]);
+  const [outlookImgKey, setOutlookImgKey] = useState(Date.now());
 
   // Advisory data
   const [alerts, setAlerts] = useState<NWSAlert[]>([]);
@@ -409,6 +544,16 @@ export default function TropicalAdvisories() {
     const interval = setInterval(fetchAlerts, 300_000);
     return () => clearInterval(interval);
   }, [fetchAlerts]);
+
+  // Fetch NHC active storms on mount and every 30 minutes
+  useEffect(() => {
+    fetchNHCStorms().then(setNhcStorms);
+    const interval = setInterval(() => {
+      fetchNHCStorms().then(setNhcStorms);
+      setOutlookImgKey(Date.now()); // force NHC image refresh
+    }, 1_800_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Scroll sidebar to highlighted alert
   useEffect(() => {
@@ -517,6 +662,30 @@ export default function TropicalAdvisories() {
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
           <LayerBtn label="Gulf Stream / SST" active={showGulfStream} color="#39FF14" onClick={() => setShowGulfStream(v => !v)} />
           <LayerBtn label="Zone Forecasts" active={showZoneForecasts} onClick={() => setShowZoneForecasts(v => !v)} />
+          {/* NHC Tropical Outlook three-state toggle */}
+          <div style={{ display: "flex", gap: 0, marginLeft: 8, border: "1px solid #1A2D42", overflow: "hidden" }}>
+            {(["off", "2day", "7day"] as OutlookMode[]).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setOutlookMode(mode)}
+                style={{
+                  padding: "5px 12px",
+                  background: outlookMode === mode ? "rgba(255,69,0,0.18)" : "rgba(13,21,32,0.85)",
+                  color: outlookMode === mode ? "#FF4500" : "#7B9BB5",
+                  border: "none",
+                  borderLeft: mode !== "off" ? "1px solid #1A2D42" : "none",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                  letterSpacing: "0.08em",
+                  fontFamily: "inherit",
+                  fontWeight: outlookMode === mode ? 700 : 400,
+                  transition: "all 0.15s",
+                }}
+              >
+                {mode === "off" ? "Tropical Outlook OFF" : mode === "2day" ? "2-Day" : "7-Day"}
+              </button>
+            ))}
+          </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
             {(["street", "satellite"] as const).map(b => (
               <button key={b} onClick={() => setBasemap(b)} style={{
@@ -631,7 +800,74 @@ export default function TropicalAdvisories() {
               highlightedId={highlightedId}
               onAlertClick={id => setHighlightedId(prev => prev === id ? null : id)}
             />
+
+            {/* NHC active storm markers -- shown when outlook is 2day or 7day */}
+            {outlookMode !== "off" && nhcStorms.length > 0 && (
+              <StormMarkersLayer storms={nhcStorms} />
+            )}
           </MapContainer>
+
+          {/* NHC Tropical Outlook image panel -- overlays bottom of map when active */}
+          {outlookMode !== "off" && (
+            <div style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: "rgba(13,21,32,0.92)",
+              borderTop: "1px solid #FF4500",
+              zIndex: 800,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: "8px 12px",
+              maxHeight: "55%",
+              overflowY: "auto",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: 6 }}>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#FF4500", letterSpacing: "0.1em" }}>
+                  NHC {outlookMode === "2day" ? "2-Day" : "7-Day"} Graphical Tropical Weather Outlook
+                  {nhcStorms.length > 0 && (
+                    <span style={{ marginLeft: 12, fontSize: "0.9rem", color: "#FFD700" }}>
+                      {nhcStorms.length} active storm{nhcStorms.length !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setOutlookMode("off")}
+                  style={{ background: "none", border: "1px solid #1A2D42", color: "#7B9BB5", cursor: "pointer", fontSize: "0.9rem", fontFamily: "inherit", padding: "3px 10px" }}
+                >
+                  CLOSE
+                </button>
+              </div>
+              {/* Atlantic basin */}
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", width: "100%" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", marginBottom: 4 }}>ATLANTIC</div>
+                  <img
+                    key={`atl-${outlookMode}-${outlookImgKey}`}
+                    src={`https://www.nhc.noaa.gov/xgtwo/two_atl_${outlookMode === "2day" ? "2d0" : "7d0"}.png?t=${outlookImgKey}`}
+                    alt={`NHC Atlantic ${outlookMode} Tropical Weather Outlook`}
+                    style={{ maxWidth: "100%", maxHeight: 320, border: "1px solid #1A2D42", display: "block" }}
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", marginBottom: 4 }}>EASTERN PACIFIC</div>
+                  <img
+                    key={`epac-${outlookMode}-${outlookImgKey}`}
+                    src={`https://www.nhc.noaa.gov/xgtwo/two_pac_${outlookMode === "2day" ? "2d0" : "7d0"}.png?t=${outlookImgKey}`}
+                    alt={`NHC Eastern Pacific ${outlookMode} Tropical Weather Outlook`}
+                    style={{ maxWidth: "100%", maxHeight: 320, border: "1px solid #1A2D42", display: "block" }}
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#3A5068", marginTop: 6, textAlign: "center" }}>
+                Source: NOAA National Hurricane Center &bull; nhc.noaa.gov &bull; Updates with every NHC advisory issuance
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Advisory sidebar ── */}
