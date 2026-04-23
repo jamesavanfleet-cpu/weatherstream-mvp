@@ -178,6 +178,116 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
   return null;
 }
 
+// ── Animated global satellite layer (NOAA nowCOAST GMGSI global mosaic) ─────
+// Uses the NOAA/NESDIS Global Mosaic of Geostationary Satellite Imagery which
+// composites GOES-19 (East), GOES-18 (West), Himawari-9, Meteosat-9 & -10.
+// Coverage: 60N to 60S globally. Updated hourly. Free NOAA WMS, no key needed.
+function SatelliteLayer({ enabled }: { enabled: boolean }) {
+  const map = useMap();
+  const layersRef = useRef<L.TileLayer.WMS[]>([]);
+  const idxRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      layersRef.current.forEach(l => { try { l.setOpacity(0); } catch { /* ignore */ } });
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+      return;
+    }
+    if (loadedRef.current) {
+      // Re-enable: show current frame and restart animation
+      layersRef.current[idxRef.current]?.setOpacity(0.75);
+      timerRef.current = setInterval(() => {
+        const prev = idxRef.current;
+        const next = (prev + 1) % layersRef.current.length;
+        layersRef.current[next]?.setOpacity(0.75);
+        setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
+        idxRef.current = next;
+      }, 900);
+      return;
+    }
+    (async () => {
+      try {
+        // Fetch the WMS capabilities to get the latest available timestamps
+        const capUrl =
+          "https://nowcoast.noaa.gov/geoserver/satellite/wms" +
+          "?service=WMS&version=1.3.0&request=GetCapabilities";
+        const res = await fetch(capUrl);
+        const text = await res.text();
+        // Parse the time dimension for global_longwave_imagery_mosaic
+        const match = text.match(
+          /global_longwave_imagery_mosaic[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
+        );
+        let timestamps: string[] = [];
+        if (match) {
+          timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
+        }
+        // Use last 6 hourly frames (6 hours of animation)
+        const frames = timestamps.slice(-6);
+        if (frames.length === 0) {
+          // Fallback: single static frame with no TIME param
+          const layer = L.tileLayer.wms(
+            "https://nowcoast.noaa.gov/geoserver/satellite/wms",
+            {
+              layers: "global_longwave_imagery_mosaic",
+              format: "image/png",
+              transparent: true,
+              version: "1.3.0",
+              opacity: 0.75,
+              zIndex: 240,
+              maxNativeZoom: 8,
+            } as L.WMSOptions
+          ).addTo(map);
+          layersRef.current = [layer];
+          idxRef.current = 0;
+          loadedRef.current = true;
+          return;
+        }
+        // Pre-load all frames at opacity 0
+        layersRef.current = frames.map(ts =>
+          L.tileLayer.wms(
+            "https://nowcoast.noaa.gov/geoserver/satellite/wms",
+            {
+              layers: "global_longwave_imagery_mosaic",
+              format: "image/png",
+              transparent: true,
+              version: "1.3.0",
+              opacity: 0,
+              zIndex: 240,
+              maxNativeZoom: 8,
+              // Pass the time parameter so each frame shows a different hour
+              TIME: ts,
+            } as L.WMSOptions
+          ).addTo(map)
+        );
+        idxRef.current = layersRef.current.length - 1;
+        // Show the most recent frame
+        layersRef.current[idxRef.current]?.setOpacity(0.75);
+        loadedRef.current = true;
+        // Animate through frames: each frame shows for ~900ms
+        timerRef.current = setInterval(() => {
+          const prev = idxRef.current;
+          const next = (prev + 1) % layersRef.current.length;
+          layersRef.current[next]?.setOpacity(0.75);
+          setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
+          idxRef.current = next;
+        }, 900);
+      } catch {
+        // Silently fail -- satellite is optional
+      }
+    })();
+    return () => {
+      layersRef.current.forEach(l => { try { map.removeLayer(l); } catch { /* ignore */ } });
+      layersRef.current = [];
+      loadedRef.current = false;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [enabled, map]);
+  return null;
+}
+
 // ── Animated radar layer ──────────────────────────────────────────────────────
 function RadarLayer({ enabled }: { enabled: boolean }) {
   const map = useMap();
@@ -188,13 +298,26 @@ function RadarLayer({ enabled }: { enabled: boolean }) {
 
   useEffect(() => {
     if (!enabled) {
-      layersRef.current.forEach(l => { try { map.removeLayer(l); } catch { /* ignore */ } });
-      layersRef.current = [];
+      // Hide all frames and clear timer -- keep layers in ref so re-enable is instant
+      layersRef.current.forEach(l => { try { l.setOpacity(0); } catch { /* ignore */ } });
       if (timerRef.current) clearInterval(timerRef.current);
-      loadedRef.current = false;
+      timerRef.current = null;
       return;
     }
-    if (loadedRef.current) return;
+    if (loadedRef.current) {
+      // Re-enable: show current frame and restart animation
+      const cur = idxRef.current;
+      layersRef.current[cur]?.setOpacity(0.7);
+      timerRef.current = setInterval(() => {
+        const prev = idxRef.current;
+        const next = (prev + 1) % layersRef.current.length;
+        // Fade in next frame before fading out previous to avoid black flash
+        layersRef.current[next]?.setOpacity(0.7);
+        setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
+        idxRef.current = next;
+      }, 700);
+      return;
+    }
     (async () => {
       try {
         const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
@@ -204,28 +327,33 @@ function RadarLayer({ enabled }: { enabled: boolean }) {
           ...(data.radar?.nowcast ?? []).slice(0, 2).map((f: { path: string }) => f.path),
         ].slice(-8);
         if (paths.length === 0) return;
+        // Pre-load ALL frames onto the map at opacity 0 -- no flashing since tiles are always present
         layersRef.current = paths.map(path =>
           L.tileLayer(
             `https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/2/1_1.png`,
-            { opacity: 0.7, zIndex: 300 }
-          )
+            { opacity: 0, zIndex: 300 }
+          ).addTo(map)
         );
         idxRef.current = layersRef.current.length - 1;
-        layersRef.current[idxRef.current].addTo(map);
+        // Show only the most recent frame initially
+        layersRef.current[idxRef.current]?.setOpacity(0.7);
         loadedRef.current = true;
         timerRef.current = setInterval(() => {
           const prev = idxRef.current;
           const next = (prev + 1) % layersRef.current.length;
-          layersRef.current[next].addTo(map);
-          try { map.removeLayer(layersRef.current[prev]); } catch { /* ignore */ }
+          // Bring next frame up before dropping previous -- eliminates the black flash
+          layersRef.current[next]?.setOpacity(0.7);
+          setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
           idxRef.current = next;
-        }, 600);
+        }, 700);
       } catch {
         // Silently fail -- radar is optional
       }
     })();
     return () => {
       layersRef.current.forEach(l => { try { map.removeLayer(l); } catch { /* ignore */ } });
+      layersRef.current = [];
+      loadedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [enabled, map]);
@@ -855,6 +983,7 @@ export default function TropicalAdvisories() {
                 }}
                 opacity={0.55}
                 zIndex={210}
+                maxNativeZoom={10}
               />
             )}
 
@@ -871,23 +1000,13 @@ export default function TropicalAdvisories() {
                 } as Parameters<typeof WMSTileLayer>[0]["params"]}
                 opacity={0.7}
                 zIndex={220}
+                maxNativeZoom={13}
               />
             )}
 
-            {/* Satellite -- GOES IR via Iowa State Mesonet */}
-            {showSatellite && (
-              <WMSTileLayer
-                url="https://mesonet.agron.iastate.edu/cgi-bin/wms/goes/conus_ir.cgi"
-                params={{
-                  layers: "goes_conus_ir",
-                  format: "image/png",
-                  transparent: true,
-                  version: "1.1.1",
-                }}
-                opacity={0.75}
-                zIndex={240}
-              />
-            )}
+            {/* Satellite -- NOAA nowCOAST global GMGSI mosaic (animated, 6-hour loop) */}
+            {/* Covers 60N-60S globally: GOES-19 East, GOES-18 West, Himawari-9, Meteosat-9/10 */}
+            <SatelliteLayer enabled={showSatellite} />
 
             {/* Active Alerts WMS -- NWS hazard polygons (background layer) */}
             {showAlerts && (
@@ -901,6 +1020,7 @@ export default function TropicalAdvisories() {
                 }}
                 opacity={0.6}
                 zIndex={250}
+                maxNativeZoom={10}
               />
             )}
 
