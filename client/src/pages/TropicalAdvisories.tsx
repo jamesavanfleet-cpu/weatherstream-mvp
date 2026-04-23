@@ -766,16 +766,12 @@ export default function TropicalAdvisories() {
         borderBottom: "1px solid #1A2D42",
         padding: "7px 14px",
         flexShrink: 0,
-        // Desktop: single scrollable row; Mobile: allow wrapping so all buttons are visible
-        overflowX: isMobile ? "visible" : "auto",
       }}>
         <div style={{
           display: "flex",
           gap: 6,
           alignItems: "center",
-          // Desktop: force single row; Mobile: wrap into multiple rows
-          flexWrap: isMobile ? "wrap" : "nowrap",
-          minWidth: isMobile ? undefined : "max-content",
+          flexWrap: "wrap",
         }}>
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
           <LayerBtn label="Weather Radar" active={showRadar} onClick={() => setShowRadar(v => !v)} />
