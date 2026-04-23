@@ -179,44 +179,114 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
 }
 
 // ── Animated global satellite layer (NOAA nowCOAST GMGSI global mosaic) ─────
-// Uses the NOAA/NESDIS Global Mosaic of Geostationary Satellite Imagery which
-// composites GOES-19 (East), GOES-18 (West), Himawari-9, Meteosat-9 & -10.
-// Coverage: 60N to 60S globally. Updated hourly. Free NOAA WMS, no key needed.
-function SatelliteLayer({ enabled }: { enabled: boolean }) {
+// Single-tile viewport approach: one WMS GetMap request per frame covering the
+// full map bounds -- no tile seams, no checkerboard. Uses mix-blend-mode:screen
+// so dark clear-sky pixels are transparent and bright cloud pixels are visible.
+// Animates last 6 hourly frames from the WMS time dimension (6-hour loop).
+function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: boolean }) {
   const map = useMap();
-  const layersRef = useRef<L.TileLayer.WMS[]>([]);
+  // Each frame is an L.ImageOverlay covering the full viewport
+  const overlaysRef = useRef<L.ImageOverlay[]>([]);
   const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timestampsRef = useRef<string[]>([]);
   const loadedRef = useRef(false);
+  const enabledRef = useRef(enabled);
+  const isPlayingRef = useRef(isPlaying);
 
+  // Build a WMS GetMap URL for a given timestamp and map bounds
+  const buildUrl = (bounds: L.LatLngBounds, ts: string | null, size: { x: number; y: number }) => {
+    // Convert lat/lng bounds to EPSG:3857 (Web Mercator) for the WMS request
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const toMerc = (lat: number, lng: number): [number, number] => {
+      const x = lng * 20037508.34 / 180;
+      const y = Math.log(Math.tan((90 + Math.min(Math.max(lat, -85), 85)) * Math.PI / 360)) / (Math.PI / 180) * 20037508.34 / 180;
+      return [x, y];
+    };
+    const [swx, swy] = toMerc(sw.lat, sw.lng);
+    const [nex, ney] = toMerc(ne.lat, ne.lng);
+    const w = Math.max(256, Math.round(size.x));
+    const h = Math.max(256, Math.round(size.y));
+    const layer = "global_longwave_imagery_mosaic";
+    let url = `https://nowcoast.noaa.gov/geoserver/satellite/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
+      + `&LAYERS=${layer}&CRS=EPSG:3857&BBOX=${swx},${swy},${nex},${ney}`
+      + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
+    if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
+    return url;
+  };
+
+  // Apply mix-blend-mode:screen to an overlay so dark pixels (clear sky) become transparent
+  const applyBlend = (overlay: L.ImageOverlay) => {
+    const el = overlay.getElement();
+    if (el) {
+      el.style.mixBlendMode = "screen";
+      el.style.pointerEvents = "none";
+    }
+  };
+
+  // Show frame at index, hide all others
+  const showFrame = (idx: number) => {
+    overlaysRef.current.forEach((ov, i) => {
+      const el = ov.getElement();
+      if (el) el.style.opacity = i === idx ? "1" : "0";
+    });
+    idxRef.current = idx;
+  };
+
+  // Rebuild all overlays for current map bounds (called on move/zoom)
+  const rebuildOverlays = () => {
+    if (!enabledRef.current || timestampsRef.current.length === 0) return;
+    const bounds = map.getBounds();
+    const size = map.getSize();
+    const curIdx = idxRef.current;
+    // Remove old overlays
+    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+    // Create new overlays for each timestamp
+    overlaysRef.current = timestampsRef.current.map((ts, i) => {
+      const url = buildUrl(bounds, ts, size);
+      const ov = L.imageOverlay(url, bounds, { opacity: i === curIdx ? 1 : 0, zIndex: 240 }).addTo(map);
+      // Apply blend mode after the image element is created
+      ov.on("load", () => applyBlend(ov));
+      // Also try immediately in case element already exists
+      applyBlend(ov);
+      return ov;
+    });
+  };
+
+  // Load timestamps from WMS capabilities, then build initial overlays
   useEffect(() => {
     if (!enabled) {
-      layersRef.current.forEach(l => { try { l.setOpacity(0); } catch { /* ignore */ } });
+      // Hide all overlays and stop animation
+      overlaysRef.current.forEach(ov => {
+        const el = ov.getElement();
+        if (el) el.style.opacity = "0";
+      });
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
+      enabledRef.current = false;
       return;
     }
+    enabledRef.current = true;
+
     if (loadedRef.current) {
-      // Re-enable: show current frame and restart animation
-      layersRef.current[idxRef.current]?.setOpacity(0.75);
-      timerRef.current = setInterval(() => {
-        const prev = idxRef.current;
-        const next = (prev + 1) % layersRef.current.length;
-        layersRef.current[next]?.setOpacity(0.75);
-        setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
-        idxRef.current = next;
-      }, 900);
+      // Re-enable: show current frame
+      showFrame(idxRef.current);
+      if (isPlayingRef.current) {
+        timerRef.current = setInterval(() => {
+          const next = (idxRef.current + 1) % overlaysRef.current.length;
+          showFrame(next);
+        }, 900);
+      }
       return;
     }
+
     (async () => {
       try {
-        // Fetch the WMS capabilities to get the latest available timestamps
-        const capUrl =
-          "https://nowcoast.noaa.gov/geoserver/satellite/wms" +
-          "?service=WMS&version=1.3.0&request=GetCapabilities";
+        const capUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
+          + "?service=WMS&version=1.3.0&request=GetCapabilities";
         const res = await fetch(capUrl);
         const text = await res.text();
-        // Parse the time dimension for global_longwave_imagery_mosaic
         const match = text.match(
           /global_longwave_imagery_mosaic[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
         );
@@ -224,67 +294,56 @@ function SatelliteLayer({ enabled }: { enabled: boolean }) {
         if (match) {
           timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
         }
-        // Use last 6 hourly frames (6 hours of animation)
-        const frames = timestamps.slice(-6);
-        if (frames.length === 0) {
-          // Fallback: single static frame with no TIME param
-          const layer = L.tileLayer.wms(
-            "https://nowcoast.noaa.gov/geoserver/satellite/wms",
-            {
-              layers: "global_longwave_imagery_mosaic",
-              format: "image/png",
-              transparent: true,
-              version: "1.3.0",
-              opacity: 0.75,
-              zIndex: 240,
-              maxNativeZoom: 8,
-            } as L.WMSOptions
-          ).addTo(map);
-          layersRef.current = [layer];
-          idxRef.current = 0;
-          loadedRef.current = true;
-          return;
-        }
-        // Pre-load all frames at opacity 0
-        layersRef.current = frames.map(ts =>
-          L.tileLayer.wms(
-            "https://nowcoast.noaa.gov/geoserver/satellite/wms",
-            {
-              layers: "global_longwave_imagery_mosaic",
-              format: "image/png",
-              transparent: true,
-              version: "1.3.0",
-              opacity: 0,
-              zIndex: 240,
-              maxNativeZoom: 8,
-              // Pass the time parameter so each frame shows a different hour
-              TIME: ts,
-            } as L.WMSOptions
-          ).addTo(map)
-        );
-        idxRef.current = layersRef.current.length - 1;
-        // Show the most recent frame
-        layersRef.current[idxRef.current]?.setOpacity(0.75);
+        // Use last 6 hourly frames; fallback to single frame with no TIME
+        timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-6) : [""];
+        idxRef.current = timestampsRef.current.length - 1;
+        rebuildOverlays();
+        // Show most recent frame
+        showFrame(idxRef.current);
         loadedRef.current = true;
-        // Animate through frames: each frame shows for ~900ms
-        timerRef.current = setInterval(() => {
-          const prev = idxRef.current;
-          const next = (prev + 1) % layersRef.current.length;
-          layersRef.current[next]?.setOpacity(0.75);
-          setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
-          idxRef.current = next;
-        }, 900);
+        // Start animation if playing
+        if (isPlayingRef.current) {
+          timerRef.current = setInterval(() => {
+            const next = (idxRef.current + 1) % overlaysRef.current.length;
+            showFrame(next);
+          }, 900);
+        }
       } catch {
         // Silently fail -- satellite is optional
       }
     })();
+
+    // Rebuild overlays on map move/zoom to keep image aligned with viewport
+    const onMove = () => { if (enabledRef.current) rebuildOverlays(); };
+    map.on("moveend", onMove);
+    map.on("zoomend", onMove);
+
     return () => {
-      layersRef.current.forEach(l => { try { map.removeLayer(l); } catch { /* ignore */ } });
-      layersRef.current = [];
+      map.off("moveend", onMove);
+      map.off("zoomend", onMove);
+      overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+      overlaysRef.current = [];
       loadedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [enabled, map]);
+  }, [enabled, map]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Respond to play/pause toggle without reloading data
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    if (!enabled || !loadedRef.current) return;
+    if (isPlaying) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        const next = (idxRef.current + 1) % overlaysRef.current.length;
+        showFrame(next);
+      }, 900);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [isPlaying, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return null;
 }
 
@@ -693,6 +752,7 @@ export default function TropicalAdvisories() {
   const [showAlerts, setShowAlerts] = useState(true);
   const [showRadar, setShowRadar] = useState(false);
   const [showSatellite, setShowSatellite] = useState(false);
+  const [satPlaying, setSatPlaying] = useState(true); // satellite animation play/pause
   const [showGulfStream, setShowGulfStream] = useState(false);
   const [showZoneForecasts, setShowZoneForecasts] = useState(false);
   const [basemap, setBasemap] = useState<"street" | "satellite">("street");
@@ -904,6 +964,36 @@ export default function TropicalAdvisories() {
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
           <LayerBtn label="Weather Radar" active={showRadar} onClick={() => setShowRadar(v => !v)} />
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
+          {/* Satellite play/pause -- only visible when satellite layer is on */}
+          {showSatellite && (
+            <button
+              onClick={() => setSatPlaying(v => !v)}
+              title={satPlaying ? "Pause satellite animation" : "Play satellite animation"}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 26, height: 26,
+                border: "1px solid #1A2D42",
+                background: "rgba(13,21,32,0.85)",
+                color: "#00D4FF",
+                cursor: "pointer",
+                flexShrink: 0,
+                padding: 0,
+              }}
+            >
+              {satPlaying ? (
+                /* Pause icon: two vertical bars */
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <rect x="2" y="1" width="3" height="10" rx="0.5" fill="#00D4FF" />
+                  <rect x="7" y="1" width="3" height="10" rx="0.5" fill="#00D4FF" />
+                </svg>
+              ) : (
+                /* Play icon: triangle */
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <polygon points="2,1 11,6 2,11" fill="#00D4FF" />
+                </svg>
+              )}
+            </button>
+          )}
           <LayerBtn label="Gulf Stream / SST" active={showGulfStream} color="#39FF14" onClick={() => setShowGulfStream(v => !v)} />
           <LayerBtn label="Zone Forecasts" active={showZoneForecasts} onClick={() => setShowZoneForecasts(v => !v)} />
           {/* NHC Tropical Outlook three-state toggle */}
@@ -1006,7 +1096,7 @@ export default function TropicalAdvisories() {
 
             {/* Satellite -- NOAA nowCOAST global GMGSI mosaic (animated, 6-hour loop) */}
             {/* Covers 60N-60S globally: GOES-19 East, GOES-18 West, Himawari-9, Meteosat-9/10 */}
-            <SatelliteLayer enabled={showSatellite} />
+            <SatelliteLayer enabled={showSatellite} isPlaying={satPlaying} />
 
             {/* Active Alerts WMS -- NWS hazard polygons (background layer) */}
             {showAlerts && (
