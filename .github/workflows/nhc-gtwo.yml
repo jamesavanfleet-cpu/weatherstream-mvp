@@ -1,0 +1,58 @@
+name: NHC GTWO Disturbance Update
+
+# NHC issues the GTWO at approximately 2 AM, 8 AM, 2 PM, and 8 PM EDT
+# (06:00, 12:00, 18:00, 00:00 UTC ). We run 20 minutes after each issuance
+# to ensure NHC has finished publishing before we fetch.
+# During the off-season (Dec-May) the shapefile has 0 disturbances, which is correct.
+# During hurricane season (Jun-Nov) this will show active disturbance ellipses.
+on:
+  schedule:
+    - cron: '20 6 * * *'    # 06:20 UTC = ~2:20 AM EDT
+    - cron: '20 12 * * *'   # 12:20 UTC = ~8:20 AM EDT
+    - cron: '20 18 * * *'   # 18:20 UTC = ~2:20 PM EDT
+    - cron: '20 0 * * *'    # 00:20 UTC = ~8:20 PM EDT
+  workflow_dispatch:          # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  nhc-gtwo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pyshp
+        run: pip install pyshp
+
+      - name: Fetch NHC GTWO disturbance data
+        run: |
+          python3 scripts/generate_nhc_gtwo.py
+          echo "nhc_gtwo.json generated: $(wc -c < client/public/nhc_gtwo.json) bytes"
+
+      - name: Push updated nhc_gtwo.json to gh-pages
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+
+          cp client/public/nhc_gtwo.json /tmp/nhc_gtwo.json
+
+          git fetch origin gh-pages
+          git checkout -f gh-pages
+          git pull origin gh-pages
+
+          cp /tmp/nhc_gtwo.json nhc_gtwo.json
+
+          git add nhc_gtwo.json
+          git diff --cached --quiet && echo "No changes to nhc_gtwo.json, skipping push." && exit 0
+          git commit -m "NHC GTWO update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
