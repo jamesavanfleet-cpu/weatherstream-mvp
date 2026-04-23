@@ -8,6 +8,7 @@ import BookBriefing from "./pages/BookBriefing";
 import Home from "./pages/Home";
 import RegionDetail from "./pages/RegionDetail";
 import RouteMap from "./pages/RouteMap";
+import TropicalAdvisories from "./pages/TropicalAdvisories";
 
 // Strip trailing slash from Vite's BASE_URL for wouter base path compatibility
 const basePath = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
@@ -53,6 +54,7 @@ function Router() {
         <Route path={"/book-briefing"} component={BookBriefing} />
         <Route path={"/region/:slug"} component={RegionDetail} />
         <Route path={"/route-map"} component={RouteMap} />
+        <Route path={"/advisories"} component={TropicalAdvisories} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

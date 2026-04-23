@@ -1394,7 +1394,7 @@ export default function Home() {
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, Eastern Pacific, and Alaska.
             </p>
             <div className="h-8" />
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
@@ -1402,6 +1402,15 @@ export default function Home() {
               >
                 <Play className="w-5 h-5 mr-2" />
                 Watch the Latest Briefing
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
+                onClick={() => navigate("/advisories")}
+              >
+                <AlertTriangle className="w-5 h-5 mr-2" />
+                Tropical Advisories Map
               </Button>
             </div>
           </div>
