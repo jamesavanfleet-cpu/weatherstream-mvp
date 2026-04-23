@@ -61,17 +61,19 @@ function alertColor(severity: string): string {
 
 function eventColor(event: string): string {
   const e = event.toLowerCase();
-  if (e.includes("hurricane warning"))       return "#FF0000";
-  if (e.includes("hurricane watch"))         return "#FF69B4";
-  if (e.includes("tropical storm warning"))  return "#FF4500";
-  if (e.includes("tropical storm watch"))    return "#FF8C00";
-  if (e.includes("tropical depression"))     return "#FFD700";
-  if (e.includes("storm surge warning"))     return "#B22222";
-  if (e.includes("storm surge watch"))       return "#DB7093";
-  if (e.includes("warning"))                 return "#FF3C3C";
-  if (e.includes("watch"))                   return "#FF8C00";
-  if (e.includes("advisory"))                return "#FFD700";
-  return "#00D4FF";
+  // Official NHC/NWS standard color palette
+  if (e.includes("hurricane warning"))       return "#FF0000"; // Red
+  if (e.includes("hurricane watch"))         return "#FF69B4"; // Pink
+  if (e.includes("tropical storm warning"))  return "#4169E1"; // Blue (official NHC)
+  if (e.includes("tropical storm watch"))    return "#FFD700"; // Yellow (official NHC)
+  if (e.includes("tropical depression"))     return "#FFD700"; // Yellow
+  if (e.includes("storm surge warning"))     return "#00CED1"; // Bright Teal/Green (official NHC)
+  if (e.includes("storm surge watch"))       return "#66CDAA"; // Medium Aquamarine
+  if (e.includes("extreme wind warning"))    return "#FF8C00"; // Dark Orange
+  if (e.includes("warning"))                 return "#FF3C3C"; // Red-orange (NWS marine warning)
+  if (e.includes("watch"))                   return "#FF8C00"; // Orange (NWS watch)
+  if (e.includes("advisory"))                return "#FFD700"; // Yellow (NWS advisory)
+  return "#00D4FF"; // Cyan (statement/other)
 }
 
 function timeAgo(iso: string): string {
@@ -250,7 +252,7 @@ function LayerBtn({
         background: active ? `rgba(${rgb},0.12)` : "rgba(13,21,32,0.85)",
         color: active ? color : "#7B9BB5",
         cursor: "pointer",
-        fontSize: "0.6rem",
+        fontSize: "1rem",
         letterSpacing: "0.08em",
         fontFamily: "'JetBrains Mono', 'Courier New', monospace",
         whiteSpace: "nowrap",
@@ -264,7 +266,7 @@ function LayerBtn({
         boxShadow: active ? `0 0 6px ${color}` : "none",
       }} />
       {label}
-      <span style={{ fontSize: "0.5rem", opacity: 0.7 }}>{active ? "ON" : "OFF"}</span>
+      <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>{active ? "ON" : "OFF"}</span>
     </button>
   );
 }
@@ -298,22 +300,22 @@ function AlertCard({
         <div style={{ width: 3, background: color, alignSelf: "stretch", minHeight: 40, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3 }}>
-            <span style={{ fontSize: "0.62rem", fontWeight: 700, color, letterSpacing: "0.08em", fontFamily: "inherit" }}>
+            <span style={{ fontSize: "1.05rem", fontWeight: 700, color, letterSpacing: "0.08em", fontFamily: "inherit" }}>
               {alert.event.toUpperCase()}
             </span>
-            <span style={{ fontSize: "0.5rem", color, border: `1px solid ${color}`, padding: "0 4px", opacity: 0.8 }}>
+            <span style={{ fontSize: "0.85rem", color, border: `1px solid ${color}`, padding: "0 5px", opacity: 0.8 }}>
               {alert.severity.toUpperCase()}
             </span>
           </div>
-          <div style={{ fontSize: "0.68rem", color: "#E8F4FF", lineHeight: 1.4, marginBottom: 3 }}>
+          <div style={{ fontSize: "1rem", color: "#E8F4FF", lineHeight: 1.4, marginBottom: 3 }}>
             {alert.headline || alert.event}
           </div>
-          <div style={{ fontSize: "0.58rem", color: "#7B9BB5" }}>
+          <div style={{ fontSize: "0.9rem", color: "#7B9BB5" }}>
             {alert.areaDesc.slice(0, 80)}{alert.areaDesc.length > 80 ? "..." : ""}
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
-            <span style={{ fontSize: "0.52rem", color: "#7B9BB5" }}>{timeAgo(alert.effective)}</span>
-            <span style={{ fontSize: "0.52rem", color: new Date(alert.expires).getTime() - Date.now() < 3_600_000 ? "#FF8C00" : "#7B9BB5" }}>
+            <span style={{ fontSize: "0.85rem", color: "#7B9BB5" }}>{timeAgo(alert.effective)}</span>
+            <span style={{ fontSize: "0.85rem", color: new Date(alert.expires).getTime() - Date.now() < 3_600_000 ? "#FF8C00" : "#7B9BB5" }}>
               {timeUntil(alert.expires)}
             </span>
           </div>
@@ -325,13 +327,13 @@ function AlertCard({
       </button>
       {expanded && (
         <div style={{ padding: "0 10px 10px 23px", borderTop: "1px solid #1A2D42" }}>
-          <p style={{ fontSize: "0.62rem", color: "#B0C8E0", lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>
+          <p style={{ fontSize: "0.95rem", color: "#B0C8E0", lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>
             {alert.description.slice(0, 600)}{alert.description.length > 600 ? "..." : ""}
           </p>
           {alert.zones.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
               {alert.zones.slice(0, 8).map(z => (
-                <span key={z} style={{ fontSize: "0.52rem", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.3)", background: "rgba(0,212,255,0.05)", padding: "1px 6px" }}>
+                <span key={z} style={{ fontSize: "0.85rem", color: "#00D4FF", border: "1px solid rgba(0,212,255,0.3)", background: "rgba(0,212,255,0.05)", padding: "2px 8px" }}>
                   {z}
                 </span>
               ))}
@@ -457,9 +459,9 @@ export default function TropicalAdvisories() {
             border: "1px solid #1A2D42",
             color: "#7B9BB5",
             cursor: "pointer",
-            fontSize: "0.6rem",
+            fontSize: "1rem",
             letterSpacing: "0.08em",
-            padding: "4px 10px",
+            padding: "6px 14px",
             fontFamily: "inherit",
             display: "flex",
             alignItems: "center",
@@ -473,10 +475,10 @@ export default function TropicalAdvisories() {
           HOME
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.08em" }}>
+          <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.08em" }}>
             TROPICAL &amp; MARINE ADVISORIES
           </div>
-          <div style={{ fontSize: "0.5rem", color: "#7B9BB5", marginTop: 1 }}>
+          <div style={{ fontSize: "0.9rem", color: "#7B9BB5", marginTop: 2 }}>
             NWS Marine + NHC Tropical Watches, Warnings &amp; Statements
           </div>
         </div>
@@ -489,9 +491,9 @@ export default function TropicalAdvisories() {
               border: `1px solid ${showSidebar ? "#00D4FF" : "#1A2D42"}`,
               color: showSidebar ? "#00D4FF" : "#7B9BB5",
               cursor: "pointer",
-              fontSize: "0.6rem",
+              fontSize: "1rem",
               letterSpacing: "0.08em",
-              padding: "4px 10px",
+              padding: "6px 14px",
               fontFamily: "inherit",
               flexShrink: 0,
             }}
@@ -518,7 +520,7 @@ export default function TropicalAdvisories() {
           <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
             {(["street", "satellite"] as const).map(b => (
               <button key={b} onClick={() => setBasemap(b)} style={{
-                padding: "5px 10px", cursor: "pointer", fontSize: "0.6rem", letterSpacing: "0.06em",
+                padding: "6px 14px", cursor: "pointer", fontSize: "1rem", letterSpacing: "0.06em",
                 border: `1px solid ${basemap === b ? "#00D4FF" : "#1A2D42"}`,
                 background: basemap === b ? "rgba(0,212,255,0.12)" : "rgba(13,21,32,0.85)",
                 color: basemap === b ? "#00D4FF" : "#7B9BB5",
@@ -656,15 +658,15 @@ export default function TropicalAdvisories() {
             <div style={{ padding: "12px 14px", borderBottom: "1px solid #1A2D42", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.05em" }}>
+                  <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.05em" }}>
                     Tropical &amp; Marine Advisories
                   </div>
-                  <div style={{ fontSize: "0.52rem", color: "#7B9BB5", marginTop: 2 }}>
+                  <div style={{ fontSize: "0.9rem", color: "#7B9BB5", marginTop: 2 }}>
                     {alertsLoading ? "Loading..." : `${alerts.length} active`}
                     {lastUpdated && ` · Updated ${lastUpdated}`}
                   </div>
                 </div>
-                <button onClick={fetchAlerts} style={{ fontSize: "0.52rem", color: "#00D4FF", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.1em", fontFamily: "inherit" }}>
+                <button onClick={fetchAlerts} style={{ fontSize: "0.9rem", color: "#00D4FF", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.1em", fontFamily: "inherit" }}>
                   REFRESH
                 </button>
               </div>
@@ -682,15 +684,15 @@ export default function TropicalAdvisories() {
                     <div style={{ fontSize: "1.3rem", fontWeight: 700, color: alerts.length > 0 ? sevColor : "#39FF14", lineHeight: 1 }}>
                       {alerts.length}
                     </div>
-                    <div style={{ fontSize: "0.48rem", color: "#7B9BB5" }}>ADVISORIES</div>
+                    <div style={{ fontSize: "0.85rem", color: "#7B9BB5" }}>ADVISORIES</div>
                   </div>
                   {highestSeverity && (
-                    <div style={{ fontSize: "0.52rem", color: sevColor, border: `1px solid ${sevColor}`, padding: "2px 8px", letterSpacing: "0.08em" }}>
+                    <div style={{ fontSize: "0.9rem", color: sevColor, border: `1px solid ${sevColor}`, padding: "3px 10px", letterSpacing: "0.08em" }}>
                       {highestSeverity.toUpperCase()}
                     </div>
                   )}
                   {alerts.length === 0 && (
-                    <div style={{ fontSize: "0.58rem", color: "#39FF14", letterSpacing: "0.1em" }}>ALL CLEAR</div>
+                    <div style={{ fontSize: "1rem", color: "#39FF14", letterSpacing: "0.1em" }}>ALL CLEAR</div>
                   )}
                 </div>
               )}
@@ -701,40 +703,40 @@ export default function TropicalAdvisories() {
               {alertsLoading && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "32px 0", justifyContent: "center" }}>
                   <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00D4FF" }} />
-                  <span style={{ fontSize: "0.58rem", color: "#7B9BB5" }}>FETCHING NOAA ALERTS...</span>
+                  <span style={{ fontSize: "1rem", color: "#7B9BB5" }}>FETCHING NOAA ALERTS...</span>
                 </div>
               )}
               {alertsError && (
-                <div style={{ fontSize: "0.58rem", color: "#FF8C00", padding: "16px 0", textAlign: "center" }}>
+                <div style={{ fontSize: "1rem", color: "#FF8C00", padding: "16px 0", textAlign: "center" }}>
                   {alertsError}
                 </div>
               )}
               {!alertsLoading && alerts.length === 0 && !alertsError && (
                 <div style={{ textAlign: "center", padding: "48px 0" }}>
-                  <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#39FF14", letterSpacing: "0.12em", marginBottom: 8 }}>
+                  <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "#39FF14", letterSpacing: "0.12em", marginBottom: 8 }}>
                     ALL CLEAR
                   </div>
-                  <div style={{ fontSize: "0.6rem", color: "#7B9BB5", marginBottom: 16 }}>
+                  <div style={{ fontSize: "1rem", color: "#7B9BB5", marginBottom: 16 }}>
                     No active marine or tropical advisories
                   </div>
                   {/* Color legend */}
                   <div style={{ textAlign: "left", padding: "0 8px" }}>
-                    <div style={{ fontSize: "0.5rem", color: "#3A5068", letterSpacing: "0.08em", marginBottom: 8 }}>
+                    <div style={{ fontSize: "0.9rem", color: "#3A5068", letterSpacing: "0.08em", marginBottom: 8 }}>
                       ALERT COLOR LEGEND
                     </div>
                     {[
                       { color: "#FF0000", label: "Hurricane Warning" },
                       { color: "#FF69B4", label: "Hurricane Watch" },
-                      { color: "#FF4500", label: "Tropical Storm Warning" },
-                      { color: "#FF8C00", label: "Tropical Storm Watch" },
-                      { color: "#B22222", label: "Storm Surge Warning" },
+                      { color: "#4169E1", label: "Tropical Storm Warning" },
+                      { color: "#FFD700", label: "Tropical Storm Watch" },
+                      { color: "#00CED1", label: "Storm Surge Warning" },
                       { color: "#FF3C3C", label: "Marine Warning" },
                       { color: "#FFD700", label: "Marine Advisory" },
                       { color: "#00D4FF", label: "Statement / Other" },
                     ].map(item => (
-                      <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                        <div style={{ width: 10, height: 10, background: item.color, flexShrink: 0, opacity: 0.9 }} />
-                        <span style={{ fontSize: "0.55rem", color: "#7B9BB5" }}>{item.label}</span>
+                      <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                        <div style={{ width: 14, height: 14, background: item.color, flexShrink: 0, opacity: 0.9 }} />
+                        <span style={{ fontSize: "0.95rem", color: "#7B9BB5" }}>{item.label}</span>
                       </div>
                     ))}
                   </div>
@@ -752,31 +754,31 @@ export default function TropicalAdvisories() {
               {/* Legend shown below alerts when alerts are present */}
               {!alertsLoading && alerts.length > 0 && (
                 <div style={{ marginTop: 16, padding: "10px 8px", borderTop: "1px solid #1A2D42" }}>
-                  <div style={{ fontSize: "0.5rem", color: "#3A5068", letterSpacing: "0.08em", marginBottom: 8 }}>
-                    ALERT COLOR LEGEND
+                <div style={{ fontSize: "0.9rem", color: "#3A5068", letterSpacing: "0.08em", marginBottom: 8 }}>
+                  ALERT COLOR LEGEND
+                </div>
+                {[
+                  { color: "#FF0000", label: "Hurricane Warning" },
+                  { color: "#FF69B4", label: "Hurricane Watch" },
+                  { color: "#4169E1", label: "Tropical Storm Warning" },
+                  { color: "#FFD700", label: "Tropical Storm Watch" },
+                  { color: "#00CED1", label: "Storm Surge Warning" },
+                  { color: "#FF3C3C", label: "Marine Warning" },
+                  { color: "#FFD700", label: "Marine Advisory" },
+                  { color: "#00D4FF", label: "Statement / Other" },
+                ].map(item => (
+                  <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                    <div style={{ width: 14, height: 14, background: item.color, flexShrink: 0, opacity: 0.9 }} />
+                    <span style={{ fontSize: "0.95rem", color: "#7B9BB5" }}>{item.label}</span>
                   </div>
-                  {[
-                    { color: "#FF0000", label: "Hurricane Warning" },
-                    { color: "#FF69B4", label: "Hurricane Watch" },
-                    { color: "#FF4500", label: "Tropical Storm Warning" },
-                    { color: "#FF8C00", label: "Tropical Storm Watch" },
-                    { color: "#B22222", label: "Storm Surge Warning" },
-                    { color: "#FF3C3C", label: "Marine Warning" },
-                    { color: "#FFD700", label: "Marine Advisory" },
-                    { color: "#00D4FF", label: "Statement / Other" },
-                  ].map(item => (
-                    <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                      <div style={{ width: 10, height: 10, background: item.color, flexShrink: 0, opacity: 0.9 }} />
-                      <span style={{ fontSize: "0.55rem", color: "#7B9BB5" }}>{item.label}</span>
-                    </div>
-                  ))}
+                ))}
                 </div>
               )}
             </div>
 
             {/* Footer */}
             <div style={{ padding: "7px 12px", borderTop: "1px solid #1A2D42", flexShrink: 0 }}>
-              <div style={{ fontSize: "0.48rem", color: "#3A5068", textAlign: "center" }}>
+              <div style={{ fontSize: "0.85rem", color: "#3A5068", textAlign: "center" }}>
                 Data: NOAA/NWS + NHC api.weather.gov · Auto-refreshes every 5 min
               </div>
             </div>
