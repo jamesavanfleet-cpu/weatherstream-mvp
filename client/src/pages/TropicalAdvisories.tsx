@@ -268,27 +268,27 @@ function LayerBtn({
     <button
       onClick={onClick}
       style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "5px 10px",
+        display: "flex", alignItems: "center", gap: 4,
+        padding: "4px 7px",
         border: `1px solid ${active ? color : "#1A2D42"}`,
         background: active ? `rgba(${rgb},0.12)` : "rgba(13,21,32,0.85)",
         color: active ? color : "#7B9BB5",
         cursor: "pointer",
-        fontSize: "1rem",
-        letterSpacing: "0.08em",
+        fontSize: "0.78rem",
+        letterSpacing: "0.06em",
         fontFamily: "'JetBrains Mono', 'Courier New', monospace",
         whiteSpace: "nowrap",
         transition: "all 0.15s",
       }}
     >
       <span style={{
-        width: 6, height: 6, borderRadius: "50%",
+        width: 5, height: 5, borderRadius: "50%",
         background: active ? color : "#1A2D42",
         flexShrink: 0,
-        boxShadow: active ? `0 0 6px ${color}` : "none",
+        boxShadow: active ? `0 0 5px ${color}` : "none",
       }} />
       {label}
-      <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>{active ? "ON" : "OFF"}</span>
+      <span style={{ fontSize: "0.72rem", opacity: 0.7 }}>{active ? "ON" : "OFF"}</span>
     </button>
   );
 }
@@ -492,6 +492,9 @@ export default function TropicalAdvisories() {
   const [nhcStorms, setNhcStorms] = useState<NHCStorm[]>([]);
   const [outlookImgKey, setOutlookImgKey] = useState(Date.now());
 
+  // REFRESH button visual feedback
+  const [refreshing, setRefreshing] = useState(false);
+
   // Advisory data
   const [alerts, setAlerts] = useState<NWSAlert[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
@@ -669,14 +672,14 @@ export default function TropicalAdvisories() {
                 key={mode}
                 onClick={() => setOutlookMode(mode)}
                 style={{
-                  padding: "5px 12px",
+                  padding: "4px 8px",
                   background: outlookMode === mode ? "rgba(255,69,0,0.18)" : "rgba(13,21,32,0.85)",
                   color: outlookMode === mode ? "#FF4500" : "#7B9BB5",
                   border: "none",
                   borderLeft: mode !== "off" ? "1px solid #1A2D42" : "none",
                   cursor: "pointer",
-                  fontSize: "1rem",
-                  letterSpacing: "0.08em",
+                  fontSize: "0.78rem",
+                  letterSpacing: "0.06em",
                   fontFamily: "inherit",
                   fontWeight: outlookMode === mode ? 700 : 400,
                   transition: "all 0.15s",
@@ -689,7 +692,7 @@ export default function TropicalAdvisories() {
           <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
             {(["street", "satellite"] as const).map(b => (
               <button key={b} onClick={() => setBasemap(b)} style={{
-                padding: "6px 14px", cursor: "pointer", fontSize: "1rem", letterSpacing: "0.06em",
+                padding: "4px 9px", cursor: "pointer", fontSize: "0.78rem", letterSpacing: "0.06em",
                 border: `1px solid ${basemap === b ? "#00D4FF" : "#1A2D42"}`,
                 background: basemap === b ? "rgba(0,212,255,0.12)" : "rgba(13,21,32,0.85)",
                 color: basemap === b ? "#00D4FF" : "#7B9BB5",
@@ -742,19 +745,16 @@ export default function TropicalAdvisories() {
               />
             )}
 
-            {/* Gulf Stream / SST -- NOAA CoastWatch */}
+            {/* Gulf Stream / SST -- NOAA CoastWatch ERDDAP MUR SST */}
             {showGulfStream && (
               <WMSTileLayer
                 url="https://coastwatch.pfeg.noaa.gov/erddap/wms/jplMURSST41/request"
                 params={{
-                  layers: "jplMURSST41/sst",
+                  layers: "jplMURSST41:analysed_sst",
                   format: "image/png",
                   transparent: true,
                   version: "1.3.0",
-                  colorscalerange: "10,32",
-                  belowmincolor: "extend",
-                  abovemaxcolor: "extend",
-                  styles: "boxfill/rainbow",
+                  styles: "",
                 } as Parameters<typeof WMSTileLayer>[0]["params"]}
                 opacity={0.7}
                 zIndex={220}
@@ -902,8 +902,27 @@ export default function TropicalAdvisories() {
                     {lastUpdated && ` · Updated ${lastUpdated}`}
                   </div>
                 </div>
-                <button onClick={fetchAlerts} style={{ fontSize: "0.9rem", color: "#00D4FF", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.1em", fontFamily: "inherit" }}>
-                  REFRESH
+                <button
+                  onClick={async () => {
+                    if (refreshing) return;
+                    setRefreshing(true);
+                    await fetchAlerts();
+                    setRefreshing(false);
+                  }}
+                  style={{
+                    fontSize: "0.9rem",
+                    color: refreshing ? "#FFD700" : "#00D4FF",
+                    background: refreshing ? "rgba(255,215,0,0.08)" : "none",
+                    border: refreshing ? "1px solid #FFD700" : "none",
+                    cursor: refreshing ? "default" : "pointer",
+                    letterSpacing: "0.1em",
+                    fontFamily: "inherit",
+                    padding: "2px 8px",
+                    transition: "all 0.2s",
+                  }}
+                  disabled={refreshing}
+                >
+                  {refreshing ? "REFRESHING..." : "REFRESH"}
                 </button>
               </div>
               {/* Severity summary */}
