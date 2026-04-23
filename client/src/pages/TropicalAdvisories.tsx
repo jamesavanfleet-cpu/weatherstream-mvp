@@ -418,7 +418,7 @@ function RadarLayer({ enabled }: { enabled: boolean }) {
         layersRef.current = paths.map(path =>
           L.tileLayer(
             `https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/2/1_1.png`,
-            { opacity: 0, zIndex: 300 }
+            { opacity: 0, zIndex: 300, maxNativeZoom: 12 }
           ).addTo(map)
         );
         idxRef.current = layersRef.current.length - 1;
