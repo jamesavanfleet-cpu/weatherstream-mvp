@@ -146,6 +146,17 @@ const ZONE_IDS = [
   "FLZ075","FLZ076","FLZ077","FLZ078","FLZ079","FLZ080",
 ].join(",");
 
+// ── Map size invalidator -- forces Leaflet to recalculate canvas after layout changes ──
+function MapInvalidator({ trigger }: { trigger: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    // Small delay lets the DOM reflow complete before Leaflet measures
+    const t = setTimeout(() => { map.invalidateSize(); }, 80);
+    return () => clearTimeout(t);
+  }, [trigger, map]);
+  return null;
+}
+
 // ── Animated radar layer ──────────────────────────────────────────────────────
 function RadarLayer({ enabled }: { enabled: boolean }) {
   const map = useMap();
@@ -573,9 +584,16 @@ export default function TropicalAdvisories() {
 
   // Detect mobile for sidebar layout
   const [isMobile, setIsMobile] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  // Mobile: sidebar hidden by default so map fills full width on load
+  const [showSidebar, setShowSidebar] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // On mobile, hide sidebar by default; on desktop always show
+      if (!mobile) setShowSidebar(true);
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -657,9 +675,17 @@ export default function TropicalAdvisories() {
         borderBottom: "1px solid #1A2D42",
         padding: "7px 14px",
         flexShrink: 0,
-        overflowX: "auto",
+        // Desktop: single scrollable row; Mobile: allow wrapping so all buttons are visible
+        overflowX: isMobile ? "visible" : "auto",
       }}>
-        <div style={{ display: "flex", gap: 6, alignItems: "center", minWidth: "max-content" }}>
+        <div style={{
+          display: "flex",
+          gap: 6,
+          alignItems: "center",
+          // Desktop: force single row; Mobile: wrap into multiple rows
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          minWidth: isMobile ? undefined : "max-content",
+        }}>
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
           <LayerBtn label="Weather Radar" active={showRadar} onClick={() => setShowRadar(v => !v)} />
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
@@ -689,7 +715,7 @@ export default function TropicalAdvisories() {
               </button>
             ))}
           </div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+          <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", gap: 4 }}>
             {(["street", "satellite"] as const).map(b => (
               <button key={b} onClick={() => setBasemap(b)} style={{
                 padding: "4px 9px", cursor: "pointer", fontSize: "0.78rem", letterSpacing: "0.06em",
@@ -707,8 +733,8 @@ export default function TropicalAdvisories() {
 
       {/* ── Map + sidebar ── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
-        {/* Leaflet map */}
-        <div style={{ flex: 1, position: "relative" }}>
+        {/* Leaflet map -- flex:1 always so it fills remaining width after sidebar */}
+        <div ref={mapContainerRef} style={{ flex: 1, position: "relative", minWidth: 0 }}>
           <MapContainer
             center={[22.0, -75.0]}
             zoom={5}
@@ -790,6 +816,9 @@ export default function TropicalAdvisories() {
                 zIndex={250}
               />
             )}
+
+            {/* Invalidate Leaflet canvas size when sidebar shows/hides on mobile */}
+            <MapInvalidator trigger={showSidebar} />
 
             {/* Animated radar */}
             <RadarLayer enabled={showRadar} />
