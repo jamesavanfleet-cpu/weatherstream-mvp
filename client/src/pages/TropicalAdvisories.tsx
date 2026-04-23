@@ -180,12 +180,13 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
 
 // ── Animated global satellite layer (NOAA nowCOAST GMGSI global mosaic) ─────
 // Single-tile viewport approach: one WMS GetMap request per frame covering the
-// full map bounds -- no tile seams, no checkerboard. Uses mix-blend-mode:screen
-// so dark clear-sky pixels are transparent and bright cloud pixels are visible.
-// Animates last 6 hourly frames from the WMS time dimension (6-hour loop).
+// full map bounds -- no tile seams, no checkerboard.
+// Uses canvas-based threshold transparency: pixels darker than threshold are
+// made fully transparent so the map shows through clear-sky areas.
+// All frames are pre-loaded before animation starts to eliminate flashing.
 function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: boolean }) {
   const map = useMap();
-  // Each frame is an L.ImageOverlay covering the full viewport
+  // Each frame is an L.ImageOverlay whose URL is a canvas data URL (processed)
   const overlaysRef = useRef<L.ImageOverlay[]>([]);
   const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -193,71 +194,117 @@ function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: b
   const loadedRef = useRef(false);
   const enabledRef = useRef(enabled);
   const isPlayingRef = useRef(isPlaying);
+  // Brightness threshold: pixels with mean RGB below this become transparent
+  // IR imagery: clear sky ~1-30, thin cloud ~30-80, thick cloud ~80-255
+  const CLOUD_THRESHOLD = 35;
 
   // Build a WMS GetMap URL for a given timestamp and map bounds
-  const buildUrl = (bounds: L.LatLngBounds, ts: string | null, size: { x: number; y: number }) => {
-    // Convert lat/lng bounds to EPSG:3857 (Web Mercator) for the WMS request
+  const buildWmsUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
-    const toMerc = (lat: number, lng: number): [number, number] => {
-      const x = lng * 20037508.34 / 180;
-      const y = Math.log(Math.tan((90 + Math.min(Math.max(lat, -85), 85)) * Math.PI / 360)) / (Math.PI / 180) * 20037508.34 / 180;
-      return [x, y];
-    };
-    const [swx, swy] = toMerc(sw.lat, sw.lng);
-    const [nex, ney] = toMerc(ne.lat, ne.lng);
-    const w = Math.max(256, Math.round(size.x));
-    const h = Math.max(256, Math.round(size.y));
-    const layer = "global_longwave_imagery_mosaic";
-    let url = `https://nowcoast.noaa.gov/geoserver/satellite/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
-      + `&LAYERS=${layer}&CRS=EPSG:3857&BBOX=${swx},${swy},${nex},${ney}`
+    // Clamp to valid EPSG:4326 bounds
+    const minLat = Math.max(sw.lat, -85);
+    const maxLat = Math.min(ne.lat, 85);
+    const minLng = Math.max(sw.lng, -180);
+    const maxLng = Math.min(ne.lng, 180);
+    const w = Math.max(256, Math.min(1024, Math.round(size.x)));
+    const h = Math.max(256, Math.min(1024, Math.round(size.y)));
+    let url = `https://nowcoast.noaa.gov/geoserver/satellite/wms`
+      + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
+      + `&LAYERS=global_longwave_imagery_mosaic`
+      + `&CRS=EPSG:4326&BBOX=${minLat},${minLng},${maxLat},${maxLng}`
       + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
     if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
     return url;
   };
 
-  // Apply mix-blend-mode:screen to an overlay so dark pixels (clear sky) become transparent
-  const applyBlend = (overlay: L.ImageOverlay) => {
-    const el = overlay.getElement();
-    if (el) {
-      el.style.mixBlendMode = "screen";
-      el.style.pointerEvents = "none";
-    }
+  // Fetch a WMS image and return a canvas data URL with dark pixels made transparent
+  const fetchProcessedFrame = (wmsUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("no canvas ctx")); return; }
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          // Apply threshold: make dark (clear sky) pixels transparent
+          for (let i = 0; i < data.length; i += 4) {
+            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            if (brightness < CLOUD_THRESHOLD) {
+              data[i + 3] = 0; // fully transparent
+            } else {
+              // Scale opacity: thin clouds semi-transparent, thick clouds opaque
+              const opacity = Math.min(255, Math.round(((brightness - CLOUD_THRESHOLD) / (255 - CLOUD_THRESHOLD)) * 220));
+              data[i + 3] = opacity;
+            }
+          }
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = () => reject(new Error("image load failed"));
+      img.src = wmsUrl;
+    });
   };
 
-  // Show frame at index, hide all others
+  // Show frame at index, hide all others (instant, no flashing)
   const showFrame = (idx: number) => {
     overlaysRef.current.forEach((ov, i) => {
       const el = ov.getElement();
-      if (el) el.style.opacity = i === idx ? "1" : "0";
+      if (el) el.style.opacity = i === idx ? "0.9" : "0";
     });
     idxRef.current = idx;
   };
 
-  // Rebuild all overlays for current map bounds (called on move/zoom)
-  const rebuildOverlays = () => {
+  // Load all frames for current bounds and start animation
+  const loadFrames = async () => {
     if (!enabledRef.current || timestampsRef.current.length === 0) return;
     const bounds = map.getBounds();
     const size = map.getSize();
-    const curIdx = idxRef.current;
+    // Stop animation while loading
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     // Remove old overlays
     overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-    // Create new overlays for each timestamp
-    overlaysRef.current = timestampsRef.current.map((ts, i) => {
-      const url = buildUrl(bounds, ts, size);
-      const ov = L.imageOverlay(url, bounds, { opacity: i === curIdx ? 1 : 0, zIndex: 240 }).addTo(map);
-      // Apply blend mode after the image element is created
-      ov.on("load", () => applyBlend(ov));
-      // Also try immediately in case element already exists
-      applyBlend(ov);
-      return ov;
-    });
+    overlaysRef.current = [];
+    try {
+      // Fetch and process all frames in parallel
+      const dataUrls = await Promise.all(
+        timestampsRef.current.map(ts => fetchProcessedFrame(buildWmsUrl(bounds, ts, size)))
+      );
+      if (!enabledRef.current) return; // disabled while loading
+      // Create overlays from processed canvas data URLs, all hidden initially
+      overlaysRef.current = dataUrls.map(dataUrl => {
+        const ov = L.imageOverlay(dataUrl, bounds, { opacity: 0, zIndex: 240 }).addTo(map);
+        const el = ov.getElement();
+        if (el) el.style.pointerEvents = "none";
+        return ov;
+      });
+      // Show most recent frame
+      const startIdx = overlaysRef.current.length - 1;
+      showFrame(startIdx);
+      // Start animation if playing
+      if (isPlayingRef.current && overlaysRef.current.length > 1) {
+        timerRef.current = setInterval(() => {
+          const next = (idxRef.current + 1) % overlaysRef.current.length;
+          showFrame(next);
+        }, 900);
+      }
+    } catch {
+      // Silently fail -- satellite is optional
+    }
   };
 
-  // Load timestamps from WMS capabilities, then build initial overlays
+  // Main effect: fetch timestamps and load frames when enabled
   useEffect(() => {
     if (!enabled) {
-      // Hide all overlays and stop animation
       overlaysRef.current.forEach(ov => {
         const el = ov.getElement();
         if (el) el.style.opacity = "0";
@@ -269,52 +316,33 @@ function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: b
     }
     enabledRef.current = true;
 
-    if (loadedRef.current) {
-      // Re-enable: show current frame
-      showFrame(idxRef.current);
-      if (isPlayingRef.current) {
-        timerRef.current = setInterval(() => {
-          const next = (idxRef.current + 1) % overlaysRef.current.length;
-          showFrame(next);
-        }, 900);
-      }
-      return;
-    }
-
-    (async () => {
+    const init = async () => {
       try {
-        const capUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
-          + "?service=WMS&version=1.3.0&request=GetCapabilities";
-        const res = await fetch(capUrl);
-        const text = await res.text();
-        const match = text.match(
-          /global_longwave_imagery_mosaic[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
-        );
-        let timestamps: string[] = [];
-        if (match) {
-          timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
+        if (!loadedRef.current) {
+          // First time: fetch WMS capabilities to get timestamps
+          const capUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
+            + "?service=WMS&version=1.3.0&request=GetCapabilities";
+          const res = await fetch(capUrl);
+          const text = await res.text();
+          const match = text.match(
+            /global_longwave_imagery_mosaic[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
+          );
+          let timestamps: string[] = [];
+          if (match) {
+            timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
+          }
+          timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-6) : [""];
+          loadedRef.current = true;
         }
-        // Use last 6 hourly frames; fallback to single frame with no TIME
-        timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-6) : [""];
-        idxRef.current = timestampsRef.current.length - 1;
-        rebuildOverlays();
-        // Show most recent frame
-        showFrame(idxRef.current);
-        loadedRef.current = true;
-        // Start animation if playing
-        if (isPlayingRef.current) {
-          timerRef.current = setInterval(() => {
-            const next = (idxRef.current + 1) % overlaysRef.current.length;
-            showFrame(next);
-          }, 900);
-        }
+        await loadFrames();
       } catch {
-        // Silently fail -- satellite is optional
+        // Silently fail
       }
-    })();
+    };
+    init();
 
-    // Rebuild overlays on map move/zoom to keep image aligned with viewport
-    const onMove = () => { if (enabledRef.current) rebuildOverlays(); };
+    // Reload frames on map move/zoom so image stays aligned with viewport
+    const onMove = () => { if (enabledRef.current) loadFrames(); };
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
 
@@ -331,7 +359,7 @@ function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: b
   // Respond to play/pause toggle without reloading data
   useEffect(() => {
     isPlayingRef.current = isPlaying;
-    if (!enabled || !loadedRef.current) return;
+    if (!enabled || overlaysRef.current.length === 0) return;
     if (isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
