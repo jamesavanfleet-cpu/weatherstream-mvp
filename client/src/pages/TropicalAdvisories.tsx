@@ -66,6 +66,27 @@ interface NHCStorm {
 
 type OutlookMode = "off" | "2day" | "7day";
 
+// ── NHC GTWO disturbance feature type ────────────────────────────────────────
+interface GtwoProperties {
+  name: string;
+  basin: string;
+  area: string;
+  prob_2day: string;
+  risk_2day: string;
+  prob_2day_pct: number | null;
+  color_2day: string;
+  prob_7day: string;
+  risk_7day: string;
+  prob_7day_pct: number | null;
+  color_7day: string;
+}
+
+interface GtwoFeature {
+  type: "Feature";
+  geometry: GeoJSON.Geometry;
+  properties: GtwoProperties;
+}
+
 // CORS proxy for NHC endpoints that lack Access-Control-Allow-Origin
 const ALLORIGINS = (url: string) =>
   `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
@@ -435,6 +456,58 @@ async function fetchNHCStorms(): Promise<NHCStorm[]> {
   }
 }
 
+// ── NHC GTWO disturbance ellipse layer ───────────────────────────────────────
+function GtwoLayer({
+  features,
+  mode,
+}: {
+  features: GtwoFeature[];
+  mode: OutlookMode;
+}) {
+  if (mode === "off" || features.length === 0) return null;
+
+  return (
+    <>
+      {features.map((feature, idx) => {
+        const p = feature.properties;
+        const color = mode === "2day" ? p.color_2day : p.color_7day;
+        const prob = mode === "2day" ? p.prob_2day : p.prob_7day;
+        const risk = mode === "2day" ? p.risk_2day : p.risk_7day;
+        const probPct = mode === "2day" ? p.prob_2day_pct : p.prob_7day_pct;
+
+        const tooltipHtml = `<div style="font-family:monospace;font-size:13px;line-height:1.6;padding:6px 10px;background:#0D1520;border:1px solid ${color};color:#E8F4FF;min-width:200px;max-width:280px">
+  <div style="font-weight:700;color:${color};font-size:14px;margin-bottom:4px">${p.name}</div>
+  <div style="margin-bottom:2px">Basin: ${p.basin}</div>
+  <div style="margin-bottom:2px">${mode === "2day" ? "2-Day" : "7-Day"} Formation Chance: <span style="color:${color};font-weight:700">${prob || "N/A"}</span></div>
+  ${risk ? `<div style="margin-bottom:2px">Risk Level: <span style="color:${color};font-weight:700">${risk}</span></div>` : ""}
+  ${probPct !== null && probPct !== undefined ? `<div style="margin-top:4px;padding-top:4px;border-top:1px solid #1A2D42;font-size:11px;color:#7B9BB5">${probPct > 60 ? "High" : probPct >= 40 ? "Medium" : "Low"} probability of tropical cyclone formation</div>` : ""}
+</div>`;
+
+        return (
+          <GeoJSON
+            key={`gtwo-${idx}-${mode}`}
+            data={feature as unknown as GeoJSON.GeoJsonObject}
+            style={() => ({
+              color,
+              weight: 2,
+              fillColor: color,
+              fillOpacity: 0.25,
+              opacity: 0.85,
+            })}
+            onEachFeature={(_feat, layer) => {
+              layer.bindTooltip(tooltipHtml, {
+                sticky: true,
+                opacity: 1,
+                direction: "top",
+              });
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 // ── Storm track markers on the Leaflet map ────────────────────────────────────
 function StormMarkersLayer({ storms }: { storms: NHCStorm[] }) {
   const map = useMap();
@@ -501,7 +574,9 @@ export default function TropicalAdvisories() {
 
   // NHC active storms
   const [nhcStorms, setNhcStorms] = useState<NHCStorm[]>([]);
-  const [outlookImgKey, setOutlookImgKey] = useState(Date.now());
+
+  // NHC GTWO disturbance GeoJSON features
+  const [gtwoFeatures, setGtwoFeatures] = useState<GtwoFeature[]>([]);
 
   // REFRESH button visual feedback
   const [refreshing, setRefreshing] = useState(false);
@@ -564,8 +639,24 @@ export default function TropicalAdvisories() {
     fetchNHCStorms().then(setNhcStorms);
     const interval = setInterval(() => {
       fetchNHCStorms().then(setNhcStorms);
-      setOutlookImgKey(Date.now()); // force NHC image refresh
     }, 1_800_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch NHC GTWO disturbance GeoJSON on mount and every 3 hours
+  useEffect(() => {
+    const loadGtwo = async () => {
+      try {
+        const res = await fetch("/nhc_gtwo.json");
+        if (!res.ok) return;
+        const data = await res.json();
+        setGtwoFeatures((data.features ?? []) as GtwoFeature[]);
+      } catch {
+        // Silently fail -- GTWO layer is optional
+      }
+    };
+    loadGtwo();
+    const interval = setInterval(loadGtwo, 10_800_000); // 3 hours
     return () => clearInterval(interval);
   }, []);
 
@@ -834,69 +925,10 @@ export default function TropicalAdvisories() {
             {outlookMode !== "off" && nhcStorms.length > 0 && (
               <StormMarkersLayer storms={nhcStorms} />
             )}
-          </MapContainer>
 
-          {/* NHC Tropical Outlook image panel -- overlays bottom of map when active */}
-          {outlookMode !== "off" && (
-            <div style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: "rgba(13,21,32,0.92)",
-              borderTop: "1px solid #FF4500",
-              zIndex: 800,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              padding: "8px 12px",
-              maxHeight: "55%",
-              overflowY: "auto",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: 6 }}>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#FF4500", letterSpacing: "0.1em" }}>
-                  NHC {outlookMode === "2day" ? "2-Day" : "7-Day"} Graphical Tropical Weather Outlook
-                  {nhcStorms.length > 0 && (
-                    <span style={{ marginLeft: 12, fontSize: "0.9rem", color: "#FFD700" }}>
-                      {nhcStorms.length} active storm{nhcStorms.length !== 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setOutlookMode("off")}
-                  style={{ background: "none", border: "1px solid #1A2D42", color: "#7B9BB5", cursor: "pointer", fontSize: "0.9rem", fontFamily: "inherit", padding: "3px 10px" }}
-                >
-                  CLOSE
-                </button>
-              </div>
-              {/* Atlantic basin */}
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", width: "100%" }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", marginBottom: 4 }}>ATLANTIC</div>
-                  <img
-                    key={`atl-${outlookMode}-${outlookImgKey}`}
-                    src={`https://www.nhc.noaa.gov/xgtwo/two_atl_${outlookMode === "2day" ? "2d0" : "7d0"}.png?t=${outlookImgKey}`}
-                    alt={`NHC Atlantic ${outlookMode} Tropical Weather Outlook`}
-                    style={{ maxWidth: "100%", maxHeight: 320, border: "1px solid #1A2D42", display: "block" }}
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", marginBottom: 4 }}>EASTERN PACIFIC</div>
-                  <img
-                    key={`epac-${outlookMode}-${outlookImgKey}`}
-                    src={`https://www.nhc.noaa.gov/xgtwo/two_pac_${outlookMode === "2day" ? "2d0" : "7d0"}.png?t=${outlookImgKey}`}
-                    alt={`NHC Eastern Pacific ${outlookMode} Tropical Weather Outlook`}
-                    style={{ maxWidth: "100%", maxHeight: 320, border: "1px solid #1A2D42", display: "block" }}
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                </div>
-              </div>
-              <div style={{ fontSize: "0.8rem", color: "#3A5068", marginTop: 6, textAlign: "center" }}>
-                Source: NOAA National Hurricane Center &bull; nhc.noaa.gov &bull; Updates with every NHC advisory issuance
-              </div>
-            </div>
-          )}
+            {/* NHC GTWO disturbance ellipses -- interactive GeoJSON polygons on the map */}
+            <GtwoLayer features={gtwoFeatures} mode={outlookMode} />
+          </MapContainer>
         </div>
 
         {/* ── Advisory sidebar ── */}

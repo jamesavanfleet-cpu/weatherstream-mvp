@@ -1,0 +1,55 @@
+name: NHC GTWO Disturbance Update
+
+# Runs every 3 hours to fetch the latest NHC Graphical Tropical Weather Outlook
+# disturbance polygons and push nhc_gtwo.json to gh-pages.
+# During the off-season (Dec-May) the shapefile has 0 disturbances, which is correct.
+# During hurricane season (Jun-Nov) this will show active disturbance ellipses.
+on:
+  schedule:
+    - cron: '20 */3 * * *'   # :20 past every 3rd hour
+  workflow_dispatch:          # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  nhc-gtwo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pyshp
+        run: pip install pyshp
+
+      - name: Fetch NHC GTWO disturbance data
+        run: |
+          python3 scripts/generate_nhc_gtwo.py
+          echo "nhc_gtwo.json generated: $(wc -c < client/public/nhc_gtwo.json) bytes"
+
+      - name: Push updated nhc_gtwo.json to gh-pages
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+
+          # Copy the generated file to a temp location BEFORE switching branches.
+          cp client/public/nhc_gtwo.json /tmp/nhc_gtwo.json
+
+          git fetch origin gh-pages
+          git checkout -f gh-pages
+          git pull origin gh-pages
+
+          cp /tmp/nhc_gtwo.json nhc_gtwo.json
+
+          git add nhc_gtwo.json
+          git diff --cached --quiet && echo "No changes to nhc_gtwo.json, skipping push." && exit 0
+          git commit -m "NHC GTWO update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
