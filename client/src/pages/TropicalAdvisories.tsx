@@ -408,19 +408,37 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
         loadedRef.current = false;
       }
       if (!loadedRef.current) {
-        // Fetch real available timestamps from the server-side JSON written by
-        // the fetch-weather-times GitHub Actions workflow.  These timestamps
-        // exactly match what NOAA has cached -- client-computed round-number
-        // intervals return fully transparent images from the WMS server.
-        // SATELLITE_TIMES_FETCH_MARKER
+        // Fetch real available timestamps directly from NOAA nowCOAST WMS GetCapabilities.
+        // This is the only reliable source -- it returns exactly the timestamps NOAA has
+        // cached right now, with no dependency on a pre-generated JSON file or cron job.
+        // SATELLITE_GETCAPS_MARKER
         try {
-          const resp = await fetch('/satellite_times.json');
-          const data = await resp.json();
-          if (layer === "goes_longwave_imagery") {
-            timestampsRef.current = Array.isArray(data.goes) ? data.goes : [];
-          } else {
-            timestampsRef.current = Array.isArray(data.global) ? data.global : [];
+          const capsUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
+            + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities";
+          const resp = await fetch(capsUrl);
+          const xmlText = await resp.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(xmlText, "text/xml");
+          // Walk all <Layer> elements to find the one matching our layer name,
+          // then extract the comma-separated TIME dimension values.
+          const layerEls = Array.from(doc.getElementsByTagName("Layer"));
+          let times: string[] = [];
+          for (const el of layerEls) {
+            const nameEl = el.getElementsByTagName("Name")[0];
+            if (nameEl && nameEl.textContent === layer) {
+              const dimEls = Array.from(el.getElementsByTagName("Dimension"));
+              for (const dim of dimEls) {
+                if (dim.getAttribute("name") === "time" && dim.textContent) {
+                  times = dim.textContent.split(",").map(t => t.trim()).filter(Boolean);
+                  break;
+                }
+              }
+              break;
+            }
           }
+          // Use the most recent maxFrames timestamps so the loop stays manageable.
+          const { maxFrames } = getActiveLayer(map.getBounds());
+          timestampsRef.current = times.slice(-maxFrames);
         } catch {
           timestampsRef.current = [];
         }
@@ -468,254 +486,6 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       timerRef.current = setInterval(() => {
         drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
       }, 900);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, [isPlaying, enabled, drawFrame]);
-
-  // Respond to external frame index changes
-  useEffect(() => {
-    if (!enabled || bitmapsRef.current.length === 0) return;
-    const clamped = Math.max(0, Math.min(frameIdx, bitmapsRef.current.length - 1));
-    if (clamped !== idxRef.current) drawFrame(clamped);
-  }, [frameIdx, enabled, drawFrame]);
-
-  return null;
-}
-
-// ── Animated radar layer (NOAA Ridge2/MRMS WMS, single-tile viewport) ──────────
-// Single-canvas architecture: ONE <canvas> element positioned over the map.
-// All 20 frames pre-decoded into ImageBitmap objects off-screen.
-// Frame advance = ctx.clearRect + ctx.drawImage -- single GPU blit, zero flash.
-interface RadarLayerProps {
-  enabled: boolean;
-  isPlaying: boolean;
-  frameIdx: number;
-  onFrameChange: (idx: number, total: number, timestamp: string) => void;
-}
-
-function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerProps) {
-  const map = useMap();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const bitmapsRef = useRef<ImageBitmap[]>([]);
-  const idxRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timestampsRef = useRef<string[]>([]);
-  const loadedRef = useRef(false);
-  const enabledRef = useRef(enabled);
-  const isPlayingRef = useRef(isPlaying);
-  const onFrameChangeRef = useRef(onFrameChange);
-  onFrameChangeRef.current = onFrameChange;
-  const moveListenerRef = useRef<(() => void) | null>(null);
-  // Stored so it can be detached on teardown
-  const clearListenerRef = useRef<(() => void) | null>(null);
-
-  // Immediately blank the canvas -- called on movestart/zoomstart so stale
-  // imagery disappears the instant the user begins interacting with the map
-  const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }, []);
-
-  // Draw one bitmap onto the canvas -- single GPU blit, no DOM swapping
-  const drawFrame = useCallback((idx: number) => {
-    const canvas = canvasRef.current;
-    const bitmaps = bitmapsRef.current;
-    if (!canvas || bitmaps.length === 0) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const bm = bitmaps[idx];
-    if (bm) ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
-    idxRef.current = idx;
-    const ts = timestampsRef.current[idx] ?? "";
-    onFrameChangeRef.current(idx, bitmaps.length, ts);
-  }, []);
-
-  // Full teardown: stop timer, clear canvas, detach all map listeners
-  const teardown = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      canvas.style.display = "none";
-    }
-    if (moveListenerRef.current) {
-      map.off("moveend", moveListenerRef.current);
-      map.off("zoomend", moveListenerRef.current);
-      moveListenerRef.current = null;
-    }
-    if (clearListenerRef.current) {
-      map.off("movestart", clearListenerRef.current);
-      map.off("zoomstart", clearListenerRef.current);
-      clearListenerRef.current = null;
-    }
-  }, [map]);
-
-  // Build WMS GetMap URL -- CONUS + Caribbean composite
-  const buildRadarUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
-    const minLat = Math.max(sw.lat, -90);
-    const maxLat = Math.min(ne.lat, 90);
-    const minLng = Math.max(sw.lng, -180);
-    const maxLng = Math.min(ne.lng, 180);
-    const w = Math.max(256, Math.min(1024, Math.round(size.x)));
-    const h = Math.max(256, Math.min(1024, Math.round(size.y)));
-    let url = `https://opengeo.ncep.noaa.gov/geoserver/ows`
-      + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
-      + `&LAYERS=conus_cref_qcd,carib_cref_qcd`
-      + `&CRS=EPSG:4326&BBOX=${minLat},${minLng},${maxLat},${maxLng}`
-      + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
-    if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
-    return url;
-  };
-
-  // Fetch one radar frame and return an ImageBitmap (native RGBA transparency)
-  const fetchBitmap = (wmsUrl: string): Promise<ImageBitmap> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        createImageBitmap(img).then(resolve).catch(reject);
-      };
-      img.onerror = () => reject(new Error("fetch failed"));
-      img.src = wmsUrl;
-    });
-  };
-
-  // Load all 20 frames off-screen, then swap bitmaps and draw in one step
-  const loadFrames = useCallback(async () => {
-    if (!enabledRef.current || timestampsRef.current.length === 0) return;
-    const bounds = map.getBounds();
-    const size = map.getSize();
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    try {
-      const newBitmaps = await Promise.all(
-        timestampsRef.current.map(ts => fetchBitmap(buildRadarUrl(bounds, ts, size)))
-      );
-      if (!enabledRef.current) return;
-      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
-      bitmapsRef.current = newBitmaps;
-      // Canvas is already sized to 100% of overlayPane -- just show it and draw
-      const canvas = canvasRef.current;
-      if (canvas) canvas.style.display = "block";
-      const startIdx = newBitmaps.length - 1;
-      drawFrame(startIdx);
-      if (isPlayingRef.current && newBitmaps.length > 1) {
-        timerRef.current = setInterval(() => {
-          drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
-        }, 600);
-      }
-    } catch {
-      // Silently fail
-    }
-  }, [map, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Create and attach the canvas element once on mount.
-  // Appended to overlayPane so it moves and scales with the map automatically.
-  useEffect(() => {
-    const overlayPane = map.getPanes().overlayPane;
-    const canvas = document.createElement("canvas");
-    canvas.style.display = "none";
-    canvas.style.position = "absolute";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "400";
-    overlayPane.appendChild(canvas);
-    canvasRef.current = canvas;
-    // Keep canvas pixel dimensions in sync with the map container size on resize.
-    // We measure map.getContainer() -- NOT overlayPane -- because the overlay pane
-    // has no intrinsic size and getBoundingClientRect() on it always returns 0x0.
-    const onResize = () => {
-      const r = map.getContainer().getBoundingClientRect();
-      canvas.width = Math.round(r.width);
-      canvas.height = Math.round(r.height);
-    };
-    onResize();
-    map.on("resize", onResize);
-    return () => {
-      map.off("resize", onResize);
-      try { overlayPane.removeChild(canvas); } catch { /* ignore */ }
-      canvasRef.current = null;
-      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
-      bitmapsRef.current = [];
-    };
-  }, [map]);
-
-  // Main effect: fetch timestamps and load frames when enabled
-  useEffect(() => {
-    if (!enabled) {
-      teardown();
-      enabledRef.current = false;
-      loadedRef.current = false;
-      return;
-    }
-    enabledRef.current = true;
-
-    const init = async () => {
-      if (!loadedRef.current) {
-        // Fetch real available timestamps from the server-side JSON written by
-        // the fetch-weather-times GitHub Actions workflow.  These timestamps
-        // exactly match what NOAA has cached -- client-computed round-number
-        // intervals return fully transparent images from the WMS server.
-        // RADAR_TIMES_FETCH_MARKER
-        try {
-          const resp = await fetch('/radar_times.json');
-          const data = await resp.json();
-          timestampsRef.current = Array.isArray(data.conus) ? data.conus : [];
-        } catch {
-          timestampsRef.current = [];
-        }
-        loadedRef.current = true;
-      }
-      await loadFrames();
-    };
-    init();
-
-    // Detach any previously registered listeners before registering new ones.
-    // This prevents duplicate listeners accumulating across enable/disable cycles.
-    if (moveListenerRef.current) {
-      map.off("moveend", moveListenerRef.current);
-      map.off("zoomend", moveListenerRef.current);
-    }
-    if (clearListenerRef.current) {
-      map.off("movestart", clearListenerRef.current);
-      map.off("zoomstart", clearListenerRef.current);
-    }
-    const onMove = () => { if (enabledRef.current) loadFrames(); };
-    moveListenerRef.current = onMove;
-    map.on("moveend", onMove);
-    map.on("zoomend", onMove);
-    // Clear canvas immediately when user starts panning/zooming so stale
-    // imagery does not sit misaligned while new frames download
-    const onClear = () => { if (enabledRef.current) clearCanvas(); };
-    clearListenerRef.current = onClear;
-    map.on("movestart", onClear);
-    map.on("zoomstart", onClear);
-
-    return () => {
-      teardown();
-      loadedRef.current = false;
-    };
-  }, [enabled, map, teardown, loadFrames, clearCanvas]);
-
-  // Respond to play/pause toggle
-  useEffect(() => {
-    isPlayingRef.current = isPlaying;
-    if (!enabled || bitmapsRef.current.length === 0) return;
-    if (isPlaying) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
-      }, 600);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
@@ -1063,21 +833,20 @@ export default function TropicalAdvisories() {
 
   // Layer toggles
   const [showAlerts, setShowAlerts] = useState(true);
-  const [showRadar, setShowRadar] = useState(false);
   const [showSatellite, setShowSatellite] = useState(false);
   const [showGulfStream, setShowGulfStream] = useState(false);
   const [showZoneForecasts, setShowZoneForecasts] = useState(false);
   const [basemap, setBasemap] = useState<"street" | "satellite">("street");
 
-  // Shared playback control state (used by both radar and satellite)
+  // Playback control state (satellite animation)
   const [pbPlaying, setPbPlaying] = useState(true);          // play/pause
   // Single state object for frame info -- ensures exactly one re-render per frame advance,
   // eliminating the blurry/doubled clock caused by three separate setState calls.
   const [pbState, setPbState] = useState({ frameIdx: 0, total: 0, timestamp: "" });
   const [pbRequestIdx, setPbRequestIdx] = useState(0);       // external step request (changes trigger layer)
 
-  // Which layer is driving the playback bar (radar takes priority if both on)
-  const pbActive = showRadar || showSatellite;
+  // Playback bar is shown when satellite is active
+  const pbActive = showSatellite;
 
   // Callback for layers to report frame changes back to the control bar.
   // Single setState call guarantees exactly one re-render per frame advance.
@@ -1301,7 +1070,6 @@ export default function TropicalAdvisories() {
           flexWrap: "wrap",
         }}>
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
-          <LayerBtn label="Weather Radar" active={showRadar} onClick={() => setShowRadar(v => !v)} />
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
           <LayerBtn label="Gulf Stream / SST" active={showGulfStream} color="#39FF14" onClick={() => setShowGulfStream(v => !v)} />
           <LayerBtn label="Zone Forecasts" active={showZoneForecasts} onClick={() => setShowZoneForecasts(v => !v)} />
@@ -1431,14 +1199,6 @@ export default function TropicalAdvisories() {
             {/* Invalidate Leaflet canvas size when sidebar shows/hides on mobile */}
             <MapInvalidator trigger={showSidebar} />
 
-            {/* Animated radar -- NOAA Ridge2/MRMS WMS (same data as radar.weather.gov) */}
-            <RadarLayer
-              enabled={showRadar}
-              isPlaying={pbPlaying}
-              frameIdx={pbRequestIdx}
-              onFrameChange={handleFrameChange}
-            />
-
             {/* Clickable GeoJSON alert zones from NWS API */}
             <AlertZonesLayer
               alerts={alerts}
@@ -1455,7 +1215,7 @@ export default function TropicalAdvisories() {
             <GtwoLayer features={gtwoFeatures} mode={outlookMode} />
           </MapContainer>
 
-          {/* ── Playback control bar -- shown when radar or satellite is active ── */}
+          {/* ── Playback control bar -- shown when satellite is active ── */}
           {pbActive && (
             <div style={{
               position: "absolute",

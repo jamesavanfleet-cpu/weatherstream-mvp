@@ -60,9 +60,6 @@ jobs:
           cp top_story.json /tmp/top_story-backup.json 2>/dev/null || true
           cp live_conditions.json /tmp/live_conditions-backup.json 2>/dev/null || true
           cp cruise_itineraries.json /tmp/cruise_itineraries-backup.json 2>/dev/null || true
-          cp radar_times.json /tmp/radar_times-backup.json 2>/dev/null || true
-          cp satellite_times.json /tmp/satellite_times-backup.json 2>/dev/null || true
-
           # Replace old assets with new build
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
@@ -78,9 +75,6 @@ jobs:
           cp /tmp/top_story-backup.json top_story.json 2>/dev/null || true
           cp /tmp/live_conditions-backup.json live_conditions.json 2>/dev/null || true
           cp /tmp/cruise_itineraries-backup.json cruise_itineraries.json 2>/dev/null || true
-          cp /tmp/radar_times-backup.json radar_times.json 2>/dev/null || true
-          cp /tmp/satellite_times-backup.json satellite_times.json 2>/dev/null || true
-
           # Commit and push
           git add -A
           git diff --cached --quiet && echo "No changes to deploy" && exit 0
