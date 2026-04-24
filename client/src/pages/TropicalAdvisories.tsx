@@ -184,7 +184,14 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
 // Uses canvas-based threshold transparency: pixels darker than threshold are
 // made fully transparent so the map shows through clear-sky areas.
 // All frames are pre-loaded before animation starts to eliminate flashing.
-function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: boolean }) {
+interface SatelliteLayerProps {
+  enabled: boolean;
+  isPlaying: boolean;
+  frameIdx: number;         // controlled from outside for step forward/back
+  onFrameChange: (idx: number, total: number, timestamp: string) => void;
+}
+
+function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: SatelliteLayerProps) {
   const map = useMap();
   // Each frame is an L.ImageOverlay whose URL is a canvas data URL (processed)
   const overlaysRef = useRef<L.ImageOverlay[]>([]);
@@ -194,6 +201,8 @@ function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: b
   const loadedRef = useRef(false);
   const enabledRef = useRef(enabled);
   const isPlayingRef = useRef(isPlaying);
+  const onFrameChangeRef = useRef(onFrameChange);
+  onFrameChangeRef.current = onFrameChange;
   // Brightness threshold: pixels with mean RGB below this become transparent
   // IR imagery: clear sky ~1-30, thin cloud ~30-80, thick cloud ~80-255
   const CLOUD_THRESHOLD = 35;
@@ -262,6 +271,8 @@ function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: b
       if (el) el.style.opacity = i === idx ? "0.9" : "0";
     });
     idxRef.current = idx;
+    const ts = timestampsRef.current[idx] ?? "";
+    onFrameChangeRef.current(idx, overlaysRef.current.length, ts);
   };
 
   // Load all frames for current bounds and start animation
@@ -372,78 +383,200 @@ function SatelliteLayer({ enabled, isPlaying }: { enabled: boolean; isPlaying: b
     }
   }, [isPlaying, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Respond to external frame index changes (step forward/back from control bar)
+  useEffect(() => {
+    if (!enabled || overlaysRef.current.length === 0) return;
+    const clamped = Math.max(0, Math.min(frameIdx, overlaysRef.current.length - 1));
+    if (clamped !== idxRef.current) showFrame(clamped);
+  }, [frameIdx, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return null;
 }
 
-// ── Animated radar layer ──────────────────────────────────────────────────────
-function RadarLayer({ enabled }: { enabled: boolean }) {
+// ── Animated radar layer (NOAA Ridge2/MRMS WMS, single-tile viewport) ──────────
+// Uses NOAA opengeo.ncep.noaa.gov WMS -- same data source as radar.weather.gov.
+// Single-tile GetMap request per frame covering the full map viewport:
+//   no tile seams, native RGBA transparency (clear sky = fully transparent),
+//   CONUS + Caribbean layers composited, 60 frames (~2-hour loop).
+interface RadarLayerProps {
+  enabled: boolean;
+  isPlaying: boolean;
+  frameIdx: number;         // controlled from outside for step forward/back
+  onFrameChange: (idx: number, total: number, timestamp: string) => void;
+}
+
+function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerProps) {
   const map = useMap();
-  const layersRef = useRef<L.TileLayer[]>([]);
+  const overlaysRef = useRef<L.ImageOverlay[]>([]);
   const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timestampsRef = useRef<string[]>([]);
   const loadedRef = useRef(false);
+  const enabledRef = useRef(enabled);
+  const isPlayingRef = useRef(isPlaying);
+  const onFrameChangeRef = useRef(onFrameChange);
+  onFrameChangeRef.current = onFrameChange;
 
+  // Build a WMS GetMap URL for a given timestamp and map bounds
+  // Composites CONUS + Caribbean layers so both are visible in one image
+  const buildRadarUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const minLat = Math.max(sw.lat, -90);
+    const maxLat = Math.min(ne.lat, 90);
+    const minLng = Math.max(sw.lng, -180);
+    const maxLng = Math.min(ne.lng, 180);
+    const w = Math.max(256, Math.min(1024, Math.round(size.x)));
+    const h = Math.max(256, Math.min(1024, Math.round(size.y)));
+    // Use CONUS layer as primary; it covers US + Caribbean adequately
+    // For views that include Caribbean, also include carib layer
+    const layers = "conus_cref_qcd,carib_cref_qcd";
+    let url = `https://opengeo.ncep.noaa.gov/geoserver/ows`
+      + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
+      + `&LAYERS=${layers}`
+      + `&CRS=EPSG:4326&BBOX=${minLat},${minLng},${maxLat},${maxLng}`
+      + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
+    if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
+    return url;
+  };
+
+  // Show frame at index, hide all others
+  const showFrame = (idx: number) => {
+    overlaysRef.current.forEach((ov, i) => {
+      const el = ov.getElement();
+      if (el) el.style.opacity = i === idx ? "0.85" : "0";
+    });
+    idxRef.current = idx;
+    const ts = timestampsRef.current[idx] ?? "";
+    onFrameChangeRef.current(idx, overlaysRef.current.length, ts);
+  };
+
+  // Load all frames for current bounds
+  const loadFrames = async () => {
+    if (!enabledRef.current || timestampsRef.current.length === 0) return;
+    const bounds = map.getBounds();
+    const size = map.getSize();
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+    overlaysRef.current = [];
+    try {
+      // Create all overlays with placeholder (empty) -- they will load as the browser fetches
+      // We use a blank 1x1 transparent PNG as placeholder so overlays exist immediately
+      const BLANK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+      overlaysRef.current = timestampsRef.current.map(() =>
+        L.imageOverlay(BLANK, bounds, { opacity: 0, zIndex: 300 }).addTo(map)
+      );
+      // Load each frame image and swap in when ready
+      timestampsRef.current.forEach((ts, i) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(img, 0, 0);
+          const dataUrl = canvas.toDataURL("image/png");
+          if (overlaysRef.current[i]) {
+            overlaysRef.current[i].setUrl(dataUrl);
+          }
+        };
+        img.src = buildRadarUrl(bounds, ts, size);
+      });
+      // Show most recent frame
+      const startIdx = overlaysRef.current.length - 1;
+      showFrame(startIdx);
+      // Start animation if playing
+      if (isPlayingRef.current && overlaysRef.current.length > 1) {
+        timerRef.current = setInterval(() => {
+          const next = (idxRef.current + 1) % overlaysRef.current.length;
+          showFrame(next);
+        }, 600);
+      }
+    } catch {
+      // Silently fail
+    }
+  };
+
+  // Main effect: fetch timestamps and load frames when enabled
   useEffect(() => {
     if (!enabled) {
-      // Hide all frames and clear timer -- keep layers in ref so re-enable is instant
-      layersRef.current.forEach(l => { try { l.setOpacity(0); } catch { /* ignore */ } });
+      overlaysRef.current.forEach(ov => {
+        const el = ov.getElement();
+        if (el) el.style.opacity = "0";
+      });
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
+      enabledRef.current = false;
       return;
     }
-    if (loadedRef.current) {
-      // Re-enable: show current frame and restart animation
-      const cur = idxRef.current;
-      layersRef.current[cur]?.setOpacity(0.7);
-      timerRef.current = setInterval(() => {
-        const prev = idxRef.current;
-        const next = (prev + 1) % layersRef.current.length;
-        // Fade in next frame before fading out previous to avoid black flash
-        layersRef.current[next]?.setOpacity(0.7);
-        setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
-        idxRef.current = next;
-      }, 700);
-      return;
-    }
-    (async () => {
+    enabledRef.current = true;
+
+    const init = async () => {
       try {
-        const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-        const data = await res.json();
-        const paths: string[] = [
-          ...(data.radar?.past ?? []).map((f: { path: string }) => f.path),
-          ...(data.radar?.nowcast ?? []).slice(0, 2).map((f: { path: string }) => f.path),
-        ].slice(-8);
-        if (paths.length === 0) return;
-        // Pre-load ALL frames onto the map at opacity 0 -- no flashing since tiles are always present
-        layersRef.current = paths.map(path =>
-          L.tileLayer(
-            `https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/2/1_1.png`,
-            { opacity: 0, zIndex: 300, maxNativeZoom: 12 }
-          ).addTo(map)
-        );
-        idxRef.current = layersRef.current.length - 1;
-        // Show only the most recent frame initially
-        layersRef.current[idxRef.current]?.setOpacity(0.7);
-        loadedRef.current = true;
-        timerRef.current = setInterval(() => {
-          const prev = idxRef.current;
-          const next = (prev + 1) % layersRef.current.length;
-          // Bring next frame up before dropping previous -- eliminates the black flash
-          layersRef.current[next]?.setOpacity(0.7);
-          setTimeout(() => { layersRef.current[prev]?.setOpacity(0); }, 80);
-          idxRef.current = next;
-        }, 700);
+        if (!loadedRef.current) {
+          // Fetch WMS capabilities to get timestamps
+          const capUrl = "https://opengeo.ncep.noaa.gov/geoserver/conus/ows"
+            + "?service=WMS&version=1.3.0&request=GetCapabilities";
+          const res = await fetch(capUrl);
+          const text = await res.text();
+          const match = text.match(
+            /conus_cref_qcd[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
+          );
+          let timestamps: string[] = [];
+          if (match) {
+            timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
+          }
+          // Use last 20 frames (~40 minutes) for a smooth loop
+          timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-20) : [""];
+          loadedRef.current = true;
+        }
+        await loadFrames();
       } catch {
-        // Silently fail -- radar is optional
+        // Silently fail
       }
-    })();
+    };
+    init();
+
+    // Reload frames on map move/zoom so image stays aligned with viewport
+    const onMove = () => { if (enabledRef.current) loadFrames(); };
+    map.on("moveend", onMove);
+    map.on("zoomend", onMove);
+
     return () => {
-      layersRef.current.forEach(l => { try { map.removeLayer(l); } catch { /* ignore */ } });
-      layersRef.current = [];
+      map.off("moveend", onMove);
+      map.off("zoomend", onMove);
+      overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+      overlaysRef.current = [];
       loadedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [enabled, map]);
+  }, [enabled, map]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Respond to play/pause toggle without reloading data
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    if (!enabled || overlaysRef.current.length === 0) return;
+    if (isPlaying) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        const next = (idxRef.current + 1) % overlaysRef.current.length;
+        showFrame(next);
+      }, 600);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [isPlaying, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Respond to external frame index changes (step forward/back from control bar)
+  useEffect(() => {
+    if (!enabled || overlaysRef.current.length === 0) return;
+    const clamped = Math.max(0, Math.min(frameIdx, overlaysRef.current.length - 1));
+    if (clamped !== idxRef.current) showFrame(clamped);
+  }, [frameIdx, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return null;
 }
 
@@ -780,10 +913,37 @@ export default function TropicalAdvisories() {
   const [showAlerts, setShowAlerts] = useState(true);
   const [showRadar, setShowRadar] = useState(false);
   const [showSatellite, setShowSatellite] = useState(false);
-  const [satPlaying, setSatPlaying] = useState(true); // satellite animation play/pause
   const [showGulfStream, setShowGulfStream] = useState(false);
   const [showZoneForecasts, setShowZoneForecasts] = useState(false);
   const [basemap, setBasemap] = useState<"street" | "satellite">("street");
+
+  // Shared playback control state (used by both radar and satellite)
+  const [pbPlaying, setPbPlaying] = useState(true);          // play/pause
+  const [pbFrameIdx, setPbFrameIdx] = useState(0);           // current frame index (controlled)
+  const [pbTotal, setPbTotal] = useState(0);                  // total frames
+  const [pbTimestamp, setPbTimestamp] = useState("");         // ISO timestamp of current frame
+  const [pbRequestIdx, setPbRequestIdx] = useState(0);       // external step request (changes trigger layer)
+
+  // Which layer is driving the playback bar (radar takes priority if both on)
+  const pbActive = showRadar || showSatellite;
+
+  // Callback for layers to report frame changes back to the control bar
+  const handleFrameChange = useCallback((idx: number, total: number, ts: string) => {
+    setPbFrameIdx(idx);
+    setPbTotal(total);
+    setPbTimestamp(ts);
+  }, []);
+
+  // Step forward/back handlers
+  const pbStepForward = useCallback(() => {
+    setPbRequestIdx(prev => prev + 1);
+    setPbFrameIdx(prev => (pbTotal > 0 ? (prev + 1) % pbTotal : prev));
+  }, [pbTotal]);
+
+  const pbStepBack = useCallback(() => {
+    setPbRequestIdx(prev => prev - 1);
+    setPbFrameIdx(prev => (pbTotal > 0 ? (prev - 1 + pbTotal) % pbTotal : prev));
+  }, [pbTotal]);
 
   // NHC tropical outlook toggle: off | 2day | 7day
   const [outlookMode, setOutlookMode] = useState<OutlookMode>("off");
@@ -992,36 +1152,6 @@ export default function TropicalAdvisories() {
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
           <LayerBtn label="Weather Radar" active={showRadar} onClick={() => setShowRadar(v => !v)} />
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
-          {/* Satellite play/pause -- only visible when satellite layer is on */}
-          {showSatellite && (
-            <button
-              onClick={() => setSatPlaying(v => !v)}
-              title={satPlaying ? "Pause satellite animation" : "Play satellite animation"}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 26, height: 26,
-                border: "1px solid #1A2D42",
-                background: "rgba(13,21,32,0.85)",
-                color: "#00D4FF",
-                cursor: "pointer",
-                flexShrink: 0,
-                padding: 0,
-              }}
-            >
-              {satPlaying ? (
-                /* Pause icon: two vertical bars */
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <rect x="2" y="1" width="3" height="10" rx="0.5" fill="#00D4FF" />
-                  <rect x="7" y="1" width="3" height="10" rx="0.5" fill="#00D4FF" />
-                </svg>
-              ) : (
-                /* Play icon: triangle */
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <polygon points="2,1 11,6 2,11" fill="#00D4FF" />
-                </svg>
-              )}
-            </button>
-          )}
           <LayerBtn label="Gulf Stream / SST" active={showGulfStream} color="#39FF14" onClick={() => setShowGulfStream(v => !v)} />
           <LayerBtn label="Zone Forecasts" active={showZoneForecasts} onClick={() => setShowZoneForecasts(v => !v)} />
           {/* NHC Tropical Outlook three-state toggle */}
@@ -1124,7 +1254,12 @@ export default function TropicalAdvisories() {
 
             {/* Satellite -- NOAA nowCOAST global GMGSI mosaic (animated, 6-hour loop) */}
             {/* Covers 60N-60S globally: GOES-19 East, GOES-18 West, Himawari-9, Meteosat-9/10 */}
-            <SatelliteLayer enabled={showSatellite} isPlaying={satPlaying} />
+            <SatelliteLayer
+              enabled={showSatellite}
+              isPlaying={pbPlaying}
+              frameIdx={pbFrameIdx}
+              onFrameChange={handleFrameChange}
+            />
 
             {/* Active Alerts WMS -- NWS hazard polygons (background layer) */}
             {showAlerts && (
@@ -1145,8 +1280,13 @@ export default function TropicalAdvisories() {
             {/* Invalidate Leaflet canvas size when sidebar shows/hides on mobile */}
             <MapInvalidator trigger={showSidebar} />
 
-            {/* Animated radar */}
-            <RadarLayer enabled={showRadar} />
+            {/* Animated radar -- NOAA Ridge2/MRMS WMS (same data as radar.weather.gov) */}
+            <RadarLayer
+              enabled={showRadar}
+              isPlaying={pbPlaying}
+              frameIdx={pbRequestIdx}
+              onFrameChange={handleFrameChange}
+            />
 
             {/* Clickable GeoJSON alert zones from NWS API */}
             <AlertZonesLayer
@@ -1163,6 +1303,83 @@ export default function TropicalAdvisories() {
             {/* NHC GTWO disturbance ellipses -- interactive GeoJSON polygons on the map */}
             <GtwoLayer features={gtwoFeatures} mode={outlookMode} />
           </MapContainer>
+
+          {/* ── Playback control bar -- shown when radar or satellite is active ── */}
+          {pbActive && (
+            <div style={{
+              position: "absolute",
+              bottom: 28,
+              left: 10,
+              zIndex: 1000,
+              background: "rgba(10,18,28,0.88)",
+              border: "1px solid #1A2D42",
+              borderRadius: 6,
+              padding: "6px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              minWidth: 220,
+              backdropFilter: "blur(4px)",
+            }}>
+              {/* Timestamp and frame counter */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "0.72rem", color: "#7B9BB5", fontFamily: "monospace" }}>
+                  {pbTimestamp
+                    ? new Date(pbTimestamp).toLocaleString("en-US", {
+                        month: "numeric", day: "numeric", year: "2-digit",
+                        hour: "numeric", minute: "2-digit", hour12: true,
+                        timeZoneName: "short",
+                      })
+                    : "Loading..."}
+                </span>
+                <span style={{ fontSize: "0.72rem", color: "#7B9BB5", marginLeft: 12 }}>
+                  {pbTotal > 0 ? `${pbFrameIdx + 1} / ${pbTotal}` : "--"}
+                </span>
+              </div>
+              {/* Controls row */}
+              <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "center" }}>
+                {/* Step back */}
+                <button
+                  onClick={pbStepBack}
+                  title="Step back one frame"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#00D4FF", padding: 4, lineHeight: 1 }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <polygon points="14,2 6,8 14,14" fill="#00D4FF" />
+                    <rect x="2" y="2" width="3" height="12" rx="0.5" fill="#00D4FF" />
+                  </svg>
+                </button>
+                {/* Play/Pause */}
+                <button
+                  onClick={() => setPbPlaying(v => !v)}
+                  title={pbPlaying ? "Pause" : "Play"}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#00D4FF", padding: 4, lineHeight: 1 }}
+                >
+                  {pbPlaying ? (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="3" y="2" width="4" height="12" rx="0.5" fill="#00D4FF" />
+                      <rect x="9" y="2" width="4" height="12" rx="0.5" fill="#00D4FF" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <polygon points="3,1 14,8 3,15" fill="#00D4FF" />
+                    </svg>
+                  )}
+                </button>
+                {/* Step forward */}
+                <button
+                  onClick={pbStepForward}
+                  title="Step forward one frame"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#00D4FF", padding: 4, lineHeight: 1 }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <polygon points="2,2 10,8 2,14" fill="#00D4FF" />
+                    <rect x="11" y="2" width="3" height="12" rx="0.5" fill="#00D4FF" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Advisory sidebar ── */}
