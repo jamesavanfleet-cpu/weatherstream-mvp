@@ -401,23 +401,29 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       // Determine which layer is appropriate for the current viewport (Option C).
       // If the viewport is fully within GOES coverage, use the high-frequency GOES layer.
       // Otherwise fall back to the global mosaic.
-      const { layer, intervalMin, maxFrames } = getActiveLayer(map.getBounds());
-      // If the active layer has changed since the last load, regenerate timestamps.
+      const { layer } = getActiveLayer(map.getBounds());
+      // If the active layer has changed since the last load, force a timestamp refresh.
       if (layer !== currentLayerRef.current) {
         currentLayerRef.current = layer;
         loadedRef.current = false;
       }
       if (!loadedRef.current) {
-        // Generate timestamps client-side at the known update cadence.
-        // This avoids a browser CORS fetch to GetCapabilities which fails silently.
-        const INTERVAL_MS = intervalMin * 60 * 1000;
-        const now = Date.now();
-        const latest = now - (now % INTERVAL_MS);
-        const timestamps: string[] = [];
-        for (let i = maxFrames - 1; i >= 0; i--) {
-          timestamps.push(new Date(latest - i * INTERVAL_MS).toISOString().replace(/\.\d{3}Z$/, "Z"));
+        // Fetch real available timestamps from the server-side JSON written by
+        // the fetch-weather-times GitHub Actions workflow.  These timestamps
+        // exactly match what NOAA has cached -- client-computed round-number
+        // intervals return fully transparent images from the WMS server.
+        // SATELLITE_TIMES_FETCH_MARKER
+        try {
+          const resp = await fetch('/satellite_times.json');
+          const data = await resp.json();
+          if (layer === "goes_longwave_imagery") {
+            timestampsRef.current = Array.isArray(data.goes) ? data.goes : [];
+          } else {
+            timestampsRef.current = Array.isArray(data.global) ? data.global : [];
+          }
+        } catch {
+          timestampsRef.current = [];
         }
-        timestampsRef.current = timestamps;
         loadedRef.current = true;
       }
       await loadFrames();
@@ -655,19 +661,19 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     enabledRef.current = true;
 
     const init = async () => {
-      // Generate the last 20 radar timestamps client-side at 2-minute intervals.
-      // MRMS composite reflectivity updates every 2 minutes.
-      // This avoids a browser CORS fetch to GetCapabilities which fails silently.
       if (!loadedRef.current) {
-        const INTERVAL_MS = 2 * 60 * 1000;
-        const now = Date.now();
-        // Round down to the nearest 2-minute boundary
-        const latest = now - (now % INTERVAL_MS);
-        const timestamps: string[] = [];
-        for (let i = 19; i >= 0; i--) {
-          timestamps.push(new Date(latest - i * INTERVAL_MS).toISOString().replace(/\.\d{3}Z$/, "Z"));
+        // Fetch real available timestamps from the server-side JSON written by
+        // the fetch-weather-times GitHub Actions workflow.  These timestamps
+        // exactly match what NOAA has cached -- client-computed round-number
+        // intervals return fully transparent images from the WMS server.
+        // RADAR_TIMES_FETCH_MARKER
+        try {
+          const resp = await fetch('/radar_times.json');
+          const data = await resp.json();
+          timestampsRef.current = Array.isArray(data.conus) ? data.conus : [];
+        } catch {
+          timestampsRef.current = [];
         }
-        timestampsRef.current = timestamps;
         loadedRef.current = true;
       }
       await loadFrames();
