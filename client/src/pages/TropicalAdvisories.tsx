@@ -628,24 +628,22 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     enabledRef.current = true;
 
     const init = async () => {
-      try {
-        if (!loadedRef.current) {
-          const capUrl = "https://opengeo.ncep.noaa.gov/geoserver/conus/ows"
-            + "?service=WMS&version=1.3.0&request=GetCapabilities";
-          const res = await fetch(capUrl);
-          const text = await res.text();
-          const match = text.match(
-            /conus_cref_qcd[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
-          );
-          let timestamps: string[] = [];
-          if (match) {
-            timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
-          }
-          timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-20) : [""];
-          loadedRef.current = true;
+      // Generate the last 20 radar timestamps client-side at 2-minute intervals.
+      // MRMS composite reflectivity updates every 2 minutes.
+      // This avoids a browser CORS fetch to GetCapabilities which fails silently.
+      if (!loadedRef.current) {
+        const INTERVAL_MS = 2 * 60 * 1000;
+        const now = Date.now();
+        // Round down to the nearest 2-minute boundary
+        const latest = now - (now % INTERVAL_MS);
+        const timestamps: string[] = [];
+        for (let i = 19; i >= 0; i--) {
+          timestamps.push(new Date(latest - i * INTERVAL_MS).toISOString().replace(/\.\d{3}Z$/, "Z"));
         }
-        await loadFrames();
-      } catch { /* silently fail */ }
+        timestampsRef.current = timestamps;
+        loadedRef.current = true;
+      }
+      await loadFrames();
     };
     init();
 
