@@ -203,26 +203,20 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
   const moveListenerRef = useRef<(() => void) | null>(null);
+  // Stored so it can be detached on teardown
+  const clearListenerRef = useRef<(() => void) | null>(null);
   const CLOUD_THRESHOLD = 35;
 
-  // Position and size the canvas to exactly cover the current map viewport
-  const positionCanvas = useCallback(() => {
+  // Immediately blank the canvas -- called on movestart/zoomstart so stale
+  // imagery disappears the instant the user begins interacting with the map
+  const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const mapEl = map.getContainer();
-    const rect = mapEl.getBoundingClientRect();
-    canvas.style.position = "absolute";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "400";
-    canvas.width = Math.round(rect.width);
-    canvas.height = Math.round(rect.height);
-  }, [map]);
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, []);
 
-  // Draw the bitmap at idxRef.current onto the canvas
+  // Draw one bitmap onto the canvas
   const drawFrame = useCallback((idx: number) => {
     const canvas = canvasRef.current;
     const bitmaps = bitmapsRef.current;
@@ -237,7 +231,7 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     onFrameChangeRef.current(idx, bitmaps.length, ts);
   }, []);
 
-  // Full teardown: stop timer, hide canvas, detach move listeners
+  // Full teardown: stop timer, hide canvas, detach all map listeners
   const teardown = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     const canvas = canvasRef.current;
@@ -250,6 +244,11 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
       moveListenerRef.current = null;
+    }
+    if (clearListenerRef.current) {
+      map.off("movestart", clearListenerRef.current);
+      map.off("zoomstart", clearListenerRef.current);
+      clearListenerRef.current = null;
     }
   }, [map]);
 
@@ -319,8 +318,7 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       // Close old bitmaps to free GPU memory
       bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
       bitmapsRef.current = newBitmaps;
-      // Reposition canvas for current viewport, then draw latest frame
-      positionCanvas();
+      // Canvas is already sized to 100% of overlayPane -- just show it and draw
       const canvas = canvasRef.current;
       if (canvas) canvas.style.display = "block";
       const startIdx = newBitmaps.length - 1;
@@ -333,16 +331,34 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     } catch {
       // Silently fail
     }
-  }, [map, positionCanvas, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Create and attach the canvas element once on mount
+  // Create and attach the canvas element once on mount.
+  // Appended to overlayPane so it moves and scales with the map automatically.
   useEffect(() => {
+    const overlayPane = map.getPanes().overlayPane;
     const canvas = document.createElement("canvas");
     canvas.style.display = "none";
-    map.getContainer().appendChild(canvas);
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "401";
+    overlayPane.appendChild(canvas);
     canvasRef.current = canvas;
+    // Keep canvas pixel dimensions in sync with the pane size on resize
+    const onResize = () => {
+      const r = overlayPane.getBoundingClientRect();
+      canvas.width = Math.round(r.width);
+      canvas.height = Math.round(r.height);
+    };
+    onResize();
+    map.on("resize", onResize);
     return () => {
-      try { map.getContainer().removeChild(canvas); } catch { /* ignore */ }
+      map.off("resize", onResize);
+      try { overlayPane.removeChild(canvas); } catch { /* ignore */ }
       canvasRef.current = null;
       bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
       bitmapsRef.current = [];
@@ -381,16 +397,32 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     };
     init();
 
+    // Detach any previously registered listeners before registering new ones.
+    // This prevents duplicate listeners accumulating across enable/disable cycles.
+    if (moveListenerRef.current) {
+      map.off("moveend", moveListenerRef.current);
+      map.off("zoomend", moveListenerRef.current);
+    }
+    if (clearListenerRef.current) {
+      map.off("movestart", clearListenerRef.current);
+      map.off("zoomstart", clearListenerRef.current);
+    }
     const onMove = () => { if (enabledRef.current) loadFrames(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
+    // Clear canvas immediately when user starts panning/zooming so stale
+    // imagery does not sit misaligned while new frames download
+    const onClear = () => { if (enabledRef.current) clearCanvas(); };
+    clearListenerRef.current = onClear;
+    map.on("movestart", onClear);
+    map.on("zoomstart", onClear);
 
     return () => {
       teardown();
       loadedRef.current = false;
     };
-  }, [enabled, map, teardown, loadFrames]);
+  }, [enabled, map, teardown, loadFrames, clearCanvas]);
 
   // Respond to play/pause toggle
   useEffect(() => {
@@ -441,23 +473,17 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
   const moveListenerRef = useRef<(() => void) | null>(null);
+  // Stored so it can be detached on teardown
+  const clearListenerRef = useRef<(() => void) | null>(null);
 
-  // Position and size the canvas to exactly cover the current map viewport
-  const positionCanvas = useCallback(() => {
+  // Immediately blank the canvas -- called on movestart/zoomstart so stale
+  // imagery disappears the instant the user begins interacting with the map
+  const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const mapEl = map.getContainer();
-    const rect = mapEl.getBoundingClientRect();
-    canvas.style.position = "absolute";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "400";
-    canvas.width = Math.round(rect.width);
-    canvas.height = Math.round(rect.height);
-  }, [map]);
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, []);
 
   // Draw one bitmap onto the canvas -- single GPU blit, no DOM swapping
   const drawFrame = useCallback((idx: number) => {
@@ -474,7 +500,7 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     onFrameChangeRef.current(idx, bitmaps.length, ts);
   }, []);
 
-  // Full teardown: stop timer, clear canvas, detach move listeners
+  // Full teardown: stop timer, clear canvas, detach all map listeners
   const teardown = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     const canvas = canvasRef.current;
@@ -487,6 +513,11 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
       moveListenerRef.current = null;
+    }
+    if (clearListenerRef.current) {
+      map.off("movestart", clearListenerRef.current);
+      map.off("zoomstart", clearListenerRef.current);
+      clearListenerRef.current = null;
     }
   }, [map]);
 
@@ -535,7 +566,7 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
       if (!enabledRef.current) return;
       bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
       bitmapsRef.current = newBitmaps;
-      positionCanvas();
+      // Canvas is already sized to 100% of overlayPane -- just show it and draw
       const canvas = canvasRef.current;
       if (canvas) canvas.style.display = "block";
       const startIdx = newBitmaps.length - 1;
@@ -548,16 +579,34 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     } catch {
       // Silently fail
     }
-  }, [map, positionCanvas, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Create and attach the canvas element once on mount
+  // Create and attach the canvas element once on mount.
+  // Appended to overlayPane so it moves and scales with the map automatically.
   useEffect(() => {
+    const overlayPane = map.getPanes().overlayPane;
     const canvas = document.createElement("canvas");
     canvas.style.display = "none";
-    map.getContainer().appendChild(canvas);
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "400";
+    overlayPane.appendChild(canvas);
     canvasRef.current = canvas;
+    // Keep canvas pixel dimensions in sync with the pane size on resize
+    const onResize = () => {
+      const r = overlayPane.getBoundingClientRect();
+      canvas.width = Math.round(r.width);
+      canvas.height = Math.round(r.height);
+    };
+    onResize();
+    map.on("resize", onResize);
     return () => {
-      try { map.getContainer().removeChild(canvas); } catch { /* ignore */ }
+      map.off("resize", onResize);
+      try { overlayPane.removeChild(canvas); } catch { /* ignore */ }
       canvasRef.current = null;
       bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
       bitmapsRef.current = [];
@@ -596,16 +645,32 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     };
     init();
 
+    // Detach any previously registered listeners before registering new ones.
+    // This prevents duplicate listeners accumulating across enable/disable cycles.
+    if (moveListenerRef.current) {
+      map.off("moveend", moveListenerRef.current);
+      map.off("zoomend", moveListenerRef.current);
+    }
+    if (clearListenerRef.current) {
+      map.off("movestart", clearListenerRef.current);
+      map.off("zoomstart", clearListenerRef.current);
+    }
     const onMove = () => { if (enabledRef.current) loadFrames(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
+    // Clear canvas immediately when user starts panning/zooming so stale
+    // imagery does not sit misaligned while new frames download
+    const onClear = () => { if (enabledRef.current) clearCanvas(); };
+    clearListenerRef.current = onClear;
+    map.on("movestart", onClear);
+    map.on("zoomstart", onClear);
 
     return () => {
       teardown();
       loadedRef.current = false;
     };
-  }, [enabled, map, teardown, loadFrames]);
+  }, [enabled, map, teardown, loadFrames, clearCanvas]);
 
   // Respond to play/pause toggle
   useEffect(() => {
