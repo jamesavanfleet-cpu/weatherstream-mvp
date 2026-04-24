@@ -2,21 +2,21 @@
 **My Cruising Weather -- www.mycruisingweather.com**
 
 **Report Period:** April 17 -- April 24, 2026
-**Generated:** April 24, 2026 at 11:04 PM UTC
+**Generated:** April 24, 2026 at 11:10 PM UTC
 **Source:** CruiseMapper.com (automated verification)
 
 ---
 
 ## Summary
 
-This report covers **1 verification run(s)** conducted between April 17 and April 24, 2026. A total of **66 ship sailings** were checked against CruiseMapper.com.
+This report covers **2 verification run(s)** conducted between April 17 and April 24, 2026. A total of **132 ship sailings** were checked against CruiseMapper.com.
 
-**18 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
+**30 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
 
 | Category | Count |
 |---|---|
-| Itineraries corrected (wrong ports or dates) | 15 |
-| New sailings added from CruiseMapper | 3 |
+| Itineraries corrected (wrong ports or dates) | 24 |
+| New sailings added from CruiseMapper | 6 |
 | Errors (CruiseMapper fetch failures) | 0 |
 
 ---
@@ -32,10 +32,20 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Galveston > Galveston
 - **Corrected to:** Galveston > At Sea > Cozumel > At Sea > Galveston
 
+**Carnival Breeze** -- Departure 2026-05-04 _(detected 2026-04-24)_
+
+- **Was:** Galveston > Galveston
+- **Corrected to:** Galveston > At Sea > Cozumel > Progreso > At Sea > Galveston
+
 **Carnival Freedom** -- Departure 2026-04-30 _(detected 2026-04-21)_
 
 - **Was:** Port Canaveral > Port Canaveral
 - **Corrected to:** Port Canaveral > At Sea > Half Moon Cay > Celebration Key > Port Canaveral
+
+**Carnival Freedom** -- Departure 2026-05-04 _(detected 2026-04-24)_
+
+- **Was:** Port Canaveral > Port Canaveral
+- **Corrected to:** Port Canaveral > Nassau > Celebration Key > Princess Cays > At Sea > Port Canaveral
 
 **Carnival Vista** -- Departure 2026-05-10 _(detected 2026-04-21)_
 
@@ -49,6 +59,11 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Southampton > Best of Scandinavia > Southampton
 - **Corrected to:** Southampton > At Sea > Copenhagen > At Sea > At Sea > Helsinki > Tallinn > Stockholm > Visby > At Sea > Oslo > Kristiansand > At Sea > Southampton
 
+**Celebrity Beyond** -- Departure 2026-05-10 _(detected 2026-04-24)_
+
+- **Was:** Miami > Tortola > St. Maarten Puerto Plata > Miami
+- **Corrected to:** Miami > At Sea > Puerto Plata > Tortola > St. Maarten > At Sea > At Sea > Miami
+
 ### Disney Cruise Line
 
 **Disney Wish** -- Departure 2026-04-27 _(detected 2026-04-21)_
@@ -56,12 +71,29 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Port Canaveral > Bahamian Cruise From Port Canaveral > Port Canaveral
 - **Corrected to:** Port Canaveral > Castaway Cay > Disney Lookout Cay > At Sea > Port Canaveral
 
+**Disney Wish** -- Departure 2026-05-01 _(detected 2026-04-24)_
+
+- **Was:** Port Canaveral > Bahamian Cruise From Port Canaveral > Port Canaveral
+- **Corrected to:** Port Canaveral > Nassau > Castaway Cay > Port Canaveral
+
+### MSC Cruises
+
+**MSC Seascape** -- Departure 2026-05-10 _(detected 2026-04-24)_
+
+- **Was:** Galveston > Galveston
+- **Corrected to:** Galveston > At Sea > At Sea > Perfect Day at CocoCay > Roatan > Cozumel > At Sea > Galveston
+
 ### Norwegian Cruise Line
 
 **Norwegian Getaway** -- Departure 2026-04-27 _(detected 2026-04-21)_
 
 - **Was:** Miami > Miami Great Stirrup Cay Nassau > Miami
 - **Corrected to:** Miami > Great Stirrup Cay > At Sea > Nassau > Miami
+
+**Norwegian Getaway** -- Departure 2026-05-01 _(detected 2026-04-24)_
+
+- **Was:** Miami > Miami Great Stirrup Cay Nassau > Miami
+- **Corrected to:** Miami > Nassau > Great Stirrup Cay > Miami
 
 ### Princess Cruises
 
@@ -76,6 +108,11 @@ The following itineraries were found to be incorrect and were replaced with the 
 
 - **Was:** Port Canaveral > Perfect Day > Port Canaveral
 - **Corrected to:** Port Canaveral > At Sea > Falmouth > Jamaica > Grand Cayman > At Sea > Perfect Day at CocoCay > Port Canaveral
+
+**Allure of the Seas** -- Departure 2026-05-10 _(detected 2026-04-24)_
+
+- **Was:** Fort Lauderdale > Perfect Day > Fort Lauderdale
+- **Corrected to:** Fort Lauderdale > Perfect Day at CocoCay > At Sea > Falmouth > Jamaica > At Sea > Nassau > Fort Lauderdale
 
 **Freedom of the Seas** -- Departure 2026-05-02 _(detected 2026-04-21)_
 
@@ -102,10 +139,20 @@ The following itineraries were found to be incorrect and were replaced with the 
 - **Was:** Cape Liberty > Perfect Day Cruise > Cape Liberty
 - **Corrected to:** Cape Liberty Bayonne > At Sea > At Sea > Nassau > Perfect Day at CocoCay > At Sea > At Sea > Cape Liberty Bayonne
 
+**Symphony of the Seas** -- Departure 2026-05-10 _(detected 2026-04-24)_
+
+- **Was:** Galveston > Cruise > Galveston
+- **Corrected to:** Galveston > At Sea > At Sea > Roatan > Perfect Day at CocoCay > Cozumel > At Sea > Galveston
+
 **Wonder of the Seas** -- Departure 2026-04-27 _(detected 2026-04-21)_
 
 - **Was:** Miami > Perfect Day Cruise > Miami
 - **Corrected to:** Miami > Perfect Day at CocoCay > Nassau > At Sea > Miami
+
+**Wonder of the Seas** -- Departure 2026-05-01 _(detected 2026-04-24)_
+
+- **Was:** Miami > Perfect Day > Miami
+- **Corrected to:** Miami > Perfect Day at CocoCay > At Sea > San Juan > St. Thomas > At Sea > At Sea > Miami
 
 ### Virgin Voyages
 
@@ -123,7 +170,10 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Ship | Departure Date | Description |
 |---|---|---|
 | Mardi Gras | 2026-04-25 | 7 days, round-trip Eastern Caribbean |
+| Mardi Gras | 2026-04-25 | 7 days, round-trip Eastern Caribbean |
 | Mardi Gras | 2026-05-02 | 7 days, round-trip Western Caribbean |
+| Mardi Gras | 2026-05-02 | 7 days, round-trip Western Caribbean |
+| Mardi Gras | 2026-05-09 | 7 days, round-trip Eastern Caribbean |
 | Mardi Gras | 2026-05-09 | 7 days, round-trip Eastern Caribbean |
 
 ---
