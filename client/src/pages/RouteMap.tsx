@@ -846,6 +846,7 @@ export default function RouteMap() {
   const polylineRef = useRef<L.Polyline | null>(null);
   const [saveMsg, setSaveMsg] = useState("");
   const [shareMsg, setShareMsg] = useState("");
+  const [hasSavedRoute, setHasSavedRoute] = useState(false);
   const newStopRef = useRef<HTMLDivElement | null>(null);
 
   // Load climate database
@@ -911,18 +912,13 @@ export default function RouteMap() {
       } catch {}
     }
 
-    // 4. Load from localStorage ONLY if user explicitly saved the route
-    // A separate flag "routeMapSaved" is written by handleSave -- without it,
-    // we never auto-populate the form with old data the user did not intend to keep.
+    // 4. Check if a saved route exists in localStorage -- but do NOT auto-populate.
+    // The user must explicitly click "Load Saved Route" to restore it.
+    // This prevents stale itineraries from appearing on every fresh visit.
     const wasSaved = localStorage.getItem("routeMapSaved") === "true";
-    if (wasSaved) {
-      const saved = localStorage.getItem("routeMapItinerary");
-      if (saved) {
-        try {
-          const parsed: PortStop[] = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) setStops(parsed);
-        } catch {}
-      }
+    const hasSaved = localStorage.getItem("routeMapItinerary");
+    if (wasSaved && hasSaved) {
+      setHasSavedRoute(true);
     }
   }, []);
 
@@ -1155,15 +1151,18 @@ export default function RouteMap() {
       }
       return updated;
     });
-    // Auto-sort chronologically after a short delay
-    setTimeout(() => {
-      setStops(prev => {
-        const withDates = prev.filter(s => s.date);
-        const withoutDates = prev.filter(s => !s.date);
-        const sorted = [...withDates].sort((a, b) => a.date.localeCompare(b.date));
-        return [...sorted, ...withoutDates];
-      });
-    }, 300);
+  };
+
+  const handleLoadSaved = () => {
+    const saved = localStorage.getItem("routeMapItinerary");
+    if (!saved) return;
+    try {
+      const parsed: PortStop[] = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setStops(parsed);
+        setHasSavedRoute(false);
+      }
+    } catch {}
   };
 
   const handlePlot = () => {
@@ -1177,7 +1176,11 @@ export default function RouteMap() {
       }
       return s;
     });
-    setStops(resolved);
+    // Sort chronologically at plot time so the map and itinerary strip are in order
+    const withDates = resolved.filter(s => s.date);
+    const withoutDates = resolved.filter(s => !s.date);
+    const sorted = [...withDates].sort((a, b) => a.date.localeCompare(b.date));
+    setStops([...sorted, ...withoutDates]);
     setPlotted(true);
   };
 
@@ -1323,6 +1326,16 @@ export default function RouteMap() {
           >
             <Plus className="w-4 h-4" /> Add Another Port / Sea Day
           </button>
+
+          {/* Load Saved Route button -- only shown when a previously saved route exists */}
+          {hasSavedRoute && (
+            <button
+              onClick={handleLoadSaved}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/20 transition-colors text-sm font-semibold"
+            >
+              <Save className="w-4 h-4" /> Load Saved Route
+            </button>
+          )}
 
           {/* Plot button */}
           <button
