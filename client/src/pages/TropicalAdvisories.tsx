@@ -179,22 +179,21 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
 }
 
 // ── Animated global satellite layer (NOAA nowCOAST GMGSI global mosaic) ─────
-// Single-tile viewport approach: one WMS GetMap request per frame covering the
-// full map bounds -- no tile seams, no checkerboard.
-// Uses canvas-based threshold transparency: pixels darker than threshold are
-// made fully transparent so the map shows through clear-sky areas.
-// All frames are pre-loaded before animation starts to eliminate flashing.
+// Single-canvas architecture: ONE <canvas> element is positioned over the map.
+// All 6 frames are pre-decoded into ImageBitmap objects off-screen.
+// Frame advance = ctx.clearRect + ctx.drawImage -- a single GPU blit.
+// Zero DOM element swapping, zero Leaflet opacity timing races, zero flash.
 interface SatelliteLayerProps {
   enabled: boolean;
   isPlaying: boolean;
-  frameIdx: number;         // controlled from outside for step forward/back
+  frameIdx: number;
   onFrameChange: (idx: number, total: number, timestamp: string) => void;
 }
 
 function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: SatelliteLayerProps) {
   const map = useMap();
-  // Each frame is an L.ImageOverlay whose URL is a canvas data URL (processed)
-  const overlaysRef = useRef<L.ImageOverlay[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bitmapsRef = useRef<ImageBitmap[]>([]);
   const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timestampsRef = useRef<string[]>([]);
@@ -203,17 +202,50 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   const isPlayingRef = useRef(isPlaying);
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
-  // Holds the current moveend/zoomend listener so it can be detached on teardown
   const moveListenerRef = useRef<(() => void) | null>(null);
-  // Brightness threshold: pixels with mean RGB below this become transparent
-  // IR imagery: clear sky ~1-30, thin cloud ~30-80, thick cloud ~80-255
   const CLOUD_THRESHOLD = 35;
 
-  // Full teardown: stop timer, remove all overlays from map, detach move listeners
+  // Position and size the canvas to exactly cover the current map viewport
+  const positionCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const mapEl = map.getContainer();
+    const rect = mapEl.getBoundingClientRect();
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "400";
+    canvas.width = Math.round(rect.width);
+    canvas.height = Math.round(rect.height);
+  }, [map]);
+
+  // Draw the bitmap at idxRef.current onto the canvas
+  const drawFrame = useCallback((idx: number) => {
+    const canvas = canvasRef.current;
+    const bitmaps = bitmapsRef.current;
+    if (!canvas || bitmaps.length === 0) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const bm = bitmaps[idx];
+    if (bm) ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
+    idxRef.current = idx;
+    const ts = timestampsRef.current[idx] ?? "";
+    onFrameChangeRef.current(idx, bitmaps.length, ts);
+  }, []);
+
+  // Full teardown: stop timer, hide canvas, detach move listeners
   const teardown = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-    overlaysRef.current = [];
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display = "none";
+    }
     if (moveListenerRef.current) {
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
@@ -221,11 +253,10 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     }
   }, [map]);
 
-  // Build a WMS GetMap URL for a given timestamp and map bounds
+  // Build WMS GetMap URL
   const buildWmsUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
-    // Clamp to valid EPSG:4326 bounds
     const minLat = Math.max(sw.lat, -85);
     const maxLat = Math.min(ne.lat, 85);
     const minLng = Math.max(sw.lng, -180);
@@ -241,115 +272,86 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     return url;
   };
 
-  // Fetch a WMS image and return a canvas data URL with dark pixels made transparent
-  const fetchProcessedFrame = (wmsUrl: string): Promise<string> => {
+  // Fetch one WMS frame, apply cloud threshold, return ImageBitmap
+  const fetchBitmap = (wmsUrl: string): Promise<ImageBitmap> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         try {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) { reject(new Error("no canvas ctx")); return; }
+          const offscreen = document.createElement("canvas");
+          offscreen.width = img.naturalWidth || img.width;
+          offscreen.height = img.naturalHeight || img.height;
+          const ctx = offscreen.getContext("2d");
+          if (!ctx) { reject(new Error("no ctx")); return; }
           ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
           const data = imageData.data;
-          // Apply threshold: make dark (clear sky) pixels transparent
           for (let i = 0; i < data.length; i += 4) {
             const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
             if (brightness < CLOUD_THRESHOLD) {
-              data[i + 3] = 0; // fully transparent
+              data[i + 3] = 0;
             } else {
-              // Scale opacity: thin clouds semi-transparent, thick clouds opaque
-              const opacity = Math.min(255, Math.round(((brightness - CLOUD_THRESHOLD) / (255 - CLOUD_THRESHOLD)) * 220));
-              data[i + 3] = opacity;
+              data[i + 3] = Math.min(255, Math.round(((brightness - CLOUD_THRESHOLD) / (255 - CLOUD_THRESHOLD)) * 220));
             }
           }
           ctx.putImageData(imageData, 0, 0);
-          resolve(canvas.toDataURL("image/png"));
-        } catch (e) {
-          reject(e);
-        }
+          createImageBitmap(offscreen).then(resolve).catch(reject);
+        } catch (e) { reject(e); }
       };
-      img.onerror = () => reject(new Error("image load failed"));
+      img.onerror = () => reject(new Error("fetch failed"));
       img.src = wmsUrl;
     });
   };
 
-  // Show frame at index, hide all others (instant, no flashing).
-  // Uses setProperty so it overrides the "important" flag set during creation.
-  const showFrame = (idx: number) => {
-    overlaysRef.current.forEach((ov, i) => {
-      const el = ov.getElement();
-      if (el) el.style.setProperty("opacity", i === idx ? "0.9" : "0", "important");
-    });
-    idxRef.current = idx;
-    const ts = timestampsRef.current[idx] ?? "";
-    onFrameChangeRef.current(idx, overlaysRef.current.length, ts);
-  };
-
-  // Load all frames for current bounds and start animation.
-  // All frames are fully downloaded and canvas-processed off-screen first.
-  // Overlays are created with opacity forced to 0 via direct DOM style BEFORE
-  // Leaflet's async _initImage can make them visible. Only after all overlays
-  // are ready does showFrame reveal the latest one.
+  // Load all frames off-screen, then swap bitmaps and redraw in one step
   const loadFrames = useCallback(async () => {
     if (!enabledRef.current || timestampsRef.current.length === 0) return;
     const bounds = map.getBounds();
     const size = map.getSize();
-    // Stop animation timer but keep old overlays visible during load
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    const oldOverlays = overlaysRef.current.slice();
-    overlaysRef.current = [];
     try {
-      // Fetch and process all frames in parallel, completely off-screen
-      const dataUrls = await Promise.all(
-        timestampsRef.current.map(ts => fetchProcessedFrame(buildWmsUrl(bounds, ts, size)))
+      // Download + process ALL frames completely off-screen before touching the canvas
+      const newBitmaps = await Promise.all(
+        timestampsRef.current.map(ts => fetchBitmap(buildWmsUrl(bounds, ts, size)))
       );
-      if (!enabledRef.current) {
-        // Disabled while loading -- clean up old overlays and bail
-        oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-        return;
-      }
-      // Remove old overlays and create new ones atomically.
-      // CRITICAL: force el.style.opacity = "0" immediately after addTo(map)
-      // because Leaflet's opacity constructor option is applied asynchronously
-      // after _initImage fires -- without this, every frame flashes at full
-      // opacity for one paint cycle before showFrame can hide them.
-      oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-      overlaysRef.current = dataUrls.map(dataUrl => {
-        const ov = L.imageOverlay(dataUrl, bounds, { opacity: 0, zIndex: 240 }).addTo(map);
-        // Force opacity to 0 immediately via direct DOM style -- do not rely on
-        // Leaflet's opacity option which fires asynchronously
-        const el = ov.getElement();
-        if (el) {
-          el.style.setProperty("opacity", "0", "important");
-          el.style.pointerEvents = "none";
-        }
-        return ov;
-      });
-      // Show most recent frame
-      const startIdx = overlaysRef.current.length - 1;
-      showFrame(startIdx);
-      // Start animation if playing
-      if (isPlayingRef.current && overlaysRef.current.length > 1) {
+      if (!enabledRef.current) return;
+      // Close old bitmaps to free GPU memory
+      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
+      bitmapsRef.current = newBitmaps;
+      // Reposition canvas for current viewport, then draw latest frame
+      positionCanvas();
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.display = "block";
+      const startIdx = newBitmaps.length - 1;
+      drawFrame(startIdx);
+      if (isPlayingRef.current && newBitmaps.length > 1) {
         timerRef.current = setInterval(() => {
-          const next = (idxRef.current + 1) % overlaysRef.current.length;
-          showFrame(next);
+          drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
         }, 900);
       }
     } catch {
-      // Silently fail -- satellite is optional
-      oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+      // Silently fail
     }
-  }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, positionCanvas, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Create and attach the canvas element once on mount
+  useEffect(() => {
+    const canvas = document.createElement("canvas");
+    canvas.style.display = "none";
+    map.getContainer().appendChild(canvas);
+    canvasRef.current = canvas;
+    return () => {
+      try { map.getContainer().removeChild(canvas); } catch { /* ignore */ }
+      canvasRef.current = null;
+      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
+      bitmapsRef.current = [];
+    };
+  }, [map]);
 
   // Main effect: fetch timestamps and load frames when enabled
   useEffect(() => {
     if (!enabled) {
-      // Full teardown: remove overlays from map, stop timer, detach move listeners
       teardown();
       enabledRef.current = false;
       loadedRef.current = false;
@@ -360,7 +362,6 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     const init = async () => {
       try {
         if (!loadedRef.current) {
-          // First time: fetch WMS capabilities to get timestamps
           const capUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
             + "?service=WMS&version=1.3.0&request=GetCapabilities";
           const res = await fetch(capUrl);
@@ -376,13 +377,10 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
           loadedRef.current = true;
         }
         await loadFrames();
-      } catch {
-        // Silently fail
-      }
+      } catch { /* silently fail */ }
     };
     init();
 
-    // Reload frames on map move/zoom so image stays aligned with viewport
     const onMove = () => { if (enabledRef.current) loadFrames(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
@@ -392,49 +390,48 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       teardown();
       loadedRef.current = false;
     };
-  }, [enabled, map, teardown, loadFrames]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, map, teardown, loadFrames]);
 
-  // Respond to play/pause toggle without reloading data
+  // Respond to play/pause toggle
   useEffect(() => {
     isPlayingRef.current = isPlaying;
-    if (!enabled || overlaysRef.current.length === 0) return;
+    if (!enabled || bitmapsRef.current.length === 0) return;
     if (isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
-        const next = (idxRef.current + 1) % overlaysRef.current.length;
-        showFrame(next);
+        drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
       }, 900);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [isPlaying, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPlaying, enabled, drawFrame]);
 
-  // Respond to external frame index changes (step forward/back from control bar)
+  // Respond to external frame index changes
   useEffect(() => {
-    if (!enabled || overlaysRef.current.length === 0) return;
-    const clamped = Math.max(0, Math.min(frameIdx, overlaysRef.current.length - 1));
-    if (clamped !== idxRef.current) showFrame(clamped);
-  }, [frameIdx, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!enabled || bitmapsRef.current.length === 0) return;
+    const clamped = Math.max(0, Math.min(frameIdx, bitmapsRef.current.length - 1));
+    if (clamped !== idxRef.current) drawFrame(clamped);
+  }, [frameIdx, enabled, drawFrame]);
 
   return null;
 }
 
 // ── Animated radar layer (NOAA Ridge2/MRMS WMS, single-tile viewport) ──────────
-// Uses NOAA opengeo.ncep.noaa.gov WMS -- same data source as radar.weather.gov.
-// Single-tile GetMap request per frame covering the full map viewport:
-//   no tile seams, native RGBA transparency (clear sky = fully transparent),
-//   CONUS + Caribbean layers composited, 60 frames (~2-hour loop).
+// Single-canvas architecture: ONE <canvas> element positioned over the map.
+// All 20 frames pre-decoded into ImageBitmap objects off-screen.
+// Frame advance = ctx.clearRect + ctx.drawImage -- single GPU blit, zero flash.
 interface RadarLayerProps {
   enabled: boolean;
   isPlaying: boolean;
-  frameIdx: number;         // controlled from outside for step forward/back
+  frameIdx: number;
   onFrameChange: (idx: number, total: number, timestamp: string) => void;
 }
 
 function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerProps) {
   const map = useMap();
-  const overlaysRef = useRef<L.ImageOverlay[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bitmapsRef = useRef<ImageBitmap[]>([]);
   const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timestampsRef = useRef<string[]>([]);
@@ -443,14 +440,49 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
   const isPlayingRef = useRef(isPlaying);
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
-  // Holds the current moveend/zoomend listener so it can be detached on teardown
   const moveListenerRef = useRef<(() => void) | null>(null);
 
-  // Full teardown: stop timer, remove all overlays from map, detach move listeners
+  // Position and size the canvas to exactly cover the current map viewport
+  const positionCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const mapEl = map.getContainer();
+    const rect = mapEl.getBoundingClientRect();
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "400";
+    canvas.width = Math.round(rect.width);
+    canvas.height = Math.round(rect.height);
+  }, [map]);
+
+  // Draw one bitmap onto the canvas -- single GPU blit, no DOM swapping
+  const drawFrame = useCallback((idx: number) => {
+    const canvas = canvasRef.current;
+    const bitmaps = bitmapsRef.current;
+    if (!canvas || bitmaps.length === 0) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const bm = bitmaps[idx];
+    if (bm) ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
+    idxRef.current = idx;
+    const ts = timestampsRef.current[idx] ?? "";
+    onFrameChangeRef.current(idx, bitmaps.length, ts);
+  }, []);
+
+  // Full teardown: stop timer, clear canvas, detach move listeners
   const teardown = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-    overlaysRef.current = [];
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display = "none";
+    }
     if (moveListenerRef.current) {
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
@@ -458,8 +490,7 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     }
   }, [map]);
 
-  // Build a WMS GetMap URL for a given timestamp and map bounds
-  // Composites CONUS + Caribbean layers so both are visible in one image
+  // Build WMS GetMap URL -- CONUS + Caribbean composite
   const buildRadarUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
@@ -469,111 +500,73 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     const maxLng = Math.min(ne.lng, 180);
     const w = Math.max(256, Math.min(1024, Math.round(size.x)));
     const h = Math.max(256, Math.min(1024, Math.round(size.y)));
-    // Use CONUS layer as primary; it covers US + Caribbean adequately
-    // For views that include Caribbean, also include carib layer
-    const layers = "conus_cref_qcd,carib_cref_qcd";
     let url = `https://opengeo.ncep.noaa.gov/geoserver/ows`
       + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
-      + `&LAYERS=${layers}`
+      + `&LAYERS=conus_cref_qcd,carib_cref_qcd`
       + `&CRS=EPSG:4326&BBOX=${minLat},${minLng},${maxLat},${maxLng}`
       + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
     if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
     return url;
   };
 
-  // Show frame at index, hide all others.
-  // Uses setProperty so it overrides the "important" flag set during creation.
-  const showFrame = (idx: number) => {
-    overlaysRef.current.forEach((ov, i) => {
-      const el = ov.getElement();
-      if (el) el.style.setProperty("opacity", i === idx ? "0.85" : "0", "important");
+  // Fetch one radar frame and return an ImageBitmap (native RGBA transparency)
+  const fetchBitmap = (wmsUrl: string): Promise<ImageBitmap> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        createImageBitmap(img).then(resolve).catch(reject);
+      };
+      img.onerror = () => reject(new Error("fetch failed"));
+      img.src = wmsUrl;
     });
-    idxRef.current = idx;
-    const ts = timestampsRef.current[idx] ?? "";
-    onFrameChangeRef.current(idx, overlaysRef.current.length, ts);
   };
 
-  // Load all frames for current bounds.
-  // All 20 images are fully downloaded and canvas-processed OFF-SCREEN before
-  // any overlay is created on the map. Overlays are created with the final
-  // data URL directly -- Leaflet never needs to do a second internal load.
-  // Old overlays stay visible until the new batch is 100% ready, then swap
-  // atomically. Result: no flashing, no blanks, no blue screen on pan/zoom.
-  const loadFrames = async () => {
+  // Load all 20 frames off-screen, then swap bitmaps and draw in one step
+  const loadFrames = useCallback(async () => {
     if (!enabledRef.current || timestampsRef.current.length === 0) return;
     const bounds = map.getBounds();
     const size = map.getSize();
-    const total = timestampsRef.current.length;
-
-    // Stop animation timer but keep old overlays visible during load
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    const oldOverlays = overlaysRef.current.slice();
-
-    // Step 1: Download + canvas-process ALL frames completely off-screen
-    const FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-    const dataUrls: string[] = new Array(total).fill(FALLBACK);
-
-    await Promise.all(
-      timestampsRef.current.map((ts, i) =>
-        new Promise<void>(resolve => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => {
-            try {
-              const canvas = document.createElement("canvas");
-              canvas.width = img.naturalWidth || img.width;
-              canvas.height = img.naturalHeight || img.height;
-              const ctx = canvas.getContext("2d");
-              if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                dataUrls[i] = canvas.toDataURL("image/png");
-              }
-            } catch { /* ignore tainted canvas */ }
-            resolve();
-          };
-          img.onerror = () => resolve();
-          img.src = buildRadarUrl(bounds, ts, size);
-        })
-      )
-    );
-
-    // Bail if layer was disabled while we were loading
-    if (!enabledRef.current) {
-      oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-      return;
-    }
-
-    // Step 2: Remove old overlays and create new ones with final data URLs
-    // in one synchronous block -- no async gap, no blank frames.
-    // CRITICAL: force el.style.opacity = "0" immediately after addTo(map)
-    // because Leaflet's opacity constructor option is applied asynchronously
-    // after _initImage fires -- without this, every frame flashes at full
-    // opacity for one paint cycle before showFrame can hide them.
-    oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-    overlaysRef.current = dataUrls.map(url => {
-      const ov = L.imageOverlay(url, bounds, { opacity: 0, zIndex: 300 }).addTo(map);
-      const el = ov.getElement();
-      if (el) {
-        el.style.setProperty("opacity", "0", "important");
-        el.style.pointerEvents = "none";
+    try {
+      const newBitmaps = await Promise.all(
+        timestampsRef.current.map(ts => fetchBitmap(buildRadarUrl(bounds, ts, size)))
+      );
+      if (!enabledRef.current) return;
+      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
+      bitmapsRef.current = newBitmaps;
+      positionCanvas();
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.display = "block";
+      const startIdx = newBitmaps.length - 1;
+      drawFrame(startIdx);
+      if (isPlayingRef.current && newBitmaps.length > 1) {
+        timerRef.current = setInterval(() => {
+          drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
+        }, 600);
       }
-      return ov;
-    });
-
-    // Step 3: Show most recent frame and start animation
-    showFrame(overlaysRef.current.length - 1);
-    if (isPlayingRef.current && overlaysRef.current.length > 1) {
-      timerRef.current = setInterval(() => {
-        const next = (idxRef.current + 1) % overlaysRef.current.length;
-        showFrame(next);
-      }, 600);
+    } catch {
+      // Silently fail
     }
-  };
+  }, [map, positionCanvas, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Create and attach the canvas element once on mount
+  useEffect(() => {
+    const canvas = document.createElement("canvas");
+    canvas.style.display = "none";
+    map.getContainer().appendChild(canvas);
+    canvasRef.current = canvas;
+    return () => {
+      try { map.getContainer().removeChild(canvas); } catch { /* ignore */ }
+      canvasRef.current = null;
+      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
+      bitmapsRef.current = [];
+    };
+  }, [map]);
 
   // Main effect: fetch timestamps and load frames when enabled
   useEffect(() => {
     if (!enabled) {
-      // Full teardown: remove overlays from map, stop timer, detach move listeners
       teardown();
       enabledRef.current = false;
       loadedRef.current = false;
@@ -584,7 +577,6 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     const init = async () => {
       try {
         if (!loadedRef.current) {
-          // Fetch WMS capabilities to get timestamps
           const capUrl = "https://opengeo.ncep.noaa.gov/geoserver/conus/ows"
             + "?service=WMS&version=1.3.0&request=GetCapabilities";
           const res = await fetch(capUrl);
@@ -596,18 +588,14 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
           if (match) {
             timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
           }
-          // Use last 20 frames (~40 minutes) for a smooth loop
           timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-20) : [""];
           loadedRef.current = true;
         }
         await loadFrames();
-      } catch {
-        // Silently fail
-      }
+      } catch { /* silently fail */ }
     };
     init();
 
-    // Reload frames on map move/zoom so image stays aligned with viewport
     const onMove = () => { if (enabledRef.current) loadFrames(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
@@ -617,30 +605,29 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
       teardown();
       loadedRef.current = false;
     };
-  }, [enabled, map, teardown]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, map, teardown, loadFrames]);
 
-  // Respond to play/pause toggle without reloading data
+  // Respond to play/pause toggle
   useEffect(() => {
     isPlayingRef.current = isPlaying;
-    if (!enabled || overlaysRef.current.length === 0) return;
+    if (!enabled || bitmapsRef.current.length === 0) return;
     if (isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
-        const next = (idxRef.current + 1) % overlaysRef.current.length;
-        showFrame(next);
+        drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
       }, 600);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [isPlaying, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPlaying, enabled, drawFrame]);
 
-  // Respond to external frame index changes (step forward/back from control bar)
+  // Respond to external frame index changes
   useEffect(() => {
-    if (!enabled || overlaysRef.current.length === 0) return;
-    const clamped = Math.max(0, Math.min(frameIdx, overlaysRef.current.length - 1));
-    if (clamped !== idxRef.current) showFrame(clamped);
-  }, [frameIdx, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!enabled || bitmapsRef.current.length === 0) return;
+    const clamped = Math.max(0, Math.min(frameIdx, bitmapsRef.current.length - 1));
+    if (clamped !== idxRef.current) drawFrame(clamped);
+  }, [frameIdx, enabled, drawFrame]);
 
   return null;
 }
