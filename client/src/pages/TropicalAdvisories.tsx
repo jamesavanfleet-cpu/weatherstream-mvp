@@ -205,7 +205,27 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   const moveListenerRef = useRef<(() => void) | null>(null);
   // Stored so it can be detached on teardown
   const clearListenerRef = useRef<(() => void) | null>(null);
+  // Tracks which WMS layer is currently active so we know when to regenerate timestamps
+  const currentLayerRef = useRef<string>("");
   const CLOUD_THRESHOLD = 35;
+
+  // GOES-East/West coverage bounds (conservative thresholds to avoid boundary edge cases)
+  const GOES_WEST = -179.5;
+  const GOES_EAST = -52.0;
+  const GOES_SOUTH = 12.0;
+  const GOES_NORTH = 50.6;
+
+  // Determine which satellite layer to use based on current map viewport.
+  // Returns GOES (5-min, 24 frames) when fully inside GOES coverage,
+  // otherwise returns global mosaic (60-min, 6 frames).
+  const getActiveLayer = (bounds: L.LatLngBounds): { layer: string; intervalMin: number; maxFrames: number } => {
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    if (sw.lng >= GOES_WEST && ne.lng <= GOES_EAST && sw.lat >= GOES_SOUTH && ne.lat <= GOES_NORTH) {
+      return { layer: "goes_longwave_imagery", intervalMin: 5, maxFrames: 24 };
+    }
+    return { layer: "global_longwave_imagery_mosaic", intervalMin: 60, maxFrames: 6 };
+  };
 
   // Immediately blank the canvas -- called on movestart/zoomstart so stale
   // imagery disappears the instant the user begins interacting with the map
@@ -253,7 +273,7 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   }, [map]);
 
   // Build WMS GetMap URL
-  const buildWmsUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
+  const buildWmsUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }, layerName: string) => {
     const sw = bounds.getSouthWest();
     const ne = bounds.getNorthEast();
     const minLat = Math.max(sw.lat, -85);
@@ -264,7 +284,7 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     const h = Math.max(256, Math.min(1024, Math.round(size.y)));
     let url = `https://nowcoast.noaa.gov/geoserver/satellite/wms`
       + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
-      + `&LAYERS=global_longwave_imagery_mosaic`
+      + `&LAYERS=${layerName}`
       + `&CRS=EPSG:4326&BBOX=${minLat},${minLng},${maxLat},${maxLng}`
       + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
     if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
@@ -312,7 +332,7 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     try {
       // Download + process ALL frames completely off-screen before touching the canvas
       const newBitmaps = await Promise.all(
-        timestampsRef.current.map(ts => fetchBitmap(buildWmsUrl(bounds, ts, size)))
+        timestampsRef.current.map(ts => fetchBitmap(buildWmsUrl(bounds, ts, size, currentLayerRef.current)))
       );
       if (!enabledRef.current) return;
       // Close old bitmaps to free GPU memory
@@ -378,24 +398,29 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     enabledRef.current = true;
 
     const init = async () => {
-      try {
-        if (!loadedRef.current) {
-          const capUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
-            + "?service=WMS&version=1.3.0&request=GetCapabilities";
-          const res = await fetch(capUrl);
-          const text = await res.text();
-          const match = text.match(
-            /global_longwave_imagery_mosaic[\s\S]*?<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/
-          );
-          let timestamps: string[] = [];
-          if (match) {
-            timestamps = match[1].split(",").map(s => s.trim()).filter(Boolean);
-          }
-          timestampsRef.current = timestamps.length > 0 ? timestamps.slice(-6) : [""];
-          loadedRef.current = true;
+      // Determine which layer is appropriate for the current viewport (Option C).
+      // If the viewport is fully within GOES coverage, use the high-frequency GOES layer.
+      // Otherwise fall back to the global mosaic.
+      const { layer, intervalMin, maxFrames } = getActiveLayer(map.getBounds());
+      // If the active layer has changed since the last load, regenerate timestamps.
+      if (layer !== currentLayerRef.current) {
+        currentLayerRef.current = layer;
+        loadedRef.current = false;
+      }
+      if (!loadedRef.current) {
+        // Generate timestamps client-side at the known update cadence.
+        // This avoids a browser CORS fetch to GetCapabilities which fails silently.
+        const INTERVAL_MS = intervalMin * 60 * 1000;
+        const now = Date.now();
+        const latest = now - (now % INTERVAL_MS);
+        const timestamps: string[] = [];
+        for (let i = maxFrames - 1; i >= 0; i--) {
+          timestamps.push(new Date(latest - i * INTERVAL_MS).toISOString().replace(/\.\d{3}Z$/, "Z"));
         }
-        await loadFrames();
-      } catch { /* silently fail */ }
+        timestampsRef.current = timestamps;
+        loadedRef.current = true;
+      }
+      await loadFrames();
     };
     init();
 
@@ -409,7 +434,9 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       map.off("movestart", clearListenerRef.current);
       map.off("zoomstart", clearListenerRef.current);
     }
-    const onMove = () => { if (enabledRef.current) loadFrames(); };
+    // onMove calls init (not loadFrames directly) so that crossing the GOES
+    // coverage boundary triggers a layer switch and timestamp regeneration.
+    const onMove = () => { if (enabledRef.current) init(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
