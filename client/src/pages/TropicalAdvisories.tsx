@@ -452,68 +452,61 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
   };
 
   // Load all frames for current bounds.
-  // Key design: keep old overlays visible during reload (no blue flash),
-  // and only start the animation timer after ALL frames have fully loaded
-  // (no flashing through blank/unloaded frames).
+  // All 20 images are fully downloaded and canvas-processed OFF-SCREEN before
+  // any overlay is created on the map. Overlays are created with the final
+  // data URL directly -- Leaflet never needs to do a second internal load.
+  // Old overlays stay visible until the new batch is 100% ready, then swap
+  // atomically. Result: no flashing, no blanks, no blue screen on pan/zoom.
   const loadFrames = async () => {
     if (!enabledRef.current || timestampsRef.current.length === 0) return;
     const bounds = map.getBounds();
     const size = map.getSize();
     const total = timestampsRef.current.length;
 
-    // Stop current animation but keep old overlays visible while new ones load
+    // Stop animation timer but keep old overlays visible during load
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     const oldOverlays = overlaysRef.current.slice();
 
-    // Pre-load all frame images off-screen before touching the map
-    const dataUrls: (string | null)[] = new Array(total).fill(null);
-    let loadedCount = 0;
+    // Step 1: Download + canvas-process ALL frames completely off-screen
+    const FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    const dataUrls: string[] = new Array(total).fill(FALLBACK);
 
-    await new Promise<void>(resolve => {
-      timestampsRef.current.forEach((ts, i) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              ctx.drawImage(img, 0, 0);
-              dataUrls[i] = canvas.toDataURL("image/png");
-            }
-          } catch { /* ignore cross-origin canvas errors */ }
-          loadedCount++;
-          if (loadedCount === total) resolve();
-        };
-        img.onerror = () => {
-          loadedCount++;
-          if (loadedCount === total) resolve();
-        };
-        img.src = buildRadarUrl(bounds, ts, size);
-      });
-    });
-
-    // All frames loaded -- now swap out old overlays for new ones atomically
-    if (!enabledRef.current) {
-      // Layer was disabled while we were loading -- discard and return
-      return;
-    }
-    oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-    overlaysRef.current = dataUrls.map(url =>
-      L.imageOverlay(
-        url ?? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-        bounds,
-        { opacity: 0, zIndex: 300 }
-      ).addTo(map)
+    await Promise.all(
+      timestampsRef.current.map((ts, i) =>
+        new Promise<void>(resolve => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.naturalWidth || img.width;
+              canvas.height = img.naturalHeight || img.height;
+              const ctx = canvas.getContext("2d");
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                dataUrls[i] = canvas.toDataURL("image/png");
+              }
+            } catch { /* ignore tainted canvas */ }
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = buildRadarUrl(bounds, ts, size);
+        })
+      )
     );
 
-    // Show most recent frame
-    const startIdx = overlaysRef.current.length - 1;
-    showFrame(startIdx);
+    // Bail if layer was disabled while we were loading
+    if (!enabledRef.current) return;
 
-    // Start animation only now that every frame is ready -- smooth loop, no blanks
+    // Step 2: Remove old overlays and create new ones with final data URLs
+    // in one synchronous block -- no async gap, no blank frames
+    oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+    overlaysRef.current = dataUrls.map(url =>
+      L.imageOverlay(url, bounds, { opacity: 0, zIndex: 300 }).addTo(map)
+    );
+
+    // Step 3: Show most recent frame and start animation
+    showFrame(overlaysRef.current.length - 1);
     if (isPlayingRef.current && overlaysRef.current.length > 1) {
       timerRef.current = setInterval(() => {
         const next = (idxRef.current + 1) % overlaysRef.current.length;
