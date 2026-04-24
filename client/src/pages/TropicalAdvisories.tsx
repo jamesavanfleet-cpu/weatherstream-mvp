@@ -216,12 +216,15 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   const GOES_NORTH = 50.6;
 
   // Determine which satellite layer to use based on current map viewport.
-  // Returns GOES (5-min, 24 frames) when fully inside GOES coverage,
-  // otherwise returns global mosaic (60-min, 6 frames).
+  // Uses the viewport CENTER to decide: if the center is within GOES-East coverage,
+  // use the high-frequency GOES layer (5-min, 24 frames). This ensures the Caribbean,
+  // Gulf, and US East/West Coast views always use GOES even when the viewport extends
+  // south of 12N or east of 52W. Switches to global mosaic (60-min, 6 frames) only
+  // when the user has panned to a region outside GOES coverage (Mediterranean, Pacific, etc.).
+  // GOES_CENTER_MARKER
   const getActiveLayer = (bounds: L.LatLngBounds): { layer: string; intervalMin: number; maxFrames: number } => {
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
-    if (sw.lng >= GOES_WEST && ne.lng <= GOES_EAST && sw.lat >= GOES_SOUTH && ne.lat <= GOES_NORTH) {
+    const center = bounds.getCenter();
+    if (center.lng >= GOES_WEST && center.lng <= GOES_EAST && center.lat >= GOES_SOUTH && center.lat <= GOES_NORTH) {
       return { layer: "goes_longwave_imagery", intervalMin: 5, maxFrames: 24 };
     }
     return { layer: "global_longwave_imagery_mosaic", intervalMin: 60, maxFrames: 6 };
