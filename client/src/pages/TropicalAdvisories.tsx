@@ -421,12 +421,17 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
           const doc = parser.parseFromString(xmlText, "text/xml");
           // Walk all <Layer> elements to find the one matching our layer name,
           // then extract the comma-separated TIME dimension values.
-          const layerEls = Array.from(doc.getElementsByTagName("Layer"));
+          // Use getElementsByTagNameNS("*", ...) so the query matches regardless of
+          // whether the XML declares a default namespace (xmlns="http://www.opengis.net/wms").
+          // Plain getElementsByTagName("Layer") returns zero elements when a default
+          // namespace is present in browsers that apply namespace rules strictly.
+          // SATELLITE_GETCAPS_NS_FIX_MARKER
+          const layerEls = Array.from(doc.getElementsByTagNameNS("*", "Layer"));
           let times: string[] = [];
           for (const el of layerEls) {
-            const nameEl = el.getElementsByTagName("Name")[0];
+            const nameEl = el.getElementsByTagNameNS("*", "Name")[0];
             if (nameEl && nameEl.textContent === layer) {
-              const dimEls = Array.from(el.getElementsByTagName("Dimension"));
+              const dimEls = Array.from(el.getElementsByTagNameNS("*", "Dimension"));
               for (const dim of dimEls) {
                 if (dim.getAttribute("name") === "time" && dim.textContent) {
                   times = dim.textContent.split(",").map(t => t.trim()).filter(Boolean);
