@@ -1065,31 +1065,30 @@ export default function TropicalAdvisories() {
 
   // Shared playback control state (used by both radar and satellite)
   const [pbPlaying, setPbPlaying] = useState(true);          // play/pause
-  const [pbFrameIdx, setPbFrameIdx] = useState(0);           // current frame index (controlled)
-  const [pbTotal, setPbTotal] = useState(0);                  // total frames
-  const [pbTimestamp, setPbTimestamp] = useState("");         // ISO timestamp of current frame
+  // Single state object for frame info -- ensures exactly one re-render per frame advance,
+  // eliminating the blurry/doubled clock caused by three separate setState calls.
+  const [pbState, setPbState] = useState({ frameIdx: 0, total: 0, timestamp: "" });
   const [pbRequestIdx, setPbRequestIdx] = useState(0);       // external step request (changes trigger layer)
 
   // Which layer is driving the playback bar (radar takes priority if both on)
   const pbActive = showRadar || showSatellite;
 
-  // Callback for layers to report frame changes back to the control bar
+  // Callback for layers to report frame changes back to the control bar.
+  // Single setState call guarantees exactly one re-render per frame advance.
   const handleFrameChange = useCallback((idx: number, total: number, ts: string) => {
-    setPbFrameIdx(idx);
-    setPbTotal(total);
-    setPbTimestamp(ts);
+    setPbState({ frameIdx: idx, total, timestamp: ts });
   }, []);
 
   // Step forward/back handlers
   const pbStepForward = useCallback(() => {
     setPbRequestIdx(prev => prev + 1);
-    setPbFrameIdx(prev => (pbTotal > 0 ? (prev + 1) % pbTotal : prev));
-  }, [pbTotal]);
+    setPbState(prev => (prev.total > 0 ? { ...prev, frameIdx: (prev.frameIdx + 1) % prev.total } : prev));
+  }, []);
 
   const pbStepBack = useCallback(() => {
     setPbRequestIdx(prev => prev - 1);
-    setPbFrameIdx(prev => (pbTotal > 0 ? (prev - 1 + pbTotal) % pbTotal : prev));
-  }, [pbTotal]);
+    setPbState(prev => (prev.total > 0 ? { ...prev, frameIdx: (prev.frameIdx - 1 + prev.total) % prev.total } : prev));
+  }, []);
 
   // NHC tropical outlook toggle: off | 2day | 7day
   const [outlookMode, setOutlookMode] = useState<OutlookMode>("off");
@@ -1403,7 +1402,7 @@ export default function TropicalAdvisories() {
             <SatelliteLayer
               enabled={showSatellite}
               isPlaying={pbPlaying}
-              frameIdx={pbFrameIdx}
+              frameIdx={pbState.frameIdx}
               onFrameChange={handleFrameChange}
             />
 
@@ -1470,8 +1469,8 @@ export default function TropicalAdvisories() {
               {/* Timestamp and frame counter */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "0.72rem", color: "#7B9BB5", fontFamily: "monospace" }}>
-                  {pbTimestamp
-                    ? new Date(pbTimestamp).toLocaleString("en-US", {
+                  {pbState.timestamp
+                    ? new Date(pbState.timestamp).toLocaleString("en-US", {
                         month: "numeric", day: "numeric", year: "2-digit",
                         hour: "numeric", minute: "2-digit", hour12: true,
                         timeZoneName: "short",
@@ -1479,7 +1478,7 @@ export default function TropicalAdvisories() {
                     : "Loading..."}
                 </span>
                 <span style={{ fontSize: "0.72rem", color: "#7B9BB5", marginLeft: 12 }}>
-                  {pbTotal > 0 ? `${pbFrameIdx + 1} / ${pbTotal}` : "--"}
+                  {pbState.total > 0 ? `${pbState.frameIdx + 1} / ${pbState.total}` : "--"}
                 </span>
               </div>
               {/* Controls row */}
