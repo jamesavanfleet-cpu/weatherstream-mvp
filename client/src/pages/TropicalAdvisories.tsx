@@ -187,15 +187,15 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
 // appears in ~1-2 s and 12 frames finish loading in ~12-24 s total.
 //
 // GIBS layers used:
-//   GOES-East  (Caribbean/US/Gulf/East Coast): GOES-East_ABI_Band13_Clean_Infrared_v0_NRT
-//   GOES-West  (Pacific):                     GOES-West_ABI_Band13_Clean_Infrared_v0_NRT
-//   Global IR  (Mediterranean/other):         VIIRS_NOAA20_CorrectedReflectance_TrueColor
-//     (fallback uses GOES-East global composite: GOES-East_ABI_Band13_Clean_Infrared_v0_NRT
-//      at wider zoom -- GIBS serves it globally with transparent fill outside coverage)
+//   GOES-East  (Caribbean/US/Gulf/East Coast): GOES-East_ABI_Band13_Clean_Infrared
+//   GOES-West  (Pacific):                     GOES-West_ABI_Band13_Clean_Infrared
+//   Himawari   (Mediterranean/Asia/global):   Himawari_AHI_Band13_Clean_Infrared
 //
 // WMTS URL pattern:
-//   https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/GoogleMapsCompatible/{z}/{y}/{x}.png
+//   https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png
 // Time format: YYYY-MM-DDTHH:MM:SSZ (10-minute intervals, last ~2 hours available)
+// TileMatrixSet: GoogleMapsCompatible_Level6 (max zoom 6 -- confirmed from GetCapabilities)
+// Safety margin: subtract 2 intervals from latest to avoid "not yet cached" 404s
 interface SatelliteLayerProps {
   enabled: boolean;
   isPlaying: boolean;
@@ -229,8 +229,9 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   const GOES_WEST_NORTH = 60.0;
 
   // GIBS WMTS URL template builder
+  // TileMatrixSet must be GoogleMapsCompatible_Level6 (not GoogleMapsCompatible) -- confirmed from GetCapabilities
   const gibsUrl = (layer: string, time: string) =>
-    `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${time}/GoogleMapsCompatible/{z}/{y}/{x}.png`;
+    `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${time}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
 
   // Determine which GIBS layer to use based on viewport center.
   // GOES_CENTER_MARKER
@@ -241,28 +242,28 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       center.lng >= GOES_WEST_WEST && center.lng <= GOES_WEST_EAST &&
       center.lat >= GOES_WEST_SOUTH && center.lat <= GOES_WEST_NORTH
     ) {
-      return { layer: "GOES-West_ABI_Band13_Clean_Infrared_v0_NRT", intervalMin: 10, maxFrames: 12 };
+      return { layer: "GOES-West_ABI_Band13_Clean_Infrared", intervalMin: 10, maxFrames: 12 };
     }
     // Caribbean / US / Gulf / East Coast: use GOES-East
     if (
       center.lng >= GOES_EAST_WEST && center.lng <= GOES_EAST_EAST &&
       center.lat >= GOES_EAST_SOUTH && center.lat <= GOES_EAST_NORTH
     ) {
-      return { layer: "GOES-East_ABI_Band13_Clean_Infrared_v0_NRT", intervalMin: 10, maxFrames: 12 };
+      return { layer: "GOES-East_ABI_Band13_Clean_Infrared", intervalMin: 10, maxFrames: 12 };
     }
-    // Mediterranean / other regions: GOES-East has global coverage with transparent fill
-    // outside its disk -- use it as the global fallback so the layer name stays consistent.
-    return { layer: "GOES-East_ABI_Band13_Clean_Infrared_v0_NRT", intervalMin: 10, maxFrames: 12 };
+    // Mediterranean / Asia / other regions: use Himawari (covers 80E-160W, 60S-60N)
+    return { layer: "Himawari_AHI_Band13_Clean_Infrared", intervalMin: 10, maxFrames: 12 };
   };
 
   // Generate the last N timestamps at 10-minute intervals ending at the most
-  // recent completed 10-minute mark. GIBS NRT data is available within ~5 min
-  // of observation time, so we subtract one extra interval as a safety margin.
+  // recent confirmed-available 10-minute mark. GIBS NRT tiles take ~5-15 min
+  // to become available after observation time. Subtract 2 intervals (20 min)
+  // as a safety margin to avoid 404s on the most recent not-yet-cached tiles.
   const buildTimestamps = (count: number): string[] => {
     const now = new Date();
-    // Round down to the nearest 10-minute mark, then subtract one interval
+    // Round down to the nearest 10-minute mark, then subtract 2 intervals
     const ms10 = 10 * 60 * 1000;
-    const latest = new Date(Math.floor(now.getTime() / ms10) * ms10 - ms10);
+    const latest = new Date(Math.floor(now.getTime() / ms10) * ms10 - 2 * ms10);
     const stamps: string[] = [];
     for (let i = count - 1; i >= 0; i--) {
       const t = new Date(latest.getTime() - i * ms10);
