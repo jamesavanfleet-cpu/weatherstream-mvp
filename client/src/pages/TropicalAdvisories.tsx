@@ -203,9 +203,23 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   const isPlayingRef = useRef(isPlaying);
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
+  // Holds the current moveend/zoomend listener so it can be detached on teardown
+  const moveListenerRef = useRef<(() => void) | null>(null);
   // Brightness threshold: pixels with mean RGB below this become transparent
   // IR imagery: clear sky ~1-30, thin cloud ~30-80, thick cloud ~80-255
   const CLOUD_THRESHOLD = 35;
+
+  // Full teardown: stop timer, remove all overlays from map, detach move listeners
+  const teardown = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+    overlaysRef.current = [];
+    if (moveListenerRef.current) {
+      map.off("moveend", moveListenerRef.current);
+      map.off("zoomend", moveListenerRef.current);
+      moveListenerRef.current = null;
+    }
+  }, [map]);
 
   // Build a WMS GetMap URL for a given timestamp and map bounds
   const buildWmsUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }) => {
@@ -264,38 +278,56 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     });
   };
 
-  // Show frame at index, hide all others (instant, no flashing)
+  // Show frame at index, hide all others (instant, no flashing).
+  // Uses setProperty so it overrides the "important" flag set during creation.
   const showFrame = (idx: number) => {
     overlaysRef.current.forEach((ov, i) => {
       const el = ov.getElement();
-      if (el) el.style.opacity = i === idx ? "0.9" : "0";
+      if (el) el.style.setProperty("opacity", i === idx ? "0.9" : "0", "important");
     });
     idxRef.current = idx;
     const ts = timestampsRef.current[idx] ?? "";
     onFrameChangeRef.current(idx, overlaysRef.current.length, ts);
   };
 
-  // Load all frames for current bounds and start animation
-  const loadFrames = async () => {
+  // Load all frames for current bounds and start animation.
+  // All frames are fully downloaded and canvas-processed off-screen first.
+  // Overlays are created with opacity forced to 0 via direct DOM style BEFORE
+  // Leaflet's async _initImage can make them visible. Only after all overlays
+  // are ready does showFrame reveal the latest one.
+  const loadFrames = useCallback(async () => {
     if (!enabledRef.current || timestampsRef.current.length === 0) return;
     const bounds = map.getBounds();
     const size = map.getSize();
-    // Stop animation while loading
+    // Stop animation timer but keep old overlays visible during load
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    // Remove old overlays
-    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+    const oldOverlays = overlaysRef.current.slice();
     overlaysRef.current = [];
     try {
-      // Fetch and process all frames in parallel
+      // Fetch and process all frames in parallel, completely off-screen
       const dataUrls = await Promise.all(
         timestampsRef.current.map(ts => fetchProcessedFrame(buildWmsUrl(bounds, ts, size)))
       );
-      if (!enabledRef.current) return; // disabled while loading
-      // Create overlays from processed canvas data URLs, all hidden initially
+      if (!enabledRef.current) {
+        // Disabled while loading -- clean up old overlays and bail
+        oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+        return;
+      }
+      // Remove old overlays and create new ones atomically.
+      // CRITICAL: force el.style.opacity = "0" immediately after addTo(map)
+      // because Leaflet's opacity constructor option is applied asynchronously
+      // after _initImage fires -- without this, every frame flashes at full
+      // opacity for one paint cycle before showFrame can hide them.
+      oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
       overlaysRef.current = dataUrls.map(dataUrl => {
         const ov = L.imageOverlay(dataUrl, bounds, { opacity: 0, zIndex: 240 }).addTo(map);
+        // Force opacity to 0 immediately via direct DOM style -- do not rely on
+        // Leaflet's opacity option which fires asynchronously
         const el = ov.getElement();
-        if (el) el.style.pointerEvents = "none";
+        if (el) {
+          el.style.setProperty("opacity", "0", "important");
+          el.style.pointerEvents = "none";
+        }
         return ov;
       });
       // Show most recent frame
@@ -310,19 +342,17 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
       }
     } catch {
       // Silently fail -- satellite is optional
+      oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
     }
-  };
+  }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Main effect: fetch timestamps and load frames when enabled
   useEffect(() => {
     if (!enabled) {
-      overlaysRef.current.forEach(ov => {
-        const el = ov.getElement();
-        if (el) el.style.opacity = "0";
-      });
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null;
+      // Full teardown: remove overlays from map, stop timer, detach move listeners
+      teardown();
       enabledRef.current = false;
+      loadedRef.current = false;
       return;
     }
     enabledRef.current = true;
@@ -354,18 +384,15 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
 
     // Reload frames on map move/zoom so image stays aligned with viewport
     const onMove = () => { if (enabledRef.current) loadFrames(); };
+    moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
 
     return () => {
-      map.off("moveend", onMove);
-      map.off("zoomend", onMove);
-      overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-      overlaysRef.current = [];
+      teardown();
       loadedRef.current = false;
-      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [enabled, map]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, map, teardown, loadFrames]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Respond to play/pause toggle without reloading data
   useEffect(() => {
@@ -416,6 +443,20 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
   const isPlayingRef = useRef(isPlaying);
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
+  // Holds the current moveend/zoomend listener so it can be detached on teardown
+  const moveListenerRef = useRef<(() => void) | null>(null);
+
+  // Full teardown: stop timer, remove all overlays from map, detach move listeners
+  const teardown = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+    overlaysRef.current = [];
+    if (moveListenerRef.current) {
+      map.off("moveend", moveListenerRef.current);
+      map.off("zoomend", moveListenerRef.current);
+      moveListenerRef.current = null;
+    }
+  }, [map]);
 
   // Build a WMS GetMap URL for a given timestamp and map bounds
   // Composites CONUS + Caribbean layers so both are visible in one image
@@ -440,11 +481,12 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     return url;
   };
 
-  // Show frame at index, hide all others
+  // Show frame at index, hide all others.
+  // Uses setProperty so it overrides the "important" flag set during creation.
   const showFrame = (idx: number) => {
     overlaysRef.current.forEach((ov, i) => {
       const el = ov.getElement();
-      if (el) el.style.opacity = i === idx ? "0.85" : "0";
+      if (el) el.style.setProperty("opacity", i === idx ? "0.85" : "0", "important");
     });
     idxRef.current = idx;
     const ts = timestampsRef.current[idx] ?? "";
@@ -496,14 +538,27 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     );
 
     // Bail if layer was disabled while we were loading
-    if (!enabledRef.current) return;
+    if (!enabledRef.current) {
+      oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
+      return;
+    }
 
     // Step 2: Remove old overlays and create new ones with final data URLs
-    // in one synchronous block -- no async gap, no blank frames
+    // in one synchronous block -- no async gap, no blank frames.
+    // CRITICAL: force el.style.opacity = "0" immediately after addTo(map)
+    // because Leaflet's opacity constructor option is applied asynchronously
+    // after _initImage fires -- without this, every frame flashes at full
+    // opacity for one paint cycle before showFrame can hide them.
     oldOverlays.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-    overlaysRef.current = dataUrls.map(url =>
-      L.imageOverlay(url, bounds, { opacity: 0, zIndex: 300 }).addTo(map)
-    );
+    overlaysRef.current = dataUrls.map(url => {
+      const ov = L.imageOverlay(url, bounds, { opacity: 0, zIndex: 300 }).addTo(map);
+      const el = ov.getElement();
+      if (el) {
+        el.style.setProperty("opacity", "0", "important");
+        el.style.pointerEvents = "none";
+      }
+      return ov;
+    });
 
     // Step 3: Show most recent frame and start animation
     showFrame(overlaysRef.current.length - 1);
@@ -518,13 +573,10 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
   // Main effect: fetch timestamps and load frames when enabled
   useEffect(() => {
     if (!enabled) {
-      overlaysRef.current.forEach(ov => {
-        const el = ov.getElement();
-        if (el) el.style.opacity = "0";
-      });
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null;
+      // Full teardown: remove overlays from map, stop timer, detach move listeners
+      teardown();
       enabledRef.current = false;
+      loadedRef.current = false;
       return;
     }
     enabledRef.current = true;
@@ -557,18 +609,15 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
 
     // Reload frames on map move/zoom so image stays aligned with viewport
     const onMove = () => { if (enabledRef.current) loadFrames(); };
+    moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
 
     return () => {
-      map.off("moveend", onMove);
-      map.off("zoomend", onMove);
-      overlaysRef.current.forEach(ov => { try { map.removeLayer(ov); } catch { /* ignore */ } });
-      overlaysRef.current = [];
+      teardown();
       loadedRef.current = false;
-      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [enabled, map]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, map, teardown]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Respond to play/pause toggle without reloading data
   useEffect(() => {
