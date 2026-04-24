@@ -215,6 +215,21 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
   onFrameChangeRef.current = onFrameChange;
   const moveListenerRef = useRef<(() => void) | null>(null);
   const currentLayerRef = useRef<string>("");
+  // Per-frame readiness state.
+  // "pending" = tiles still loading or retrying
+  // "ready"   = enough tiles loaded successfully -- safe to display
+  // "bad"     = permanently failed after all retries -- skip in animation
+  const frameStateRef = useRef<Array<"pending" | "ready" | "bad">>([]);
+  // Per-frame tile error counters: how many tiles failed for each frame index
+  const tileErrorCountRef = useRef<number[]>([]);
+  // Per-frame tile load counters: how many tiles loaded successfully for each frame index
+  const tileLoadCountRef = useRef<number[]>([]);
+  // Per-frame total tile counts: how many tiles were requested for each frame index
+  const tileTotalCountRef = useRef<number[]>([]);
+  // Max retries per tile before marking the frame as bad
+  const MAX_TILE_RETRIES = 2;
+  // Per-tile retry counters keyed by tile URL
+  const tileRetriesRef = useRef<Map<string, number>>(new Map());
 
   // GOES-East coverage bounds (viewport center check)
   const GOES_EAST_WEST = -179.5;
@@ -277,15 +292,38 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     return stamps;
   };
 
-  // Show one frame by index: set that layer to opacity 1, all others to 0
+  // Show one frame by index, skipping frames that are permanently bad.
+  // Searches forward (wrapping) from the requested index until it finds a
+  // frame that is not "bad". If ALL frames are bad, shows the requested index
+  // anyway (degenerate case -- better than freezing).
   const showFrame = useCallback((idx: number) => {
     const layers = tileLayersRef.current;
     if (layers.length === 0) return;
-    const clamped = Math.max(0, Math.min(idx, layers.length - 1));
-    layers.forEach((tl, i) => tl.setOpacity(i === clamped ? 0.85 : 0));
-    idxRef.current = clamped;
-    const ts = timestampsRef.current[clamped] ?? "";
-    onFrameChangeRef.current(clamped, layers.length, ts);
+    const states = frameStateRef.current;
+    // Find the nearest non-bad frame starting from idx, searching forward
+    let target = Math.max(0, Math.min(idx, layers.length - 1));
+    if (states.length === layers.length) {
+      let searched = 0;
+      while (states[target] === "bad" && searched < layers.length) {
+        target = (target + 1) % layers.length;
+        searched++;
+      }
+      // If every frame is bad, fall back to the original clamped index
+      if (searched === layers.length) {
+        target = Math.max(0, Math.min(idx, layers.length - 1));
+      }
+    }
+    layers.forEach((tl, i) => tl.setOpacity(i === target ? 0.85 : 0));
+    idxRef.current = target;
+    // Report position within ready-only frames so the counter shows meaningful numbers
+    const readyIndices = states.length === layers.length
+      ? states.map((s, i) => s !== "bad" ? i : -1).filter(i => i !== -1)
+      : layers.map((_, i) => i);
+    const posInReady = readyIndices.indexOf(target);
+    const displayIdx = posInReady >= 0 ? posInReady : target;
+    const displayTotal = readyIndices.length > 0 ? readyIndices.length : layers.length;
+    const ts = timestampsRef.current[target] ?? "";
+    onFrameChangeRef.current(displayIdx, displayTotal, ts);
   }, []);
 
   // Remove all tile layers from the map and clear the ref array
@@ -305,18 +343,87 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     }
   }, [map, removeTileLayers]);
 
-  // Build and add tile layers for all frames, show the most recent one immediately
+  // Build and add tile layers for all frames, show the most recent one immediately.
+  // Attaches per-tile load/error listeners to track frame readiness and retry failed tiles.
   const loadFrames = useCallback((layer: string, timestamps: string[]) => {
     removeTileLayers();
+    tileRetriesRef.current = new Map();
     if (timestamps.length === 0) return;
-    const newLayers = timestamps.map((ts, i) =>
-      L.tileLayer(gibsUrl(layer, ts), {
-        opacity: i === timestamps.length - 1 ? 0.85 : 0,
+
+    // Initialise per-frame state arrays
+    frameStateRef.current = timestamps.map(() => "pending" as const);
+    tileErrorCountRef.current = timestamps.map(() => 0);
+    tileLoadCountRef.current = timestamps.map(() => 0);
+    tileTotalCountRef.current = timestamps.map(() => 0);
+
+    const newLayers = timestamps.map((ts, frameIdx) => {
+      const tl = L.tileLayer(gibsUrl(layer, ts), {
+        opacity: frameIdx === timestamps.length - 1 ? 0.85 : 0,
         attribution: "NASA GIBS",
         tileSize: 256,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any)
-    );
+      } as any);
+
+      // Track how many tiles Leaflet requests for this frame
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tl.on("tileloadstart", () => {
+        tileTotalCountRef.current[frameIdx] = (tileTotalCountRef.current[frameIdx] ?? 0) + 1;
+      });
+
+      // On successful tile load: increment loaded counter; if all tiles for this
+      // frame are now loaded, mark the frame as ready.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tl.on("tileload", () => {
+        tileLoadCountRef.current[frameIdx] = (tileLoadCountRef.current[frameIdx] ?? 0) + 1;
+        const loaded = tileLoadCountRef.current[frameIdx];
+        const errors = tileErrorCountRef.current[frameIdx];
+        const total = tileTotalCountRef.current[frameIdx];
+        // Mark ready once the loaded tiles account for the non-errored tiles
+        // (i.e. all tiles that could load have loaded)
+        if (total > 0 && loaded + errors >= total && errors < total) {
+          frameStateRef.current[frameIdx] = "ready";
+        }
+      });
+
+      // On tile error: retry up to MAX_TILE_RETRIES times with a 1.5 s delay.
+      // After all retries exhausted, increment the error counter and check
+      // whether the frame should be marked bad.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tl.on("tileerror", (e: any) => {
+        const tileEl: HTMLImageElement | undefined = e.tile;
+        const url: string = tileEl?.src ?? "";
+        const retries = tileRetriesRef.current.get(url) ?? 0;
+        if (retries < MAX_TILE_RETRIES && tileEl) {
+          // Schedule a retry: blank the src briefly then restore it
+          tileRetriesRef.current.set(url, retries + 1);
+          setTimeout(() => {
+            if (tileEl && tileEl.src) {
+              const originalSrc = url;
+              tileEl.src = "";
+              tileEl.src = originalSrc;
+            }
+          }, 1500 * (retries + 1)); // back-off: 1.5 s, 3 s
+        } else {
+          // Retries exhausted for this tile -- count it as a permanent error
+          tileErrorCountRef.current[frameIdx] = (tileErrorCountRef.current[frameIdx] ?? 0) + 1;
+          const loaded = tileLoadCountRef.current[frameIdx];
+          const errors = tileErrorCountRef.current[frameIdx];
+          const total = tileTotalCountRef.current[frameIdx];
+          // Mark the frame bad only if MORE than half the tiles failed.
+          // A few 404s on out-of-coverage edge tiles is normal and acceptable;
+          // we only want to skip frames where the majority of imagery is missing.
+          if (total > 0 && errors > total / 2) {
+            frameStateRef.current[frameIdx] = "bad";
+          } else if (total > 0 && loaded + errors >= total) {
+            // Minority of tiles failed but enough loaded -- still mark ready
+            frameStateRef.current[frameIdx] = "ready";
+          }
+        }
+      });
+
+      return tl;
+    });
+
     // Add all layers to the map (invisible ones load in background)
     newLayers.forEach(tl => tl.addTo(map));
     tileLayersRef.current = newLayers;
@@ -377,6 +484,7 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     if (isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
+        // Always advance through the full layer array; showFrame will skip bad frames
         showFrame((idxRef.current + 1) % tileLayersRef.current.length);
       }, 900);
     } else {
