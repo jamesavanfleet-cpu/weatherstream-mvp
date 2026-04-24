@@ -64,6 +64,9 @@ jobs:
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
           cp /tmp/deploy-output/index.html index.html
+          # Copy static data files shipped with the build
+          cp /tmp/deploy-output/maritime_routes.json maritime_routes.json 2>/dev/null || true
+          cp /tmp/deploy-output/climate_database.json climate_database.json 2>/dev/null || true
 
           # Restore preserved files
           cp /tmp/cname-backup CNAME 2>/dev/null || true
