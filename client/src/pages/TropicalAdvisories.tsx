@@ -348,9 +348,11 @@ function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: Satelli
     canvas.style.zIndex = "401";
     overlayPane.appendChild(canvas);
     canvasRef.current = canvas;
-    // Keep canvas pixel dimensions in sync with the pane size on resize
+    // Keep canvas pixel dimensions in sync with the map container size on resize.
+    // We measure map.getContainer() -- NOT overlayPane -- because the overlay pane
+    // has no intrinsic size and getBoundingClientRect() on it always returns 0x0.
     const onResize = () => {
-      const r = overlayPane.getBoundingClientRect();
+      const r = map.getContainer().getBoundingClientRect();
       canvas.width = Math.round(r.width);
       canvas.height = Math.round(r.height);
     };
@@ -596,9 +598,11 @@ function RadarLayer({ enabled, isPlaying, frameIdx, onFrameChange }: RadarLayerP
     canvas.style.zIndex = "400";
     overlayPane.appendChild(canvas);
     canvasRef.current = canvas;
-    // Keep canvas pixel dimensions in sync with the pane size on resize
+    // Keep canvas pixel dimensions in sync with the map container size on resize.
+    // We measure map.getContainer() -- NOT overlayPane -- because the overlay pane
+    // has no intrinsic size and getBoundingClientRect() on it always returns 0x0.
     const onResize = () => {
-      const r = overlayPane.getBoundingClientRect();
+      const r = map.getContainer().getBoundingClientRect();
       canvas.width = Math.round(r.width);
       canvas.height = Math.round(r.height);
     };
