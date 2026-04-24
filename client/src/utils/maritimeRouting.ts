@@ -243,7 +243,10 @@ const SEA_GATES: Record<string, LatLon[]> = {
     [22.5, -82.0],
   ],
   "bahamas|gulf-us": [
+    // Florida Strait -> Florida Keys -> Gulf
+    [25.76, -79.96],
     [25.0, -80.5],
+    [24.6, -81.5],
   ],
   "us-east|yucatan-south": [
     [24.0, -81.5],
@@ -263,10 +266,14 @@ const SEA_GATES: Record<string, LatLon[]> = {
     [21.0, -81.5],
   ],
   "bahamas|yucatan-east": [
+    // Northwest Providence Channel -> Old Bahama Channel -> Yucatan
+    [25.76, -79.96],
     [23.5, -79.5],
     [22.0, -83.0],
   ],
   "bahamas|jamaica": [
+    // Windward Passage
+    [24.0, -76.5],
     [22.5, -77.0],
   ],
   "cayman|yucatan-east": [
@@ -286,6 +293,14 @@ const SEA_GATES: Record<string, LatLon[]> = {
   ],
   "central-america|jamaica": [
     [16.5, -82.5],
+  ],
+  "bahamas|us-east": [
+    // Northwest Providence Channel -> Florida Strait
+    [25.59, -78.14],
+    [26.3, -78.8],
+    [26.09, -79.54],
+    [25.79, -79.82],
+    [25.76, -79.96],
   ],
   "alaska-north|alaska-south": [
     [50.5, -127.0],
