@@ -178,11 +178,24 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
   return null;
 }
 
-// ── Animated global satellite layer (NOAA nowCOAST GMGSI global mosaic) ─────
-// Single-canvas architecture: ONE <canvas> element is positioned over the map.
-// All 6 frames are pre-decoded into ImageBitmap objects off-screen.
-// Frame advance = ctx.clearRect + ctx.drawImage -- a single GPU blit.
-// Zero DOM element swapping, zero Leaflet opacity timing races, zero flash.
+// ── Animated satellite layer (NASA GIBS NRT pre-tiled WMTS approach) ──────────
+// SATELLITE_GIBS_MARKER
+//
+// Architecture: one Leaflet TileLayer per frame, all created upfront.
+// Only one TileLayer is visible at a time (opacity 1 vs 0). Tiles are
+// CDN-cached by NASA GIBS and load in 0.3-0.5 s each, so the first frame
+// appears in ~1-2 s and 12 frames finish loading in ~12-24 s total.
+//
+// GIBS layers used:
+//   GOES-East  (Caribbean/US/Gulf/East Coast): GOES-East_ABI_Band13_Clean_Infrared_v0_NRT
+//   GOES-West  (Pacific):                     GOES-West_ABI_Band13_Clean_Infrared_v0_NRT
+//   Global IR  (Mediterranean/other):         VIIRS_NOAA20_CorrectedReflectance_TrueColor
+//     (fallback uses GOES-East global composite: GOES-East_ABI_Band13_Clean_Infrared_v0_NRT
+//      at wider zoom -- GIBS serves it globally with transparent fill outside coverage)
+//
+// WMTS URL pattern:
+//   https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/GoogleMapsCompatible/{z}/{y}/{x}.png
+// Time format: YYYY-MM-DDTHH:MM:SSZ (10-minute intervals, last ~2 hours available)
 interface SatelliteLayerProps {
   enabled: boolean;
   isPlaying: boolean;
@@ -192,320 +205,191 @@ interface SatelliteLayerProps {
 
 function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: SatelliteLayerProps) {
   const map = useMap();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const bitmapsRef = useRef<ImageBitmap[]>([]);
+  const tileLayersRef = useRef<L.TileLayer[]>([]);
   const idxRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timestampsRef = useRef<string[]>([]);
-  const loadedRef = useRef(false);
   const enabledRef = useRef(enabled);
   const isPlayingRef = useRef(isPlaying);
   const onFrameChangeRef = useRef(onFrameChange);
   onFrameChangeRef.current = onFrameChange;
   const moveListenerRef = useRef<(() => void) | null>(null);
-  // Stored so it can be detached on teardown
-  const clearListenerRef = useRef<(() => void) | null>(null);
-  // Tracks which WMS layer is currently active so we know when to regenerate timestamps
   const currentLayerRef = useRef<string>("");
-  const CLOUD_THRESHOLD = 35;
 
-  // GOES-East/West coverage bounds (conservative thresholds to avoid boundary edge cases)
-  const GOES_WEST = -179.5;
-  const GOES_EAST = -52.0;
-  const GOES_SOUTH = 12.0;
-  const GOES_NORTH = 50.6;
+  // GOES-East coverage bounds (viewport center check)
+  const GOES_EAST_WEST = -179.5;
+  const GOES_EAST_EAST = -52.0;
+  const GOES_EAST_SOUTH = 12.0;
+  const GOES_EAST_NORTH = 50.6;
 
-  // Determine which satellite layer to use based on current map viewport.
-  // Uses the viewport CENTER to decide: if the center is within GOES-East coverage,
-  // use the high-frequency GOES layer (5-min, 24 frames). This ensures the Caribbean,
-  // Gulf, and US East/West Coast views always use GOES even when the viewport extends
-  // south of 12N or east of 52W. Switches to global mosaic (60-min, 6 frames) only
-  // when the user has panned to a region outside GOES coverage (Mediterranean, Pacific, etc.).
+  // GOES-West coverage bounds (viewport center check)
+  const GOES_WEST_WEST = -179.5;
+  const GOES_WEST_EAST = -100.0;
+  const GOES_WEST_SOUTH = 10.0;
+  const GOES_WEST_NORTH = 60.0;
+
+  // GIBS WMTS URL template builder
+  const gibsUrl = (layer: string, time: string) =>
+    `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${time}/GoogleMapsCompatible/{z}/{y}/{x}.png`;
+
+  // Determine which GIBS layer to use based on viewport center.
   // GOES_CENTER_MARKER
   const getActiveLayer = (bounds: L.LatLngBounds): { layer: string; intervalMin: number; maxFrames: number } => {
     const center = bounds.getCenter();
-    if (center.lng >= GOES_WEST && center.lng <= GOES_EAST && center.lat >= GOES_SOUTH && center.lat <= GOES_NORTH) {
-      return { layer: "goes_longwave_imagery", intervalMin: 5, maxFrames: 24 };
+    // Pacific: use GOES-West
+    if (
+      center.lng >= GOES_WEST_WEST && center.lng <= GOES_WEST_EAST &&
+      center.lat >= GOES_WEST_SOUTH && center.lat <= GOES_WEST_NORTH
+    ) {
+      return { layer: "GOES-West_ABI_Band13_Clean_Infrared_v0_NRT", intervalMin: 10, maxFrames: 12 };
     }
-    return { layer: "global_longwave_imagery_mosaic", intervalMin: 60, maxFrames: 6 };
+    // Caribbean / US / Gulf / East Coast: use GOES-East
+    if (
+      center.lng >= GOES_EAST_WEST && center.lng <= GOES_EAST_EAST &&
+      center.lat >= GOES_EAST_SOUTH && center.lat <= GOES_EAST_NORTH
+    ) {
+      return { layer: "GOES-East_ABI_Band13_Clean_Infrared_v0_NRT", intervalMin: 10, maxFrames: 12 };
+    }
+    // Mediterranean / other regions: GOES-East has global coverage with transparent fill
+    // outside its disk -- use it as the global fallback so the layer name stays consistent.
+    return { layer: "GOES-East_ABI_Band13_Clean_Infrared_v0_NRT", intervalMin: 10, maxFrames: 12 };
   };
 
-  // Immediately blank the canvas -- called on movestart/zoomstart so stale
-  // imagery disappears the instant the user begins interacting with the map
-  const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Generate the last N timestamps at 10-minute intervals ending at the most
+  // recent completed 10-minute mark. GIBS NRT data is available within ~5 min
+  // of observation time, so we subtract one extra interval as a safety margin.
+  const buildTimestamps = (count: number): string[] => {
+    const now = new Date();
+    // Round down to the nearest 10-minute mark, then subtract one interval
+    const ms10 = 10 * 60 * 1000;
+    const latest = new Date(Math.floor(now.getTime() / ms10) * ms10 - ms10);
+    const stamps: string[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      const t = new Date(latest.getTime() - i * ms10);
+      const yyyy = t.getUTCFullYear();
+      const mm = String(t.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(t.getUTCDate()).padStart(2, "0");
+      const hh = String(t.getUTCHours()).padStart(2, "0");
+      const min = String(t.getUTCMinutes()).padStart(2, "0");
+      stamps.push(`${yyyy}-${mm}-${dd}T${hh}:${min}:00Z`);
+    }
+    return stamps;
+  };
+
+  // Show one frame by index: set that layer to opacity 1, all others to 0
+  const showFrame = useCallback((idx: number) => {
+    const layers = tileLayersRef.current;
+    if (layers.length === 0) return;
+    const clamped = Math.max(0, Math.min(idx, layers.length - 1));
+    layers.forEach((tl, i) => tl.setOpacity(i === clamped ? 0.85 : 0));
+    idxRef.current = clamped;
+    const ts = timestampsRef.current[clamped] ?? "";
+    onFrameChangeRef.current(clamped, layers.length, ts);
   }, []);
 
-  // Draw one bitmap onto the canvas
-  const drawFrame = useCallback((idx: number) => {
-    const canvas = canvasRef.current;
-    const bitmaps = bitmapsRef.current;
-    if (!canvas || bitmaps.length === 0) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const bm = bitmaps[idx];
-    if (bm) ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
-    idxRef.current = idx;
-    const ts = timestampsRef.current[idx] ?? "";
-    onFrameChangeRef.current(idx, bitmaps.length, ts);
-  }, []);
+  // Remove all tile layers from the map and clear the ref array
+  const removeTileLayers = useCallback(() => {
+    tileLayersRef.current.forEach(tl => { try { map.removeLayer(tl); } catch { /* ignore */ } });
+    tileLayersRef.current = [];
+  }, [map]);
 
-  // Full teardown: stop timer, hide canvas, detach all map listeners
+  // Full teardown: stop timer, remove all tile layers, detach map listeners
   const teardown = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      canvas.style.display = "none";
-    }
+    removeTileLayers();
     if (moveListenerRef.current) {
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
       moveListenerRef.current = null;
     }
-    if (clearListenerRef.current) {
-      map.off("movestart", clearListenerRef.current);
-      map.off("zoomstart", clearListenerRef.current);
-      clearListenerRef.current = null;
-    }
-  }, [map]);
+  }, [map, removeTileLayers]);
 
-  // Build WMS GetMap URL
-  const buildWmsUrl = (bounds: L.LatLngBounds, ts: string, size: { x: number; y: number }, layerName: string) => {
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
-    const minLat = Math.max(sw.lat, -85);
-    const maxLat = Math.min(ne.lat, 85);
-    const minLng = Math.max(sw.lng, -180);
-    const maxLng = Math.min(ne.lng, 180);
-    const w = Math.max(256, Math.min(1024, Math.round(size.x)));
-    const h = Math.max(256, Math.min(1024, Math.round(size.y)));
-    let url = `https://nowcoast.noaa.gov/geoserver/satellite/wms`
-      + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
-      + `&LAYERS=${layerName}`
-      + `&CRS=EPSG:4326&BBOX=${minLat},${minLng},${maxLat},${maxLng}`
-      + `&WIDTH=${w}&HEIGHT=${h}&FORMAT=image/png&TRANSPARENT=TRUE`;
-    if (ts) url += `&TIME=${encodeURIComponent(ts)}`;
-    return url;
-  };
-
-  // Fetch one WMS frame, apply cloud threshold, return ImageBitmap
-  const fetchBitmap = (wmsUrl: string): Promise<ImageBitmap> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        try {
-          const offscreen = document.createElement("canvas");
-          offscreen.width = img.naturalWidth || img.width;
-          offscreen.height = img.naturalHeight || img.height;
-          const ctx = offscreen.getContext("2d");
-          if (!ctx) { reject(new Error("no ctx")); return; }
-          ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
-          const data = imageData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            if (brightness < CLOUD_THRESHOLD) {
-              data[i + 3] = 0;
-            } else {
-              data[i + 3] = Math.min(255, Math.round(((brightness - CLOUD_THRESHOLD) / (255 - CLOUD_THRESHOLD)) * 220));
-            }
-          }
-          ctx.putImageData(imageData, 0, 0);
-          createImageBitmap(offscreen).then(resolve).catch(reject);
-        } catch (e) { reject(e); }
-      };
-      img.onerror = () => reject(new Error("fetch failed"));
-      img.src = wmsUrl;
-    });
-  };
-
-  // Load all frames off-screen, then swap bitmaps and redraw in one step
-  const loadFrames = useCallback(async () => {
-    if (!enabledRef.current || timestampsRef.current.length === 0) return;
-    const bounds = map.getBounds();
-    const size = map.getSize();
+  // Build and add tile layers for all frames, show the most recent one immediately
+  const loadFrames = useCallback((layer: string, timestamps: string[]) => {
+    removeTileLayers();
+    if (timestamps.length === 0) return;
+    const newLayers = timestamps.map((ts, i) =>
+      L.tileLayer(gibsUrl(layer, ts), {
+        opacity: i === timestamps.length - 1 ? 0.85 : 0,
+        attribution: "NASA GIBS",
+        tileSize: 256,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
+    );
+    // Add all layers to the map (invisible ones load in background)
+    newLayers.forEach(tl => tl.addTo(map));
+    tileLayersRef.current = newLayers;
+    // Show the most recent frame immediately
+    const startIdx = newLayers.length - 1;
+    idxRef.current = startIdx;
+    const ts = timestamps[startIdx] ?? "";
+    onFrameChangeRef.current(startIdx, newLayers.length, ts);
+    // Start playback if playing
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    try {
-      // Download + process ALL frames completely off-screen before touching the canvas
-      const newBitmaps = await Promise.all(
-        timestampsRef.current.map(ts => fetchBitmap(buildWmsUrl(bounds, ts, size, currentLayerRef.current)))
-      );
-      if (!enabledRef.current) return;
-      // Close old bitmaps to free GPU memory
-      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
-      bitmapsRef.current = newBitmaps;
-      // Canvas is already sized to 100% of overlayPane -- just show it and draw
-      const canvas = canvasRef.current;
-      if (canvas) canvas.style.display = "block";
-      const startIdx = newBitmaps.length - 1;
-      drawFrame(startIdx);
-      if (isPlayingRef.current && newBitmaps.length > 1) {
-        timerRef.current = setInterval(() => {
-          drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
-        }, 900);
-      }
-    } catch {
-      // Silently fail
+    if (isPlayingRef.current && newLayers.length > 1) {
+      timerRef.current = setInterval(() => {
+        showFrame((idxRef.current + 1) % tileLayersRef.current.length);
+      }, 900);
     }
-  }, [map, drawFrame]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, removeTileLayers, showFrame]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Create and attach the canvas element once on mount.
-  // Appended to overlayPane so it moves and scales with the map automatically.
-  useEffect(() => {
-    const overlayPane = map.getPanes().overlayPane;
-    const canvas = document.createElement("canvas");
-    canvas.style.display = "none";
-    canvas.style.position = "absolute";
-    canvas.style.top = "0";
-    canvas.style.left = "0";
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    canvas.style.pointerEvents = "none";
-    canvas.style.zIndex = "401";
-    overlayPane.appendChild(canvas);
-    canvasRef.current = canvas;
-    // Keep canvas pixel dimensions in sync with the map container size on resize.
-    // We measure map.getContainer() -- NOT overlayPane -- because the overlay pane
-    // has no intrinsic size and getBoundingClientRect() on it always returns 0x0.
-    const onResize = () => {
-      const r = map.getContainer().getBoundingClientRect();
-      canvas.width = Math.round(r.width);
-      canvas.height = Math.round(r.height);
-    };
-    onResize();
-    map.on("resize", onResize);
-    return () => {
-      map.off("resize", onResize);
-      try { overlayPane.removeChild(canvas); } catch { /* ignore */ }
-      canvasRef.current = null;
-      bitmapsRef.current.forEach(bm => { try { bm.close(); } catch { /* ignore */ } });
-      bitmapsRef.current = [];
-    };
-  }, [map]);
-
-  // Main effect: fetch timestamps and load frames when enabled
+  // Main effect: build tile layers when enabled, tear down when disabled
   useEffect(() => {
     if (!enabled) {
       teardown();
       enabledRef.current = false;
-      loadedRef.current = false;
       return;
     }
     enabledRef.current = true;
 
-    const init = async () => {
-      // Determine which layer is appropriate for the current viewport (Option C).
-      // If the viewport is fully within GOES coverage, use the high-frequency GOES layer.
-      // Otherwise fall back to the global mosaic.
-      const { layer } = getActiveLayer(map.getBounds());
-      // If the active layer has changed since the last load, force a timestamp refresh.
-      if (layer !== currentLayerRef.current) {
+    const init = () => {
+      const bounds = map.getBounds();
+      const { layer, maxFrames } = getActiveLayer(bounds);
+      // If the active layer changed (e.g. user panned from Caribbean to Pacific),
+      // rebuild all tile layers with the new GIBS layer name.
+      if (layer !== currentLayerRef.current || tileLayersRef.current.length === 0) {
         currentLayerRef.current = layer;
-        loadedRef.current = false;
+        const timestamps = buildTimestamps(maxFrames);
+        timestampsRef.current = timestamps;
+        loadFrames(layer, timestamps);
       }
-      if (!loadedRef.current) {
-        // Fetch real available timestamps directly from NOAA nowCOAST WMS GetCapabilities.
-        // This is the only reliable source -- it returns exactly the timestamps NOAA has
-        // cached right now, with no dependency on a pre-generated JSON file or cron job.
-        // SATELLITE_GETCAPS_MARKER
-        try {
-          const capsUrl = "https://nowcoast.noaa.gov/geoserver/satellite/wms"
-            + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities";
-          const resp = await fetch(capsUrl);
-          const xmlText = await resp.text();
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(xmlText, "text/xml");
-          // Walk all <Layer> elements to find the one matching our layer name,
-          // then extract the comma-separated TIME dimension values.
-          // Use getElementsByTagNameNS("*", ...) so the query matches regardless of
-          // whether the XML declares a default namespace (xmlns="http://www.opengis.net/wms").
-          // Plain getElementsByTagName("Layer") returns zero elements when a default
-          // namespace is present in browsers that apply namespace rules strictly.
-          // SATELLITE_GETCAPS_NS_FIX_MARKER
-          const layerEls = Array.from(doc.getElementsByTagNameNS("*", "Layer"));
-          let times: string[] = [];
-          for (const el of layerEls) {
-            const nameEl = el.getElementsByTagNameNS("*", "Name")[0];
-            if (nameEl && nameEl.textContent === layer) {
-              const dimEls = Array.from(el.getElementsByTagNameNS("*", "Dimension"));
-              for (const dim of dimEls) {
-                if (dim.getAttribute("name") === "time" && dim.textContent) {
-                  times = dim.textContent.split(",").map(t => t.trim()).filter(Boolean);
-                  break;
-                }
-              }
-              break;
-            }
-          }
-          // Use the most recent maxFrames timestamps so the loop stays manageable.
-          const { maxFrames } = getActiveLayer(map.getBounds());
-          timestampsRef.current = times.slice(-maxFrames);
-        } catch {
-          timestampsRef.current = [];
-        }
-        loadedRef.current = true;
-      }
-      await loadFrames();
     };
     init();
 
-    // Detach any previously registered listeners before registering new ones.
-    // This prevents duplicate listeners accumulating across enable/disable cycles.
+    // Detach any previously registered listeners before registering new ones
     if (moveListenerRef.current) {
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
     }
-    if (clearListenerRef.current) {
-      map.off("movestart", clearListenerRef.current);
-      map.off("zoomstart", clearListenerRef.current);
-    }
-    // onMove calls init (not loadFrames directly) so that crossing the GOES
-    // coverage boundary triggers a layer switch and timestamp regeneration.
     const onMove = () => { if (enabledRef.current) init(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
-    // Clear canvas immediately when user starts panning/zooming so stale
-    // imagery does not sit misaligned while new frames download
-    const onClear = () => { if (enabledRef.current) clearCanvas(); };
-    clearListenerRef.current = onClear;
-    map.on("movestart", onClear);
-    map.on("zoomstart", onClear);
 
-    return () => {
-      teardown();
-      loadedRef.current = false;
-    };
-  }, [enabled, map, teardown, loadFrames, clearCanvas]);
+    return () => { teardown(); };
+  }, [enabled, map, teardown, loadFrames]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Respond to play/pause toggle
   useEffect(() => {
     isPlayingRef.current = isPlaying;
-    if (!enabled || bitmapsRef.current.length === 0) return;
+    if (!enabled || tileLayersRef.current.length === 0) return;
     if (isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
-        drawFrame((idxRef.current + 1) % bitmapsRef.current.length);
+        showFrame((idxRef.current + 1) % tileLayersRef.current.length);
       }, 900);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [isPlaying, enabled, drawFrame]);
+  }, [isPlaying, enabled, showFrame]);
 
-  // Respond to external frame index changes
+  // Respond to external frame index changes (playback bar scrubbing)
   useEffect(() => {
-    if (!enabled || bitmapsRef.current.length === 0) return;
-    const clamped = Math.max(0, Math.min(frameIdx, bitmapsRef.current.length - 1));
-    if (clamped !== idxRef.current) drawFrame(clamped);
-  }, [frameIdx, enabled, drawFrame]);
+    if (!enabled || tileLayersRef.current.length === 0) return;
+    const clamped = Math.max(0, Math.min(frameIdx, tileLayersRef.current.length - 1));
+    if (clamped !== idxRef.current) showFrame(clamped);
+  }, [frameIdx, enabled, showFrame]);
 
   return null;
 }
