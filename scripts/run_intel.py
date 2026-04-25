@@ -327,7 +327,12 @@ def call_llm(region: dict, weather_data: dict) -> str:
         f"'Freeze Warning' = minimum shelter temperature < 32 F during growing season. "
         f"HIGH SURF ADVISORY: High surf posing danger to life (rip currents or breaking seas); generally 7+ foot incoming seas at buoys. "
         f"RED FLAG WARNING: Winds >= 25 mph AND relative humidity <= 30% AND rainfall < 0.25 inches in previous 5 days (or dry lightning, dry frontal passage, dry thunderstorms, Keetch-Byram Drought Index >= 300 in summer). "
-        f"Never apply a classification that exceeds what the data supports."
+        f"Never apply a classification that exceeds what the data supports. "
+        f"RAIN IMPACT LANGUAGE THRESHOLDS -- follow these exactly and never deviate: "
+        f"If rain probability is below 30%, do NOT use any impact language for rain. Do not say rain 'may affect', 'could affect', 'may impact', 'could impact', or 'might affect' any port or operation. You may state the rain percentage as context, but it must not be framed as a threat or operational concern. "
+        f"If rain probability is 30% to 59%, use cautious conditional language only: 'may affect' or 'could affect'. Example: 'a 45% rain chance may affect shore excursions in Nassau'. "
+        f"If rain probability is 60% or higher, use confident expectation language: 'expected to affect' or 'is expected to impact'. Example: 'a 70% rain chance is expected to affect port operations in San Juan'. "
+        f"Apply these thresholds to every day and every rain probability value mentioned in the briefing without exception."
     )
 
     payload = {
