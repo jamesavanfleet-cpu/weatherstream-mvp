@@ -7,7 +7,7 @@ import {
   Anchor, ArrowRight, Calendar, Cloud, Waves, Droplets, Info,
   MapPin, Play, Ship, Sparkles, ThermometerSun, TrendingUp, 
   Wind, Clock, Users, Navigation, AlertTriangle,
-  X, Eye, Gauge, Thermometer, TrendingDown, Minus
+  X, Eye, Gauge, Thermometer, TrendingDown, Minus, Camera, Mail
 } from "lucide-react";
 import {
   Tooltip,
@@ -1412,6 +1412,35 @@ export default function Home() {
                 <AlertTriangle className="w-5 h-5 mr-2" />
                 Tropical Advisories Map
               </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-cyan-500/60 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 shadow-lg"
+                onClick={() => navigate("/from-the-deck")}
+              >
+                <Camera className="w-5 h-5 mr-2" />
+                From the Deck
+              </Button>
+              <a
+                href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                  color: "#0D1520",
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                  letterSpacing: "0.04em",
+                  padding: "10px 22px",
+                  borderRadius: 8,
+                  textDecoration: "none",
+                  boxShadow: "0 2px 12px rgba(245,158,11,0.35)",
+                }}
+              >
+                <Mail style={{ width: 18, height: 18 }} />
+                Send Us Your Intel
+              </a>
             </div>
           </div>
 
@@ -1938,6 +1967,49 @@ export default function Home() {
                 <p className="text-white font-bold text-sm">VanFleet Wx</p>
                 <p className="text-white/60 text-xs">Weather Intelligence by James Van Fleet</p>
               </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                  color: "#0D1520",
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  letterSpacing: "0.05em",
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                  boxShadow: "0 2px 10px rgba(245,158,11,0.3)",
+                }}
+              >
+                <Mail style={{ width: 14, height: 14 }} />
+                Send Us Your Intel
+              </a>
+              <button
+                onClick={() => navigate("/from-the-deck")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: "transparent",
+                  border: "1px solid rgba(0,212,255,0.35)",
+                  color: "#00D4FF",
+                  fontWeight: 600,
+                  fontSize: "0.82rem",
+                  letterSpacing: "0.05em",
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                <Camera style={{ width: 14, height: 14 }} />
+                From the Deck
+              </button>
             </div>
             <p className="text-white/40 text-xs">
               © 2026 VanFleet Wx. Weather Intelligence by James Van Fleet.
