@@ -1505,34 +1505,34 @@ export default function Home() {
         />
       )}
 
-      {/* Briefing Video Modal -- always opens; shows video if URL loaded, otherwise coming-soon card */}
+      {/* Briefing Video Modal -- PORTRAIT_VIDEO_MODAL_V2: mobile full-screen contain, desktop 380px portrait box, object-fit contain always, no crop ever */}
       {briefingVideoOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={briefingVideoUrl && briefingVideoOrientation === 'vertical'
-            ? { background: 'rgba(0,0,0,1)' }
-            : { background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', padding: '1rem' }
-          }
+          style={{ background: 'rgba(0,0,0,0.95)' }}
           onClick={closeBriefingVideo}
         >
           <div
-            className="relative"
+            className="relative flex flex-col"
             style={briefingVideoUrl
-              ? (briefingVideoOrientation === 'vertical'
-                  ? { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column' }
-                  : { width: 'min(900px, 95vw)', maxHeight: '90vh' })
+              ? {
+                  /* On mobile: fill full screen height so portrait video sits edge-to-edge */
+                  /* On desktop: cap at 380px wide so portrait video doesn't explode across landscape screen */
+                  width: 'min(380px, 100vw)',
+                  height: '100dvh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }
               : { width: 'min(480px, 90vw)' }
             }
             onClick={e => e.stopPropagation()}
           >
-            {/* Close button */}
+            {/* Close button -- always top-right overlay */}
             <button
               onClick={closeBriefingVideo}
               className="absolute z-10 flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
-              style={briefingVideoUrl && briefingVideoOrientation === 'vertical'
-                ? { top: '1rem', right: '1rem' }
-                : { top: '-2.5rem', right: 0 }
-              }
+              style={{ top: '1rem', right: '1rem' }}
               aria-label="Close video"
             >
               <X className="w-5 h-5" />
@@ -1541,13 +1541,10 @@ export default function Home() {
 
             {briefingVideoUrl ? (
               <>
-                {/* Video container -- vertical fills full screen, horizontal keeps 16/9 */}
+                {/* Video fills the portrait container with contain -- never crops */}
                 <div
                   className="overflow-hidden"
-                  style={briefingVideoOrientation === 'vertical'
-                    ? { width: '100vw', height: '100dvh' }
-                    : { width: '100%', aspectRatio: '16/9', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }
-                  }
+                  style={{ width: '100%', height: '100dvh', background: 'black' }}
                 >
                   <video
                     src={briefingVideoUrl}
@@ -1555,15 +1552,9 @@ export default function Home() {
                     autoPlay
                     playsInline
                     className="w-full h-full"
-                    style={{ display: 'block', objectFit: briefingVideoOrientation === 'vertical' ? 'cover' : 'contain', background: 'black' }}
+                    style={{ display: 'block', objectFit: 'contain', background: 'black' }}
                   />
                 </div>
-                {/* Caption -- only shown for horizontal videos */}
-                {briefingVideoOrientation !== 'vertical' && (
-                  <p className="text-center text-white/40 text-xs mt-3 tracking-widest uppercase">
-                    Latest Weather Briefing by James Van Fleet
-                  </p>
-                )}
               </>
             ) : (
               <div className="bg-black/90 border border-white/10 rounded-2xl p-10 text-center shadow-2xl">
