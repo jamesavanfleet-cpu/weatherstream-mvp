@@ -1508,15 +1508,18 @@ export default function Home() {
       {/* Briefing Video Modal -- always opens; shows video if URL loaded, otherwise coming-soon card */}
       {briefingVideoOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={briefingVideoUrl && briefingVideoOrientation === 'vertical'
+            ? { background: 'rgba(0,0,0,1)' }
+            : { background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', padding: '1rem' }
+          }
           onClick={closeBriefingVideo}
         >
           <div
             className="relative"
             style={briefingVideoUrl
               ? (briefingVideoOrientation === 'vertical'
-                  ? { width: 'min(360px, 90vw)', maxHeight: '90vh' }
+                  ? { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column' }
                   : { width: 'min(900px, 95vw)', maxHeight: '90vh' })
               : { width: 'min(480px, 90vw)' }
             }
@@ -1525,7 +1528,11 @@ export default function Home() {
             {/* Close button */}
             <button
               onClick={closeBriefingVideo}
-              className="absolute -top-10 right-0 flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
+              className="absolute z-10 flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
+              style={briefingVideoUrl && briefingVideoOrientation === 'vertical'
+                ? { top: '1rem', right: '1rem' }
+                : { top: '-2.5rem', right: 0 }
+              }
               aria-label="Close video"
             >
               <X className="w-5 h-5" />
@@ -1534,12 +1541,12 @@ export default function Home() {
 
             {briefingVideoUrl ? (
               <>
-                {/* Video container -- aspect ratio adapts to orientation */}
+                {/* Video container -- vertical fills full screen, horizontal keeps 16/9 */}
                 <div
-                  className="w-full rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+                  className="overflow-hidden"
                   style={briefingVideoOrientation === 'vertical'
-                    ? { aspectRatio: '9/16' }
-                    : { aspectRatio: '16/9' }
+                    ? { width: '100vw', height: '100dvh' }
+                    : { width: '100%', aspectRatio: '16/9', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }
                   }
                 >
                   <video
@@ -1547,14 +1554,16 @@ export default function Home() {
                     controls
                     autoPlay
                     playsInline
-                    className="w-full h-full object-contain bg-black"
-                    style={{ display: 'block' }}
+                    className="w-full h-full"
+                    style={{ display: 'block', objectFit: briefingVideoOrientation === 'vertical' ? 'cover' : 'contain', background: 'black' }}
                   />
                 </div>
-                {/* Caption */}
-                <p className="text-center text-white/40 text-xs mt-3 tracking-widest uppercase">
-                  Latest Weather Briefing by James Van Fleet
-                </p>
+                {/* Caption -- only shown for horizontal videos */}
+                {briefingVideoOrientation !== 'vertical' && (
+                  <p className="text-center text-white/40 text-xs mt-3 tracking-widest uppercase">
+                    Latest Weather Briefing by James Van Fleet
+                  </p>
+                )}
               </>
             ) : (
               <div className="bg-black/90 border border-white/10 rounded-2xl p-10 text-center shadow-2xl">
