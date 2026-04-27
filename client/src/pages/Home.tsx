@@ -1551,8 +1551,8 @@ export default function Home() {
                     controls
                     autoPlay
                     playsInline
-                    className="w-full h-full"
-                    style={{ display: 'block', objectFit: 'contain', background: 'black' }}
+                    className="w-full h-full object-cover md:object-contain"
+                    style={{ display: 'block', background: 'black' }}
                   />
                 </div>
               </>
