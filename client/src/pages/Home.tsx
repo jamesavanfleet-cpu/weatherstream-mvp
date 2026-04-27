@@ -1414,33 +1414,24 @@ export default function Home() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
-                className="border-cyan-500/60 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 shadow-lg"
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 text-white border-0 shadow-2xl"
                 onClick={() => navigate("/from-the-deck")}
               >
                 <Camera className="w-5 h-5 mr-2" />
-                From the Deck
+                Your Photos From Your Cruise
               </Button>
-              <a
-                href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                  color: "#0D1520",
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                  letterSpacing: "0.04em",
-                  padding: "10px 22px",
-                  borderRadius: 8,
-                  textDecoration: "none",
-                  boxShadow: "0 2px 12px rgba(245,158,11,0.35)",
-                }}
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-gray-900 border-0 shadow-2xl"
+                asChild
               >
-                <Mail style={{ width: 18, height: 18 }} />
-                Send Us Your Intel
-              </a>
+                <a
+                  href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
+                >
+                  <Mail className="w-5 h-5 mr-2" />
+                  Send Us Your Intel
+                </a>
+              </Button>
             </div>
           </div>
 
