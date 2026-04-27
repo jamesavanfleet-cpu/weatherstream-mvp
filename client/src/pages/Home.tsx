@@ -1394,7 +1394,7 @@ export default function Home() {
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, Eastern Pacific, and Alaska.
             </p>
             <div className="h-8" />
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-nowrap gap-3">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
