@@ -1155,22 +1155,22 @@ export default function TropicalAdvisories() {
               />
             )}
 
-            {/* Gulf Stream / SST -- NOAA CoastWatch ERDDAP MUR SST */}
-            {showGulfStream && (
-              <WMSTileLayer
-                url="https://coastwatch.pfeg.noaa.gov/erddap/wms/jplMURSST41/request"
-                params={{
-                  layers: "jplMURSST41:analysed_sst",
-                  format: "image/png",
-                  transparent: true,
-                  version: "1.3.0",
-                  styles: "",
-                } as Parameters<typeof WMSTileLayer>[0]["params"]}
-                opacity={0.7}
-                zIndex={220}
-                maxNativeZoom={13}
-              />
-            )}
+            {/* Gulf Stream / SST -- NASA GIBS GHRSST MUR SST (EPSG:3857 native, daily, ~1-day lag) */}
+            {showGulfStream && (() => {
+              // GIBS MUR SST has a ~1-day processing lag -- use yesterday's date
+              const sstDate = new Date();
+              sstDate.setUTCDate(sstDate.getUTCDate() - 1);
+              const sstDateStr = sstDate.toISOString().slice(0, 10);
+              return (
+                <TileLayer
+                  url={`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_Sea_Surface_Temperature/default/${sstDateStr}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`}
+                  opacity={0.75}
+                  zIndex={220}
+                  maxNativeZoom={7}
+                  attribution="NASA GIBS / JPL MUR SST"
+                />
+              );
+            })()}
 
             {/* Satellite -- NOAA nowCOAST global GMGSI mosaic (animated, 6-hour loop) */}
             {/* Covers 60N-60S globally: GOES-19 East, GOES-18 West, Himawari-9, Meteosat-9/10 */}
