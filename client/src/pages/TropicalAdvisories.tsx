@@ -875,6 +875,9 @@ export default function TropicalAdvisories() {
   // NHC GTWO disturbance GeoJSON features
   const [gtwoFeatures, setGtwoFeatures] = useState<GtwoFeature[]>([]);
 
+  // Marine zone boundaries GeoJSON (pre-baked, served from gh-pages)
+  const [marineZones, setMarineZones] = useState<GeoJSON.FeatureCollection | null>(null);
+
   // REFRESH button visual feedback
   const [refreshing, setRefreshing] = useState(false);
 
@@ -956,6 +959,22 @@ export default function TropicalAdvisories() {
     const interval = setInterval(loadGtwo, 10_800_000); // 3 hours
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch marine zone boundaries on mount (lazy -- only when Zone Forecasts first toggled on)
+  useEffect(() => {
+    if (!showZoneForecasts || marineZones) return;
+    const loadZones = async () => {
+      try {
+        const res = await fetch("/marine_zones.json");
+        if (!res.ok) return;
+        const data = await res.json();
+        setMarineZones(data as GeoJSON.FeatureCollection);
+      } catch {
+        // Silently fail -- zone layer is optional
+      }
+    };
+    loadZones();
+  }, [showZoneForecasts, marineZones]);
 
   // Scroll sidebar to highlighted alert
   useEffect(() => {
@@ -1139,19 +1158,26 @@ export default function TropicalAdvisories() {
               />
             )}
 
-            {/* Zone Forecasts -- NWS marine zone boundaries */}
-            {showZoneForecasts && (
-              <WMSTileLayer
-                url="https://opengeo.ncep.noaa.gov/geoserver/ows"
-                params={{
-                  layers: "marine_zones",
-                  format: "image/png",
-                  transparent: true,
-                  version: "1.3.0",
+            {/* Zone Forecasts -- NWS marine zone boundaries (pre-baked GeoJSON from marine_zones.json) */}
+            {showZoneForecasts && marineZones && (
+              <GeoJSON
+                key="marine-zones"
+                data={marineZones}
+                style={() => ({
+                  color: "#00D4FF",
+                  weight: 1,
+                  fillColor: "#00D4FF",
+                  fillOpacity: 0.04,
+                  opacity: 0.45,
+                })}
+                onEachFeature={(feature, layer) => {
+                  const name = (feature.properties as { name?: string })?.name ?? "Marine Zone";
+                  const id = (feature.properties as { id?: string })?.id ?? "";
+                  layer.bindTooltip(
+                    `<div style="font-family:monospace;font-size:12px;padding:4px 8px;background:#0D1520;border:1px solid #00D4FF;color:#E8F4FF">${name}<br/><span style="color:#7B9BB5;font-size:11px">${id}</span></div>`,
+                    { sticky: true, opacity: 1 }
+                  );
                 }}
-                opacity={0.55}
-                zIndex={210}
-                maxNativeZoom={10}
               />
             )}
 
