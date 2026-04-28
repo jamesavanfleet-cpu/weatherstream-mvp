@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import {
   MapPin, Search, X, Calendar,
-  Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown
+  Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown,
+  Anchor, Plus
 } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
 // PORT_LIST is now in client/src/data/ports.ts
@@ -110,6 +111,7 @@ interface PortSlot {
   weather: PortWeatherData | null;
   loading: boolean;
   error: boolean;
+  isSeaDay: boolean;
 }
 
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -394,6 +396,8 @@ function PortSlotCard({
   onQueryChange,
   onClear,
   onGetForecast,
+  isSeaDay,
+  onToggleSeaDay,
 }: {
   slotIndex: number;
   slot: PortSlot | null;
@@ -404,6 +408,8 @@ function PortSlotCard({
   onQueryChange: (q: string, port: typeof PORT_LIST[0] | null) => void;
   onClear: () => void;
   onGetForecast: () => void;
+  isSeaDay: boolean;
+  onToggleSeaDay: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -480,10 +486,23 @@ function PortSlotCard({
     <div className="bg-white/5 border border-white/10 rounded-2xl">
       {/* Search row */}
       <div className="p-4">
-        <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2 mb-2">
-          <MapPin className="w-3 h-3 text-cyan-400" />
-          {labels[slotIndex]}
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[#d4c5a9] text-xs font-semibold tracking-widest uppercase flex items-center gap-2">
+            <MapPin className="w-3 h-3 text-cyan-400" />
+            {labels[slotIndex]}
+          </label>
+          <button
+            onClick={onToggleSeaDay}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+              isSeaDay
+                ? "bg-blue-500/20 border-blue-400/40 text-blue-300"
+                : "bg-white/5 border-white/10 text-white/40 hover:text-white/60"
+            }`}
+          >
+            <Anchor className="w-3 h-3" />
+            Sea Day
+          </button>
+        </div>
 
         <div className="flex gap-2 items-center max-w-xl">
           {/* Typeahead input */}
@@ -492,13 +511,15 @@ function PortSlotCard({
             <input
               ref={inputRef}
               type="text"
-              value={query}
+              value={isSeaDay ? "Sea Day" : query}
+              readOnly={isSeaDay}
               onChange={e => {
+                if (isSeaDay) return;
                 onQueryChange(e.target.value, null); // lift query up, clear selection
                 setActiveIdx(-1);
                 setOpen(true);
               }}
-              onFocus={() => { if (query.length >= 3) setOpen(true); }}
+              onFocus={() => { if (!isSeaDay && query.length >= 3) setOpen(true); }}
               onKeyDown={e => {
                 if (e.key === "ArrowDown") {
                   e.preventDefault();
@@ -520,7 +541,7 @@ function PortSlotCard({
                   setActiveIdx(-1);
                 }
               }}
-              placeholder="Type a port name..."
+              placeholder={isSeaDay ? "Sea Day" : "Type a port name..."}
               autoComplete="new-password"
               autoCorrect="off"
               autoCapitalize="off"
@@ -561,8 +582,8 @@ function PortSlotCard({
             )}
           </div>
 
-          {/* Per-slot Get Forecast button -- hidden once forecast is loaded */}
-          {!hasForecast && (
+          {/* Per-slot Get Forecast button -- hidden once forecast is loaded and hidden for Sea Day */}
+          {!hasForecast && !isSeaDay && (
             <button
               onClick={onGetForecast}
               disabled={!query.trim()}
@@ -688,10 +709,11 @@ interface PortSearchProps { isMetric: boolean; }
 export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps) {
   const [, navigate] = useLocation();
   const [localMetric, setLocalMetric] = useState(parentIsMetric);
-  const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null, null, null]);
-  // Lifted query state so the shared Get Forecast button can read all 5 inputs
-  const [queries, setQueries] = useState<string[]>(["" , "", "", "", ""]);
-  const [selectedPorts, setSelectedPorts] = useState<(typeof PORT_LIST[0] | null)[]>([null, null, null, null, null]);
+  const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null]);
+  // Lifted query state so the shared Get Forecast button can read all inputs
+  const [queries, setQueries] = useState<string[]>(["" , "", ""]);
+  const [selectedPorts, setSelectedPorts] = useState<(typeof PORT_LIST[0] | null)[]>([null, null, null]);
+  const [seaDays, setSeaDays] = useState<boolean[]>([false, false, false]);
   // Whether any forecast has been loaded -- controls Back button visibility
   const [forecastsLoaded, setForecastsLoaded] = useState(false);
 
@@ -700,7 +722,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
   const fetchSlot = useCallback((slotIndex: number, port: { name: string; lat: number; lon: number }) => {
     setSlots(prev => {
       const next = [...prev];
-      next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: true, error: false };
+      next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: true, error: false, isSeaDay: false };
       return next;
     });
 
@@ -708,7 +730,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       .then(weather => {
         setSlots(prev => {
           const next = [...prev];
-          next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather, loading: false, error: false };
+          next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather, loading: false, error: false, isSeaDay: false };
           return next;
         });
         setForecastsLoaded(true);
@@ -716,7 +738,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       .catch(() => {
         setSlots(prev => {
           const next = [...prev];
-          next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: false, error: true };
+          next[slotIndex] = { portName: port.name, lat: port.lat, lon: port.lon, weather: null, loading: false, error: true, isSeaDay: false };
           return next;
         });
       });
@@ -756,10 +778,11 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
     );
   };
 
-  // Shared Get Forecast: fires all slots that have a non-empty query
+  // Shared Get Forecast: fires all slots that have a non-empty query (skips Sea Day slots)
   const handleGetAllForecasts = () => {
     let fired = false;
     queries.forEach((q, i) => {
+      if (seaDays[i]) return; // Sea Day slots have no forecast to fetch
       if (!q.trim()) return;
       const port = resolvePort(q, selectedPorts[i]);
       if (!port) return;
@@ -774,9 +797,11 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
 
   // Back button: clear all forecasts and queries, return to input view
   const handleBack = () => {
-    setSlots([null, null, null, null, null]);
-    setQueries(["", "", "", "", ""]);
-    setSelectedPorts([null, null, null, null, null]);
+    const len = slots.length;
+    setSlots(Array(len).fill(null));
+    setQueries(Array(len).fill(""));
+    setSelectedPorts(Array(len).fill(null));
+    setSeaDays(Array(len).fill(false));
     setForecastsLoaded(false);
   };
 
@@ -784,7 +809,28 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
     setSlots(prev => { const n = [...prev]; n[slotIndex] = null; return n; });
     setQueries(prev => { const n = [...prev]; n[slotIndex] = ""; return n; });
     setSelectedPorts(prev => { const n = [...prev]; n[slotIndex] = null; return n; });
+    setSeaDays(prev => { const n = [...prev]; n[slotIndex] = false; return n; });
   }, []);
+
+  // Add a new slot (up to 5 total)
+  const addSlot = () => {
+    if (slots.length >= 5) return;
+    setSlots(prev => [...prev, null]);
+    setQueries(prev => [...prev, ""]);
+    setSelectedPorts(prev => [...prev, null]);
+    setSeaDays(prev => [...prev, false]);
+  };
+
+  // Toggle Sea Day for a specific slot
+  const toggleSeaDay = (i: number) => {
+    setSeaDays(prev => { const n = [...prev]; n[i] = !n[i]; return n; });
+    // Clear any existing query/port selection for this slot when toggling Sea Day on
+    if (!seaDays[i]) {
+      setQueries(prev => { const n = [...prev]; n[i] = ""; return n; });
+      setSelectedPorts(prev => { const n = [...prev]; n[i] = null; return n; });
+      setSlots(prev => { const n = [...prev]; n[i] = null; return n; });
+    }
+  };
 
   const anyQueryFilled = queries.some(q => q.trim().length > 0);
 
@@ -823,52 +869,41 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         <div className="flex-1 h-px bg-white/10" />
       </div>
       <p className="text-white/50 text-sm max-w-md">
-        Type up to 5 destinations, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+        Type up to 5 destinations or add Sea Days, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
       </p>
 
-      {/* 5 destination slots -- single column on mobile, two columns on desktop */}
-      <div className="flex flex-col lg:flex-row lg:items-start lg:gap-4">
-        {/* Left column: Departure Port, Destination 1, Destination 2 */}
-        <div className="flex-1 space-y-4">
-          {[0, 1, 2].map(i => (
-            <PortSlotCard
-              key={i}
-              slotIndex={i}
-              slot={slots[i]}
-              isMetric={localMetric}
-              onSetMetric={setLocalMetric}
-              query={queries[i]}
-              selectedPort={selectedPorts[i]}
-              onQueryChange={(q, port) => {
-                setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
-                setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
-              }}
-              onClear={() => handleClear(i)}
-              onGetForecast={handleGetAllForecasts}
-            />
-          ))}
-        </div>
-        {/* Right column: Destination 3, Destination 4 */}
-        <div className="flex-1 space-y-4 mt-4 lg:mt-0">
-          {[3, 4].map(i => (
-            <PortSlotCard
-              key={i}
-              slotIndex={i}
-              slot={slots[i]}
-              isMetric={localMetric}
-              onSetMetric={setLocalMetric}
-              query={queries[i]}
-              selectedPort={selectedPorts[i]}
-              onQueryChange={(q, port) => {
-                setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
-                setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
-              }}
-              onClear={() => handleClear(i)}
-              onGetForecast={handleGetAllForecasts}
-            />
-          ))}
-        </div>
+      {/* Destination slots -- single column, dynamic */}
+      <div className="space-y-4">
+        {slots.map((slot, i) => (
+          <PortSlotCard
+            key={i}
+            slotIndex={i}
+            slot={slot}
+            isMetric={localMetric}
+            onSetMetric={setLocalMetric}
+            query={queries[i]}
+            selectedPort={selectedPorts[i]}
+            isSeaDay={seaDays[i]}
+            onToggleSeaDay={() => toggleSeaDay(i)}
+            onQueryChange={(q, port) => {
+              setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
+              setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
+            }}
+            onClear={() => handleClear(i)}
+            onGetForecast={handleGetAllForecasts}
+          />
+        ))}
       </div>
+
+      {/* Add Another Port / Sea Day button -- hidden once at 5 slots */}
+      {slots.length < 5 && (
+        <button
+          onClick={addSlot}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors text-sm font-semibold"
+        >
+          <Plus className="w-4 h-4" /> Add Another Port / Sea Day
+        </button>
+      )}
 
     </div>
   );
