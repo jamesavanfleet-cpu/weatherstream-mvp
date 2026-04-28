@@ -1521,112 +1521,43 @@ export default function TropicalAdvisories() {
           gap: 20,
         }}>
 
-          {/* Card 1 -- Wind Shear */}
+          {/* Card 1 -- NHC 5-Day Forecast Cone (storm-dependent) */}
           <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>WIND SHEAR</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Atlantic Basin · CIMSS/UWisc · Updates every 6 hours</div>
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>CIMSS</div>
-            </div>
-            <img
-              src="https://tropic.ssec.wisc.edu/real-time/atlantic/winds/wg8shrZ.GIF"
-              alt="Atlantic Wind Shear Analysis"
-              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-              loading="lazy"
-              onClick={() => setLightboxSrc("https://tropic.ssec.wisc.edu/real-time/atlantic/winds/wg8shrZ.GIF")}
-            />
-            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              High wind shear (red/orange) suppresses tropical development. Low shear (blue/green) allows storms to organize and intensify.
-            </div>
-          </div>
-
-          {/* Card 2 -- Saharan Air Layer */}
-          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>SAHARAN AIR LAYER (SAL)</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>GOES-East RGB Airmass · CIMSS · Updates hourly</div>
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>CIMSS</div>
-            </div>
-            <img
-              src="https://tropic.ssec.wisc.edu/real-time/sal/g16rgbairmass/g16airmass.jpg"
-              alt="Saharan Air Layer RGB Airmass"
-              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-              loading="lazy"
-              onClick={() => setLightboxSrc("https://tropic.ssec.wisc.edu/real-time/sal/g16rgbairmass/g16airmass.jpg")}
-            />
-            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              Dry, dusty Saharan air (orange/tan tones) suppresses hurricane formation in the Caribbean and Atlantic. A clear path signals higher storm risk.
-            </div>
-          </div>
-
-          {/* Card 3 -- SST Anomaly */}
-          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>SEA SURFACE TEMP ANOMALY</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Global SST vs. Average · NOAA CPC · Updates weekly</div>
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NOAA CPC</div>
-            </div>
-            <img
-              src="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_update/sstanim.gif"
-              alt="Global Sea Surface Temperature Anomaly"
-              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-              loading="lazy"
-              onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_update/sstanim.gif")}
-            />
-            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              Warmer-than-average ocean temperatures (red/orange) provide more energy for storm intensification. Anomalies in the Main Development Region (MDR) are especially significant.
-            </div>
-          </div>
-
-          {/* Card 4 -- MJO Phase Diagram */}
-          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>MJO PHASE DIAGRAM</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Madden-Julian Oscillation · NOAA CPC · Updates daily</div>
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NOAA CPC</div>
-            </div>
-            <img
-              src="https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_order_2.gif"
-              alt="MJO Phase Diagram"
-              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-              loading="lazy"
-              onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_order_2.gif")}
-            />
-            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              The MJO is a 30-60 day pulse of enhanced convection. When the signal is in Phases 1-3 (Atlantic-favorable), tropical activity tends to increase over the next 2-4 weeks.
-            </div>
-          </div>
-
-          {/* Card 5 -- Atlantic Activity Bell Curve */}
-          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>ATLANTIC SEASON ACTIVITY</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Historical Climatology · NHC · 1944-2020 baseline</div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>NHC 5-DAY FORECAST CONE</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Official Track Forecast · NHC · Active storms only</div>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
             </div>
-            <img
-              src="https://www.nhc.noaa.gov/climo/images/2021climo/AtlanticCampfire_sm.png"
-              alt="Atlantic Hurricane Season Activity Bell Curve"
-              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-              loading="lazy"
-              onClick={() => setLightboxSrc("https://www.nhc.noaa.gov/climo/images/2021climo/AtlanticCampfire_sm.png")}
-            />
+            {nhcStorms.length > 0 ? (
+              nhcStorms.map(storm => (
+                <div key={storm.id} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
+                    {storm.name}
+                  </div>
+                  <img
+                    src={`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`}
+                    alt={`${storm.name} 5-day forecast cone`}
+                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+                    loading="lazy"
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`)}
+                  />
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: "32px 0", textAlign: "center" }}>
+                <div style={{ fontSize: "1.1rem", color: "#39FF14", letterSpacing: "0.1em", marginBottom: 8 }}>NO ACTIVE STORMS</div>
+                <div style={{ fontSize: "0.9rem", color: "#7B9BB5" }}>The official NHC 5-day forecast cone will appear here when a named storm is active.</div>
+              </div>
+            )}
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              Peak of the Atlantic hurricane season is September 10. Most activity occurs between mid-August and mid-October. The Caribbean and Gulf of Mexico are most active during this window.
+              The cone represents the probable track of the storm center over 5 days. Roughly 60-70% of historical storm centers have remained within the cone. Impacts can extend well outside the cone.
             </div>
           </div>
 
-          {/* Card 6 -- Spaghetti Models (storm-dependent) */}
+          {/* Card 2 -- Spaghetti Models (storm-dependent) */}
           <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div>
@@ -1662,39 +1593,108 @@ export default function TropicalAdvisories() {
             </div>
           </div>
 
-          {/* Card 7 -- NHC 5-Day Forecast Cone (storm-dependent) */}
+          {/* Card 3 -- Wind Shear */}
           <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>NHC 5-DAY FORECAST CONE</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Official Track Forecast · NHC · Active storms only</div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>WIND SHEAR</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Atlantic Basin · CIMSS/UWisc · Updates every 6 hours</div>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>CIMSS</div>
+            </div>
+            <img
+              src="https://tropic.ssec.wisc.edu/real-time/atlantic/winds/wg8shrZ.GIF"
+              alt="Atlantic Wind Shear Analysis"
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+              loading="lazy"
+              onClick={() => setLightboxSrc("https://tropic.ssec.wisc.edu/real-time/atlantic/winds/wg8shrZ.GIF")}
+            />
+            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
+              High wind shear (red/orange) suppresses tropical development. Low shear (blue/green) allows storms to organize and intensify.
+            </div>
+          </div>
+
+          {/* Card 4 -- Saharan Air Layer */}
+          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>SAHARAN AIR LAYER (SAL)</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>GOES-East RGB Airmass · CIMSS · Updates hourly</div>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>CIMSS</div>
+            </div>
+            <img
+              src="https://tropic.ssec.wisc.edu/real-time/sal/g16rgbairmass/g16airmass.jpg"
+              alt="Saharan Air Layer RGB Airmass"
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+              loading="lazy"
+              onClick={() => setLightboxSrc("https://tropic.ssec.wisc.edu/real-time/sal/g16rgbairmass/g16airmass.jpg")}
+            />
+            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
+              Dry, dusty Saharan air (orange/tan tones) suppresses hurricane formation in the Caribbean and Atlantic. A clear path signals higher storm risk.
+            </div>
+          </div>
+
+          {/* Card 5 -- SST Anomaly */}
+          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>SEA SURFACE TEMP ANOMALY</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Global SST vs. Average · NOAA CPC · Updates weekly</div>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NOAA CPC</div>
+            </div>
+            <img
+              src="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_update/sstanim.gif"
+              alt="Global Sea Surface Temperature Anomaly"
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+              loading="lazy"
+              onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_update/sstanim.gif")}
+            />
+            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
+              Warmer-than-average ocean temperatures (red/orange) provide more energy for storm intensification. Anomalies in the Main Development Region (MDR) are especially significant.
+            </div>
+          </div>
+
+          {/* Card 6 -- MJO Phase Diagram */}
+          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>MJO PHASE DIAGRAM</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Madden-Julian Oscillation · NOAA CPC · 15-day running mean · Updates daily</div>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NOAA CPC</div>
+            </div>
+            <img
+              src="https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_long_order.gif"
+              alt="MJO 15-Day Running Mean Phase Diagram"
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+              loading="lazy"
+              onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_long_order.gif")}
+            />
+            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
+              The Madden-Julian Oscillation is a large-scale pulse of enhanced rainfall and thunderstorm activity that originates over the Indian Ocean and travels eastward around the globe, completing one full circuit every 30 to 60 days. It was discovered in the early 1970s by Dr. Roland Madden and Dr. Paul Julian while studying tropical wind and pressure patterns. The MJO cycles through eight geographic phases as it propagates east. When the active, convective phase reaches the Atlantic basin (roughly Phases 8 through 3), it reduces wind shear, increases atmospheric moisture, and enhances upper-level divergence over the Caribbean and Gulf of Mexico -- conditions that strongly favor tropical cyclone formation and intensification. Research shows that Gulf of Mexico and Caribbean hurricanes are four times more likely to occur during an active, Atlantic-favorable MJO phase than during a suppressed phase. Forecasters use the MJO to extend tropical outlooks 2 to 4 weeks beyond what daily weather models can reliably predict.
+            </div>
+          </div>
+
+          {/* Card 7 -- Atlantic Activity Bell Curve */}
+          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>ATLANTIC SEASON ACTIVITY</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Historical Climatology · NHC · 1944-2020 baseline</div>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
             </div>
-            {nhcStorms.length > 0 ? (
-              nhcStorms.map(storm => (
-                <div key={storm.id} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
-                    {storm.name}
-                  </div>
-                  <img
-                    src={`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`}
-                    alt={`${storm.name} 5-day forecast cone`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-                    loading="lazy"
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`)}
-                  />
-                </div>
-              ))
-            ) : (
-              <div style={{ padding: "32px 0", textAlign: "center" }}>
-                <div style={{ fontSize: "1.1rem", color: "#39FF14", letterSpacing: "0.1em", marginBottom: 8 }}>NO ACTIVE STORMS</div>
-                <div style={{ fontSize: "0.9rem", color: "#7B9BB5" }}>The official NHC 5-day forecast cone will appear here when a named storm is active.</div>
-              </div>
-            )}
+            <img
+              src="https://www.nhc.noaa.gov/climo/images/2021climo/AtlanticCampfire_sm.png"
+              alt="Atlantic Hurricane Season Activity Bell Curve"
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+              loading="lazy"
+              onClick={() => setLightboxSrc("https://www.nhc.noaa.gov/climo/images/2021climo/AtlanticCampfire_sm.png")}
+            />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              The cone represents the probable track of the storm center over 5 days. Roughly 60-70% of historical storm centers have remained within the cone. Impacts can extend well outside the cone.
+              Peak of the Atlantic hurricane season is September 10. Most activity occurs between mid-August and mid-October. The Caribbean and Gulf of Mexico are most active during this window.
             </div>
           </div>
 
