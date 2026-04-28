@@ -881,6 +881,9 @@ export default function TropicalAdvisories() {
   // REFRESH button visual feedback
   const [refreshing, setRefreshing] = useState(false);
 
+  // Lightbox state for graphics section
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   // Advisory data
   const [alerts, setAlerts] = useState<NWSAlert[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
@@ -1530,8 +1533,9 @@ export default function TropicalAdvisories() {
             <img
               src="https://tropic.ssec.wisc.edu/real-time/atlantic/winds/wg8shrZ.GIF"
               alt="Atlantic Wind Shear Analysis"
-              style={{ width: "100%", display: "block", background: "#0A0E14" }}
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
               loading="lazy"
+              onClick={() => setLightboxSrc("https://tropic.ssec.wisc.edu/real-time/atlantic/winds/wg8shrZ.GIF")}
             />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
               High wind shear (red/orange) suppresses tropical development. Low shear (blue/green) allows storms to organize and intensify.
@@ -1550,8 +1554,9 @@ export default function TropicalAdvisories() {
             <img
               src="https://tropic.ssec.wisc.edu/real-time/sal/g16rgbairmass/g16airmass.jpg"
               alt="Saharan Air Layer RGB Airmass"
-              style={{ width: "100%", display: "block", background: "#0A0E14" }}
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
               loading="lazy"
+              onClick={() => setLightboxSrc("https://tropic.ssec.wisc.edu/real-time/sal/g16rgbairmass/g16airmass.jpg")}
             />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
               Dry, dusty Saharan air (orange/tan tones) suppresses hurricane formation in the Caribbean and Atlantic. A clear path signals higher storm risk.
@@ -1570,8 +1575,9 @@ export default function TropicalAdvisories() {
             <img
               src="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_update/sstanim.gif"
               alt="Global Sea Surface Temperature Anomaly"
-              style={{ width: "100%", display: "block", background: "#0A0E14" }}
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
               loading="lazy"
+              onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_update/sstanim.gif")}
             />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
               Warmer-than-average ocean temperatures (red/orange) provide more energy for storm intensification. Anomalies in the Main Development Region (MDR) are especially significant.
@@ -1588,10 +1594,11 @@ export default function TropicalAdvisories() {
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NOAA CPC</div>
             </div>
             <img
-              src="https://www.cpc.ncep.noaa.gov/products/precip/CWlink/MJO/img/rmm_obs40.png"
-              alt="MJO RMM Phase Diagram"
-              style={{ width: "100%", display: "block", background: "#0A0E14" }}
+              src="https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_order_2.gif"
+              alt="MJO Phase Diagram"
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
               loading="lazy"
+              onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_order_2.gif")}
             />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
               The MJO is a 30-60 day pulse of enhanced convection. When the signal is in Phases 1-3 (Atlantic-favorable), tropical activity tends to increase over the next 2-4 weeks.
@@ -1610,8 +1617,9 @@ export default function TropicalAdvisories() {
             <img
               src="https://www.nhc.noaa.gov/climo/images/2021climo/AtlanticCampfire_sm.png"
               alt="Atlantic Hurricane Season Activity Bell Curve"
-              style={{ width: "100%", display: "block", background: "#0A0E14" }}
+              style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
               loading="lazy"
+              onClick={() => setLightboxSrc("https://www.nhc.noaa.gov/climo/images/2021climo/AtlanticCampfire_sm.png")}
             />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
               Peak of the Atlantic hurricane season is September 10. Most activity occurs between mid-August and mid-October. The Caribbean and Gulf of Mexico are most active during this window.
@@ -1636,9 +1644,10 @@ export default function TropicalAdvisories() {
                   <img
                     src={`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_models.png`}
                     alt={`${storm.name} ensemble track models`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14" }}
+                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
                     loading="lazy"
                     onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_models.png`)}
                   />
                 </div>
               ))
@@ -1671,9 +1680,10 @@ export default function TropicalAdvisories() {
                   <img
                     src={`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`}
                     alt={`${storm.name} 5-day forecast cone`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14" }}
+                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
                     loading="lazy"
                     onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`)}
                   />
                 </div>
               ))
@@ -1697,6 +1707,57 @@ export default function TropicalAdvisories() {
           </div>
         </div>
       </div>
+
+      {/* ── LIGHTBOX OVERLAY ── */}
+      {lightboxSrc && (
+        <div
+          onClick={() => setLightboxSrc(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.88)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          {/* X close button */}
+          <button
+            onClick={e => { e.stopPropagation(); setLightboxSrc(null); }}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 20,
+              background: "none",
+              border: "none",
+              color: "#E8F4FF",
+              fontSize: "2rem",
+              lineHeight: 1,
+              cursor: "pointer",
+              padding: "4px 8px",
+              zIndex: 10000,
+            }}
+            aria-label="Close"
+          >
+            &times;
+          </button>
+          {/* Expanded image */}
+          <img
+            src={lightboxSrc}
+            alt="Expanded graphic"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: "95vw",
+              maxHeight: "90vh",
+              objectFit: "contain",
+              display: "block",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.7)",
+            }}
+          />
+        </div>
+      )}
 
     </div>
   );
