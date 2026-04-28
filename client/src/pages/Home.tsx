@@ -1346,7 +1346,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen gradient-animate">
+    <div className="min-h-screen gradient-animate overflow-x-hidden">
       {/* Full-Width Banner Photo */}
       <div className="w-full relative" style={{height: 'clamp(160px, 30vw, 260px)', overflow: 'hidden'}}>
         <img
