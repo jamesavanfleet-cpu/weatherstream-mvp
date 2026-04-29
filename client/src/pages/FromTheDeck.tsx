@@ -21,6 +21,12 @@ interface GalleryPhoto {
 }
 
 const PHOTOS: GalleryPhoto[] = [
+  { id: 41, src: "/from-the-deck/ftd-41.jpg", ship: "Harmony of the Seas", line: "Royal Caribbean", location: "San Juan, Puerto Rico", caption: "Bridge departure" },
+  { id: 42, src: "/from-the-deck/ftd-42.jpg", ship: "Enchantment of the Seas", line: "Royal Caribbean", location: "Eastern Caribbean", caption: "Double rainbow" },
+  { id: 43, src: "/from-the-deck/ftd-43.jpg", ship: "Freedom of the Seas", line: "Royal Caribbean", location: "Antigua" },
+  { id: 44, src: "/from-the-deck/ftd-44.jpg", ship: "Majesty of the Seas", line: "Royal Caribbean", location: "Havana, Cuba" },
+  { id: 45, src: "/from-the-deck/ftd-45.jpg", ship: "Adventure of the Seas", line: "Royal Caribbean", location: "Georgetown, Grand Cayman" },
+  { id: 46, src: "/from-the-deck/ftd-46.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Bremerhaven, Germany" },
   { id: 23, src: "/from-the-deck/ftd-23.jpg", ship: "Grandeur of the Seas", line: "Royal Caribbean", location: "North Atlantic", caption: "Bridge at night" },
   { id: 24, src: "/from-the-deck/ftd-24.jpg", ship: "Grandeur of the Seas", line: "Royal Caribbean", location: "St. Kitts", caption: "Sunset" },
   { id: 25, src: "/from-the-deck/ftd-25.jpg", ship: "Grandeur of the Seas & Celebrity Summit", line: "Royal Caribbean / Celebrity Cruises", location: "St. Kitts, Caribbean" },
