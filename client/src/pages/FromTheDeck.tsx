@@ -190,33 +190,7 @@ export default function FromTheDeck() {
           <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.08em" }}>
             FROM THE DECK
           </div>
-          <div style={{ fontSize: "0.85rem", color: "#7B9BB5", marginTop: 2 }}>
-            Your weather photos at sea, in port, and around the ship
-          </div>
         </div>
-        {/* Nav Intel button */}
-        <a
-          href={`mailto:${SUBMIT_EMAIL}?subject=${encodeURIComponent(SUBMIT_SUBJECT)}&body=${SUBMIT_BODY}`}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-            color: "#0D1520",
-            fontWeight: 700,
-            fontSize: "0.8rem",
-            letterSpacing: "0.06em",
-            padding: "7px 16px",
-            borderRadius: 6,
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            boxShadow: "0 2px 10px rgba(245,158,11,0.3)",
-          }}
-        >
-          <Camera size={13} />
-          Submit Your Photo
-        </a>
       </div>
 
       {/* Page content */}
