@@ -39,8 +39,6 @@ const PHOTOS: GalleryPhoto[] = [
   { id: 32, src: "/from-the-deck/ftd-32.jpg", ship: "Enchantment of the Seas", line: "Royal Caribbean", location: "Port Miami, Florida", caption: "Bridge at sunrise" },
   { id: 33, src: "/from-the-deck/ftd-33.jpg", ship: "Celebrity Reflection & Serenade of the Seas", line: "Celebrity Cruises / Royal Caribbean", location: "Cozumel, Mexico" },
   { id: 34, src: "/from-the-deck/ftd-34.jpg", ship: "At Sea", line: "", location: "Atlantic Ocean", caption: "Rainbow at sea" },
-  { id: 35, src: "/from-the-deck/ftd-35.jpg", ship: "Allure of the Seas", line: "Royal Caribbean", location: "Wet Dock, Freeport, Bahamas", caption: "Azipod maintenance" },
-  { id: 36, src: "/from-the-deck/ftd-36.jpg", ship: "Allure of the Seas", line: "Royal Caribbean", location: "Wet Dock, Freeport, Bahamas", caption: "Azipod pod under hull" },
   { id: 37, src: "/from-the-deck/ftd-37.jpg", ship: "Symphony of the Seas", line: "Royal Caribbean", location: "STX Shipyard, St. Nazaire, France", caption: "Departure in fog" },
   { id: 38, src: "/from-the-deck/ftd-38.jpg", ship: "Voyager of the Seas", line: "Royal Caribbean", location: "Port of Sydney, Australia" },
   { id: 39, src: "/from-the-deck/ftd-39.jpg", ship: "Voyager of the Seas", line: "Royal Caribbean", location: "Port of Sydney, Australia" },
@@ -55,8 +53,6 @@ const PHOTOS: GalleryPhoto[] = [
   { id: 13, src: "/from-the-deck/ftd-13.jpg", ship: "Odyssey of the Seas", line: "Royal Caribbean", location: "Port Everglades, Fort Lauderdale, FL" },
   { id: 9,  src: "/from-the-deck/ftd-09.jpg", ship: "Radiance of the Seas", line: "Royal Caribbean", location: "Juneau, Alaska" },
   { id: 5,  src: "/from-the-deck/ftd-05.jpg", ship: "At Sea", line: "", location: "At Sea (unknown location)", caption: "Sunset at Sea" },
-  { id: 14, src: "/from-the-deck/ftd-14.jpg", ship: "Liberty of the Seas", line: "Royal Caribbean", location: "Dry Dock" },
-  { id: 17, src: "/from-the-deck/ftd-17.jpg", ship: "Harmony of the Seas", line: "Royal Caribbean", location: "Dry Dock" },
   { id: 1,  src: "/from-the-deck/ftd-01.jpg", ship: "Navigator of the Seas", line: "Royal Caribbean", location: "Cabo San Lucas, Mexico" },
   { id: 2,  src: "/from-the-deck/ftd-02.jpg", ship: "Wonder of the Seas", line: "Royal Caribbean", location: "Cozumel, Mexico" },
   { id: 3,  src: "/from-the-deck/ftd-03.jpg", ship: "Symphony of the Seas", line: "Royal Caribbean", location: "Cozumel, Mexico" },
@@ -67,6 +63,10 @@ const PHOTOS: GalleryPhoto[] = [
   { id: 20, src: "/from-the-deck/ftd-20.jpg", ship: "Vision of the Seas", line: "Royal Caribbean", location: "Sea Day, North of Puerto Rico" },
   { id: 21, src: "/from-the-deck/ftd-21.jpg", ship: "Vision of the Seas", line: "Royal Caribbean", location: "Bridge Wing, at Sea" },
   { id: 22, src: "/from-the-deck/ftd-22.jpg", ship: "Explorer of the Seas", line: "Royal Caribbean", location: "Aruba" },
+  { id: 35, src: "/from-the-deck/ftd-35.jpg", ship: "Allure of the Seas", line: "Royal Caribbean", location: "Wet Dock, Freeport, Bahamas", caption: "Azipod maintenance" },
+  { id: 36, src: "/from-the-deck/ftd-36.jpg", ship: "Allure of the Seas", line: "Royal Caribbean", location: "Wet Dock, Freeport, Bahamas", caption: "Azipod pod under hull" },
+  { id: 14, src: "/from-the-deck/ftd-14.jpg", ship: "Liberty of the Seas", line: "Royal Caribbean", location: "Dry Dock" },
+  { id: 17, src: "/from-the-deck/ftd-17.jpg", ship: "Harmony of the Seas", line: "Royal Caribbean", location: "Dry Dock" },
 ];
 
 function SubmitBanner({ compact = false }: { compact?: boolean }) {
