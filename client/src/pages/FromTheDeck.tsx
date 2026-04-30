@@ -18,10 +18,11 @@ interface GalleryPhoto {
   line: string;
   location: string;
   caption?: string;
+  photographer?: string;
 }
 
 const PHOTOS: GalleryPhoto[] = [
-  { id: 47, src: "/from-the-deck/ftd-47.jpg", ship: "Norwegian Luna", line: "Norwegian Cruise Line", location: "St. Thomas, USVI", caption: "Ol' Sol and Luna on the NCL Luna" },
+  { id: 47, src: "/from-the-deck/ftd-47.jpg", ship: "Norwegian Luna", line: "Norwegian Cruise Line", location: "St. Thomas, USVI", caption: "Ol' Sol and Luna on the NCL Luna", photographer: "Kevin Novak" },
   { id: 41, src: "/from-the-deck/ftd-41.jpg", ship: "Harmony of the Seas", line: "Royal Caribbean", location: "San Juan, Puerto Rico", caption: "Bridge departure" },
   { id: 42, src: "/from-the-deck/ftd-42.jpg", ship: "Enchantment of the Seas", line: "Royal Caribbean", location: "Eastern Caribbean", caption: "Double rainbow" },
   { id: 43, src: "/from-the-deck/ftd-43.jpg", ship: "Freedom of the Seas", line: "Royal Caribbean", location: "Antigua" },
@@ -245,8 +246,11 @@ export default function FromTheDeck() {
                 background: "linear-gradient(to top, rgba(10,12,24,0.92) 0%, rgba(10,12,24,0.6) 60%, transparent 100%)",
                 padding: "28px 12px 10px",
               }}>
-                <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#E8F4FF", lineHeight: 1.3 }}>
-                  {photo.ship}
+                <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#E8F4FF", lineHeight: 1.3, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                  <span>{photo.ship}</span>
+                  {photo.photographer && (
+                    <span style={{ fontSize: "0.68rem", fontWeight: 400, color: "#a0b4c8" }}>Photo: {photo.photographer}</span>
+                  )}
                 </div>
                 {photo.line && (
                   <div style={{ fontSize: "0.72rem", color: "#7B9BB5", marginTop: 1 }}>{photo.line}</div>
@@ -384,7 +388,12 @@ export default function FromTheDeck() {
               padding: "12px 18px",
               borderTop: "1px solid rgba(255,255,255,0.08)",
             }}>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF" }}>{activePh.ship}</div>
+              <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <span>{activePh.ship}</span>
+                {activePh.photographer && (
+                  <span style={{ fontSize: "0.78rem", fontWeight: 400, color: "#a0b4c8" }}>Photo: {activePh.photographer}</span>
+                )}
+              </div>
               <div style={{ display: "flex", gap: 16, marginTop: 3, flexWrap: "wrap" }}>
                 {activePh.line && (
                   <span style={{ fontSize: "0.82rem", color: "#7B9BB5" }}>{activePh.line}</span>
