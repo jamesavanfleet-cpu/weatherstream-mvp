@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-30T04:03:55.179666+00:00",
+  "generated_at": "2026-04-30T04:13:10.669963+00:00",
   "ports": {
     "Miami": {
       "tempF": 75,
@@ -203,59 +203,59 @@
     },
     "Barcelona": {
       "tempF": 58,
-      "tempC": 14.4,
+      "tempC": 14.7,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 3,
-      "windDir": 309
+      "windDir": 307
     },
     "Valencia": {
+      "tempF": 61,
+      "tempC": 16.3,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 1,
+      "windDir": 254
+    },
+    "Palma": {
       "tempF": 60,
-      "tempC": 15.6,
+      "tempC": 15.8,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 2,
-      "windDir": 263
-    },
-    "Palma": {
-      "tempF": 61,
-      "tempC": 15.9,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 2,
-      "windDir": 14
+      "windDir": 13
     },
     "Ibiza": {
       "tempF": 62,
-      "tempC": 16.4,
+      "tempC": 16.7,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 2,
-      "windDir": 288
+      "windDir": 304
     },
     "Malaga": {
-      "tempF": 61,
-      "tempC": 15.9,
+      "tempF": 60,
+      "tempC": 15.5,
       "condition": "Mostly Clear",
       "wmo": 1,
       "windKt": 4,
-      "windDir": 357
+      "windDir": 360
     },
     "Cadiz": {
-      "tempF": 62,
-      "tempC": 16.9,
+      "tempF": 63,
+      "tempC": 17.0,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 3,
-      "windDir": 333
+      "windDir": 342
     },
     "Lisbon": {
-      "tempF": 58,
-      "tempC": 14.6,
+      "tempF": 59,
+      "tempC": 14.8,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 2,
-      "windDir": 218
+      "windDir": 214
     },
     "Marseille": {
       "tempF": 62,
@@ -299,27 +299,27 @@
     },
     "Livorno": {
       "tempF": 61,
-      "tempC": 15.9,
+      "tempC": 16.0,
       "condition": "Partly Cloudy",
       "wmo": 2,
-      "windKt": 10,
-      "windDir": 82
+      "windKt": 11,
+      "windDir": 83
     },
     "Civitavecchia": {
       "tempF": 60,
-      "tempC": 15.8,
+      "tempC": 15.7,
       "condition": "Overcast",
       "wmo": 3,
       "windKt": 3,
-      "windDir": 107
+      "windDir": 127
     },
     "Naples": {
-      "tempF": 60,
-      "tempC": 15.6,
+      "tempF": 59,
+      "tempC": 14.9,
       "condition": "Light Rain",
       "wmo": 61,
-      "windKt": 3,
-      "windDir": 27
+      "windKt": 4,
+      "windDir": 52
     },
     "Sardinia": {
       "tempF": 57,
@@ -327,11 +327,11 @@
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 2,
-      "windDir": 6
+      "windDir": 17
     },
     "Corsica": {
-      "tempF": 49,
-      "tempC": 9.5,
+      "tempF": 50,
+      "tempC": 10.1,
       "condition": "Mostly Clear",
       "wmo": 1,
       "windKt": 4,
@@ -346,12 +346,12 @@
       "windDir": 45
     },
     "Dubrovnik": {
-      "tempF": 61,
-      "tempC": 16.2,
+      "tempF": 62,
+      "tempC": 16.5,
       "condition": "Overcast",
       "wmo": 3,
-      "windKt": 1,
-      "windDir": 63
+      "windKt": 3,
+      "windDir": 40
     },
     "Venice": {
       "tempF": 56,
@@ -363,31 +363,31 @@
     },
     "Athens": {
       "tempF": 52,
-      "tempC": 11.2,
+      "tempC": 11.3,
       "condition": "Sunny",
       "wmo": 0,
       "windKt": 2,
-      "windDir": 50
+      "windDir": 40
     },
     "Santorini": {
-      "tempF": 62,
-      "tempC": 16.4,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 3,
-      "windDir": 290
-    },
-    "Mykonos": {
       "tempF": 61,
       "tempC": 16.2,
       "condition": "Sunny",
       "wmo": 0,
-      "windKt": 0,
-      "windDir": 27
+      "windKt": 2,
+      "windDir": 299
+    },
+    "Mykonos": {
+      "tempF": 60,
+      "tempC": 15.7,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 2,
+      "windDir": 41
     },
     "Rhodes": {
-      "tempF": 62,
-      "tempC": 16.4,
+      "tempF": 61,
+      "tempC": 16.2,
       "condition": "Sunny",
       "wmo": 0,
       "windKt": 4,
@@ -399,15 +399,15 @@
       "condition": "Sunny",
       "wmo": 0,
       "windKt": 1,
-      "windDir": 180
+      "windDir": 172
     },
     "Istanbul": {
       "tempF": 50,
       "tempC": 10.1,
       "condition": "Overcast",
       "wmo": 3,
-      "windKt": 6,
-      "windDir": 51
+      "windKt": 7,
+      "windDir": 46
     },
     "Izmir": {
       "tempF": 51,
@@ -415,7 +415,7 @@
       "condition": "Sunny",
       "wmo": 0,
       "windKt": 3,
-      "windDir": 102
+      "windDir": 94
     },
     "Cyprus": {
       "tempF": 59,
@@ -438,8 +438,8 @@
       "tempC": 17.1,
       "condition": "Partly Cloudy",
       "wmo": 2,
-      "windKt": 2,
-      "windDir": 14
+      "windKt": 1,
+      "windDir": 16
     },
     "Bonaire": {
       "tempF": 80,
