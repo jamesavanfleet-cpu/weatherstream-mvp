@@ -23,11 +23,17 @@ interface GalleryPhoto {
 
 const PHOTOS: GalleryPhoto[] = [
   { id: 47, src: "/from-the-deck/ftd-47.jpg", ship: "Norwegian Luna", line: "Norwegian Cruise Line", location: "St. Thomas, USVI", caption: "Ol' Sol and Luna on the NCL Luna", photographer: "Kevin Novak" },
+  { id: 50, src: "/from-the-deck/ftd-50.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Hong Kong, China" },
   { id: 41, src: "/from-the-deck/ftd-41.jpg", ship: "Harmony of the Seas", line: "Royal Caribbean", location: "San Juan, Puerto Rico", caption: "Bridge departure" },
+  { id: 48, src: "/from-the-deck/ftd-48.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Suez Canal, Egypt" },
   { id: 42, src: "/from-the-deck/ftd-42.jpg", ship: "Enchantment of the Seas", line: "Royal Caribbean", location: "Eastern Caribbean", caption: "Double rainbow" },
+  { id: 53, src: "/from-the-deck/ftd-53.jpg", ship: "Explorer of the Seas", line: "Royal Caribbean", location: "Bonaire, Caribbean", caption: "Captain Toni docking" },
   { id: 43, src: "/from-the-deck/ftd-43.jpg", ship: "Freedom of the Seas", line: "Royal Caribbean", location: "Antigua" },
+  { id: 51, src: "/from-the-deck/ftd-51.jpg", ship: "Anthem of the Seas", line: "Royal Caribbean", location: "Cape Liberty, Bayonne, NJ", caption: "Fog departure" },
   { id: 44, src: "/from-the-deck/ftd-44.jpg", ship: "Majesty of the Seas", line: "Royal Caribbean", location: "Havana, Cuba" },
+  { id: 52, src: "/from-the-deck/ftd-52.jpg", ship: "Silver Wind", line: "Silversea Cruises", location: "Bridgetown, Barbados" },
   { id: 45, src: "/from-the-deck/ftd-45.jpg", ship: "Adventure of the Seas", line: "Royal Caribbean", location: "Georgetown, Grand Cayman" },
+  { id: 49, src: "/from-the-deck/ftd-49.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Aqaba, Jordan" },
   { id: 46, src: "/from-the-deck/ftd-46.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Bremerhaven, Germany" },
   { id: 23, src: "/from-the-deck/ftd-23.jpg", ship: "Grandeur of the Seas", line: "Royal Caribbean", location: "North Atlantic", caption: "Bridge at night" },
   { id: 24, src: "/from-the-deck/ftd-24.jpg", ship: "Grandeur of the Seas", line: "Royal Caribbean", location: "St. Kitts", caption: "Sunset" },
