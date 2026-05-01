@@ -1126,6 +1126,122 @@
         }
       ],
       "errors": []
+    },
+    {
+      "run_timestamp": "2026-05-01T23:09:14.356648",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "FIXED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-05-17",
+          "was": "Galveston, Cruise, Galveston",
+          "now": "Galveston, At Sea, Cozumel, Roatan, Perfect Day at CocoCay, At Sea, At Sea, Galveston",
+          "detail": "FIXED Symphony of the Seas 2026-05-17: was [Galveston, Cruise, Galveston] -> now [Galveston, At Sea, Cozumel, Roatan, Perfect Day at CocoCay, At Sea, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-05-11",
+          "was": "Galveston, Cruise, Galveston",
+          "now": "Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
+          "detail": "FIXED Mariner of the Seas 2026-05-11: was [Galveston, Cruise, Galveston] -> now [Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-05-11",
+          "was": "Miami, Perfect Day Cruise, Miami",
+          "now": "Miami, Perfect Day at CocoCay, Nassau, At Sea, Miami",
+          "detail": "FIXED Wonder of the Seas 2026-05-11: was [Miami, Perfect Day Cruise, Miami] -> now [Miami, Perfect Day at CocoCay, Nassau, At Sea, Miami]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Freedom of the Seas",
+          "departure_date": "2026-05-11",
+          "was": "Miami, Perfect Day, Miami",
+          "now": "Miami, At Sea, Cozumel, At Sea, Perfect Day at CocoCay, Miami",
+          "detail": "FIXED Freedom of the Seas 2026-05-11: was [Miami, Perfect Day, Miami] -> now [Miami, At Sea, Cozumel, At Sea, Perfect Day at CocoCay, Miami]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-02",
+          "description": "7 days, round-trip Western Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-02: 7 days, round-trip Western Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-09",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-09: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-16",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-16: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-05-16",
+          "was": "Port Canaveral, Port Canaveral",
+          "now": "Port Canaveral, At Sea, At Sea, Curacao, Aruba, At Sea, At Sea, Celebration Key, Port Canaveral",
+          "detail": "FIXED Carnival Vista 2026-05-16: was [Port Canaveral, Port Canaveral] -> now [Port Canaveral, At Sea, At Sea, Curacao, Aruba, At Sea, At Sea, Celebration Key, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-05-17",
+          "was": "Miami, Grand Cayman, Miami",
+          "now": "Miami, At Sea, Grand Cayman, Cozumel, Perfect Day at CocoCay, At Sea, Nassau, Miami",
+          "detail": "FIXED Celebrity Beyond 2026-05-17: was [Miami, Grand Cayman, Miami] -> now [Miami, At Sea, Grand Cayman, Cozumel, Perfect Day at CocoCay, At Sea, Nassau, Miami]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-05-08",
+          "was": "Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Castaway Cay, Port Canaveral",
+          "detail": "FIXED Disney Wish 2026-05-08: was [Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral] -> now [Port Canaveral, Nassau, Castaway Cay, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-05-08",
+          "was": "Miami, Miami Great Stirrup Cay Nassau, Miami",
+          "now": "Miami, Nassau, Great Stirrup Cay, Miami",
+          "detail": "FIXED Norwegian Getaway 2026-05-08: was [Miami, Miami Great Stirrup Cay Nassau, Miami] -> now [Miami, Nassau, Great Stirrup Cay, Miami]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-05-17",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-05-17: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-05-17",
+          "was": "Galveston, Galveston",
+          "now": "Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston",
+          "detail": "FIXED MSC Seascape 2026-05-17: was [Galveston, Galveston] -> now [Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Scarlet Lady",
+          "departure_date": "2026-05-24",
+          "was": "Piraeus-Athens, Corfu, Dubrovnik More, Piraeus-Athens",
+          "now": "Piraeus-Athens, At Sea, Kotor, Dubrovnik, Corfu Island, At Sea, Mykonos Island, Piraeus-Athens",
+          "detail": "FIXED Scarlet Lady 2026-05-24: was [Piraeus-Athens, Corfu, Dubrovnik More, Piraeus-Athens] -> now [Piraeus-Athens, At Sea, Kotor, Dubrovnik, Corfu Island, At Sea, Mykonos Island, Piraeus-Athens]"
+        }
+      ],
+      "errors": []
     }
   ]
 }
