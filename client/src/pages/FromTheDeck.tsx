@@ -23,6 +23,8 @@ interface GalleryPhoto {
 
 const PHOTOS: GalleryPhoto[] = [
   { id: 47, src: "/from-the-deck/ftd-47.jpg", ship: "Norwegian Luna", line: "Norwegian Cruise Line", location: "St. Thomas, USVI", caption: "Ol' Sol and Luna on the NCL Luna", photographer: "Kevin Novak" },
+  { id: 54, src: "/from-the-deck/ftd-54.jpg", ship: "Emerald Princess", line: "Princess Cruises", location: "South of Isle of Wight, England", caption: "Departing Southampton", photographer: "Andrew Sassoli-Walker" },
+  { id: 55, src: "/from-the-deck/ftd-55.jpg", ship: "Emerald Princess", line: "Princess Cruises", location: "North Atlantic, between Ireland and Greenland", photographer: "Andrew Sassoli-Walker" },
   { id: 50, src: "/from-the-deck/ftd-50.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Hong Kong, China" },
   { id: 41, src: "/from-the-deck/ftd-41.jpg", ship: "Harmony of the Seas", line: "Royal Caribbean", location: "San Juan, Puerto Rico", caption: "Bridge departure" },
   { id: 48, src: "/from-the-deck/ftd-48.jpg", ship: "Spectrum of the Seas", line: "Royal Caribbean", location: "Suez Canal, Egypt" },
