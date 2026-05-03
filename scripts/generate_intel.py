@@ -28,6 +28,7 @@ REGIONS = [
         "lat": 25.76,
         "lon": -80.19,
         "ports": ["Baltimore", "Boston", "Bayonne", "Brooklyn", "Charleston", "Galveston", "Houston", "Jacksonville", "Long Beach", "Los Angeles", "Manhattan", "Miami", "New Orleans", "Norfolk", "Port Canaveral", "Port Everglades", "San Diego", "San Francisco", "Savannah", "Tampa Bay"],
+        "priority_note": "PORT PRIORITY FOR US PORTS REGION: The four primary ports are Miami, Port Everglades, Port Canaveral, and Tampa Bay. These are the highest-volume cruise homeports in the United States and must be named first and addressed prominently in every briefing. Smaller ports such as Charleston, Savannah, Baltimore, Boston, and others along the Eastern Seaboard may be mentioned only when conditions there are operationally significant, and must never lead the briefing or receive more emphasis than the four primary Florida homeports.",
     },
     {
         "slug": "bahamas-central-caribbean",
@@ -132,6 +133,15 @@ REGIONS = [
         "lat": 37.94,
         "lon": 23.64,
         "ports": ["Athens/Piraeus", "Santorini", "Mykonos", "Rhodes", "Corfu", "Istanbul", "Izmir", "Cyprus", "Haifa", "Alexandria"],
+    },
+    {
+        "slug": "southeast-alaska",
+        "name": "Alaska",
+        "rep_port": "Juneau, Alaska",
+        "lat": 58.30,
+        "lon": -134.42,
+        "ports": ["Juneau", "Ketchikan", "Skagway", "Sitka", "Haines", "Icy Strait Point", "Anchorage", "Seattle"],
+        "priority_note": "PORT PRIORITY FOR ALASKA REGION: Juneau, Ketchikan, and Skagway are the three highest-volume Alaska cruise ports and must be named first and addressed prominently. Sitka, Haines, Icy Strait Point, and Anchorage may be mentioned when conditions are operationally significant. Seattle is the primary embarkation port and must be addressed when embarkation-day weather is notable. CRITICAL ALASKA RULE: You are ABSOLUTELY FORBIDDEN from making any climatological, seasonal, or typical-weather statements about Alaska. Do NOT write anything about what Alaska weather is usually like, what the Inside Passage typically experiences, what season offers the best conditions, or any general geographic or climate description. Every single sentence must be based exclusively on the live forecast data provided. Do not mention ice conditions, bergy bits, or glacier navigation unless the live forecast data specifically supports an operational concern.",
     },
 ]
 
@@ -270,7 +280,7 @@ def call_groq(region: dict, weather_data: dict) -> str:
         f"You are FORBIDDEN from making any general, climatological, or typical-weather statements. "
         f"Do NOT write anything like 'the Bahamas typically sees trade winds' or 'cold fronts can bring NW winds' or any statement about what weather is usually like. "
         f"Only describe what the data says is happening or forecast for the next 3 days. "
-        f"PORT PRIORITY FOR US PORTS REGION: The four primary ports are Miami, Port Everglades, Port Canaveral, and Tampa Bay. These are the highest-volume cruise homeports in the United States and must be named first and addressed prominently in every briefing. Smaller ports such as Charleston, Savannah, Baltimore, Boston, and others along the Eastern Seaboard may be mentioned only when conditions there are operationally significant, and must never lead the briefing or receive more emphasis than the four primary Florida homeports. "
+        f"{region.get('priority_note', '') + ' ' if region.get('priority_note') else ''}"
         f"Name specific ports when describing impacts. "
         f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity. Focus only on: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Do not use em dashes. Do not mention the data source. "
