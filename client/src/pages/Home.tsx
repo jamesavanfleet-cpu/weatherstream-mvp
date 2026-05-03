@@ -1394,35 +1394,37 @@ export default function Home() {
               of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, Eastern Pacific, and Alaska.
             </p>
             <div className="h-8" />
-            <div className="flex flex-col md:flex-row md:flex-nowrap gap-3">
-              <Button
-                size="lg"
-                className="w-full md:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
-                onClick={() => setBriefingVideoOpen(true)}
-              >
-                <Play className="w-5 h-5 mr-2" />
-                Watch the Latest Briefing
-              </Button>
+            <div className="flex flex-col md:flex-row md:flex-nowrap md:justify-between gap-3">
+              <div className="flex flex-col md:flex-row md:flex-nowrap gap-3">
+                <Button
+                  size="lg"
+                  className="w-full md:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
+                  onClick={() => setBriefingVideoOpen(true)}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Watch the Latest Briefing
+                </Button>
+                <Button
+                  size="lg"
+                  className="hidden md:flex w-full md:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-gray-900 border-0 shadow-lg"
+                  onClick={() => navigate("/advisories")}
+                >
+                  <AlertTriangle className="w-5 h-5 mr-2" />
+                  Tropical Advisories Map
+                </Button>
+                <Button
+                  size="lg"
+                  className="w-full md:w-auto bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 text-white border-0 shadow-2xl"
+                  onClick={() => navigate("/from-the-deck")}
+                >
+                  <Camera className="w-5 h-5 mr-2" />
+                  Your Photos From Your Cruise
+                </Button>
+              </div>
               <Button
                 size="lg"
                 variant="outline"
-                className="hidden md:flex w-full md:w-auto border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
-                onClick={() => navigate("/advisories")}
-              >
-                <AlertTriangle className="w-5 h-5 mr-2" />
-                Tropical Advisories Map
-              </Button>
-              <Button
-                size="lg"
-                className="w-full md:w-auto bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 text-white border-0 shadow-2xl"
-                onClick={() => navigate("/from-the-deck")}
-              >
-                <Camera className="w-5 h-5 mr-2" />
-                Your Photos From Your Cruise
-              </Button>
-              <Button
-                size="lg"
-                className="w-full md:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-gray-900 border-0 shadow-2xl"
+                className="hidden md:flex md:w-auto border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
                 asChild
               >
                 <a
@@ -1515,12 +1517,25 @@ export default function Home() {
             {/* Tropical Advisories button -- mobile only, shown below live conditions */}
             <Button
               size="lg"
-              variant="outline"
-              className="md:hidden w-full mt-3 border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
+              className="md:hidden w-full mt-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-gray-900 border-0 shadow-lg"
               onClick={() => navigate("/advisories")}
             >
               <AlertTriangle className="w-5 h-5 mr-2" />
               Tropical Advisories Map
+            </Button>
+            {/* Send Us Your Intel button -- mobile only, shown below Tropical Advisories */}
+            <Button
+              size="lg"
+              variant="outline"
+              className="md:hidden w-full mt-3 border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
+              asChild
+            >
+              <a
+                href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
+              >
+                <Mail className="w-5 h-5 mr-2" />
+                Send Us Your Intel
+              </a>
             </Button>
           </div>
         </div>
