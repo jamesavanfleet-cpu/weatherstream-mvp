@@ -24,9 +24,9 @@ REGIONS = [
     {
         "slug": "us-ports",
         "name": "US Ports",
-        "rep_port": "Charleston, South Carolina",
-        "lat": 32.78,
-        "lon": -79.93,
+        "rep_port": "Miami, Florida",
+        "lat": 25.76,
+        "lon": -80.19,
         "ports": ["Baltimore", "Boston", "Bayonne", "Brooklyn", "Charleston", "Galveston", "Houston", "Jacksonville", "Long Beach", "Los Angeles", "Manhattan", "Miami", "New Orleans", "Norfolk", "Port Canaveral", "Port Everglades", "San Diego", "San Francisco", "Savannah", "Tampa Bay"],
     },
     {
@@ -270,6 +270,7 @@ def call_groq(region: dict, weather_data: dict) -> str:
         f"You are FORBIDDEN from making any general, climatological, or typical-weather statements. "
         f"Do NOT write anything like 'the Bahamas typically sees trade winds' or 'cold fronts can bring NW winds' or any statement about what weather is usually like. "
         f"Only describe what the data says is happening or forecast for the next 3 days. "
+        f"PORT PRIORITY FOR US PORTS REGION: The four primary ports are Miami, Port Everglades, Port Canaveral, and Tampa Bay. These are the highest-volume cruise homeports in the United States and must be named first and addressed prominently in every briefing. Smaller ports such as Charleston, Savannah, Baltimore, Boston, and others along the Eastern Seaboard may be mentioned only when conditions there are operationally significant, and must never lead the briefing or receive more emphasis than the four primary Florida homeports. "
         f"Name specific ports when describing impacts. "
         f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity. Focus only on: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Do not use em dashes. Do not mention the data source. "
