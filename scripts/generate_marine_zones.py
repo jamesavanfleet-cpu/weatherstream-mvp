@@ -28,6 +28,117 @@ import http.client
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 API_BASE = "https://api.weather.gov"
+
+# Geometry compaction settings. NWS publishes polygons at sub-millimeter
+# precision (up to 9 decimals) which is wasted bytes for a continent-scale
+# map. Rounding to 4 decimals is roughly 11 m precision -- well below pixel
+# resolution at our zoom range. Douglas-Peucker simplification then removes
+# vertices that are within EPSILON degrees of the line they lie on, which
+# typically eliminates 80-95% of vertices on coastline-following zones with
+# zero visible difference at the zoom levels used by the map.
+COORD_DECIMALS = 4
+SIMPLIFY_EPSILON = 0.001  # degrees, ~110 m at the equator
+
+
+def _perp_dist_sq(p, a, b):
+    """Squared perpendicular distance from point p to segment ab."""
+    ax, ay = a[0], a[1]
+    bx, by = b[0], b[1]
+    px, py = p[0], p[1]
+    dx = bx - ax
+    dy = by - ay
+    if dx == 0.0 and dy == 0.0:
+        ex = px - ax
+        ey = py - ay
+        return ex * ex + ey * ey
+    t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)
+    if t < 0.0:
+        t = 0.0
+    elif t > 1.0:
+        t = 1.0
+    cx = ax + t * dx
+    cy = ay + t * dy
+    ex = px - cx
+    ey = py - cy
+    return ex * ex + ey * ey
+
+
+def _douglas_peucker(points, eps_sq):
+    """Iterative Douglas-Peucker; returns simplified ring keeping endpoints."""
+    n = len(points)
+    if n < 3:
+        return list(points)
+    keep = [False] * n
+    keep[0] = True
+    keep[n - 1] = True
+    stack = [(0, n - 1)]
+    while stack:
+        i, j = stack.pop()
+        max_d = 0.0
+        max_k = -1
+        a = points[i]
+        b = points[j]
+        for k in range(i + 1, j):
+            d = _perp_dist_sq(points[k], a, b)
+            if d > max_d:
+                max_d = d
+                max_k = k
+        if max_k != -1 and max_d > eps_sq:
+            keep[max_k] = True
+            stack.append((i, max_k))
+            stack.append((max_k, j))
+    return [points[i] for i in range(n) if keep[i]]
+
+
+def _round_pt(pt):
+    return [round(pt[0], COORD_DECIMALS), round(pt[1], COORD_DECIMALS)]
+
+
+def _process_ring(ring):
+    """Round every coordinate, then DP-simplify. Closes the ring if needed."""
+    if not ring:
+        return ring
+    rounded = [_round_pt(p) for p in ring]
+    eps_sq = SIMPLIFY_EPSILON * SIMPLIFY_EPSILON
+    simplified = _douglas_peucker(rounded, eps_sq)
+    # Preserve ring closure: first and last must match for valid GeoJSON
+    if simplified and (simplified[0][0] != simplified[-1][0] or simplified[0][1] != simplified[-1][1]):
+        simplified.append(simplified[0])
+    return simplified
+
+
+def compact_geometry(geom):
+    """Round coordinate precision and simplify polygon vertices in place.
+    Supports Polygon and MultiPolygon GeoJSON geometries (which are the only
+    types NWS returns for marine zones)."""
+    if not geom or not isinstance(geom, dict):
+        return geom
+    gtype = geom.get("type")
+    coords = geom.get("coordinates")
+    if not coords:
+        return geom
+    if gtype == "Polygon":
+        new_rings = []
+        for ring in coords:
+            simplified = _process_ring(ring)
+            if len(simplified) >= 4:  # min for closed polygon ring
+                new_rings.append(simplified)
+        if new_rings:
+            geom["coordinates"] = new_rings
+    elif gtype == "MultiPolygon":
+        new_polys = []
+        for poly in coords:
+            new_rings = []
+            for ring in poly:
+                simplified = _process_ring(ring)
+                if len(simplified) >= 4:
+                    new_rings.append(simplified)
+            if new_rings:
+                new_polys.append(new_rings)
+        if new_polys:
+            geom["coordinates"] = new_polys
+    return geom
+
 HEADERS = {"User-Agent": "MyCruisingWeather/1.0 (mycruisingweather.com; contact@mycruisingweather.com)"}
 MAX_RETRIES = 4
 RETRY_DELAY = 2
@@ -209,6 +320,7 @@ def main():
                 pc = coastal_product_for(zone_id, wfo)
             product_code = pc[0] if pc else ""
             office = pc[1] if pc else ""
+            geom = compact_geometry(geom)
             all_features.append({
                 "type": "Feature",
                 "geometry": geom,
