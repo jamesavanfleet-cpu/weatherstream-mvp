@@ -1520,6 +1520,15 @@ export default function Home() {
               })}
             </div>
             <p className="text-white/25 text-[10px] mt-2 text-right">Updated hourly -- tap any port for full conditions</p>
+            {/* Tropical Advisories button -- mobile only, shown below live conditions */}
+            <Button
+              size="lg"
+              className="md:hidden w-full mt-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-gray-900 border-0 shadow-lg"
+              onClick={() => navigate("/advisories")}
+            >
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              Tropical Advisories Map
+            </Button>
 
           </div>
         </div>
