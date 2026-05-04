@@ -1,22 +1,8 @@
 {
-  "generated_at": "2026-05-04T11:15:40.372658+00:00",
+  "generated_at": "2026-05-04T11:16:55.576182+00:00",
   "ports": {
-    "Miami": {
-      "tempF": 73,
-      "tempC": 22.8,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
-      "windKt": 3,
-      "windDir": 325
-    },
-    "Key West": {
-      "tempF": 76,
-      "tempC": 24.3,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 5,
-      "windDir": 328
-    },
+    "Miami": null,
+    "Key West": null,
     "Nassau": {
       "tempF": 75,
       "tempC": 23.8,
@@ -260,8 +246,8 @@
     "Marseille": {
       "tempF": 65,
       "tempC": 18.2,
-      "condition": "Heavy Drizzle",
-      "wmo": 55,
+      "condition": "Rain",
+      "wmo": 63,
       "windKt": 12,
       "windDir": 119
     },
