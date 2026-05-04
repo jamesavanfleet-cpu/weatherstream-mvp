@@ -147,6 +147,28 @@ RETRY_DELAY = 2
 # Prefix uses first 4 chars (AMZ6 etc.) for coarse routing then refined by tens digit
 # from the explicit map below. WFOs verified against NWS marine zone responsibility list.
 COASTAL_CWF_BY_TENS = {
+    # --- Pacific coastal (PZZ1xx-7xx) -- WFO codes verified against live CWF bulletins ---
+    "PZZ11": ("CWFSEW", "KSEW"),  # Seattle WA
+    "PZZ13": ("CWFSEW", "KSEW"),
+    "PZZ15": ("CWFSEW", "KSEW"),
+    "PZZ17": ("CWFSEW", "KSEW"),
+    "PZZ21": ("CWFPQR", "KPQR"),  # Portland OR
+    "PZZ25": ("CWFPQR", "KPQR"),
+    "PZZ27": ("CWFPQR", "KPQR"),
+    "PZZ35": ("CWFMFR", "KMFR"),  # Medford OR
+    "PZZ37": ("CWFMFR", "KMFR"),
+    "PZZ41": ("CWFEKA", "KEKA"),  # Eureka CA
+    "PZZ45": ("CWFEKA", "KEKA"),
+    "PZZ47": ("CWFEKA", "KEKA"),
+    "PZZ53": ("CWFMTR", "KMTR"),  # San Francisco Bay Area
+    "PZZ54": ("CWFMTR", "KMTR"),
+    "PZZ55": ("CWFMTR", "KMTR"),
+    "PZZ56": ("CWFMTR", "KMTR"),
+    "PZZ57": ("CWFMTR", "KMTR"),
+    "PZZ64": ("CWFLOX", "KLOX"),  # Los Angeles / Oxnard
+    "PZZ65": ("CWFLOX", "KLOX"),
+    "PZZ67": ("CWFLOX", "KLOX"),
+    "PZZ74": ("CWFSGX", "KSGX"),  # San Diego
     # --- Atlantic coastal (AMZ6xx-9xx) ---
     "AMZ63": ("CWFSJU", "TJSJ"),  # San Juan PR / USVI
     "AMZ65": ("CWFMFL", "KMFL"),  # Miami FL (E coast S FL)
@@ -213,6 +235,20 @@ OFFSHORE_ZONE_TO_PRODUCT = {
     **{f"ANZ{n:03d}": ("OFFNT1", "KWBC") for n in [800, 805, 810, 815, 898, 900]},
     # OPC West Central N Atlantic shelf/slope 60-250 NM -- OFFNT2 (FZNT22 KWBC)
     **{f"ANZ{n:03d}": ("OFFNT2", "KWBC") for n in [820, 825, 828, 830, 833, 835, 899, 905, 910, 915, 920, 925, 930, 935]},
+    # OPC NE Pacific Washington/Oregon waters 60-250 NM -- OFFPZ5 (FZPN25 KWBC)
+    # Verified against live OFFPZ5 bulletin: zones PZZ800,805,810,815,898 (60-150NM)
+    # plus PZZ900,905,910,915 (150-250NM).
+    **{f"PZZ{n:03d}": ("OFFPZ5", "KWBC") for n in [800, 805, 810, 815, 898, 900, 905, 910, 915]},
+    # OPC NE Pacific California waters 60-250 NM -- OFFPZ6 (FZPN26 KWBC)
+    # Verified against live OFFPZ6 bulletin: zones PZZ820,825,830,835,840,899 (60-150NM)
+    # plus PZZ920,925,930,935,940,945 (150-250NM).
+    **{f"PZZ{n:03d}": ("OFFPZ6", "KWBC") for n in [820, 825, 830, 835, 840, 899, 920, 925, 930, 935, 940, 945]},
+    # NHC East Pacific within 250 NM of Mexico -- OFFPZ7 (FZPN27 KNHC)
+    # Verified against live OFFPZ7 bulletin: PMZ001 synopsis + PMZ009-029 zone segments.
+    **{f"PMZ{n:03d}": ("OFFPZ7", "KNHC") for n in [1, 9, 11, 13, 14, 16, 17, 19, 21, 22, 24, 25, 26, 28, 29]},
+    # NHC East Pacific Central America / Colombia / Ecuador / Galapagos -- OFFPZ8 (FZPN28 KNHC)
+    # Verified against live OFFPZ8 bulletin: PMZ101 synopsis + PMZ111-123 zone segments.
+    **{f"PMZ{n:03d}": ("OFFPZ8", "KNHC") for n in [101, 111, 113, 115, 117, 119, 121, 123]},
 }
 
 
@@ -242,11 +278,12 @@ def coastal_product_for(zone_id: str, wfo: str):
 def in_coverage(zone_id: str) -> bool:
     """Coverage rule: any AMZ/GMZ zone with a verified offshore product OR any
     coastal AMZ6xx-9xx / GMZ1xx-8xx zone (CWF text), plus the OPC ANZ offshore
-    zones that cover Mid-Atlantic / NW Atlantic shipping routes."""
+    zones that cover Mid-Atlantic / NW Atlantic shipping routes, plus the
+    Eastern Pacific (PZZ West Coast, PMZ Mexico to Ecuador)."""
     if not zone_id or len(zone_id) < 6:
         return False
     prefix = zone_id[:3]
-    if prefix not in ("AMZ", "GMZ", "ANZ"):
+    if prefix not in ("AMZ", "GMZ", "ANZ", "PZZ", "PMZ"):
         return False
     try:
         n = int(zone_id[3:])
@@ -259,12 +296,22 @@ def in_coverage(zone_id: str) -> bool:
         return zone_id in OFFSHORE_ZONE_TO_PRODUCT or (100 <= n <= 999)
     if prefix == "ANZ":
         return zone_id in OFFSHORE_ZONE_TO_PRODUCT
+    if prefix == "PZZ":
+        # Pacific West Coast: include all coastal PZZ100-799 plus offshore PZZ8xx-9xx
+        return zone_id in OFFSHORE_ZONE_TO_PRODUCT or (100 <= n <= 799)
+    if prefix == "PMZ":
+        # NHC East Pacific Mexico-Ecuador only (PMZ001-129); exclude far-Pacific
+        # micronesian coastal zones (PMZ151+) which are well outside cruise routes.
+        return zone_id in OFFSHORE_ZONE_TO_PRODUCT or (1 <= n <= 129)
     return False
 
 
 def fetch_category_index(category: str):
-    """Bulk list zone IDs and names; geometry comes from per-zone fetches."""
-    url = f"{API_BASE}/zones?type={category}&limit=500"
+    """Bulk list zone IDs and names; geometry comes from per-zone fetches.
+    limit=2000 ensures every Atlantic + Gulf + Caribbean + Pacific zone is
+    returned in a single page; the default limit=500 truncates the alphabetical
+    listing before reaching the P-prefixed (PZZ/PMZ) Pacific zones."""
+    url = f"{API_BASE}/zones?type={category}&limit=2000"
     print(f"Listing {category} zones from {url}", flush=True)
     data = http_get_json(url)
     feats = data.get("features", [])
