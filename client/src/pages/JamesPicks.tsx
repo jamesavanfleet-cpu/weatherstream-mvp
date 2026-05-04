@@ -51,11 +51,45 @@ function heatColor(s: number): string {
   return "rgba(127,29,29,0.7)";
 }
 
+// ---- Alaska port set (uses separate temperature-adjusted color scale) ----
+const ALASKA_PORTS = new Set([
+  "Juneau","Ketchikan","Sitka","Skagway","Tracy Arm Fjord","Haines",
+  "Seattle","Vancouver","Victoria",
+]);
+
+function akScoreClass(s: number): string {
+  if (s >= 60) return "excellent";
+  if (s >= 40) return "good";
+  if (s >= 20) return "fair";
+  return "poor";
+}
+function akScoreColor(s: number): string {
+  if (s >= 60) return "#22c55e";
+  if (s >= 40) return "#eab308";
+  if (s >= 20) return "#f97316";
+  return "#ef4444";
+}
+function akHeatColor(s: number): string {
+  if (s >= 60) return "rgba(34,197,94,0.85)";
+  if (s >= 50) return "rgba(134,239,172,0.75)";
+  if (s >= 40) return "rgba(234,179,8,0.75)";
+  if (s >= 20) return "rgba(249,115,22,0.75)";
+  if (s >= 10) return "rgba(239,68,68,0.7)";
+  return "rgba(127,29,29,0.7)";
+}
+function getScoreColor(portName: string, s: number): string {
+  return ALASKA_PORTS.has(portName) ? akScoreColor(s) : scoreColor(s);
+}
+function getHeatColor(portName: string, s: number): string {
+  return ALASKA_PORTS.has(portName) ? akHeatColor(s) : heatColor(s);
+}
+
 // ---- Sub-components ----
-function MonthStrip({ months, selectedMonth, onSelect }: {
+function MonthStrip({ months, selectedMonth, onSelect, portName }: {
   months: MonthData[];
   selectedMonth: number | null;
   onSelect: (i: number) => void;
+  portName: string;
 }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(12,1fr)", gap: 3 }}>
@@ -65,7 +99,7 @@ function MonthStrip({ months, selectedMonth, onSelect }: {
           onClick={(e) => { e.stopPropagation(); onSelect(i); }}
           title={`${m.month}: Score ${m.score}`}
           style={{
-            background: heatColor(m.score),
+            background: getHeatColor(portName, m.score),
             borderRadius: 4,
             padding: "4px 2px",
             textAlign: "center",
@@ -94,8 +128,8 @@ function PortCard({ port, selectedMonth, onOpen, onSelectMonth }: {
 }) {
   const displayMonth = selectedMonth !== null ? port.months[selectedMonth] : port.months.reduce((a, b) => b.score > a.score ? b : a);
   const best = port.months.reduce((a, b) => b.score > a.score ? b : a);
-  const sc = scoreClass(displayMonth.score);
-  const col = scoreColor(displayMonth.score);
+  const sc = ALASKA_PORTS.has(port.name) ? akScoreClass(displayMonth.score) : scoreClass(displayMonth.score);
+  const col = getScoreColor(port.name, displayMonth.score);
 
   const badgeStyle: React.CSSProperties = {
     width: 52, height: 52, borderRadius: "50%",
@@ -137,7 +171,7 @@ function PortCard({ port, selectedMonth, onOpen, onSelectMonth }: {
       {/* Month strip */}
       <div style={{ padding: "14px 20px", borderBottom: "1px solid #1e3a5f" }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Weather Score by Month</div>
-        <MonthStrip months={port.months} selectedMonth={selectedMonth} onSelect={onSelectMonth} />
+        <MonthStrip months={port.months} selectedMonth={selectedMonth} onSelect={onSelectMonth} portName={port.name} />
       </div>
 
       {/* Stats */}
@@ -189,7 +223,7 @@ function PortModal({ port, onClose }: { port: PortData; onClose: () => void }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 28 }}>
             {port.months.map(m => {
               const isBest = m.month === best.month;
-              const col = scoreColor(m.score);
+              const col = getScoreColor(port.name, m.score);
               return (
                 <div key={m.month} style={{ background: isBest ? "rgba(245,158,11,0.08)" : "#111827", border: `1px solid ${isBest ? "#f59e0b" : "#1e3a5f"}`, borderRadius: 10, padding: 14, textAlign: "center" } as React.CSSProperties}>
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{m.month}{isBest ? " \u2605" : ""}</div>
@@ -225,7 +259,7 @@ function PortModal({ port, onClose }: { port: PortData; onClose: () => void }) {
               { label: "Temp High",   val: best.temp_high_f|| 0, max: 110, unit: "\u00b0F", invert: false },
             ].map(p => {
               const pct = Math.min(100, (p.val / p.max) * 100);
-              const col = p.invert ? scoreColor(100 - pct) : scoreColor(100 - Math.abs(pct - 72));
+              const col = p.invert ? getScoreColor(port.name, 100 - pct) : getScoreColor(port.name, 100 - Math.abs(pct - 72));
               return (
                 <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ fontSize: 12, color: "#94a3b8", width: 100, flexShrink: 0 }}>{p.label}</div>
@@ -395,6 +429,16 @@ export default function JamesPicks() {
             {k.label}
           </span>
         ))}
+        <span style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", marginLeft: 12 }}>
+          (Alaska Summer:
+          {[{color:"#22c55e",label:"60-85"},{color:"#eab308",label:"40-59"},{color:"#f97316",label:"20-39"},{color:"#ef4444",label:"below 20"}].map(k => (
+            <span key={k.label} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 8, fontSize: 11, fontWeight: 600 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: k.color, display: "inline-block", flexShrink: 0 }} />
+              {k.label}
+            </span>
+          ))}
+          )
+        </span>
         <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic", marginLeft: "auto" }}>Scored on rain, wind, cloud cover &amp; temperature comfort</span>
       </div>
 
@@ -452,7 +496,7 @@ export default function JamesPicks() {
                 {sorted.map(port => {
                   const d = getDisplay(port);
                   const best = port.months.reduce((a, b) => b.score > a.score ? b : a);
-                  const col = scoreColor(d.score);
+                  const col = getScoreColor(port.name, d.score);
                   return (
                     <tr key={port.name} onClick={() => setModalPort(port)} style={{ cursor: "pointer" }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = "rgba(56,189,248,0.04)"}
@@ -496,7 +540,7 @@ export default function JamesPicks() {
                       {port.name}<br /><span style={{ fontSize: 10, color: "#94a3b8" }}>{port.region}</span>
                     </td>
                     {port.months.map((m, i) => (
-                      <td key={m.month} style={{ border: "1px solid rgba(30,58,95,0.4)", padding: "6px 4px", textAlign: "center", fontWeight: 700, fontSize: 11, background: heatColor(m.score), color: "#fff", outline: selectedMonth === i ? "2px solid #fff" : undefined, outlineOffset: selectedMonth === i ? -2 : undefined, cursor: "default" }} title={`${port.name} ${m.month}: Score ${m.score}, Rain ${m.rain_prob}%, Wind ${m.wind_kt}kt`}>
+                      <td key={m.month} style={{ border: "1px solid rgba(30,58,95,0.4)", padding: "6px 4px", textAlign: "center", fontWeight: 700, fontSize: 11, background: getHeatColor(port.name, m.score), color: "#fff", outline: selectedMonth === i ? "2px solid #fff" : undefined, outlineOffset: selectedMonth === i ? -2 : undefined, cursor: "default" }} title={`${port.name} ${m.month}: Score ${m.score}, Rain ${m.rain_prob}%, Wind ${m.wind_kt}kt`}>
                         {Math.round(m.score)}
                       </td>
                     ))}
