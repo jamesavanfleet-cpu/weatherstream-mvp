@@ -2,7 +2,7 @@
 // Full-screen Leaflet map for mycruisingweather.com showing:
 //   - NWS marine advisories (watches, warnings, statements) for Atlantic, Caribbean, Gulf waters
 //   - NHC tropical advisories (Tropical Storm Watch/Warning, Hurricane Watch/Warning, etc.)
-//   - Toggleable overlay layers: Radar, Satellite, Gulf Stream/SST, Zone Forecasts
+//   - Toggleable overlay layers: Radar, Satellite, Zone Forecasts
 //   - Advisory sidebar with live alert count, severity, and expandable alert cards
 //
 // Implementation notes:
@@ -835,7 +835,6 @@ export default function TropicalAdvisories() {
   // Layer toggles
   const [showAlerts, setShowAlerts] = useState(true);
   const [showSatellite, setShowSatellite] = useState(false);
-  const [showGulfStream, setShowGulfStream] = useState(false);
   const [showZoneForecasts, setShowZoneForecasts] = useState(false);
   const [basemap, setBasemap] = useState<"street" | "satellite">("street");
 
@@ -1094,7 +1093,6 @@ export default function TropicalAdvisories() {
         }}>
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
-          <LayerBtn label="Gulf Stream / SST" active={showGulfStream} color="#39FF14" onClick={() => setShowGulfStream(v => !v)} />
           <LayerBtn label="Zone Forecasts" active={showZoneForecasts} onClick={() => setShowZoneForecasts(v => !v)} />
           {/* NHC Tropical Outlook three-state toggle */}
           <div style={{ display: "flex", gap: 0, marginLeft: 8, border: "1px solid #1A2D42", overflow: "hidden" }}>
@@ -1183,23 +1181,6 @@ export default function TropicalAdvisories() {
                 }}
               />
             )}
-
-            {/* Gulf Stream / SST -- NASA GIBS GHRSST MUR SST (EPSG:3857 native, daily, ~1-day lag) */}
-            {showGulfStream && (() => {
-              // GIBS MUR SST has a ~1-day processing lag -- use yesterday's date
-              const sstDate = new Date();
-              sstDate.setUTCDate(sstDate.getUTCDate() - 1);
-              const sstDateStr = sstDate.toISOString().slice(0, 10);
-              return (
-                <TileLayer
-                  url={`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GHRSST_L4_MUR_Sea_Surface_Temperature/default/${sstDateStr}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`}
-                  opacity={0.75}
-                  zIndex={220}
-                  maxNativeZoom={7}
-                  attribution="NASA GIBS / JPL MUR SST"
-                />
-              );
-            })()}
 
             {/* Satellite -- NOAA nowCOAST global GMGSI mosaic (animated, 6-hour loop) */}
             {/* Covers 60N-60S globally: GOES-19 East, GOES-18 West, Himawari-9, Meteosat-9/10 */}
