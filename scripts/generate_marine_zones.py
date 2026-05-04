@@ -201,6 +201,12 @@ def http_get_json(url: str) -> dict:
 OFFSHORE_ZONE_TO_PRODUCT = {
     # NHC Caribbean Sea + Tropical N Atlantic W of 55W -- OFFNT3 (FZNT23 KNHC)
     **{f"AMZ{n:03d}": ("OFFNT3", "KNHC") for n in [1] + list(range(40, 63))},
+    # NHC High Seas Forecast Atlantic AT2 -- HSFAT2 (FZNT02 KNHC)
+    # Covers AMZ063-AMZ099: Bahamas + Atlantic open ocean east of Florida 22-31N, 55-77W.
+    # NWS does NOT issue zone-segmented text bulletins for these polygons; the only
+    # NWS forecast text covering this water is the broadcast HSF AT2, which describes
+    # weather features by lat/lon corners within the entire 7N-31N west of 35W area.
+    **{f"AMZ{n:03d}": ("HSFAT2", "KNHC") for n in range(63, 100)},
     # NHC Gulf of America (Gulf of Mexico) -- OFFNT4 (FZNT24 KNHC)
     **{f"GMZ{n:03d}": ("OFFNT4", "KNHC") for n in [1, 40, 41, 45, 46, 47, 48, 49, 50, 56, 57, 58]},
     # OPC NW Atlantic 250-500 NM -- OFFNT1 (FZNT21 KWBC)

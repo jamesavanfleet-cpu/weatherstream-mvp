@@ -37,7 +37,9 @@ to gh-pages so the front end never has to talk to NOAA cross-origin.
 import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 import urllib.error
@@ -220,6 +222,237 @@ def parse_bulletin(product_code: str, text: str) -> dict:
     return out
 
 
+# ── HSF AT2 (Atlantic High Seas Forecast) parser ─────────────────────────────
+# HSF AT2 does not segment by zone IDs. It is a free-form forecast covering the
+# entire Atlantic 7N-31N west of 35W with weather features described inside
+# lat/lon polygons. We extract the issuance time and slice the body into
+# logical periods (Warnings, Synopsis, 24/48 hour, Forecaster).
+
+HSF_HEADER_TIME_RE = re.compile(r"\b(\d{4}\s+UTC\s+(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+\d{1,2}\s+\d{4})\b")
+
+
+def parse_hsf_header(txt: str) -> str:
+    if not txt:
+        return ""
+    for ln in txt.splitlines()[:15]:
+        m = HSF_HEADER_TIME_RE.search(ln)
+        if m:
+            return m.group(1).strip()
+    return ""
+
+
+def parse_hsf_periods(txt: str) -> list:
+    """Slice HSF AT2 into labeled period blocks for popup display.
+    Sections are delimited by lines like '.WARNINGS.', '.SYNOPSIS AND FORECAST.',
+    '.FORECASTER NAME.', and the body uses '.LABEL...' or '.LABEL.' markers.
+    We return a structured period list: SUMMARY, WARNINGS, SYNOPSIS, plus the
+    body content split into reasonable chunks.
+    """
+    if not txt:
+        return []
+    lines = txt.splitlines()
+    periods = []
+    # SUMMARY block: lines 0-12 (header + area description)
+    summary_lines = []
+    for ln in lines[:14]:
+        s = ln.strip()
+        if s and not s.startswith("FZNT") and not re.match(r"^\d+$", s):
+            summary_lines.append(s)
+    if summary_lines:
+        periods.append({"label": "AREA", "text": " ".join(summary_lines)})
+    # Walk body for .SECTION. headers and group their content
+    body = "\n".join(lines)
+    # Split on top-level section markers like .WARNINGS. or .SYNOPSIS AND FORECAST.
+    section_re = re.compile(r"^\.([A-Z][A-Z0-9 /]*?)\.\s*$", re.M)
+    matches = list(section_re.finditer(body))
+    for i, m in enumerate(matches):
+        label = m.group(1).strip()
+        start = m.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(body)
+        block = body[start:end]
+        # Stop at the closing $$ marker if present
+        if "$$" in block:
+            block = block.split("$$", 1)[0]
+        # Collapse whitespace and split into sentences/items
+        clean = re.sub(r"\s+", " ", block).strip()
+        if clean and not clean.startswith("FORECASTER"):
+            # Break long blocks into period sub-items by leading ".LABEL" markers
+            sub = re.split(r"\s\.([A-Z][A-Z0-9 /]*?)\s", " " + clean)
+            if len(sub) > 1:
+                # sub = ['', 'LABEL1', 'text1', 'LABEL2', 'text2', ...]
+                # Prepend the section label to the first item
+                pre = sub[0].strip()
+                if pre:
+                    periods.append({"label": label, "text": pre})
+                for k in range(1, len(sub) - 1, 2):
+                    sub_label = sub[k].strip()
+                    sub_text = sub[k + 1].strip()
+                    if sub_text:
+                        periods.append({"label": sub_label, "text": sub_text})
+            else:
+                periods.append({"label": label, "text": clean})
+    return periods
+
+
+# ── Bahamas Department of Meteorology marine forecast ───────────────────────
+# Scrapes met.gov.bs homepage for the latest marine forecast PDF link, downloads
+# the PDF, extracts text via pdftotext (poppler-utils, pre-installed in sandbox
+# and available in CI runner image used by the refresh workflow), and parses
+# the four region sections.
+
+BDM_HOMEPAGE = "https://met.gov.bs/"
+BDM_PDF_LINK_RE = re.compile(r'href="(https?://met\.gov\.bs/[^"]*MARINE-FORECAST[^"]*\.pdf)"', re.I)
+BDM_SECTION_HEADERS = {
+    "NORTHERN BAHAMAS": "NORTHERN",
+    "NORTHWEST BAHAMAS": "NORTHWEST",
+    "CENTRAL BAHAMAS": "CENTRAL",
+    "SOUTHEAST BAHAMAS": "SOUTHEAST",
+}
+# Map NWS marine zone ID to the BDM section that best covers it
+BDM_ZONE_TO_SECTION = {
+    "AMZ073": "NORTHERN",      # Atlantic from 27N to 31N between 77W and 75W (Abacos area)
+    "AMZ074": "NORTHERN",
+    "AMZ075": "NORTHWEST",     # New Providence / Andros / Berry Islands area
+    "AMZ076": "NORTHWEST",
+    "AMZ078": "NORTHWEST",
+    "AMZ080": "CENTRAL",        # Central Bahamas including Cay Sal Bank
+    "AMZ082": "CENTRAL",
+    "AMZ083": "CENTRAL",
+    "AMZ085": "SOUTHEAST",      # SE Bahamas / Inagua / Acklins / Mayaguana
+    "AMZ087": "SOUTHEAST",
+}
+
+
+BDM_LABELS = ["ADVISORY", "WINDS", "LOCAL SEAS", "GULF STREAM", "SWELLS", "WEATHER"]
+BDM_LABEL_COL = 16  # labels live in columns 0..15, values from column 16+
+
+
+def _parse_bdm_section(section_text: str) -> list:
+    """Parse a single BDM region section using two-column PDF layout.
+
+    The PDF lays out each region as a two-column table: labels (ADVISORY:,
+    WINDS:, etc.) are in a left column at indent 0; the value paragraph is in
+    a right column at indent ~16. pdftotext -layout renders this row-by-row,
+    so the value lines BRACKET the label line (a label appears at the visual
+    vertical center of its value cell).
+
+    Algorithm:
+      1. Classify every non-blank line by indent: LABEL (indent < 16 and
+         matches known label keyword) or VALUE (indent >= 16) or HEADER
+         (anything else like region sub-header).
+      2. Walk lines collecting VALUE lines into bins keyed by the LABEL whose
+         influence range that line falls in. The influence range of label N
+         starts halfway between label N-1 and label N, and ends halfway
+         between label N and label N+1.
+      3. Some labels carry an inline value on the same line (e.g. "LOCAL SEAS:
+         3 - 5 feet ..."); that text is added to the label's bin.
+      4. Skip empty bins and "NONE." placeholders.
+    """
+    lines = section_text.splitlines()
+    # Build (line_index, kind, payload) records
+    records = []  # (idx, kind, label_or_text, inline_value)
+    label_pat = re.compile(r"^(ADVISORY|WINDS|LOCAL SEAS|GULF STREAM|SWELLS|WEATHER):\s*(.*)$")
+    for i, raw in enumerate(lines):
+        if not raw.strip():
+            continue
+        rstripped = raw.rstrip()
+        indent = len(rstripped) - len(rstripped.lstrip(" "))
+        text = rstripped.strip()
+        if indent < 16:
+            m = label_pat.match(text)
+            if m:
+                records.append((i, "L", m.group(1), m.group(2).strip()))
+            # else: ignore HEADER / sub-header lines
+        else:
+            records.append((i, "V", text, ""))
+
+    # Find label positions (line indexes of labels) and assign value lines to
+    # the nearest label by line proximity, splitting ties forward.
+    label_records = [r for r in records if r[1] == "L"]
+    value_records = [r for r in records if r[1] == "V"]
+    if not label_records:
+        return []
+    label_lines = [r[0] for r in label_records]
+    bins = {idx: [] for idx, _, _, _ in label_records}
+    # Add inline values to their label's bin first
+    for idx, _, _lbl, inline in label_records:
+        if inline:
+            bins[idx].append(inline)
+    # For each value line, find the nearest label by absolute line distance
+    for vidx, _, vtext, _ in value_records:
+        # Compute distance to each label
+        nearest = min(label_lines, key=lambda li: (abs(vidx - li), li))
+        bins[nearest].append(vtext)
+
+    periods = []
+    for idx, _, lbl, _inline in label_records:
+        parts = bins.get(idx, [])
+        val = re.sub(r"\s+", " ", " ".join(parts)).strip()
+        val = val.lstrip(":").strip()
+        if not val or val.upper() in ("NONE.", "NONE"):
+            continue
+        periods.append({"label": f"BAHAMAS MET / {lbl}", "text": val})
+    return periods
+
+
+def fetch_bdm_marine_forecast() -> dict:
+    """Fetch latest BDM marine forecast PDF and parse into structured sections."""
+    # Use a browser User-Agent because met.gov.bs WAF blocks generic UAs
+    bdm_headers = {"User-Agent": "Mozilla/5.0 (compatible; MyCruisingWeather/1.0)"}
+    req = urllib.request.Request(BDM_HOMEPAGE, headers=bdm_headers)
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        html = resp.read().decode("utf-8", errors="replace")
+    matches = BDM_PDF_LINK_RE.findall(html)
+    if not matches:
+        return {}
+    pdf_url = matches[0]
+    req = urllib.request.Request(pdf_url, headers=bdm_headers)
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        pdf_bytes = resp.read()
+    if not pdf_bytes or len(pdf_bytes) < 1000:
+        return {}
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp.write(pdf_bytes)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            ["pdftotext", "-layout", tmp_path, "-"],
+            capture_output=True, text=True, timeout=20
+        )
+        text = result.stdout
+    finally:
+        os.unlink(tmp_path)
+    if not text:
+        return {}
+    # Extract issuance time. Filename pattern: 6AM-BAHAMAS-MARINE-FORECAST-MONDAY-4TH-MAY-2026-SWH.pdf
+    fn = pdf_url.rsplit("/", 1)[-1]
+    m = re.match(r"(\d+)([AP]M)-BAHAMAS-MARINE-FORECAST-(\w+)-(\w+)-(\w+)-(\d{4})", fn, re.I)
+    issued = ""
+    if m:
+        issued = f"{m.group(1)} {m.group(2).upper()} {m.group(3).title()} {m.group(4)} {m.group(5).title()} {m.group(6)}"
+    # Extract synopsis: text between "GENERAL" and first region header
+    syn_m = re.search(r"GENERAL.*?SITUATION:?(.*?)NORTHERN BAHAMAS", text, re.S | re.I)
+    synopsis = ""
+    if syn_m:
+        synopsis = re.sub(r"\s+", " ", syn_m.group(1)).strip()[:800]
+    # Split text into region sections by header lines
+    sections = {}
+    region_anchors = ["NORTHERN BAHAMAS", "NORTHWEST BAHAMAS", "CENTRAL BAHAMAS", "SOUTHEAST BAHAMAS"]
+    end_anchors = region_anchors + ["MOONSET", "FORECASTER", "BAHMET"]
+    for header_text, section_key in BDM_SECTION_HEADERS.items():
+        # Capture from header up to the next region header (or end markers)
+        end_pat = "|".join(re.escape(a) for a in end_anchors if a != header_text)
+        pat = rf"{re.escape(header_text)}\s*\n(.*?)(?=\n\s*(?:{end_pat})\b|\Z)"
+        sec_m = re.search(pat, text, re.S | re.I)
+        if not sec_m:
+            continue
+        body = sec_m.group(1)
+        periods = _parse_bdm_section(body)
+        if periods:
+            sections[section_key] = {"periods": periods, "raw": body.strip()}
+    return {"issuedAt": issued, "synopsis": synopsis, "sections": sections, "sourceUrl": pdf_url}
+
+
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     zones_path = os.path.normpath(os.path.join(script_dir, "..", "client", "public", "marine_zones.json"))
@@ -260,6 +493,34 @@ def main():
     products_meta = {}
     zones_out = {}
     for pc, txt in fetched.items():
+        if pc == "HSFAT2":
+            # HSFAT2 is a broadcast High Seas Forecast covering the entire Atlantic
+            # 7N-31N west of 35W. It does NOT segment by zone IDs; it describes
+            # weather features within lat/lon polygons. Fan its full content out
+            # to every zone using HSFAT2 as productCode.
+            target_zones = [
+                f.get("properties", {}).get("id")
+                for f in zones_data.get("features", [])
+                if (f.get("properties") or {}).get("productCode") == "HSFAT2"
+            ]
+            target_zones = [z for z in target_zones if z]
+            issued = parse_hsf_header(txt)
+            seg_periods = parse_hsf_periods(txt)
+            products_meta[pc] = {
+                "issuedAt": issued,
+                "office": "NWS National Hurricane Center Miami FL",
+                "synopsis": "Atlantic High Seas Forecast covering 7N-31N west of 35W including Caribbean Sea and Gulf of America.",
+                "zoneCount": len(target_zones),
+            }
+            for zid in target_zones:
+                zones_out[zid] = {
+                    "productCode": "HSFAT2",
+                    "name": "Atlantic High Seas Forecast (covers this zone)",
+                    "issuedAt": issued,
+                    "periods": seg_periods,
+                    "raw": txt,
+                }
+            continue
         parsed = parse_bulletin(pc, txt)
         products_meta[pc] = {
             "issuedAt": parsed["issuedAt"],
@@ -269,6 +530,41 @@ def main():
         }
         for zid, seg in parsed["zones"].items():
             zones_out[zid] = seg
+
+    # Bahamas Department of Meteorology supplementary forecast for Bahamas zones
+    try:
+        bdm = fetch_bdm_marine_forecast()
+        if bdm and bdm.get("sections"):
+            for zid, section_key in BDM_ZONE_TO_SECTION.items():
+                section = bdm["sections"].get(section_key)
+                if not section:
+                    continue
+                # If we already have an HSFAT2 entry for this zone, append BDM
+                # as additional periods labeled "BAHAMAS MET ...". If no entry,
+                # create a fresh one.
+                if zid in zones_out:
+                    zones_out[zid]["periods"] = list(zones_out[zid].get("periods", [])) + section["periods"]
+                    zones_out[zid]["bahamasMet"] = {"issuedAt": bdm["issuedAt"], "section": section_key}
+                else:
+                    zones_out[zid] = {
+                        "productCode": "BDM",
+                        "name": f"Bahamas Department of Meteorology - {section_key}",
+                        "issuedAt": bdm["issuedAt"],
+                        "periods": section["periods"],
+                        "raw": section.get("raw", ""),
+                        "bahamasMet": {"issuedAt": bdm["issuedAt"], "section": section_key},
+                    }
+            products_meta["BDM"] = {
+                "issuedAt": bdm["issuedAt"],
+                "office": "Bahamas Department of Meteorology",
+                "synopsis": bdm.get("synopsis", ""),
+                "zoneCount": sum(1 for z in zones_out.values() if z.get("bahamasMet")),
+            }
+            print(f"  OK BDM ({bdm['issuedAt']})", flush=True)
+        else:
+            print("  WARN BDM: no marine forecast extracted", flush=True)
+    except Exception as e:
+        print(f"  FAIL BDM: {e}", flush=True)
 
     # Validate coverage: every zone in marine_zones.json with productCode
     # should have a forecast segment. If not, log a warning but still write.
