@@ -116,6 +116,32 @@ interface PortWeather {
 const COLS = 3; // Number of columns in the port grid -- used for row-level accordion toggling
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
+// Bounded retry with exponential backoff for the per-port forecast fetches.
+// Root-cause fix for transient Open-Meteo failures (network blips / rate limiting)
+// that previously caused ports to permanently render "Data temporarily unavailable".
+// FIX_MARKER: NASSAU_RETRY_v1
+async function fetchJsonWithRetry(url: string, attempts = 4): Promise<any> {
+  const delays = [300, 700, 1500, 3000];
+  let lastErr: unknown = null;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (!json || (typeof json === "object" && "error" in json && (json as any).error === true)) {
+        throw new Error("API error payload");
+      }
+      return json;
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise(res => setTimeout(res, delays[i]));
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("fetchJsonWithRetry failed");
+}
+
 async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | "loading" | "error">> {
   const weatherUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${port.lat}&longitude=${port.lon}` +
@@ -134,14 +160,14 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     `&length_unit=imperial&timezone=auto&forecast_days=7`;
 
   const [weatherRes, marineRes] = await Promise.allSettled([
-    fetch(weatherUrl).then(r => r.json()),
-    fetch(marineUrl).then(r => r.json()),
+    fetchJsonWithRetry(weatherUrl),
+    fetchJsonWithRetry(marineUrl),
   ]);
 
   const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
   const marine  = marineRes.status  === "fulfilled" ? marineRes.value  : null;
 
-  if (!weather) throw new Error("Weather fetch failed");
+  if (!weather || !weather.current || !weather.daily) throw new Error("Weather fetch failed");
 
   const c = weather.current;
   const d = weather.daily;
