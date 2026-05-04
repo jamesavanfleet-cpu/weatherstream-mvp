@@ -298,7 +298,7 @@ export default function JamesPicks() {
 
   // Fetch data
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}climate_data.json?v=20260503`)
+    fetch(`${import.meta.env.BASE_URL}climate_data.json?v=20260503c`)
       .then(r => { if (!r.ok) throw new Error("Failed to load climate data"); return r.json(); })
       .then((data: PortData[]) => { setPorts(data); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
@@ -429,16 +429,7 @@ export default function JamesPicks() {
             {k.label}
           </span>
         ))}
-        <span style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap", marginLeft: 12 }}>
-          (Alaska Summer:
-          {[{color:"#22c55e",label:"60-85"},{color:"#eab308",label:"40-59"},{color:"#f97316",label:"20-39"},{color:"#ef4444",label:"below 20"}].map(k => (
-            <span key={k.label} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 8, fontSize: 11, fontWeight: 600 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: k.color, display: "inline-block", flexShrink: 0 }} />
-              {k.label}
-            </span>
-          ))}
-          )
-        </span>
+
         <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic", marginLeft: "auto" }}>Scored on rain, wind, cloud cover &amp; temperature comfort</span>
       </div>
 
