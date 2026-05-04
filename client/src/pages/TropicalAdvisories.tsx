@@ -877,6 +877,24 @@ export default function TropicalAdvisories() {
   // Marine zone boundaries GeoJSON (pre-baked, served from gh-pages)
   const [marineZones, setMarineZones] = useState<GeoJSON.FeatureCollection | null>(null);
 
+  // Marine forecasts (NOAA Offshore Waters and Coastal Waters bulletins, parsed),
+  // keyed by zone ID. Loaded together with marine_zones.json when Zone Forecasts is
+  // first toggled on. See scripts/generate_marine_forecasts.py for the source.
+  type MarineForecastPeriod = { label: string; text: string };
+  type MarineForecastZone = {
+    productCode: string;
+    name: string;
+    issuedAt: string;
+    periods: MarineForecastPeriod[];
+    raw: string;
+  };
+  type MarineForecastsFile = {
+    generated: string;
+    products: Record<string, { issuedAt: string; office: string; synopsis: string; zoneCount: number }>;
+    zones: Record<string, MarineForecastZone>;
+  };
+  const [marineForecasts, setMarineForecasts] = useState<MarineForecastsFile | null>(null);
+
   // REFRESH button visual feedback
   const [refreshing, setRefreshing] = useState(false);
 
@@ -962,21 +980,32 @@ export default function TropicalAdvisories() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch marine zone boundaries on mount (lazy -- only when Zone Forecasts first toggled on)
+  // Fetch marine zone boundaries AND marine forecasts on mount (lazy -- only when
+  // Zone Forecasts is first toggled on). Both files come from gh-pages and are
+  // refreshed by scripts/generate_marine_zones.py and generate_marine_forecasts.py.
   useEffect(() => {
-    if (!showZoneForecasts || marineZones) return;
-    const loadZones = async () => {
+    if (!showZoneForecasts) return;
+    if (marineZones && marineForecasts) return;
+    const loadAll = async () => {
       try {
-        const res = await fetch("/marine_zones.json");
-        if (!res.ok) return;
-        const data = await res.json();
-        setMarineZones(data as GeoJSON.FeatureCollection);
+        const [zonesRes, forecastsRes] = await Promise.all([
+          marineZones ? Promise.resolve(null) : fetch("/marine_zones.json"),
+          marineForecasts ? Promise.resolve(null) : fetch("/marine_forecasts.json"),
+        ]);
+        if (zonesRes && zonesRes.ok) {
+          const data = await zonesRes.json();
+          setMarineZones(data as GeoJSON.FeatureCollection);
+        }
+        if (forecastsRes && forecastsRes.ok) {
+          const data = await forecastsRes.json();
+          setMarineForecasts(data as MarineForecastsFile);
+        }
       } catch {
         // Silently fail -- zone layer is optional
       }
     };
-    loadZones();
-  }, [showZoneForecasts, marineZones]);
+    loadAll();
+  }, [showZoneForecasts, marineZones, marineForecasts]);
 
   // Scroll sidebar to highlighted alert
   useEffect(() => {
@@ -1172,12 +1201,42 @@ export default function TropicalAdvisories() {
                   opacity: 0.45,
                 })}
                 onEachFeature={(feature, layer) => {
-                  const name = (feature.properties as { name?: string })?.name ?? "Marine Zone";
-                  const id = (feature.properties as { id?: string })?.id ?? "";
+                  const props = feature.properties as {
+                    name?: string;
+                    id?: string;
+                    productCode?: string;
+                    forecastOffice?: string;
+                    zoneType?: string;
+                  } | undefined;
+                  const name = props?.name ?? "Marine Zone";
+                  const id = props?.id ?? "";
+                  const productCode = props?.productCode ?? "";
+                  // Hover tooltip: quick zone identification
                   layer.bindTooltip(
-                    `<div style="font-family:monospace;font-size:12px;padding:4px 8px;background:#0D1520;border:1px solid #00D4FF;color:#E8F4FF">${name}<br/><span style="color:#7B9BB5;font-size:11px">${id}</span></div>`,
+                    `<div style="font-family:monospace;font-size:12px;padding:4px 8px;background:#0D1520;border:1px solid #00D4FF;color:#E8F4FF">${name}<br/><span style="color:#7B9BB5;font-size:11px">${id}${productCode ? ` &middot; ${productCode}` : ""}</span></div>`,
                     { sticky: true, opacity: 1 }
                   );
+                  // Click popup: full NOAA forecast text for this zone
+                  const renderForecastHtml = () => {
+                    const seg = id && marineForecasts?.zones?.[id];
+                    if (!seg) {
+                      return `<div style="font-family:monospace;font-size:12px;padding:8px 10px;background:#0D1520;border:1px solid #00D4FF;color:#E8F4FF;max-width:320px"><div style="font-weight:600;color:#00D4FF;margin-bottom:4px">${name}</div><div style="color:#7B9BB5;font-size:11px;margin-bottom:6px">${id}${productCode ? ` &middot; ${productCode}` : ""}</div><div style="color:#A8B8C8">No NWS forecast text available for this zone yet.</div></div>`;
+                    }
+                    const periodsHtml = (seg.periods || [])
+                      .slice(0, 10)
+                      .map((p: MarineForecastPeriod) =>
+                        `<div style="margin-bottom:6px"><span style="color:#00D4FF;font-weight:600">${p.label}</span> &middot; <span style="color:#E8F4FF">${p.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span></div>`
+                      )
+                      .join("");
+                    return (
+                      `<div style="font-family:monospace;font-size:12px;padding:10px 12px;background:#0D1520;border:1px solid #00D4FF;color:#E8F4FF;max-width:380px;max-height:360px;overflow-y:auto">` +
+                        `<div style="font-weight:600;color:#00D4FF;margin-bottom:2px">${seg.name || name}</div>` +
+                        `<div style="color:#7B9BB5;font-size:11px;margin-bottom:6px">${id} &middot; ${seg.productCode}${seg.issuedAt ? ` &middot; ${seg.issuedAt}` : ""}</div>` +
+                        periodsHtml +
+                      `</div>`
+                    );
+                  };
+                  layer.bindPopup(renderForecastHtml, { maxWidth: 400, autoPan: true });
                 }}
               />
             )}
