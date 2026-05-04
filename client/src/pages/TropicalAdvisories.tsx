@@ -178,6 +178,47 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
   return null;
 }
 
+// ── Wheel zoom gate -- WHEEL_ZOOM_GATE_v1 ────────────────────────────────────
+// Problem: with Leaflet's default scrollWheelZoom enabled, the wheel event over
+// the map is captured by Leaflet and the page cannot scroll past the map. Users
+// who land on /advisories never discover the Graphics & Forecast Tools section
+// below because the cursor naturally sits over the large map area.
+//
+// Fix: keep scrollWheelZoom DISABLED by default (so plain wheel/trackpad scroll
+// passes through to the page). Only enable wheel-zoom while Ctrl or Meta (Cmd)
+// is held down -- the same pattern Mapbox/Google Maps embeds use. Touch pinch
+// (touchZoom) and the +/- zoom control buttons remain unaffected.
+function WheelZoomGate() {
+  const map = useMap();
+  useEffect(() => {
+    // Ensure starting state is disabled (defensive -- MapContainer prop also sets this)
+    map.scrollWheelZoom.disable();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (!map.scrollWheelZoom.enabled()) map.scrollWheelZoom.enable();
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.metaKey) {
+        if (map.scrollWheelZoom.enabled()) map.scrollWheelZoom.disable();
+      }
+    };
+    // Also handle the case where the window loses focus while modifier was held
+    const onBlur = () => {
+      if (map.scrollWheelZoom.enabled()) map.scrollWheelZoom.disable();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [map]);
+  return null;
+}
+
 // ── Animated satellite layer (NASA GIBS NRT pre-tiled WMTS approach) ──────────
 // SATELLITE_GIBS_MARKER
 //
@@ -838,6 +879,17 @@ export default function TropicalAdvisories() {
   const [showZoneForecasts, setShowZoneForecasts] = useState(false);
   const [basemap, setBasemap] = useState<"street" | "satellite">("street");
 
+  // Wheel-zoom hint dismissal -- WHEEL_ZOOM_GATE_v1
+  // Persists across reloads via localStorage so returning users don't see the hint again.
+  const [scrollHintDismissed, setScrollHintDismissed] = useState<boolean>(() => {
+    try { return localStorage.getItem("mcw_scroll_hint_dismissed") === "1"; }
+    catch { return false; }
+  });
+  const dismissScrollHint = useCallback(() => {
+    setScrollHintDismissed(true);
+    try { localStorage.setItem("mcw_scroll_hint_dismissed", "1"); } catch { /* ignore */ }
+  }, []);
+
   // Playback control state (satellite animation)
   const [pbPlaying, setPbPlaying] = useState(true);          // play/pause
   // Single state object for frame info -- ensures exactly one re-render per frame advance,
@@ -1172,7 +1224,10 @@ export default function TropicalAdvisories() {
             zoom={5}
             style={{ height: "100%", width: "100%" }}
             zoomControl={true}
+            scrollWheelZoom={false}
           >
+            {/* Wheel zoom gate -- enables zoom only while Ctrl/Cmd is held; otherwise wheel scrolls page */}
+            <WheelZoomGate />
             {/* Base tiles */}
             {basemap === "street" ? (
               <TileLayer
@@ -1284,6 +1339,52 @@ export default function TropicalAdvisories() {
             {/* NHC GTWO disturbance ellipses -- interactive GeoJSON polygons on the map */}
             <GtwoLayer features={gtwoFeatures} mode={outlookMode} />
           </MapContainer>
+
+          {/* ── Scroll-zoom hint -- WHEEL_ZOOM_GATE_v1 ── */}
+          {/* Tells first-time users that plain scroll moves the page; Ctrl/Cmd+scroll zooms the map. */}
+          {!scrollHintDismissed && (
+            <div
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                zIndex: 1000,
+                background: "rgba(10,18,28,0.88)",
+                border: "1px solid #1A2D42",
+                borderRadius: 6,
+                padding: "6px 8px 6px 10px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                maxWidth: 260,
+                fontSize: "0.72rem",
+                color: "#E8F4FF",
+                fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+                backdropFilter: "blur(4px)",
+                lineHeight: 1.3,
+              }}
+            >
+              <span style={{ flex: 1 }}>
+                Hold <span style={{ color: "#00D4FF", fontWeight: 600 }}>Ctrl</span> (or <span style={{ color: "#00D4FF", fontWeight: 600 }}>⌘</span>) and scroll to zoom the map. Plain scroll moves the page.
+              </span>
+              <button
+                onClick={dismissScrollHint}
+                title="Dismiss"
+                aria-label="Dismiss scroll hint"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#7B9BB5",
+                  cursor: "pointer",
+                  padding: "0 4px",
+                  fontSize: "1rem",
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           {/* ── Playback control bar -- shown when satellite is active ── */}
           {pbActive && (
