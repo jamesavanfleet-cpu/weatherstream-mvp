@@ -1430,7 +1430,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="hidden md:flex lg:hidden md:w-auto border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
+                className="w-full md:w-auto border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
                 asChild
               >
                 <a
@@ -1555,22 +1555,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Desktop-only: Intel button absolutely pinned to bottom-right of hero */}
-        <div className="hidden lg:block absolute bottom-8 right-8 z-20">
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
-            asChild
-          >
-            <a
-              href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
-            >
-              <Mail className="w-5 h-5 mr-2" />
-              Send Us Your Intel
-            </a>
-          </Button>
-        </div>
+
       </section>
 
       {/* Port Detail Modal */}
