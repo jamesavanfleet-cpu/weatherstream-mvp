@@ -258,8 +258,8 @@ export default function JamesPicks() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"cards" | "table" | "heatmap">("cards");
-  const [sortCol, setSortCol] = useState<string>("score");
-  const [sortDir, setSortDir] = useState<-1 | 1>(-1);
+  const [sortCol, setSortCol] = useState<string>("name");
+  const [sortDir, setSortDir] = useState<-1 | 1>(1);
   const [modalPort, setModalPort] = useState<PortData | null>(null);
 
   // Fetch data
@@ -342,9 +342,12 @@ export default function JamesPicks() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           Weather Intelligence by James Van Fleet
         </div>
-        <h1 style={{ fontSize: "clamp(28px,5vw,48px)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 14 }}>
-          James' Picks for <span style={{ color: "#38bdf8" }}>Best Weather Ports</span>
+        <h1 style={{ fontSize: "clamp(28px,5vw,48px)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 10 }}>
+          James' Picks for <span style={{ color: "#38bdf8" }}>Best Weather</span>
         </h1>
+        <p style={{ fontSize: 15, color: "#e2e8f0", maxWidth: 580, margin: "0 auto 10px", lineHeight: 1.5 }}>
+          For planning what time of year and where to go on your next Cruise
+        </p>
         <p style={{ fontSize: 16, color: "#94a3b8", maxWidth: 580, margin: "0 auto 28px", lineHeight: 1.6 }}>
           30 years of NASA POWER reanalysis data (1994-2023) analyzed across every cruise port. Scored on rain probability, wind, cloud cover, and temperature comfort -- so you know exactly when to go where.
         </p>
