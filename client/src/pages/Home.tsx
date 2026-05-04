@@ -1421,6 +1421,14 @@ export default function Home() {
               </Button>
               <Button
                 size="lg"
+                className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-white border-0 shadow-2xl"
+                onClick={() => navigate("/james-picks")}
+              >
+                <ThermometerSun className="w-5 h-5 mr-2" />
+                James' Picks
+              </Button>
+              <Button
+                size="lg"
                 variant="outline"
                 className="hidden md:flex lg:hidden md:w-auto border-amber-500/60 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 shadow-lg"
                 asChild
@@ -1520,6 +1528,15 @@ export default function Home() {
             >
               <AlertTriangle className="w-5 h-5 mr-2" />
               Tropical Advisories Map
+            </Button>
+            {/* James Picks button -- mobile only */}
+            <Button
+              size="lg"
+              className="md:hidden w-full mt-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-white border-0 shadow-lg"
+              onClick={() => navigate("/james-picks")}
+            >
+              <ThermometerSun className="w-5 h-5 mr-2" />
+              James' Picks
             </Button>
             {/* Send Us Your Intel button -- mobile only, shown below Tropical Advisories */}
             <Button
