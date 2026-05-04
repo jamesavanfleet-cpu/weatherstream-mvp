@@ -140,7 +140,7 @@ REGIONS = [
         "rep_port": "Juneau, Alaska",
         "lat": 58.30,
         "lon": -134.42,
-        "ports": ["Juneau", "Ketchikan", "Skagway", "Sitka", "Haines", "Icy Strait Point", "Anchorage", "Seattle"],
+        "ports": ["Juneau", "Ketchikan", "Skagway", "Sitka", "Haines", "Icy Strait Point", "Anchorage", "Seattle", "Vancouver", "Victoria"],
         "priority_note": "PORT PRIORITY FOR ALASKA REGION: Juneau, Ketchikan, and Skagway are the three highest-volume Alaska cruise ports and must be named first and addressed prominently. Sitka, Haines, Icy Strait Point, and Anchorage may be mentioned when conditions are operationally significant. Seattle is the primary embarkation port and must be addressed when embarkation-day weather is notable. CRITICAL ALASKA RULE: You are ABSOLUTELY FORBIDDEN from making any climatological, seasonal, or typical-weather statements about Alaska. Do NOT write anything about what Alaska weather is usually like, what the Inside Passage typically experiences, what season offers the best conditions, or any general geographic or climate description. Every single sentence must be based exclusively on the live forecast data provided. Do not mention ice conditions, bergy bits, or glacier navigation unless the live forecast data specifically supports an operational concern.",
     },
 ]

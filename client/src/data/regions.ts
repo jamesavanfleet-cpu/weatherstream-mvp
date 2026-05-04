@@ -207,6 +207,9 @@ export const REGIONS: Region[] = [
       { name: "Sitka",             lat: 57.05, lon: -135.33, marineLat: 57.05, marineLon: -135.50 },
       { name: "Skagway",           lat: 59.46, lon: -135.31, marineLat: 59.20, marineLon: -135.40 },
       { name: "Tracy Arm Fjord",   lat: 57.85, lon: -133.65, marineLat: 57.70, marineLon: -133.80 },
+      { name: "Haines",             lat: 59.24, lon: -135.45, marineLat: 59.20, marineLon: -135.50 },
+      { name: "Vancouver",          lat: 49.28, lon: -123.12, marineLat: 49.20, marineLon: -123.30 },
+      { name: "Victoria",           lat: 48.43, lon: -123.37, marineLat: 48.40, marineLon: -123.50 },
     ],
   },
 ];

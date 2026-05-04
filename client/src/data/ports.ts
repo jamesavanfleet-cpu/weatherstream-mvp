@@ -342,8 +342,11 @@ export const PORT_LIST: Port[] = [
   { name: "Ketchikan",              lat: 55.3422, lon: -131.6461, region: "Alaska" },
   { name: "Sitka",                  lat: 57.0531, lon: -135.3300, region: "Alaska" },
   { name: "Skagway",                lat: 59.4583, lon: -135.3139, region: "Alaska" },
+  { name: "Haines",                 lat: 59.2358, lon: -135.4452, region: "Alaska" },
   // Tracy Arm Fjord -- scenic cruising area, no dock; coords are the fjord entrance
   { name: "Tracy Arm Fjord",        lat: 57.8500, lon: -133.6500, region: "Alaska" },
+  { name: "Vancouver",              lat: 49.2827, lon: -123.1207, region: "Alaska" },
+  { name: "Victoria",               lat: 48.4284, lon: -123.3656, region: "Alaska" },
 
   // ---- Western Mediterranean ----
   { name: "Barcelona",              lat: 41.3500, lon:    2.1700, region: "Mediterranean" },
