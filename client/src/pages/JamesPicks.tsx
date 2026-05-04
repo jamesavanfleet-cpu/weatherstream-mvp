@@ -264,7 +264,7 @@ export default function JamesPicks() {
 
   // Fetch data
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}climate_data.json`)
+    fetch(`${import.meta.env.BASE_URL}climate_data.json?v=20260503`)
       .then(r => { if (!r.ok) throw new Error("Failed to load climate data"); return r.json(); })
       .then((data: PortData[]) => { setPorts(data); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
