@@ -1189,7 +1189,7 @@ export default function TropicalAdvisories() {
             )}
 
             {/* Zone Forecasts -- NWS marine zone boundaries (pre-baked GeoJSON from marine_zones.json) */}
-            {showZoneForecasts && marineZones && (
+            {showZoneForecasts && marineZones && marineForecasts && (
               <GeoJSON
                 key="marine-zones"
                 data={marineZones}
