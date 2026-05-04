@@ -31,23 +31,23 @@ const REGIONS = ["US Homeport","Caribbean","Bahamas","Mediterranean","Pacific","
 
 // ---- Score helpers ----
 function scoreClass(s: number): string {
-  if (s >= 72) return "excellent";
-  if (s >= 55) return "good";
-  if (s >= 38) return "fair";
+  if (s >= 70) return "excellent";
+  if (s >= 50) return "good";
+  if (s >= 30) return "fair";
   return "poor";
 }
 function scoreColor(s: number): string {
-  if (s >= 72) return "#22c55e";
-  if (s >= 55) return "#eab308";
-  if (s >= 38) return "#f97316";
+  if (s >= 70) return "#22c55e";
+  if (s >= 50) return "#eab308";
+  if (s >= 30) return "#f97316";
   return "#ef4444";
 }
 function heatColor(s: number): string {
-  if (s >= 80) return "rgba(34,197,94,0.85)";
-  if (s >= 65) return "rgba(134,239,172,0.75)";
-  if (s >= 55) return "rgba(234,179,8,0.75)";
-  if (s >= 42) return "rgba(249,115,22,0.75)";
-  if (s >= 28) return "rgba(239,68,68,0.7)";
+  if (s >= 70) return "rgba(34,197,94,0.85)";
+  if (s >= 60) return "rgba(134,239,172,0.75)";
+  if (s >= 50) return "rgba(234,179,8,0.75)";
+  if (s >= 30) return "rgba(249,115,22,0.75)";
+  if (s >= 15) return "rgba(239,68,68,0.7)";
   return "rgba(127,29,29,0.7)";
 }
 
@@ -385,10 +385,10 @@ export default function JamesPicks() {
       <div style={S.colorKey}>
         <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>Score Key:</span>
         {[
-          { color: "#22c55e", label: "72-100 Excellent" },
-          { color: "#eab308", label: "55-71 Good" },
-          { color: "#f97316", label: "38-54 Fair" },
-          { color: "#ef4444", label: "0-37 Poor" },
+          { color: "#22c55e", label: "70-100 Excellent" },
+          { color: "#eab308", label: "50-69 Good" },
+          { color: "#f97316", label: "30-49 Fair" },
+          { color: "#ef4444", label: "0-29 Poor" },
         ].map(k => (
           <span key={k.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
             <span style={{ width: 12, height: 12, borderRadius: "50%", background: k.color, flexShrink: 0, display: "inline-block" }} />
