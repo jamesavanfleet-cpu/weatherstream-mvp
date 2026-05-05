@@ -67,9 +67,7 @@ jobs:
           # Copy static data files shipped with the build
           cp /tmp/deploy-output/maritime_routes.json maritime_routes.json 2>/dev/null || true
           cp /tmp/deploy-output/climate_database.json climate_database.json 2>/dev/null || true
-
-          # Restore preserved files
-          cp /tmp/cname-backup CNAME 2>/dev/null || true
+          cp /tmp/deploy-output/climate_data.json climate_data.json 2>/dev/null || true
           cp /tmp/404-backup 404.html 2>/dev/null || true
 
           # Restore JSON data files (never overwrite with empty/missing files)
