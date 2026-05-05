@@ -27,8 +27,8 @@ REGIONS = [
         "rep_port": "Miami, Florida",
         "lat": 25.76,
         "lon": -80.19,
-        "ports": ["Baltimore", "Boston", "Bayonne", "Brooklyn", "Charleston", "Galveston", "Houston", "Jacksonville", "Long Beach", "Los Angeles", "Manhattan", "Miami", "New Orleans", "Norfolk", "Port Canaveral", "Port Everglades", "San Diego", "San Francisco", "Savannah", "Tampa Bay"],
-        "priority_note": "PORT PRIORITY FOR US PORTS REGION: The four primary ports are Miami, Port Everglades, Port Canaveral, and Tampa Bay. These are the highest-volume cruise homeports in the United States and must be named first and addressed prominently in every briefing. Smaller ports such as Charleston, Savannah, Baltimore, Boston, and others along the Eastern Seaboard may be mentioned only when conditions there are operationally significant, and must never lead the briefing or receive more emphasis than the four primary Florida homeports.",
+        "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
+        "priority_note": "PORT PRIORITY: The first sentence of the briefing must explicitly name Miami as the lead port. Miami is the cruise capital of the world and the highest-volume cruise homeport in the United States. The four primary US cruise homeports are Miami, Port Everglades, Port Canaveral, and Tampa Bay; address these prominently throughout the briefing. Other US ports may be referenced only when their conditions are operationally significant for cruise operations, and never as the lead.",
     },
     {
         "slug": "bahamas-central-caribbean",
@@ -269,6 +269,7 @@ def call_groq(region: dict, weather_data: dict) -> str:
         f"Write a daily weather intel briefing for cruise passengers and crew in the {region['name']} region "
         f"(ports: {ports_list}) for {today}. "
         f"{region.get('priority_note', '') + ' ' if region.get('priority_note') else ''}"
+        f"{('LEAD SENTENCE REQUIREMENT: The first sentence must explicitly name Miami as the primary US cruise homeport. Do not begin the briefing with Charleston, Savannah, Baltimore, Boston, Norfolk, Brooklyn, Bayonne, Manhattan, Houston, Galveston, New Orleans, Jacksonville, Long Beach, Los Angeles, San Diego, or San Francisco. The lead must be Miami. ') if region['slug'] == 'us-ports' else ''}"
         f"{sig_block}"
         f"Base every sentence on this live forecast data for {region['rep_port']}: {weather_summary} "
         f"STRUCTURE REQUIREMENT: The briefing must address three time periods in order -- "
