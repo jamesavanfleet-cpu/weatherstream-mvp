@@ -381,12 +381,10 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"If rain probability is 30% to 59%, use cautious conditional language only: 'may affect' or 'could affect'. Example: 'a 45% rain chance may affect shore excursions in Nassau'. "
         f"If rain probability is 60% or higher, use confident expectation language: 'expected to affect' or 'is expected to impact'. Example: 'a 70% rain chance is expected to affect port operations in San Juan'. "
         f"Apply these thresholds to every day and every rain probability value mentioned in the briefing without exception. "
-        f"LOW RAIN PROBABILITY WORDING RULE -- mandatory: "
-        f"If the rain probability for any day or current conditions is below 10%, you MUST write the exact phrase 'less than 10% rain probability'. "
-        f"You are FORBIDDEN from writing single-digit percentages such as '0% rain chance', '0% chance of rain', 'zero percent rain', '1% rain', '4% chance of drizzle', '5% rain probability', or any similar wording. "
-        f"You are FORBIDDEN from spelling small percentages out (no 'zero percent', 'one percent', 'three percent'). "
-        f"Any percentage value of 10% or higher renders normally as the literal integer percent. "
-        f"This rule applies to today's conditions, the 24-48 hour outlook, and the beyond-48-hour trend."
+        f"RAIN PROBABILITY PHRASING: "
+        f"The data block above already shows the correct wording for every value: it uses the exact phrase 'less than 10% rain probability' for any value below 10%, and it uses the literal integer percentage (for example '45% rain probability') for values at 10% or higher. "
+        f"Carry that exact wording through into your sentences verbatim. Do not invent any sub-10% literal phrasing such as '0% rain chance', 'zero percent rain', '4% chance of drizzle', or '5% rain probability'. "
+        f"Do not mention this rule, the 10% threshold, or the phrase 'is not applicable' in your output. Just write naturally using whichever wording the data block provides for each value."
     )
 
     payload = json.dumps({
