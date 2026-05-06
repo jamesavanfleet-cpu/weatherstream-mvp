@@ -29,6 +29,7 @@ REGIONS = [
         "lon": -80.19,
         "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
         "priority_note": "PORT PRIORITY: The first sentence of the briefing must explicitly name Miami as the lead port. Miami is the cruise capital of the world and the highest-volume cruise homeport in the United States. The four primary US cruise homeports are Miami, Port Everglades, Port Canaveral, and Tampa Bay; address these prominently throughout the briefing. Other US ports may be referenced only when their conditions are operationally significant for cruise operations, and never as the lead.",
+        "required_lead_port": "Miami",
     },
     {
         "slug": "bahamas-central-caribbean",
@@ -248,7 +249,7 @@ def build_weather_summary(wx: dict) -> dict:
     return {"summary": summary, "significant": significant}
 
 
-def call_groq(region: dict, weather_data: dict) -> str:
+def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     today = date.today().strftime("%B %d, %Y")
     ports_list = ", ".join(region["ports"])
     weather_summary = weather_data["summary"]
@@ -264,7 +265,25 @@ def call_groq(region: dict, weather_data: dict) -> str:
     else:
         sig_block = ""
 
+    # LEAD-PORT HEADER: For regions that declare a required_lead_port, prepend a hard
+    # rule as the very first content of the prompt. Models weigh the opening tokens of
+    # a prompt heaviest, so this placement materially improves instruction-following on
+    # weaker instruction-following models (e.g., llama-3.3-70b-versatile) compared with
+    # placing the same rule deeper in the prompt body.
+    required_lead = region.get("required_lead_port")
+    if required_lead:
+        lead_header = (
+            f"ABSOLUTE LEAD-PORT RULE -- THIS OVERRIDES EVERY OTHER INSTRUCTION BELOW. "
+            f"The first sentence of the briefing MUST explicitly name {required_lead} as the lead port. "
+            f"You may not begin the briefing with any other port name. If you cannot honor this rule the "
+            f"output will be rejected and regenerated. "
+        )
+    else:
+        lead_header = ""
+
     prompt = (
+        f"{retry_prefix}"
+        f"{lead_header}"
         f"You are a professional Chief Meteorologist with 30+ years of cruise industry experience. "
         f"Write a daily weather intel briefing for cruise passengers and crew in the {region['name']} region "
         f"(ports: {ports_list}) for {today}. "
@@ -458,6 +477,78 @@ def strip_temperatures(text: str) -> str:
     return result
 
 
+def _validate_and_repair_lead(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
+    """
+    Lead-port validator and repair backstop (Layer B for the Miami-lead bug).
+
+    For any region that declares a 'required_lead_port', verify the first sentence of
+    the model's briefing names that port. If it does not, regenerate up to max_retries
+    times with a corrective prefix telling the model exactly which port it wrongly led
+    with. If all retries still fail, perform an in-place hard repair: replace the
+    misnamed port in the first sentence with the required port. This guarantees that
+    production never ships a non-compliant lead even if the model never complies.
+
+    Returns the (possibly repaired) intel string. Never raises.
+    """
+    import re as _re
+    required_lead = region.get("required_lead_port")
+    if not required_lead:
+        return intel
+
+    def _first_sentence(t: str) -> str:
+        parts = _re.split(r"(?<=[.!?])\s+", t.strip(), maxsplit=1)
+        return parts[0] if parts else t
+
+    def _lead_ok(t: str) -> bool:
+        return required_lead.lower() in _first_sentence(t).lower()
+
+    if _lead_ok(intel):
+        return intel
+
+    bad_first = _first_sentence(intel)
+    print(
+        f"  [LEAD VALIDATOR] First sentence does not name '{required_lead}': {bad_first[:120]}",
+        file=sys.stderr,
+    )
+
+    for attempt in range(max_retries):
+        retry_prefix = (
+            f"REGENERATION REQUIRED. Your previous attempt opened with: \"{bad_first}\". "
+            f"That is not acceptable because the lead port for this region is {required_lead}. "
+            f"Begin the new briefing with a sentence that explicitly names {required_lead} as the lead port. "
+        )
+        try:
+            new_intel = call_groq(region, weather_data, retry_prefix=retry_prefix)
+            new_intel = strip_temperatures(new_intel.strip())
+        except Exception as e:
+            print(f"  [LEAD VALIDATOR] Retry {attempt+1} call_groq failed: {e}", file=sys.stderr)
+            continue
+        if _lead_ok(new_intel):
+            print(f"  [LEAD VALIDATOR] Retry {attempt+1} succeeded with '{required_lead}' lead.", file=sys.stderr)
+            return new_intel
+        intel = new_intel
+        bad_first = _first_sentence(intel)
+        print(
+            f"  [LEAD VALIDATOR] Retry {attempt+1} still wrong: {bad_first[:120]}",
+            file=sys.stderr,
+        )
+
+    # Hard mechanical repair: rewrite the first sentence to anchor on required_lead.
+    # Remove the leading 'Today' phrase if present (matching the prompt's 'Start with Today'
+    # rule), then prepend a clean Today-anchored Miami lead, then keep the remaining body.
+    parts = _re.split(r"(?<=[.!?])\s+", intel.strip(), maxsplit=1)
+    body = parts[1] if len(parts) > 1 else ""
+    repaired = (
+        f"Today in {required_lead}, conditions across the region are detailed below. "
+        + body
+    ).strip()
+    print(
+        f"  [LEAD VALIDATOR] All retries exhausted -- hard-repaired lead to '{required_lead}'.",
+        file=sys.stderr,
+    )
+    return repaired
+
+
 def main():
     if not GROQ_API_KEY:
         print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
@@ -488,6 +579,10 @@ def main():
             # value regardless of what the AI produced. This catches any slip-through
             # that the prompt rules did not prevent.
             intel = strip_temperatures(intel.strip())
+            # --- LEAD-PORT VALIDATOR (Layer B for required_lead_port regions) ---
+            # If the region declares a required_lead_port and the model failed to lead
+            # with it, regenerate with a corrective prefix; if still failing, hard-repair.
+            intel = _validate_and_repair_lead(region, intel, weather_data)
             output["regions"][region["slug"]] = intel
             print(f"  OK: {intel[:80]}...", file=sys.stderr)
         except Exception as e:
