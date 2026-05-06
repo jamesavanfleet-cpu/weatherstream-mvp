@@ -18,6 +18,55 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
+
+def _format_rain_prob(value) -> str:
+    """
+    Render a precipitation-probability value as a human-readable phrase.
+    Bug 2 fix: Any value strictly less than 10% is rendered as the fixed phrase
+    'less than 10% rain probability'. Values of 10% or higher render as the
+    literal integer percent.
+    """
+    try:
+        v = int(round(float(value)))
+    except (TypeError, ValueError):
+        v = 0
+    if v < 10:
+        return "less than 10% rain probability"
+    return f"{v}% rain probability"
+
+
+def _normalize_low_rain_phrasing(text: str) -> str:
+    """
+    Post-generation rain-wording filter (Layer B for Bug 2).
+    Rewrites any sub-10% rain phrasing in model output to the canonical phrase
+    'less than 10% rain probability'. Values of 10% or higher untouched.
+    """
+    import re
+    CANONICAL = "less than 10% rain probability"
+    patterns = [
+        re.compile(
+            r"\b[0-9]\s*%\s*(?:chance\s+of\s+(?:rain|drizzle|showers|precipitation)|rain(?:fall)?(?:\s+chance|\s+probability|\s+chances)?|(?:rain\s+)?probability(?:\s+of\s+rain)?)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\s+percent\s+(?:chance\s+of\s+(?:rain|drizzle|showers|precipitation)|rain(?:fall)?(?:\s+chance|\s+probability|\s+chances)?|(?:rain\s+)?probability(?:\s+of\s+rain)?)\b",
+            re.IGNORECASE,
+        ),
+    ]
+    rewritten = text
+    swap_count = 0
+    for pat in patterns:
+        new_rewritten, n = pat.subn(CANONICAL, rewritten)
+        if n:
+            swap_count += n
+            rewritten = new_rewritten
+    if swap_count:
+        print(
+            f"  [RAIN WORDING FILTER] Replaced {swap_count} sub-10% rain phrase(s) with '{CANONICAL}'.",
+            file=sys.stderr,
+        )
+    return rewritten
+
 # ── Port registry ─────────────────────────────────────────────────────────────
 PORTS = [
     # Eastern Caribbean
@@ -179,7 +228,7 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
         f"Max wave height: {max_wave} ft. "
         f"Max swell period: {max_period} s. "
         f"Dominant swell direction: {swell_dir}. "
-        f"Max rain probability: {max_rain}%."
+        f"Max rain: {_format_rain_prob(max_rain)}."
     )
     if runner_up:
         ru_wind = round(max((ms_to_kt(v) for v in runner_up["daily_wind_max"] if v is not None), default=0))
@@ -198,6 +247,11 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
         "Do NOT start with phrases like 'As I analyze', 'Looking at', 'Reviewing the data', or any similar opener. "
         "Begin immediately with the location and conditions, for example: 'Marseille is experiencing...' or 'Strong winds are building across...'. "
         "No em dash. No hype. Just clear professional meteorology.\n"
+        "LOW RAIN PROBABILITY WORDING RULE: "
+        "If rain probability is below 10%, you MUST write the exact phrase 'less than 10% rain probability'. "
+        "You are FORBIDDEN from writing single-digit percentages such as '0% rain chance', '0% chance of rain', 'zero percent rain', '4% chance of drizzle', or any similar wording. "
+        "You are FORBIDDEN from spelling small percentages out (no 'zero percent', 'three percent'). "
+        "Any percentage value of 10% or higher renders normally as the literal integer percent.\n"
         + NHC_NWS_RULES
         + f"Data: {context}\n\n"
         "Respond in JSON: {\"headline\": \"...\", \"paragraph\": \"...\"}"
@@ -293,12 +347,15 @@ def build_fallback(top: dict, group_label: str) -> tuple[str, str]:
     )
 
     # Build a sentence about rain and overall outlook
+    # Bug 2: route all rain wording through _format_rain_prob so values <10% render
+    # as 'less than 10% rain probability' instead of '0%' or '4%'.
+    rain_phrase = _format_rain_prob(max_rain)
     if max_rain >= 60:
-        rain_str = f"Rain probability reaches {max_rain}% -- expect disrupted conditions for shore excursions and tender operations."
+        rain_str = f"{rain_phrase} -- expect disrupted conditions for shore excursions and tender operations."
     elif max_rain >= 30:
-        rain_str = f"Rain probability reaches {max_rain}% -- isolated showers possible but conditions remain manageable."
+        rain_str = f"{rain_phrase} -- isolated showers possible but conditions remain manageable."
     else:
-        rain_str = f"Rain probability stays at {max_rain}% -- overall conditions are favorable for cruise operations."
+        rain_str = f"{rain_phrase} -- overall conditions are favorable for cruise operations."
     sentence2 = rain_str
 
     paragraph = f"{sentence1} {sentence2}"
@@ -345,6 +402,10 @@ async def main():
     except Exception as e:
         print(f"  Mediterranean story failed: {e} -- using fallback", file=sys.stderr)
         med_headline, med_paragraph = build_fallback(med_top, "Mediterranean")
+
+    # --- Layer B for Bug 2: post-filter both paragraphs to canonicalize sub-10% rain wording ---
+    carib_paragraph = _normalize_low_rain_phrasing(carib_paragraph)
+    med_paragraph   = _normalize_low_rain_phrasing(med_paragraph)
 
     print(f"Caribbean headline: {carib_headline}")
     print(f"Med headline: {med_headline}")

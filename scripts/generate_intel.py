@@ -196,6 +196,25 @@ def wmo_to_text(code: int) -> str:
     return "mixed conditions"
 
 
+def _format_rain_prob(value) -> str:
+    """
+    Render a precipitation-probability value as a human-readable phrase.
+    Bug 2 fix: Any value strictly less than 10% is rendered as the fixed phrase
+    'less than 10% rain probability', because tiny single-digit percentages are
+    not meaningful to a passenger or operations audience and create credibility
+    damage on the rare day when an isolated cell does move through despite a
+    low published number. Values of 10% or higher render as the literal
+    integer percentage.
+    """
+    try:
+        v = int(round(float(value)))
+    except (TypeError, ValueError):
+        v = 0
+    if v < 10:
+        return "less than 10% rain probability"
+    return f"{v}% rain probability"
+
+
 def build_weather_summary(wx: dict) -> dict:
     """
     Build a structured weather data dict for the AI prompt.
@@ -213,6 +232,7 @@ def build_weather_summary(wx: dict) -> dict:
     wind_dir = deg_to_compass(c["wind_direction_10m"])
     cond = wmo_to_text(c["weathercode"])
     rain = c.get("precipitation_probability", 0) or 0
+    rain_phrase = _format_rain_prob(rain)
 
     # 3-day outlook -- wind, sky condition, and rain probability only (no temperatures)
     outlook_parts = []
@@ -221,17 +241,17 @@ def build_weather_summary(wx: dict) -> dict:
         w_dir = deg_to_compass(d["wind_direction_10m_dominant"][i])
         r = d["precipitation_probability_max"][i] or 0
         cond_d = wmo_to_text(d["weathercode"][i])
-        outlook_parts.append(f"Day {i+1}: {w_dir} {w_kt}kt, {cond_d}, {r}% rain")
+        outlook_parts.append(f"Day {i+1}: {w_dir} {w_kt}kt, {cond_d}, {_format_rain_prob(r)}")
 
     summary = (
-        f"Current conditions: {wind_dir} {wind_kt}kt, {cond}, {rain}% rain chance. "
+        f"Current conditions: {wind_dir} {wind_kt}kt, {cond}, {rain_phrase}. "
         f"3-day outlook: {'; '.join(outlook_parts)}."
     )
 
     # Significant weather flags -- conditions that MUST lead the briefing
     significant = []
     if c["weathercode"] >= 80:  # rain showers or thunderstorms
-        significant.append(f"ACTIVE SIGNIFICANT WEATHER NOW: {cond} with {rain}% rain probability")
+        significant.append(f"ACTIVE SIGNIFICANT WEATHER NOW: {cond} with {rain_phrase}")
     if wind_kt >= 20:
         significant.append(f"ELEVATED WINDS NOW: {wind_dir} {wind_kt}kt")
     for i in range(min(3, len(d["time"]))):
@@ -240,9 +260,9 @@ def build_weather_summary(wx: dict) -> dict:
         cond_d = wmo_to_text(d["weathercode"][i])
         day_label = "today" if i == 0 else f"Day {i+1}"
         if d["weathercode"][i] >= 80:
-            significant.append(f"SIGNIFICANT WEATHER {day_label.upper()}: {cond_d}, {r}% rain probability")
+            significant.append(f"SIGNIFICANT WEATHER {day_label.upper()}: {cond_d}, {_format_rain_prob(r)}")
         elif r >= 40:
-            significant.append(f"ELEVATED RAIN CHANCE {day_label.upper()}: {r}% probability, {cond_d}")
+            significant.append(f"ELEVATED RAIN CHANCE {day_label.upper()}: {_format_rain_prob(r)}, {cond_d}")
         if w_kt >= 20:
             significant.append(f"ELEVATED WINDS {day_label.upper()}: {w_kt}kt")
 
@@ -360,7 +380,13 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"If rain probability is below 30%, do NOT use any impact language for rain. Do not say rain 'may affect', 'could affect', 'may impact', 'could impact', or 'might affect' any port or operation. You may state the rain percentage as context, but it must not be framed as a threat or operational concern. "
         f"If rain probability is 30% to 59%, use cautious conditional language only: 'may affect' or 'could affect'. Example: 'a 45% rain chance may affect shore excursions in Nassau'. "
         f"If rain probability is 60% or higher, use confident expectation language: 'expected to affect' or 'is expected to impact'. Example: 'a 70% rain chance is expected to affect port operations in San Juan'. "
-        f"Apply these thresholds to every day and every rain probability value mentioned in the briefing without exception."
+        f"Apply these thresholds to every day and every rain probability value mentioned in the briefing without exception. "
+        f"LOW RAIN PROBABILITY WORDING RULE -- mandatory: "
+        f"If the rain probability for any day or current conditions is below 10%, you MUST write the exact phrase 'less than 10% rain probability'. "
+        f"You are FORBIDDEN from writing single-digit percentages such as '0% rain chance', '0% chance of rain', 'zero percent rain', '1% rain', '4% chance of drizzle', '5% rain probability', or any similar wording. "
+        f"You are FORBIDDEN from spelling small percentages out (no 'zero percent', 'one percent', 'three percent'). "
+        f"Any percentage value of 10% or higher renders normally as the literal integer percent. "
+        f"This rule applies to today's conditions, the 24-48 hour outlook, and the beyond-48-hour trend."
     )
 
     payload = json.dumps({
@@ -477,6 +503,61 @@ def strip_temperatures(text: str) -> str:
     return result
 
 
+def _normalize_low_rain_phrasing(text: str) -> str:
+    """
+    Post-generation rain-wording filter (Layer B for Bug 2).
+
+    Scans the AI-generated briefing for any sub-10% rain phrasing the model may
+    have produced despite the prompt rule (numeric forms like '4% rain chance',
+    '0% chance of rain', or spelled-out forms like 'zero percent rain') and
+    rewrites them to the canonical phrase 'less than 10% rain probability'.
+    Values of 10% or higher are left untouched.
+
+    Logs a warning to stderr each time a substitution is made so the rewrite is
+    visible in the GitHub Actions run log.
+    """
+    import re
+
+    CANONICAL = "less than 10% rain probability"
+
+    # Each pattern matches a sub-10% rain phrasing in any of the wordings the
+    # model has historically produced. The shared replacement is CANONICAL.
+    NUMERIC_WORDS = {
+        "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+        "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+    }
+
+    patterns = [
+        # Digit forms followed by an explicit rain phrase (handles 0%-9%)
+        re.compile(
+            r"\b[0-9]\s*%\s*(?:chance\s+of\s+(?:rain|drizzle|showers|precipitation)|rain(?:fall)?(?:\s+chance|\s+probability|\s+chances)?|(?:rain\s+)?probability(?:\s+of\s+rain)?)\b",
+            re.IGNORECASE,
+        ),
+        # Spelled-out single-digit forms (e.g. "zero percent rain probability",
+        # "three percent chance of rain")
+        re.compile(
+            r"\b(?:zero|one|two|three|four|five|six|seven|eight|nine)\s+percent\s+(?:chance\s+of\s+(?:rain|drizzle|showers|precipitation)|rain(?:fall)?(?:\s+chance|\s+probability|\s+chances)?|(?:rain\s+)?probability(?:\s+of\s+rain)?)\b",
+            re.IGNORECASE,
+        ),
+    ]
+
+    rewritten = text
+    swap_count = 0
+    for pat in patterns:
+        new_rewritten, n = pat.subn(CANONICAL, rewritten)
+        if n:
+            swap_count += n
+            rewritten = new_rewritten
+
+    if swap_count:
+        print(
+            f"  [RAIN WORDING FILTER] Replaced {swap_count} sub-10% rain phrase(s) with '{CANONICAL}'.",
+            file=sys.stderr,
+        )
+
+    return rewritten
+
+
 def _validate_and_repair_lead(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
     """
     Lead-port validator and repair backstop (Layer B for the Miami-lead bug).
@@ -520,6 +601,7 @@ def _validate_and_repair_lead(region: dict, intel: str, weather_data: dict, max_
         try:
             new_intel = call_groq(region, weather_data, retry_prefix=retry_prefix)
             new_intel = strip_temperatures(new_intel.strip())
+            new_intel = _normalize_low_rain_phrasing(new_intel)
         except Exception as e:
             print(f"  [LEAD VALIDATOR] Retry {attempt+1} call_groq failed: {e}", file=sys.stderr)
             continue
@@ -579,6 +661,10 @@ def main():
             # value regardless of what the AI produced. This catches any slip-through
             # that the prompt rules did not prevent.
             intel = strip_temperatures(intel.strip())
+            # --- LAYER B for Bug 2: rewrite any sub-10% rain phrasing ---
+            # Hard mechanical backstop: convert any '0% rain', '4% chance of drizzle',
+            # 'zero percent rain probability' etc. to 'less than 10% rain probability'.
+            intel = _normalize_low_rain_phrasing(intel)
             # --- LEAD-PORT VALIDATOR (Layer B for required_lead_port regions) ---
             # If the region declares a required_lead_port and the model failed to lead
             # with it, regenerate with a corrective prefix; if still failing, hard-repair.
