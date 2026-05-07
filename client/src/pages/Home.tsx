@@ -989,7 +989,11 @@ export default function Home() {
   const medRefs = useRef<(HTMLDivElement | null)[]>([]);
   const alaskaRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
-  const [liveOffset, setLiveOffset] = useState(0);
+  // Randomize the starting offset on each page load so the rotation does not always begin at A.
+  // The random value is computed once via lazy initializer (so it does not change on re-render),
+  // is snapped to a multiple of 6 to keep card-group alignment, and stays within LIVE_DATA bounds.
+  // Wrapping back through A is already handled by the existing modulo in the rotation interval and render.
+  const [liveOffset, setLiveOffset] = useState(() => Math.floor(Math.random() * (LIVE_DATA.length / 6)) * 6);
   const [liveExiting, setLiveExiting] = useState(false);
   const [liveEntering, setLiveEntering] = useState(false);
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
