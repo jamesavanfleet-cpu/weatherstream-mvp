@@ -120,6 +120,25 @@ const LIVE_DATA = [
   { location: "Venice", sublabel: "Italy", lat: 45.44, lon: 12.33, temp: 55, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-400 to-indigo-400" },
 ];
 
+// --- PTZ.com Live Camera Cross-Reference ---
+// Maps LIVE_DATA location strings to dedicated PTZ webcam domains.
+// When a port appears in this map, a small camera icon is rendered on its card
+// in Live Conditions; clicking it opens the live camera feed at PTZ.com in a new tab.
+const PTZ_CAMERA_URLS: Record<string, string> = {
+  "Bermuda -- Hamilton": "https://www.portbermudawebcam.com/",
+  "Bermuda -- Royal Naval Dockyard": "https://www.portbermudawebcam.com/",
+  "Bimini": "http://www.portbiminiwebcam.com/",
+  "Juneau": "https://www.juneauharborwebcam.com/",
+  "Key West": "https://www.keywestharborwebcam.com/",
+  "Miami": "https://www.portmiamiwebcam.com/",
+  "Nassau": "https://www.portnassauwebcam.com/",
+  "Port Canaveral": "https://www.portcanaveralwebcam.com/",
+  "Port Everglades": "https://www.portevergladeswebcam.com/",
+  "St. Maarten": "https://www.portstmaartenwebcam.com/",
+  "St. Thomas": "http://www.portstthomaswebcam.com/",
+  "Tampa Bay": "https://www.porttampawebcam.com/",
+};
+
 // --- Port Detail Live Data Cache ---
 interface HourlyForecastSlot {
   time: string;       // ISO datetime string
@@ -1506,10 +1525,26 @@ export default function Home() {
                     }}
                     onClick={() => setSelectedPort(loc)}
                   >
-                    <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-start justify-between mb-1 gap-1">
                       <p className="text-white font-bold text-xs leading-tight truncate pr-1">{loc.location}</p>
-                      <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${loc.color} flex items-center justify-center flex-shrink-0`}>
-                        <loc.icon className="w-3 h-3 text-white" />
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {PTZ_CAMERA_URLS[loc.location] && (
+                          <button
+                            type="button"
+                            aria-label={`Live camera at ${loc.location} on PTZ.com`}
+                            title={`Live camera at ${loc.location} on PTZ.com`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(PTZ_CAMERA_URLS[loc.location], '_blank', 'noopener,noreferrer');
+                            }}
+                            className="w-5 h-5 rounded-md bg-red-500/20 border border-red-400/40 flex items-center justify-center hover:bg-red-500/40 hover:border-red-400/70 transition-colors"
+                          >
+                            <Camera className="w-3 h-3 text-red-300" />
+                          </button>
+                        )}
+                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${loc.color} flex items-center justify-center`}>
+                          <loc.icon className="w-3 h-3 text-white" />
+                        </div>
                       </div>
                     </div>
                     <p className="text-white font-black text-xl leading-none">
