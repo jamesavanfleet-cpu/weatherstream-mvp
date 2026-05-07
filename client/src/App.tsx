@@ -11,6 +11,7 @@ import RouteMap from "./pages/RouteMap";
 import TropicalAdvisories from "./pages/TropicalAdvisories";
 import FromTheDeck from "./pages/FromTheDeck";
 import JamesPicks from "./pages/JamesPicks";
+import PtzCameraPreview from "./pages/PtzCameraPreview";
 
 // Strip trailing slash from Vite's BASE_URL for wouter base path compatibility
 const basePath = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
@@ -59,6 +60,7 @@ function Router() {
         <Route path={"/advisories"} component={TropicalAdvisories} />
         <Route path={"/from-the-deck"} component={FromTheDeck} />
         <Route path={"/james-picks"} component={JamesPicks} />
+        <Route path={"/ptz-camera-preview"} component={PtzCameraPreview} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />
