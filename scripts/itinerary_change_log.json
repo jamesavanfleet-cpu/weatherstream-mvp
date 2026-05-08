@@ -1242,6 +1242,114 @@
         }
       ],
       "errors": []
+    },
+    {
+      "run_timestamp": "2026-05-08T23:07:34.458030",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "FIXED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-05-24",
+          "was": "Galveston, Cruise, Galveston",
+          "now": "Galveston, At Sea, At Sea, Roatan, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
+          "detail": "FIXED Symphony of the Seas 2026-05-24: was [Galveston, Cruise, Galveston] -> now [Galveston, At Sea, At Sea, Roatan, Perfect Day at CocoCay, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-09",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-09: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-16",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-16: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-23",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-23: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-05-18",
+          "was": "Galveston, Galveston",
+          "now": "Galveston, At Sea, Cozumel, Progreso, At Sea, Galveston",
+          "detail": "FIXED Carnival Breeze 2026-05-18: was [Galveston, Galveston] -> now [Galveston, At Sea, Cozumel, Progreso, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-05-18",
+          "was": "Port Canaveral, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Celebration Key, Princess Cays, At Sea, Port Canaveral",
+          "detail": "FIXED Carnival Freedom 2026-05-18: was [Port Canaveral, Port Canaveral] -> now [Port Canaveral, Nassau, Celebration Key, Princess Cays, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-05-24",
+          "was": "Miami, St. Thomas, St. Kitts Puerto Plata, Miami",
+          "now": "Miami, At Sea, Puerto Plata, St. Thomas, St. Kitts, At Sea, At Sea, Miami",
+          "detail": "FIXED Celebrity Beyond 2026-05-24: was [Miami, St. Thomas, St. Kitts Puerto Plata, Miami] -> now [Miami, At Sea, Puerto Plata, St. Thomas, St. Kitts, At Sea, At Sea, Miami]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-05-15",
+          "was": "Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Castaway Cay, Port Canaveral",
+          "detail": "FIXED Disney Wish 2026-05-15: was [Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral] -> now [Port Canaveral, Nassau, Castaway Cay, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-05-24",
+          "was": "Seattle, Seattle Glacier Bay, Skagway Juneau, Seattle",
+          "now": "Seattle, At Sea, Juneau, Skagway, Glacier Bay, Ketchikan, Victoria BC, Seattle",
+          "detail": "FIXED Norwegian Encore 2026-05-24: was [Seattle, Seattle Glacier Bay, Skagway Juneau, Seattle] -> now [Seattle, At Sea, Juneau, Skagway, Glacier Bay, Ketchikan, Victoria BC, Seattle]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-05-15",
+          "was": "Miami, Miami Great Stirrup Cay Nassau, Miami",
+          "now": "Miami, Nassau, Great Stirrup Cay, Miami",
+          "detail": "FIXED Norwegian Getaway 2026-05-15: was [Miami, Miami Great Stirrup Cay Nassau, Miami] -> now [Miami, Nassau, Great Stirrup Cay, Miami]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-05-17",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-05-17: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-05-17",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-05-17: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-05-24",
+          "was": "Galveston, Galveston",
+          "now": "Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston",
+          "detail": "FIXED MSC Seascape 2026-05-24: was [Galveston, Galveston] -> now [Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston]"
+        }
+      ],
+      "errors": []
     }
   ]
 }
