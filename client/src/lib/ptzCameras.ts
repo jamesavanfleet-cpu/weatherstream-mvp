@@ -36,7 +36,9 @@ export const PTZ_CAMERAS: Record<string, PtzCamera> = {
   "Bermuda -- Hamilton":            { cameraUrl: "https://www.portbermudawebcam.com/",        previewUrl: "https://www.portbermudawebcam.com/images/pbw_preview.jpg" },
   "Bermuda -- Royal Naval Dockyard":{ cameraUrl: "https://www.portbermudawebcam.com/",        previewUrl: "https://www.portbermudawebcam.com/images/pbw_preview.jpg" },
   "St. Maarten":                    { cameraUrl: "https://www.portstmaartenwebcam.com/",      previewUrl: "https://www.portstmaartenwebcam.com/images/psmw_preview.jpg" },
-  "St. Thomas":                     { cameraUrl: "http://www.portstthomaswebcam.com/",        previewUrl: "https://www.portstthomaswebcam.com/images/pstw1_preview.jpg" },
+  // "St. Thomas" temporarily removed 2026-05-08 -- partner camera offline per David at PTZtv.
+  // To reinstate when David confirms it is back online, uncomment the line below:
+  // "St. Thomas":                  { cameraUrl: "http://www.portstthomaswebcam.com/",        previewUrl: "https://www.portstthomaswebcam.com/images/pstw1_preview.jpg" },
   "Juneau":                         { cameraUrl: "https://www.juneauharborwebcam.com/",       previewUrl: "https://www.juneauharborwebcam.com/images/jhw_preview.jpg" },
 };
 
