@@ -7,12 +7,21 @@
 //
 // Behavior:
 //   - Renders nothing if the given portName has no PTZ camera registered
-//   - Click opens the partner's PTZ.com webcam page in a new tab
-//   - stopPropagation prevents the click from bubbling to parent click handlers
-//     (e.g. accordion toggle, port-detail modal opener)
-//   - Falls back to a small Camera icon button if the snapshot image fails
-//   - LIVE badge with pulsing red dot overlays the bottom-left of the thumbnail
-//   - Cache-busted via ptzCacheBucket() once every 5 minutes
+//   - Click opens the partner's PTZ.com webcam page in a NEW BROWSER TAB
+//     (target="_blank") so the user's mycruisingweather.com tab stays open
+//     and they can return with a single tab switch instead of multiple Back
+//     button presses. rel="noopener noreferrer" hardens the new tab against
+//     opener-window manipulation and prevents leaking referrer data.
+//   - We render a true <a> anchor element (NOT a <button> + window.open) so
+//     the browser treats this as a normal user-initiated link navigation.
+//     Anchors with target="_blank" are never blocked by popup blockers, while
+//     window.open() can be downgraded to same-tab navigation in some mobile
+//     browsers / OS settings -- which is what was happening for users.
+//   - stopPropagation on click prevents the click from bubbling to parent
+//     handlers (e.g. accordion toggle, port-detail modal opener).
+//   - Falls back to a small Camera icon link if the snapshot image fails.
+//   - LIVE badge with pulsing red dot overlays the bottom-left of the thumbnail.
+//   - Cache-busted via ptzCacheBucket() once every 5 minutes.
 //
 // Attribution text ("Port Camera via our partners PTZtv") is rendered by the
 // CONSUMER (Home.tsx / RegionDetail.tsx), not by this component, so each call
@@ -20,7 +29,7 @@
 // =============================================================================
 import { useState } from "react";
 import { Camera } from "lucide-react";
-import { getPtzCamera, openPtzCamera, ptzCacheBucket } from "@/lib/ptzCameras";
+import { getPtzCamera, ptzCacheBucket } from "@/lib/ptzCameras";
 
 type Size = "compact" | "default";
 
@@ -44,25 +53,29 @@ export default function PtzThumb({ portName, size = "default", className = "" }:
 
   if (errored) {
     return (
-      <button
-        type="button"
-        aria-label={`Live camera at ${portName} on PTZ.com`}
-        title={`Live camera at ${portName} on PTZ.com`}
-        onClick={(e) => { stop(e); openPtzCamera(cam.cameraUrl); }}
+      <a
+        href={cam.cameraUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Live camera at ${portName} on PTZ.com (opens in new tab)`}
+        title={`Live camera at ${portName} on PTZ.com (opens in new tab)`}
+        onClick={stop}
         className={`w-6 h-6 rounded-md bg-red-500/20 border border-red-400/40 flex items-center justify-center hover:bg-red-500/40 hover:border-red-400/70 transition-colors flex-shrink-0 ${className}`}
       >
         <Camera className="w-3.5 h-3.5 text-red-300" />
-      </button>
+      </a>
     );
   }
 
   const bucket = ptzCacheBucket();
   return (
-    <button
-      type="button"
-      aria-label={`Live camera at ${portName} on PTZ.com\u2014partners PTZtv`}
-      title={`Live PTZ.com camera at ${portName}`}
-      onClick={(e) => { stop(e); openPtzCamera(cam.cameraUrl); }}
+    <a
+      href={cam.cameraUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Live PTZ.com camera at ${portName} (opens in new tab)`}
+      title={`Live PTZ.com camera at ${portName} (opens in new tab)`}
+      onClick={stop}
       className={`relative block ${dims} rounded-md overflow-hidden border border-red-400/60 hover:border-red-400 hover:shadow-[0_0_0_2px_rgba(248,113,113,0.4)] transition-all bg-slate-950 group flex-shrink-0 ${className}`}
     >
       <img
@@ -76,6 +89,6 @@ export default function PtzThumb({ portName, size = "default", className = "" }:
         <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
         <span className="text-[7px] font-black tracking-widest text-white leading-none">LIVE</span>
       </div>
-    </button>
+    </a>
   );
 }
