@@ -138,17 +138,22 @@ export default function PtzCameraPreview() {
                     <p className="text-white font-bold text-sm leading-tight truncate">
                       {p.location}
                     </p>
-                    <p className="text-white font-black text-2xl leading-none mt-1">{p.temp}&deg;F</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0`}>
+                        <p.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <p className="text-white font-black text-2xl leading-none">{p.temp}&deg;F</p>
+                    </div>
                     <p className="text-white/50 text-[11px] mt-1 truncate">{p.condition}</p>
                     <p className="text-white/35 text-[11px]">
                       {p.windKt} kt {p.windDir}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <CameraThumb port={p} bucket={bucket} />
-                    <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center`}>
-                      <p.icon className="w-4 h-4 text-white" />
-                    </div>
+                    <p className="text-slate-300 text-[9px] leading-tight text-center w-20">
+                      Port Camera via our<br />partners PTZtv
+                    </p>
                   </div>
                 </div>
               </div>
