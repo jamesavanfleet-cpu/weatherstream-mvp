@@ -17,6 +17,8 @@ import {
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import PtzThumb from "@/components/PtzThumb";
+import { hasPtzCamera } from "@/lib/ptzCameras";
 
 /**
  * WeatherStream - Next-Gen Weather Platform
@@ -1093,6 +1095,8 @@ export default function Home() {
       .catch(() => { /* silently fail -- static intel text still shown */ });
   }, []);
 
+  // PTZ partner thumbnail wiring imported once at module top is fine; we keep
+  // it inline here as a marker so future devs find it next to the rotation.
   // Rotate Live Conditions every 5 seconds: replace all 6 cards at once
   useEffect(() => {
     const id = setInterval(() => {
@@ -1490,6 +1494,7 @@ export default function Home() {
                 const windMph = Math.round(windKt * 1.15078);
                 const windDirDeg = live?.windDir ?? 0;
                 const windDirLabel = degToCompass(windDirDeg);
+                const isCam = hasPtzCamera(loc.location);
                 return (
                   <div
                     key={`${liveOffset}-${i}`}
@@ -1519,6 +1524,19 @@ export default function Home() {
                     <p className="text-white/35 text-[10px]">
                       {isMetric ? `${windKt} kt` : `${windMph} mph`} {windDirLabel}
                     </p>
+                    {/* PTZ.com partner camera: live thumbnail + LIVE badge + attribution.
+                        Renders only on camera-equipped ports; non-camera cards keep
+                        the exact original layout. The PtzThumb's onClick stops
+                        propagation so opening the partner webcam page does NOT
+                        also open the port-detail modal. */}
+                    {isCam && (
+                      <div className="mt-2 pt-2 border-t border-white/10">
+                        <PtzThumb portName={loc.location} size="compact" />
+                        <p className="text-white/60 text-[8px] leading-tight mt-1">
+                          Port Camera via our partners PTZtv
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}

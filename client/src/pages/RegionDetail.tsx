@@ -14,94 +14,11 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { REGIONS, type Port } from "@/data/regions";
 import {
-  ArrowLeft, ThermometerSun, Waves, Wind, Droplets, Sparkles, AlertTriangle, ChevronDown, TrendingUp, Camera
+  ArrowLeft, ThermometerSun, Waves, Wind, Droplets, Sparkles, AlertTriangle, ChevronDown, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// =============================================================================
-// PTZ.com partner camera integration (TESTER PHASE -- forecast region pages)
-// Map keyed by exact `Port.name` strings as defined in client/src/data/regions.ts.
-// Each entry holds the destination PTZ.com webcam page (cameraUrl) and the live
-// snapshot URL (previewUrl). Snapshot images are hotlinked from PTZ.com with
-// David's permission. Refreshed at most every 5 minutes via cacheBucket().
-// Non-camera ports are unaffected -- presence in this map is the gate.
-// =============================================================================
-interface PtzCamera {
-  cameraUrl: string;
-  previewUrl: string;
-}
-const PTZ_CAMERAS: Record<string, PtzCamera> = {
-  "Miami":                          { cameraUrl: "https://www.portmiamiwebcam.com/",          previewUrl: "https://www.portmiamiwebcam.com/images/pmw1_preview.jpg" },
-  "Port Everglades":                { cameraUrl: "https://www.portevergladeswebcam.com/",     previewUrl: "https://www.portevergladeswebcam.com/images/pew_preview.jpg" },
-  "Port Canaveral":                 { cameraUrl: "https://www.portcanaveralwebcam.com/",      previewUrl: "https://www.portcanaveralwebcam.com/images/pcw_preview.jpg" },
-  "Tampa Bay":                      { cameraUrl: "https://www.porttampawebcam.com/",          previewUrl: "https://www.porttampawebcam.com/images/ptw_preview.jpg" },
-  "Key West":                       { cameraUrl: "https://www.keywestharborwebcam.com/",      previewUrl: "https://www.keywestharborwebcam.com/images/kwhw_preview.jpg" },
-  "Nassau":                         { cameraUrl: "https://www.portnassauwebcam.com/",         previewUrl: "https://www.portnassauwebcam.com/images/pnw_preview.jpg" },
-  "Bimini":                         { cameraUrl: "http://www.portbiminiwebcam.com/",          previewUrl: "https://www.portbiminiwebcam.com/images/bim_preview.jpg" },
-  "Bermuda -- Hamilton":            { cameraUrl: "https://www.portbermudawebcam.com/",        previewUrl: "https://www.portbermudawebcam.com/images/pbw_preview.jpg" },
-  "Bermuda -- Royal Naval Dockyard":{ cameraUrl: "https://www.portbermudawebcam.com/",        previewUrl: "https://www.portbermudawebcam.com/images/pbw_preview.jpg" },
-  "St. Maarten":                    { cameraUrl: "https://www.portstmaartenwebcam.com/",      previewUrl: "https://www.portstmaartenwebcam.com/images/psmw_preview.jpg" },
-  "St. Thomas":                     { cameraUrl: "http://www.portstthomaswebcam.com/",        previewUrl: "https://www.portstthomaswebcam.com/images/pstw1_preview.jpg" },
-  "Juneau":                         { cameraUrl: "https://www.juneauharborwebcam.com/",       previewUrl: "https://www.juneauharborwebcam.com/images/jhw_preview.jpg" },
-};
-
-// Cache-bucket rotates every 5 minutes so users see fresh snapshots without
-// hammering PTZ servers on every page load.
-function ptzCacheBucket(): string {
-  return String(Math.floor(Date.now() / 300000));
-}
-
-function openPtzCamera(url: string) {
-  window.open(url, "_blank", "noopener,noreferrer");
-}
-
-// Live PTZ thumbnail with LIVE badge. Click stops accordion toggle and opens
-// the partner webcam page in a new tab. Falls back to a small camera icon if
-// the snapshot fails to load. The attribution "Port Camera via our partners
-// PTZtv" is rendered by the PortRow alongside this component.
-function PtzThumb({ portName }: { portName: string }) {
-  const cam = PTZ_CAMERAS[portName];
-  const [errored, setErrored] = useState(false);
-  if (!cam) return null;
-  const stop = (e: React.MouseEvent) => { e.stopPropagation(); };
-
-  if (errored) {
-    return (
-      <button
-        type="button"
-        aria-label={`Live camera at ${portName} on PTZ.com`}
-        title={`Live camera at ${portName} on PTZ.com`}
-        onClick={(e) => { stop(e); openPtzCamera(cam.cameraUrl); }}
-        className="w-6 h-6 rounded-md bg-red-500/20 border border-red-400/40 flex items-center justify-center hover:bg-red-500/40 hover:border-red-400/70 transition-colors flex-shrink-0"
-      >
-        <Camera className="w-3.5 h-3.5 text-red-300" />
-      </button>
-    );
-  }
-
-  const bucket = ptzCacheBucket();
-  return (
-    <button
-      type="button"
-      aria-label={`Live camera at ${portName} on PTZ.com\u2014partners PTZtv`}
-      title={`Live PTZ.com camera at ${portName}`}
-      onClick={(e) => { stop(e); openPtzCamera(cam.cameraUrl); }}
-      className="relative block w-24 h-[54px] rounded-md overflow-hidden border border-red-400/60 hover:border-red-400 hover:shadow-[0_0_0_2px_rgba(248,113,113,0.4)] transition-all bg-slate-950 group flex-shrink-0"
-    >
-      <img
-        src={`${cam.previewUrl}?cb=${bucket}`}
-        alt={`Live PTZ webcam preview of ${portName}`}
-        loading="lazy"
-        onError={() => setErrored(true)}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-      />
-      <div className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 px-1 py-[1px] rounded-sm bg-black/70 backdrop-blur-sm">
-        <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-[7px] font-black tracking-widest text-white leading-none">LIVE</span>
-      </div>
-    </button>
-  );
-}
+import PtzThumb from "@/components/PtzThumb";
+import { hasPtzCamera } from "@/lib/ptzCameras";
 
 
 // ---- Conversion helpers ----
@@ -377,7 +294,7 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
           stops click propagation so it opens the PTZ webcam page without also
           toggling the accordion. */}
       {(() => {
-        const hasCam = !!PTZ_CAMERAS[pw.port.name];
+        const hasCam = hasPtzCamera(pw.port.name);
         return (
           <div
             className={`bg-gradient-to-r ${gradient} px-5 py-4 cursor-pointer select-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3`}
