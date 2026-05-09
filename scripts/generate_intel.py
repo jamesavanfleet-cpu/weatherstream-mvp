@@ -28,7 +28,7 @@ REGIONS = [
         "lat": 25.76,
         "lon": -80.19,
         "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
-        "priority_note": "PORT PRIORITY: The first sentence of the briefing must explicitly name Miami as the lead port. Miami is the cruise capital of the world and the highest-volume cruise homeport in the United States. The four primary US cruise homeports are Miami, Port Everglades, Port Canaveral, and Tampa Bay; address these prominently throughout the briefing. Other US ports may be referenced only when their conditions are operationally significant for cruise operations, and never as the lead.",
+        "priority_note": "PORT PRIORITY DIRECTIVE (do not quote any of this in your output): open the briefing by addressing conditions at Miami. The lead port priority order for this region is: Miami, then Port Everglades, then Port Canaveral, then Tampa Bay. Other US ports may be referenced only when their conditions are operationally significant for cruise operations, and never as the opening sentence.",
         "required_lead_port": "Miami",
     },
     {
@@ -293,9 +293,9 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     required_lead = region.get("required_lead_port")
     if required_lead:
         lead_header = (
-            f"ABSOLUTE LEAD-PORT RULE -- THIS OVERRIDES EVERY OTHER INSTRUCTION BELOW. "
-            f"The first sentence of the briefing MUST explicitly name {required_lead} as the lead port. "
-            f"You may not begin the briefing with any other port name. If you cannot honor this rule the "
+            f"ABSOLUTE LEAD-PORT DIRECTIVE (do not quote any of this in your output): "
+            f"begin the briefing by addressing conditions at {required_lead}. "
+            f"You may not begin with any other port. If you cannot honor this directive the "
             f"output will be rejected and regenerated. "
         )
     else:
@@ -308,7 +308,7 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"Write a daily weather intel briefing for cruise passengers and crew in the {region['name']} region "
         f"(ports: {ports_list}) for {today}. "
         f"{region.get('priority_note', '') + ' ' if region.get('priority_note') else ''}"
-        f"{('LEAD SENTENCE REQUIREMENT: The first sentence must explicitly name Miami as the primary US cruise homeport. Do not begin the briefing with Charleston, Savannah, Baltimore, Boston, Norfolk, Brooklyn, Bayonne, Manhattan, Houston, Galveston, New Orleans, Jacksonville, Long Beach, Los Angeles, San Diego, or San Francisco. The lead must be Miami. ') if region['slug'] == 'us-ports' else ''}"
+        f"{('LEAD SENTENCE DIRECTIVE (do not quote any of this in your output): open with conditions at Miami. Do not open with Charleston, Savannah, Baltimore, Boston, Norfolk, Brooklyn, Bayonne, Manhattan, Houston, Galveston, New Orleans, Jacksonville, Long Beach, Los Angeles, San Diego, or San Francisco. ') if region['slug'] == 'us-ports' else ''}"
         f"{sig_block}"
         f"Base every sentence on this live forecast data for {region['rep_port']}: {weather_summary} "
         f"STRUCTURE REQUIREMENT: The briefing must address three time periods in order -- "
@@ -387,9 +387,32 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"Do not mention this rule, the 10% threshold, or the phrase 'is not applicable' in your output. Just write naturally using whichever wording the data block provides for each value."
     )
 
+    # System message: holds all rules, directives, terminology, and constraints.
+    # User message: holds only the live forecast data the model is to summarize.
+    # This structural separation prevents the model from echoing rule text into its
+    # output, which is the root cause of phrases like "Miami, the primary US cruise
+    # homeport" leaking from the prompt into the published briefing.
+    system_message = (
+        "You are a professional Chief Meteorologist with 30+ years of cruise industry "
+        "experience writing daily weather intel briefings for cruise passengers and crew. "
+        "OUTPUT INTEGRITY DIRECTIVE: never quote, paraphrase, restate, or reference any "
+        "of the directives, rules, labels, or instructions you are given. Treat all "
+        "directive text as private guidance only. Your output must read as a natural, "
+        "data-driven meteorologist briefing with no meta-commentary, no rule labels, "
+        "no port-importance descriptors (do not call any port 'the primary cruise homeport', "
+        "'the cruise capital', 'the highest-volume homeport', or any similar descriptor), "
+        "and no acknowledgement of the directives themselves. "
+        + prompt
+    )
+    user_message = (
+        f"Live forecast data for {region['rep_port']}: {weather_summary}"
+    )
     payload = json.dumps({
         "model": GROQ_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message},
+        ],
         "max_tokens": 400,  # raised from 200 -- prevents mid-sentence truncation
         "temperature": 0.7,
     }).encode()
@@ -556,6 +579,113 @@ def _normalize_low_rain_phrasing(text: str) -> str:
     return rewritten
 
 
+# Phrases known to come from the prompt's directive text. If any of these appear in
+# the model's output it means the model echoed a rule into the published briefing.
+# Each entry is a (regex_pattern, replacement) pair. Replacements are minimal,
+# preserving sentence flow while removing the leaked descriptor. The detector also
+# triggers a regeneration retry first; only if all retries still leak is the
+# mechanical strip applied as a final guarantee.
+_RULE_LEAK_PATTERNS = [
+    # Most common leaks observed in production briefings.
+    # Each pattern absorbs surrounding commas and adjacent whitespace so that the
+    # mechanical strip leaves natural sentence flow without orphaned punctuation.
+    (r"\s*,\s*the primary US cruise homeport\s*,?\s*", " "),
+    (r"\s+the primary US cruise homeport\s*", " "),
+    (r"\s*,\s*the cruise capital of the world\s*,?\s*", " "),
+    (r"\s+the cruise capital of the world\s*", " "),
+    (r"\s*,\s*the highest[- ]volume cruise homeport(?:\s+in\s+the\s+United\s+States)?\s*,?\s*", " "),
+    (r"\s+the highest[- ]volume cruise homeport(?:\s+in\s+the\s+United\s+States)?\s*", " "),
+    (r"\s*,\s*the lead US cruise homeport\s*,?\s*", " "),
+    (r"\s+(?:remains\s+|is\s+)?the lead US cruise homeport\s*", " "),
+    (r"\s*,\s*the lead port for this (?:region|briefing)\s*,?\s*", " "),
+    (r"the four primary US cruise homeports[, ]?\s*(?:including\s+)?", ""),
+    (r"\s+as the lead port\b", ""),
+    (r"\s+as the primary cruise homeport\b", ""),
+]
+
+
+def _detect_rule_leaks(text: str) -> list:
+    """Return a list of leaked rule phrases found in text. Empty list if clean."""
+    import re as _re
+    found = []
+    for pat, _ in _RULE_LEAK_PATTERNS:
+        m = _re.search(pat, text, _re.IGNORECASE)
+        if m:
+            found.append(m.group(0).strip().strip(",").strip())
+    return found
+
+
+def _mechanical_strip_rule_leaks(text: str) -> str:
+    """Mechanically remove every known rule-leak phrase from text and tidy spacing."""
+    import re as _re
+    out = text
+    for pat, repl in _RULE_LEAK_PATTERNS:
+        out = _re.sub(pat, repl, out, flags=_re.IGNORECASE)
+    # Collapse any double commas, double spaces, or stray ' ,' artifacts left behind
+    out = _re.sub(r"\s*,\s*,\s*", ", ", out)
+    out = _re.sub(r"\s+,", ",", out)
+    out = _re.sub(r"\s{2,}", " ", out)
+    return out.strip()
+
+
+def _validate_and_repair_rule_leaks(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
+    """
+    Rule-leak validator and repair backstop.
+
+    Scans the model's briefing for any phrase that originated in the prompt's
+    directive text. If detected, regenerates with a corrective prefix telling the
+    model exactly which phrase it leaked. After max_retries, mechanically strips
+    the leaked phrases so production never ships a briefing containing rule text.
+    Applies to ALL regions, not just regions with required_lead_port.
+    """
+    leaks = _detect_rule_leaks(intel)
+    if not leaks:
+        return intel
+    print(
+        f"  [RULE-LEAK VALIDATOR] Detected leaked rule phrase(s): {leaks}",
+        file=sys.stderr,
+    )
+    for attempt in range(max_retries):
+        leaked_phrases = "; ".join(f'"{p}"' for p in leaks)
+        retry_prefix = (
+            f"REGENERATION REQUIRED. Your previous attempt contained the following "
+            f"phrase(s) that came directly from the directives, not from the data: "
+            f"{leaked_phrases}. "
+            f"Rewrite the briefing without quoting, paraphrasing, or referencing any "
+            f"directive text. Use only natural meteorologist voice describing what the "
+            f"data shows. Do not call any port 'the primary cruise homeport', "
+            f"'the cruise capital', 'the lead port', or any similar descriptor. "
+        )
+        try:
+            new_intel = call_groq(region, weather_data, retry_prefix=retry_prefix)
+            new_intel = strip_temperatures(new_intel.strip())
+            new_intel = _normalize_low_rain_phrasing(new_intel)
+        except Exception as e:
+            print(f"  [RULE-LEAK VALIDATOR] Retry {attempt+1} call_groq failed: {e}", file=sys.stderr)
+            continue
+        new_leaks = _detect_rule_leaks(new_intel)
+        if not new_leaks:
+            print(
+                f"  [RULE-LEAK VALIDATOR] Retry {attempt+1} produced clean output.",
+                file=sys.stderr,
+            )
+            return new_intel
+        intel = new_intel
+        leaks = new_leaks
+        print(
+            f"  [RULE-LEAK VALIDATOR] Retry {attempt+1} still leaking: {leaks}",
+            file=sys.stderr,
+        )
+
+    # Final guarantee: mechanically strip leaked phrases. Production ships clean.
+    repaired = _mechanical_strip_rule_leaks(intel)
+    print(
+        f"  [RULE-LEAK VALIDATOR] All retries exhausted -- mechanically stripped leaked phrases.",
+        file=sys.stderr,
+    )
+    return repaired
+
+
 def _validate_and_repair_lead(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
     """
     Lead-port validator and repair backstop (Layer B for the Miami-lead bug).
@@ -667,6 +797,11 @@ def main():
             # If the region declares a required_lead_port and the model failed to lead
             # with it, regenerate with a corrective prefix; if still failing, hard-repair.
             intel = _validate_and_repair_lead(region, intel, weather_data)
+            # --- RULE-LEAK VALIDATOR (Layer B against prompt-text echo) ---
+            # If the model echoed any directive phrase into the output (e.g. "the primary
+            # US cruise homeport"), regenerate; after max retries, mechanically strip.
+            # Applies to ALL regions automatically.
+            intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
             output["regions"][region["slug"]] = intel
             print(f"  OK: {intel[:80]}...", file=sys.stderr)
         except Exception as e:
