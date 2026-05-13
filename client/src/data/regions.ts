@@ -41,6 +41,7 @@ export const REGIONS: Region[] = [
       { name: "Miami",             lat: 25.77,   lon: -80.19,    sublabel: "Florida" },
       { name: "New Orleans",       lat: 29.9511, lon: -90.0715, sublabel: "Louisiana" },
       { name: "Norfolk",           lat: 36.8468, lon: -76.2951, sublabel: "Virginia" },
+      { name: "Philadelphia",      lat: 39.9077, lon: -75.1389, sublabel: "Pennsylvania" },
       { name: "Port Canaveral",    lat: 28.41,   lon: -80.62,   sublabel: "Florida" },
       { name: "Port Everglades",   lat: 26.08,   lon: -80.12,   sublabel: "Fort Lauderdale" },
       { name: "San Diego",         lat: 32.7157, lon: -117.1611, sublabel: "California" },

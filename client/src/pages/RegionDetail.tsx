@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PtzThumb from "@/components/PtzThumb";
-import { hasPtzCamera } from "@/lib/ptzCameras";
+import { hasPtzCamera, getPtzCameras } from "@/lib/ptzCameras";
 
 
 // ---- Conversion helpers ----
@@ -315,7 +315,13 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
             {hasCam && (
               <div className="flex items-center gap-3 sm:flex-shrink-0">
                 <div className="flex items-center gap-2">
-                  <PtzThumb portName={pw.port.name} />
+                  {/* Render one thumbnail per camera assigned to this port.
+                      Most ports have exactly one cam. Manhattan / Brooklyn /
+                      Bayonne have two (NY Harbor Webcam + Port NY Webcam),
+                      both shown side-by-side. */}
+                  {getPtzCameras(pw.port.name).map((_, i) => (
+                    <PtzThumb key={i} portName={pw.port.name} cameraIndex={i} />
+                  ))}
                   <p className="text-white/85 text-[10px] leading-tight">
                     Port Camera via our<br />partners PTZtv
                   </p>

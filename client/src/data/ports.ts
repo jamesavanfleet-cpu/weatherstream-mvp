@@ -56,6 +56,8 @@ export const PORT_LIST: Port[] = [
     aliases: ["Norfolk Virginia", "Port of Virginia Norfolk", "Norfolk VA"] },
   { name: "Baltimore",              lat: 39.2904, lon:  -76.6122, region: "US Homeport",
     aliases: ["Baltimore Maryland", "Port of Baltimore", "Baltimore MD", "Cruise Maryland"] },
+  { name: "Philadelphia",           lat: 39.9077, lon:  -75.1389, region: "US Homeport",
+    aliases: ["Philadelphia Pennsylvania", "Port of Philadelphia", "Philadelphia PA", "PhilaPort", "PhilaPort Cruise Terminal", "Philly"] },
   { name: "Manhattan",              lat: 40.7680, lon:  -74.0020, region: "US Homeport",
     aliases: [
       "New York Cruise Terminal",   // official terminal name

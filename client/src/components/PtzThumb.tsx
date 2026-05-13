@@ -29,7 +29,7 @@
 // =============================================================================
 import { useState } from "react";
 import { Camera } from "lucide-react";
-import { getPtzCamera, ptzCacheBucket } from "@/lib/ptzCameras";
+import { getPtzCameras, ptzCacheBucket } from "@/lib/ptzCameras";
 
 type Size = "compact" | "default";
 
@@ -37,10 +37,15 @@ interface Props {
   portName: string;
   size?: Size;
   className?: string;
+  // For ports with multiple cameras, selects which camera to render. Defaults
+  // to 0 (the first camera). Single-camera ports ignore this prop. Multi-cam
+  // consumers (Manhattan/Brooklyn/Bayonne) render <PtzThumb> once per cam.
+  cameraIndex?: number;
 }
 
-export default function PtzThumb({ portName, size = "default", className = "" }: Props) {
-  const cam = getPtzCamera(portName);
+export default function PtzThumb({ portName, size = "default", className = "", cameraIndex = 0 }: Props) {
+  const cams = getPtzCameras(portName);
+  const cam = cams[cameraIndex];
   const [errored, setErrored] = useState(false);
   if (!cam) return null;
   const stop = (e: React.MouseEvent) => { e.stopPropagation(); };

@@ -18,7 +18,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import PtzThumb from "@/components/PtzThumb";
-import { hasPtzCamera } from "@/lib/ptzCameras";
+import { hasPtzCamera, getPtzCameras } from "@/lib/ptzCameras";
 
 /**
  * WeatherStream - Next-Gen Weather Platform
@@ -44,12 +44,14 @@ const LIVE_DATA = [
   { location: "Barbados", sublabel: null, lat: 13.10, lon: -59.62, temp: 82, condition: "Trade Winds", icon: Wind, color: "from-blue-500 to-indigo-500" },
   { location: "Barcelona", sublabel: "Spain", lat: 41.38, lon: 2.18, temp: 62, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-500 to-indigo-500" },
   { location: "Beirut", sublabel: "Lebanon", lat: 33.89, lon: 35.50, temp: 68, condition: "Sunny", icon: ThermometerSun, color: "from-amber-400 to-orange-400" },
+  { location: "Bayonne", sublabel: "Cape Liberty, NJ", lat: 40.6668, lon: -74.1143, temp: 60, condition: "Partly Cloudy", icon: Cloud, color: "from-slate-500 to-blue-500" },
   { location: "Bermuda -- Hamilton", sublabel: "Bermuda", lat: 32.2948, lon: -64.7839, temp: 72, condition: "Partly Cloudy", icon: Cloud, color: "from-teal-400 to-cyan-500" },
   { location: "Bermuda -- Royal Naval Dockyard", sublabel: "Bermuda", lat: 32.3167, lon: -64.8333, temp: 72, condition: "Partly Cloudy", icon: Cloud, color: "from-teal-500 to-blue-500" },
   { location: "Belize City", sublabel: null, lat: 17.25, lon: -88.77, temp: 84, condition: "Partly Cloudy", icon: Cloud, color: "from-green-500 to-teal-500" },
   { location: "Berry Islands", sublabel: "Cruise Lines' Private Islands", lat: 25.63, lon: -77.83, temp: 77, condition: "Sunny", icon: ThermometerSun, color: "from-amber-400 to-yellow-400" },
   { location: "Bimini", sublabel: null, lat: 25.73, lon: -79.30, temp: 76, condition: "Clear", icon: Sparkles, color: "from-sky-400 to-cyan-400" },
   { location: "Bonaire", sublabel: null, lat: 12.20, lon: -68.27, temp: 85, condition: "Clear", icon: Sparkles, color: "from-cyan-400 to-teal-400" },
+  { location: "Brooklyn", sublabel: "New York", lat: 40.6782, lon: -74.0060, temp: 60, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-500 to-indigo-500" },
   { location: "Cabo San Lucas", sublabel: "Baja California Sur", lat: 22.89, lon: -109.91, temp: 78, condition: "Sunny", icon: ThermometerSun, color: "from-amber-500 to-yellow-400" },
   { location: "Cadiz", sublabel: "Spain", lat: 36.53, lon: -6.30, temp: 63, condition: "Breezy", icon: Wind, color: "from-blue-400 to-sky-500" },
   { location: "Cartagena", sublabel: null, lat: 10.39, lon: -75.48, temp: 88, condition: "Sunny", icon: ThermometerSun, color: "from-amber-500 to-orange-500" },
@@ -82,6 +84,7 @@ const LIVE_DATA = [
   { location: "Lisbon", sublabel: "Portugal", lat: 38.71, lon: -9.14, temp: 60, condition: "Partly Cloudy", icon: Cloud, color: "from-green-500 to-teal-500" },
   { location: "Livorno", sublabel: "Italy", lat: 43.55, lon: 10.31, temp: 59, condition: "Sunny", icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
   { location: "Malaga", sublabel: "Spain", lat: 36.72, lon: -4.42, temp: 65, condition: "Sunny", icon: ThermometerSun, color: "from-amber-500 to-yellow-500" },
+  { location: "Manhattan", sublabel: "New York", lat: 40.7680, lon: -74.0020, temp: 60, condition: "Partly Cloudy", icon: Cloud, color: "from-indigo-500 to-blue-500" },
   { location: "Manzanillo", sublabel: "Colima, Mexico", lat: 19.05, lon: -104.32, temp: 83, condition: "Partly Cloudy", icon: Cloud, color: "from-teal-500 to-emerald-400" },
   { location: "Marseille", sublabel: "France", lat: 43.30, lon: 5.37, temp: 58, condition: "Windy", icon: Wind, color: "from-indigo-500 to-blue-500" },
   { location: "Martinique", sublabel: null, lat: 14.64, lon: -61.02, temp: 82, condition: "Partly Cloudy", icon: Cloud, color: "from-green-500 to-teal-400" },
@@ -94,6 +97,7 @@ const LIVE_DATA = [
   { location: "Nice", sublabel: "France", lat: 43.71, lon: 7.26, temp: 60, condition: "Sunny", icon: ThermometerSun, color: "from-yellow-500 to-amber-400" },
   { location: "Ocho Rios", sublabel: null, lat: 18.41, lon: -77.10, temp: 86, condition: "Partly Cloudy", icon: Cloud, color: "from-green-400 to-emerald-400" },
   { location: "Palma de Mallorca",sublabel: "Spain", lat: 39.57, lon: 2.65, temp: 61, condition: "Breezy", icon: Wind, color: "from-cyan-500 to-blue-500" },
+  { location: "Philadelphia", sublabel: "Pennsylvania", lat: 39.9077, lon: -75.1389, temp: 60, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-500 to-indigo-500" },
   { location: "Port Canaveral", sublabel: "Florida", lat: 28.4083, lon: -80.6167, temp: 76, condition: "Sunny", icon: ThermometerSun, color: "from-orange-400 to-amber-400" },
   { location: "Port Everglades", sublabel: "Fort Lauderdale", lat: 26.0833, lon: -80.1167, temp: 78, condition: "Sunny", icon: ThermometerSun, color: "from-orange-500 to-yellow-400" },
   { location: "Puerto Plata", sublabel: null, lat: 19.79, lon: -70.69, temp: 82, condition: "Breezy", icon: Wind, color: "from-blue-400 to-cyan-500" },
@@ -1532,7 +1536,15 @@ export default function Home() {
                         also open the port-detail modal. */}
                     {isCam && (
                       <div className="mt-2 pt-2 border-t border-white/10">
-                        <PtzThumb portName={loc.location} size="compact" />
+                        {/* One thumbnail per camera assigned to this port.
+                            Single-cam ports (Miami / Nassau / etc) render one;
+                            multi-cam ports (Manhattan / Brooklyn / Bayonne)
+                            render both NY Harbor + Port NY cameras stacked. */}
+                        <div className="flex flex-col gap-1">
+                          {getPtzCameras(loc.location).map((_, i) => (
+                            <PtzThumb key={i} portName={loc.location} size="compact" cameraIndex={i} />
+                          ))}
+                        </div>
                         <p className="text-white/60 text-[8px] leading-tight mt-1">
                           Port Camera via our partners PTZtv
                         </p>
