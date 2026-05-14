@@ -8,15 +8,21 @@ Each story starts directly with the weather content -- no opener phrase.
 Outputs: client/public/top_story.json
 """
 
-import asyncio, json, math, os, sys, time, urllib.request
+import asyncio, json, math, os, sys, time, urllib.request, urllib.error
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import aiohttp
 
+try:
+    import httpx as _httpx
+    _USE_HTTPX = True
+except ImportError:
+    _USE_HTTPX = False
+
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
 def _format_rain_prob(value) -> str:
@@ -263,43 +269,40 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
         "temperature": 0.6,
     }).encode()
 
-    req = urllib.request.Request(
-        f"{GROQ_BASE_URL}/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "User-Agent": "WeatherStream/1.0",
-        },
-        method="POST",
-    )
+    url = f"{GROQ_BASE_URL}/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "User-Agent": "WeatherStream/1.0",
+    }
     # Retry with exponential backoff to handle 429 rate limit responses
+    content = None
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                result = json.loads(resp.read())
-                content = result["choices"][0]["message"]["content"].strip()
+            if _USE_HTTPX:
+                resp = _httpx.post(url, content=payload, headers=headers, timeout=30)
+                if resp.status_code == 429 and attempt < 3:
+                    wait = 10 * (2 ** attempt)
+                    print(f"  Rate limit -- waiting {wait}s before retry {attempt+1}/3", file=sys.stderr)
+                    time.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                result = resp.json()
+            else:
+                req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    result = json.loads(r.read())
+            content = result["choices"][0]["message"]["content"].strip()
             break
-        except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < 3:
-                wait = 10 * (2 ** attempt)  # 10s, 20s, 40s
-                print(f"  Groq 429 rate limit -- waiting {wait}s before retry {attempt + 1}/3", file=sys.stderr)
+        except Exception as e:
+            if attempt < 3:
+                wait = 5 * (attempt + 1)
+                print(f"  API call attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
                 time.sleep(wait)
-                # Re-encode payload for retry
-                req = urllib.request.Request(
-                    f"{GROQ_BASE_URL}/chat/completions",
-                    data=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {GROQ_API_KEY}",
-                        "User-Agent": "WeatherStream/1.0",
-                    },
-                    method="POST",
-                )
             else:
                 raise
-    else:
-        raise RuntimeError("Groq API failed after 4 attempts")
+    if content is None:
+        raise RuntimeError("API failed after 4 attempts")
 
     # Strip markdown code fences if present
     if "```" in content:
