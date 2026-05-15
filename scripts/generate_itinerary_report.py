@@ -20,7 +20,7 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
-REPO_DIR = Path("/home/ubuntu/weatherstream-mvp")
+REPO_DIR = Path("/home/ubuntu/vanfleet-wx")
 CHANGE_LOG_PATH = REPO_DIR / "scripts/itinerary_change_log.json"
 REPORTS_DIR = REPO_DIR / "scripts/reports"
 
