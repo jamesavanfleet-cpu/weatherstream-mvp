@@ -242,7 +242,7 @@ export default function FromTheDeck() {
               }}
             >
               <img
-                src={photo.src}
+                src={photo.src.replace("/from-the-deck/", "/from-the-deck-thumb/")}
                 alt={`${photo.ship} - ${photo.location}`}
                 loading="lazy"
                 style={{ width: "100%", display: "block", objectFit: "cover" }}
