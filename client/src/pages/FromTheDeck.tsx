@@ -22,6 +22,7 @@ interface GalleryPhoto {
 }
 
 const PHOTOS: GalleryPhoto[] = [
+  { id: 57, src: "/from-the-deck/ftd-57.jpg", ship: "MSC Cruise Ship", line: "MSC Cruises", location: "Ocean Cay, MSC Private Island", caption: "Waterspout", photographer: "Leesa Williams" },
   { id: 56, src: "/from-the-deck/ftd-56.jpg", ship: "Anthem of the Seas", line: "Royal Caribbean", location: "Sydney, Australia", caption: "Awesome Port", photographer: "Kruising Kizzy's" },
   { id: 47, src: "/from-the-deck/ftd-47.jpg", ship: "Norwegian Luna", line: "Norwegian Cruise Line", location: "St. Thomas, USVI", caption: "Ol' Sol and Luna on the NCL Luna", photographer: "Kevin Novak" },
   { id: 54, src: "/from-the-deck/ftd-54.jpg", ship: "Emerald Princess", line: "Princess Cruises", location: "South of Isle of Wight, England", caption: "Departing Southampton", photographer: "Andrew Sassoli-Walker" },
@@ -51,8 +52,6 @@ const PHOTOS: GalleryPhoto[] = [
   { id: 33, src: "/from-the-deck/ftd-33.jpg", ship: "Celebrity Reflection & Serenade of the Seas", line: "Celebrity Cruises / Royal Caribbean", location: "Cozumel, Mexico" },
   { id: 34, src: "/from-the-deck/ftd-34.jpg", ship: "At Sea", line: "", location: "Atlantic Ocean", caption: "Rainbow at sea" },
   { id: 37, src: "/from-the-deck/ftd-37.jpg", ship: "Symphony of the Seas", line: "Royal Caribbean", location: "STX Shipyard, St. Nazaire, France", caption: "Departure in fog" },
-  { id: 38, src: "/from-the-deck/ftd-38.jpg", ship: "Voyager of the Seas", line: "Royal Caribbean", location: "Port of Sydney, Australia" },
-  { id: 39, src: "/from-the-deck/ftd-39.jpg", ship: "Voyager of the Seas", line: "Royal Caribbean", location: "Port of Sydney, Australia" },
   { id: 40, src: "/from-the-deck/ftd-40.jpg", ship: "Ovation of the Seas", line: "Royal Caribbean", location: "Hong Kong, China" },
   { id: 15, src: "/from-the-deck/ftd-15.jpg", ship: "Ovation of the Seas", line: "Royal Caribbean", location: "Alaska (Glacier)" },
   { id: 18, src: "/from-the-deck/ftd-18.jpg", ship: "Oasis of the Seas", line: "Royal Caribbean", location: "Bahamas", caption: "Golden hour at sea" },
@@ -74,6 +73,8 @@ const PHOTOS: GalleryPhoto[] = [
   { id: 20, src: "/from-the-deck/ftd-20.jpg", ship: "Vision of the Seas", line: "Royal Caribbean", location: "Sea Day, North of Puerto Rico" },
   { id: 21, src: "/from-the-deck/ftd-21.jpg", ship: "Vision of the Seas", line: "Royal Caribbean", location: "Bridge Wing, at Sea" },
   { id: 22, src: "/from-the-deck/ftd-22.jpg", ship: "Explorer of the Seas", line: "Royal Caribbean", location: "Aruba" },
+  { id: 38, src: "/from-the-deck/ftd-38.jpg", ship: "Voyager of the Seas", line: "Royal Caribbean", location: "Port of Sydney, Australia" },
+  { id: 39, src: "/from-the-deck/ftd-39.jpg", ship: "Voyager of the Seas", line: "Royal Caribbean", location: "Port of Sydney, Australia" },
   { id: 35, src: "/from-the-deck/ftd-35.jpg", ship: "Allure of the Seas", line: "Royal Caribbean", location: "Wet Dock, Freeport, Bahamas", caption: "Azipod maintenance" },
   { id: 36, src: "/from-the-deck/ftd-36.jpg", ship: "Allure of the Seas", line: "Royal Caribbean", location: "Wet Dock, Freeport, Bahamas", caption: "Azipod pod under hull" },
   { id: 14, src: "/from-the-deck/ftd-14.jpg", ship: "Liberty of the Seas", line: "Royal Caribbean", location: "Dry Dock" },
