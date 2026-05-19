@@ -243,7 +243,7 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
 
     // Fetch weather forecast (daily + hourly) and marine data in parallel
     const [weatherResp, marineResp] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,precipitation_probability_max,cloudcover_mean,surface_pressure_mean&hourly=precipitation_probability,cloudcover&wind_speed_unit=kn&timezone=auto&forecast_days=16`),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,precipitation_probability_max,cloudcover_mean,surface_pressure_mean&hourly=precipitation_probability,cloudcover&wind_speed_unit=kn&timezone=auto&forecast_days=16&models=ecmwf_ifs025`),
       fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&daily=wave_height_max,swell_wave_height_max&timezone=auto&forecast_days=16`),
     ]);
 

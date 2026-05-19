@@ -214,7 +214,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,` +
       `precipitation_probability_max,weathercode,sunrise,sunset,moonrise,moonset` +
       `&hourly=temperature_2m,wind_speed_10m,precipitation_probability,weathercode,dewpoint_2m,relativehumidity_2m,windgusts_10m` +
-      `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16`;
+      `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16&models=ecmwf_ifs025`;
     // Marine API -- try exact coordinates first, fall back to slightly offshore if it errors
     const marineUrl =
       `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +

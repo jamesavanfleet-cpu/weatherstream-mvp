@@ -151,7 +151,7 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability` +
     `&hourly=precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode` +
-    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
+    `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=7&models=ecmwf_ifs025`;
 
   // Use marineLat/marineLon if set (offshore nudge for ports where the marine model
   // grid falls on land or in an enclosed harbor returning null swell data).

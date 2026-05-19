@@ -169,7 +169,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
     `&current=temperature_2m,dew_point_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,pressure_msl` +
     `&hourly=pressure_msl,temperature_2m,wind_speed_10m,wind_direction_10m,precipitation_probability` +
     `&past_hours=2&forecast_hours=26` +
-    `&wind_speed_unit=kn&temperature_unit=celsius&timezone=auto`;
+    `&wind_speed_unit=kn&temperature_unit=celsius&timezone=auto&models=ecmwf_ifs025`;
 
   const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}` +
     `&current=wave_height,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction` +
