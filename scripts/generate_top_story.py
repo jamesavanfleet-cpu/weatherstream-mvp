@@ -177,7 +177,7 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
         f"&daily=wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode"
-        f"&wind_speed_unit=ms&timezone=auto&forecast_days=7"
+        f"&models=ecmwf_ifs025&wind_speed_unit=ms&timezone=auto&forecast_days=7"
     )
     marine_url = (
         f"https://marine-api.open-meteo.com/v1/marine"
