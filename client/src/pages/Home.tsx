@@ -411,7 +411,7 @@ const BRIEFING_CLIENTS = [
 
 // Coordinates for each route card -- used to fetch live wind direction
 const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
-  "US Ports":                      { lat: 32.7,   lon: -79.9  },
+  "US Ports":                      { lat: 25.76,  lon: -80.19 },
   "Bahamas, Bermuda and Central Caribbean": { lat: 24.0,   lon: -78.5  },
   "Eastern Caribbean":             { lat: 18.0,   lon: -63.0  },
   "Western Caribbean":             { lat: 19.3,   lon: -87.5  },
@@ -423,6 +423,8 @@ const ROUTE_COORDS: Record<string, { lat: number; lon: number }> = {
   "Western Mediterranean": { lat: 39.57, lon: 2.65 },
   "Central Mediterranean":  { lat: 43.30, lon: 5.37 },
   "Eastern Mediterranean":  { lat: 37.45, lon: 25.33 },
+  "Eastern Pacific":           { lat: 22.89, lon: -109.91 },
+  "Alaska":                     { lat: 58.30, lon: -134.42 },
 };
 
 // Convert Fahrenheit integer to Celsius string
@@ -995,6 +997,7 @@ export default function Home() {
   const medRefs = useRef<(HTMLDivElement | null)[]>([]);
   const alaskaRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [windDirs, setWindDirs] = useState<Record<string, string>>({});
+  const [liveRain, setLiveRain] = useState<Record<string, string>>({});
   // Randomize the starting offset on each page load so the rotation does not always begin at A.
   // The random value is computed once via lazy initializer (so it does not change on re-render),
   // is snapped to a multiple of 6 to keep card-group alignment, and stays within LIVE_DATA bounds.
@@ -1138,6 +1141,28 @@ export default function Home() {
         setWindDirs(results);
       })
       .catch(() => { /* silently fail -- static wind speed still shown */ });
+  }, []);
+
+  // Fetch live ECMWF precipitation probability for all route cards
+  useEffect(() => {
+    const entries = Object.entries(ROUTE_COORDS);
+    const lats = entries.map(([, c]) => c.lat).join(",");
+    const lons = entries.map(([, c]) => c.lon).join(",");
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&daily=precipitation_probability_max&models=ecmwf_ifs025&timezone=auto&forecast_days=1`
+    )
+      .then(r => r.json())
+      .then((data: unknown) => {
+        const results: Record<string, string> = {};
+        const arr = Array.isArray(data) ? data : [data];
+        arr.forEach((item: { daily?: { precipitation_probability_max?: number[] } }, idx: number) => {
+          const name = entries[idx][0];
+          const pct = item?.daily?.precipitation_probability_max?.[0];
+          if (pct !== undefined) results[name] = `${pct}%`;
+        });
+        setLiveRain(results);
+      })
+      .catch(() => { /* silently fail -- static rain values still shown */ });
   }, []);
 
   // Scroll-triggered intel expansion for Caribbean cards
@@ -1347,7 +1372,7 @@ export default function Home() {
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Droplets className="w-5 h-5 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-white">{route.rain}</p>
+              <p className="text-2xl font-bold text-white">{liveRain[route.name] || route.rain}</p>
               <p className="text-xs text-white/60">Rain Chance</p>
             </div>
           </div>
