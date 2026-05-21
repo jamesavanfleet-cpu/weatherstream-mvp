@@ -222,13 +222,27 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     const i = rawIdx + 1;
     const wKt = msToKt(d.wind_speed_10m_max[i]);
     const swellDeg = md?.swell_wave_direction_dominant?.[i];
+    // Compute daily mean rain chance from hourly data to align with NWS
+    let dayMeanRain = d.precipitation_probability_max[i] ?? 0;
+    if (h?.time && h?.precipitation_probability) {
+      const dayProbs: number[] = [];
+      (h.time as string[]).forEach((isoTime: string, idx: number) => {
+        if (isoTime.startsWith(dateStr)) {
+          const p = h.precipitation_probability[idx];
+          if (p !== null && p !== undefined) dayProbs.push(p);
+        }
+      });
+      if (dayProbs.length > 0) {
+        dayMeanRain = Math.round(dayProbs.reduce((a, b) => a + b, 0) / dayProbs.length);
+      }
+    }
     return {
       date: dateStr,
       maxF: cToF(d.temperature_2m_max[i]),
       minF: cToF(d.temperature_2m_min[i]),
       windKt: wKt,
       windDir: degToCompass(d.wind_direction_10m_dominant[i]),
-      rainChance: d.precipitation_probability_max[i] ?? 0,
+      rainChance: dayMeanRain,
       condition: wmoToCondition(d.weathercode[i]),
       waveHeightFt:  md?.wave_height_max?.[i]       != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
       swellHeightFt: md?.swell_wave_height_max?.[i] != null ? Math.round(md.swell_wave_height_max[i] * 10) / 10 : null,

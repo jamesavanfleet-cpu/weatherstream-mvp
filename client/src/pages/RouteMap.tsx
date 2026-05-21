@@ -270,15 +270,24 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       }));
 
     // Rain chance by time of day (morning 6-12, afternoon 12-18, evening 18-22, overnight 22-6)
-    // Uses max (not average) to match the daily precipitation_probability_max field
+    // Uses mean of hourly values to align with NWS professional forecasts
     function avgRain(startH: number, endH: number): number | null {
       const vals = hourlyTimes
         .map((t, i) => ({ hour: new Date(t).getHours(), val: h.precipitation_probability[i] ?? 0, t }))
         .filter(({ t, hour }) => t.startsWith(dateStr) && hour >= startH && hour < endH)
         .map(({ val }) => val);
       if (!vals.length) return null;
-      return Math.max(...vals);
+      return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
     }
+
+    // Compute daily mean rain chance for the target date
+    const targetDayProbs = hourlyTimes
+      .map((t, i) => ({ t, val: h.precipitation_probability[i] ?? 0 }))
+      .filter(({ t }) => t.startsWith(dateStr))
+      .map(({ val }) => val);
+    const targetDayMeanRain = targetDayProbs.length > 0
+      ? Math.round(targetDayProbs.reduce((a, b) => a + b, 0) / targetDayProbs.length)
+      : (d.precipitation_probability_max[dayIdx] ?? 0);
 
     // 5-day forecast centered on the target date
     const allDates: string[] = d.time ?? [];
@@ -287,7 +296,8 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
     const endIdx = Math.min(allDates.length - 1, centerIdx + 2);
     const sevenDay = [];
     for (let i = startIdx; i <= endIdx; i++) {
-      // Find the peak rain hour for this day to label the time-of-day
+      // Compute daily mean rain chance and identify peak hour for time-of-day label
+      let dayMeanRain = d.precipitation_probability_max[i] ?? 0;
       let dayPeakTimeOfDay = "Afternoon";
       const dayDateStr = allDates[i];
       if (h?.time && h?.precipitation_probability) {
@@ -298,6 +308,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
           }
         });
         if (dayHours.length > 0) {
+          dayMeanRain = Math.round(dayHours.reduce((sum, cur) => sum + cur.prob, 0) / dayHours.length);
           const peak = dayHours.reduce((best, cur) => cur.prob > best.prob ? cur : best, dayHours[0]);
           dayPeakTimeOfDay = (() => {
             const hr = peak.hour;
@@ -313,7 +324,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
         maxF: cToF(d.temperature_2m_max[i]),
         minF: cToF(d.temperature_2m_min[i]),
         condition: wmoToCondition(d.weathercode[i]),
-        rainChance: d.precipitation_probability_max[i] ?? 0,
+        rainChance: dayMeanRain,
         peakRainTimeOfDay: dayPeakTimeOfDay,
         windKt: msToKt(d.wind_speed_10m_max[i]),
         windDir: degToCompass(d.wind_direction_10m_dominant[i]),
@@ -332,7 +343,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       minF: cToF(d.temperature_2m_min[dayIdx]),
       windKt: msToKt(d.wind_speed_10m_max[dayIdx]),
       windDir: degToCompass(d.wind_direction_10m_dominant[dayIdx]),
-      rainChance: d.precipitation_probability_max[dayIdx] ?? 0,
+      rainChance: targetDayMeanRain,
       condition: wmoToCondition(d.weathercode[dayIdx]),
       waveHeightFt: marine?.daily?.wave_height_max?.[dayIdx] != null
         ? Math.round(marine.daily.wave_height_max[dayIdx] * 10) / 10

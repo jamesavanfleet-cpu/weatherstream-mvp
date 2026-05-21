@@ -1144,21 +1144,29 @@ export default function Home() {
   }, []);
 
   // Fetch live ECMWF precipitation probability for all route cards
+  // Uses hourly precipitation_probability and computes the daily mean to align
+  // with NWS professional forecasts instead of the misleading peak-hour max.
   useEffect(() => {
     const entries = Object.entries(ROUTE_COORDS);
     const lats = entries.map(([, c]) => c.lat).join(",");
     const lons = entries.map(([, c]) => c.lon).join(",");
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&daily=precipitation_probability_max&models=ecmwf_ifs025&timezone=auto&forecast_days=1`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&hourly=precipitation_probability&models=ecmwf_ifs025&timezone=auto&forecast_days=1`
     )
       .then(r => r.json())
       .then((data: unknown) => {
         const results: Record<string, string> = {};
         const arr = Array.isArray(data) ? data : [data];
-        arr.forEach((item: { daily?: { precipitation_probability_max?: number[] } }, idx: number) => {
+        arr.forEach((item: { hourly?: { precipitation_probability?: number[] } }, idx: number) => {
           const name = entries[idx][0];
-          const pct = item?.daily?.precipitation_probability_max?.[0];
-          if (pct !== undefined) results[name] = `${pct}%`;
+          const hourlyProbs = item?.hourly?.precipitation_probability;
+          if (hourlyProbs && hourlyProbs.length > 0) {
+            const validProbs = hourlyProbs.filter((p): p is number => p !== null && p !== undefined);
+            if (validProbs.length > 0) {
+              const mean = Math.round(validProbs.reduce((a, b) => a + b, 0) / validProbs.length);
+              results[name] = `${mean}%`;
+            }
+          }
         });
         setLiveRain(results);
       })

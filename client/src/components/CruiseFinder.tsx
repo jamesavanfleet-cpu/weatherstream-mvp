@@ -355,7 +355,22 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
       windDeg: d.winddirection_10m_dominant?.[idx] ?? null,
       windDir: d.winddirection_10m_dominant?.[idx] !== null ? degToDir(d.winddirection_10m_dominant[idx]) : "--",
       precipMm: d.precipitation_sum?.[idx] !== null ? Math.round(d.precipitation_sum[idx] * 10) / 10 : null,
-      precipChance: d.precipitation_probability_max?.[idx] ?? null,
+      precipChance: (() => {
+        // Use daily mean of hourly precipitation_probability to align with NWS
+        if (h?.time && h?.precipitation_probability) {
+          const dayProbs: number[] = [];
+          (h.time as string[]).forEach((isoTime: string, i: number) => {
+            if (isoTime.startsWith(date)) {
+              const p = h.precipitation_probability[i];
+              if (p !== null && p !== undefined) dayProbs.push(p);
+            }
+          });
+          if (dayProbs.length > 0) {
+            return Math.round(dayProbs.reduce((a: number, b: number) => a + b, 0) / dayProbs.length);
+          }
+        }
+        return d.precipitation_probability_max?.[idx] ?? null;
+      })(),
       cloudCoverPct: d.cloudcover_mean?.[idx] ?? null,
       condition: d.weathercode?.[idx] !== null ? wmoToCondition(d.weathercode[idx]) : "Unknown",
       wmoCode: d.weathercode?.[idx] ?? null,

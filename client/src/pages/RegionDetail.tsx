@@ -179,9 +179,10 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
 
   const windKt = msToKt(c.wind_speed_10m);
 
-  // ---- Derive peak rain chance for today from hourly data ----
-  // The hourly array covers 7 days (168 values). Today's hours are indices 0-23.
-  // We find the max value and the hour at which it occurs.
+  // ---- Derive rain chance for today from hourly data ----
+  // Uses the daily MEAN of hourly precipitation_probability to align with
+  // NWS professional forecasts, instead of the misleading peak-hour max.
+  // Also identifies the peak hour for time-of-day labeling.
   let peakRainChance = d.precipitation_probability_max?.[0] ?? 0;
   let peakRainTimeOfDay = "Afternoon"; // sensible default
 
@@ -199,9 +200,11 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     });
 
     if (todayHours.length > 0) {
-      // Find the hour with the highest probability
+      // Use daily mean for the rain chance value
+      const dailyMean = Math.round(todayHours.reduce((sum, cur) => sum + cur.prob, 0) / todayHours.length);
+      peakRainChance = dailyMean;
+      // Still identify peak hour for time-of-day labeling
       const peak = todayHours.reduce((best, cur) => cur.prob > best.prob ? cur : best, todayHours[0]);
-      peakRainChance = peak.prob;
       peakRainTimeOfDay = hourToTimeOfDay(peak.hour);
     }
   }
@@ -209,7 +212,8 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
   const forecast: DayForecast[] = (d.time as string[]).map((dateStr: string, i: number) => {
     const wKt = msToKt(d.wind_speed_10m_max[i]);
     const swellDeg = md?.swell_wave_direction_dominant?.[i];
-    // Find the peak rain hour for this day to label the time-of-day
+    // Compute daily mean rain chance and identify peak hour for time-of-day label
+    let dayMeanRain = d.precipitation_probability_max[i] ?? 0;
     let dayPeakTimeOfDay = "Afternoon";
     if (h?.time && h?.precipitation_probability) {
       const dayHours: { hour: number; prob: number }[] = [];
@@ -219,6 +223,7 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
         }
       });
       if (dayHours.length > 0) {
+        dayMeanRain = Math.round(dayHours.reduce((sum, cur) => sum + cur.prob, 0) / dayHours.length);
         const peak = dayHours.reduce((best, cur) => cur.prob > best.prob ? cur : best, dayHours[0]);
         dayPeakTimeOfDay = hourToTimeOfDay(peak.hour);
       }
@@ -229,7 +234,7 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
       minF: cToF(d.temperature_2m_min[i]),
       windKt: wKt,
       windDir: degToCompass(d.wind_direction_10m_dominant[i]),
-      rainChance: d.precipitation_probability_max[i] ?? 0,
+      rainChance: dayMeanRain,
       peakRainTimeOfDay: dayPeakTimeOfDay,
       condition: wmoToCondition(d.weathercode[i]),
       waveHeightFt:  md?.wave_height_max?.[i]       != null ? Math.round(md.wave_height_max[i] * 10) / 10 : null,
