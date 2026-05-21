@@ -160,6 +160,7 @@ def fetch_weather(lat: float, lon: float) -> dict:
         f"&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability"
         f"&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,"
         f"precipitation_probability_max,weathercode"
+        f"&hourly=precipitation_probability"
         f"&models=ecmwf_ifs025&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3"
     )
     # Retry up to 3 times with backoff for transient network errors
@@ -221,6 +222,29 @@ def _format_rain_prob(value) -> str:
     return f"{v}% rain probability"
 
 
+def _compute_daily_mean_precip_prob(wx: dict) -> list:
+    """
+    Compute the daily mean of hourly precipitation_probability for each forecast day.
+    This gives a representative daily rain chance that aligns with professional forecasts
+    (e.g., NWS), instead of the misleading peak-hour max which systematically overstates
+    rain chances in convective climates.
+    Returns a list of mean probabilities (one per forecast day).
+    """
+    hourly_probs = wx.get("hourly", {}).get("precipitation_probability", [])
+    num_days = len(wx.get("daily", {}).get("time", []))
+    daily_means = []
+    for day_idx in range(num_days):
+        start = day_idx * 24
+        end = start + 24
+        day_probs = [p for p in hourly_probs[start:end] if p is not None]
+        if day_probs:
+            daily_means.append(round(sum(day_probs) / len(day_probs)))
+        else:
+            # Fallback to daily max if hourly data is missing
+            daily_means.append(wx["daily"]["precipitation_probability_max"][day_idx] or 0)
+    return daily_means
+
+
 def build_weather_summary(wx: dict) -> dict:
     """
     Build a structured weather data dict for the AI prompt.
@@ -233,11 +257,17 @@ def build_weather_summary(wx: dict) -> dict:
     """
     c = wx["current"]
     d = wx["daily"]
+    # Compute daily mean precipitation probability from hourly ensemble data.
+    # This replaces the misleading precipitation_probability_max (peak-hour value)
+    # with a representative daily average that aligns with NWS/professional forecasts.
+    daily_rain_means = _compute_daily_mean_precip_prob(wx)
+
     # Temperature is fetched but deliberately NOT included in the summary string
     wind_kt = ms_to_kt(c["wind_speed_10m"])
     wind_dir = deg_to_compass(c["wind_direction_10m"])
     cond = wmo_to_text(c["weathercode"])
-    rain = c.get("precipitation_probability", 0) or 0
+    # Use the daily mean for today instead of the current-hour snapshot
+    rain = daily_rain_means[0] if daily_rain_means else (c.get("precipitation_probability", 0) or 0)
     rain_phrase = _format_rain_prob(rain)
 
     # 3-day outlook -- wind, sky condition, and rain probability only (no temperatures)
@@ -245,7 +275,7 @@ def build_weather_summary(wx: dict) -> dict:
     for i in range(min(3, len(d["time"]))):
         w_kt = ms_to_kt(d["wind_speed_10m_max"][i])
         w_dir = deg_to_compass(d["wind_direction_10m_dominant"][i])
-        r = d["precipitation_probability_max"][i] or 0
+        r = daily_rain_means[i] if i < len(daily_rain_means) else (d["precipitation_probability_max"][i] or 0)
         cond_d = wmo_to_text(d["weathercode"][i])
         outlook_parts.append(f"Day {i+1}: {w_dir} {w_kt}kt, {cond_d}, {_format_rain_prob(r)}")
 
@@ -262,7 +292,7 @@ def build_weather_summary(wx: dict) -> dict:
         significant.append(f"ELEVATED WINDS NOW: {wind_dir} {wind_kt}kt")
     for i in range(min(3, len(d["time"]))):
         w_kt = ms_to_kt(d["wind_speed_10m_max"][i])
-        r = d["precipitation_probability_max"][i] or 0
+        r = daily_rain_means[i] if i < len(daily_rain_means) else (d["precipitation_probability_max"][i] or 0)
         cond_d = wmo_to_text(d["weathercode"][i])
         day_label = "today" if i == 0 else f"Day {i+1}"
         if d["weathercode"][i] >= 80:

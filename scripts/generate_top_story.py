@@ -177,6 +177,7 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
         f"&daily=wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max,weathercode"
+        f"&hourly=precipitation_probability"
         f"&models=ecmwf_ifs025&wind_speed_unit=ms&timezone=auto&forecast_days=7"
     )
     marine_url = (
@@ -193,8 +194,21 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
             d = w.get("daily", {})
             result["daily_wind_max"] = d.get("wind_speed_10m_max", [])
             result["daily_wind_dir"] = d.get("wind_direction_10m_dominant", [])
-            result["daily_rain"]     = d.get("precipitation_probability_max", [])
             result["daily_dates"]    = d.get("time", [])
+            # Compute daily mean precipitation probability from hourly ensemble data
+            # instead of using the misleading peak-hour max
+            hourly_probs = w.get("hourly", {}).get("precipitation_probability", [])
+            num_days = len(d.get("time", []))
+            daily_means = []
+            for day_idx in range(num_days):
+                start = day_idx * 24
+                end = start + 24
+                day_probs = [p for p in hourly_probs[start:end] if p is not None]
+                if day_probs:
+                    daily_means.append(round(sum(day_probs) / len(day_probs)))
+                else:
+                    daily_means.append(d.get("precipitation_probability_max", [0])[day_idx] if day_idx < len(d.get("precipitation_probability_max", [])) else 0)
+            result["daily_rain"] = daily_means
     except Exception as e:
         print(f"  Weather fetch failed for {port['name']}: {e}", file=sys.stderr)
 
