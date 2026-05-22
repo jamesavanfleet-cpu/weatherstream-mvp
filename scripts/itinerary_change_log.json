@@ -1766,6 +1766,175 @@
         }
       ],
       "errors": []
+    },
+    {
+      "run_timestamp": "2026-05-22T23:08:25.869151",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "FIXED",
+          "ship": "Icon of the Seas",
+          "departure_date": "2026-05-23",
+          "was": "Miami, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Perfect Day at CocoCay, Miami",
+          "now": "Miami, At Sea, Costa Maya, Roatan, Cozumel, At Sea, Perfect Day at CocoCay, Miami",
+          "detail": "FIXED Icon of the Seas 2026-05-23: was [Miami, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Perfect Day at CocoCay, Miami] -> now [Miami, At Sea, Costa Maya, Roatan, Cozumel, At Sea, Perfect Day at CocoCay, Miami]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-05-24",
+          "was": "Galveston, At Sea, At Sea, Roatan, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
+          "now": "Galveston, At Sea, At Sea, Roatan, Costa Maya, Cozumel, At Sea, Galveston",
+          "detail": "FIXED Symphony of the Seas 2026-05-24: was [Galveston, At Sea, At Sea, Roatan, Perfect Day at CocoCay, Cozumel, At Sea, Galveston] -> now [Galveston, At Sea, At Sea, Roatan, Costa Maya, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-05-31",
+          "was": "Galveston, At Sea, At Sea, Roatan, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
+          "now": "Galveston, At Sea, At Sea, Roatan, Costa Maya, Cozumel, At Sea, Galveston",
+          "detail": "FIXED Symphony of the Seas 2026-05-31: was [Galveston, At Sea, At Sea, Roatan, Perfect Day at CocoCay, Cozumel, At Sea, Galveston] -> now [Galveston, At Sea, At Sea, Roatan, Costa Maya, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-06-07",
+          "description": "7 days, round-trip Western Caribbean Cruise",
+          "detail": "ADDED Symphony of the Seas 2026-06-07: 7 days, round-trip Western Caribbean Cruise"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-05-25",
+          "was": "Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
+          "now": "Galveston, At Sea, Costa Maya, Cozumel, At Sea, Galveston",
+          "detail": "FIXED Mariner of the Seas 2026-05-25: was [Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston] -> now [Galveston, At Sea, Costa Maya, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-05-30",
+          "was": "Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
+          "now": "Galveston, At Sea, Costa Maya, Cozumel, At Sea, Galveston",
+          "detail": "FIXED Mariner of the Seas 2026-05-30: was [Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston] -> now [Galveston, At Sea, Costa Maya, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-05-29",
+          "description": "3 days, round-trip Bahamas  Perfect Day Cruise",
+          "detail": "ADDED Wonder of the Seas 2026-05-29: 3 days, round-trip Bahamas  Perfect Day Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-23",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-23: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-05-30",
+          "description": "7 days, round-trip Western Caribbean",
+          "detail": "ADDED Mardi Gras 2026-05-30: 7 days, round-trip Western Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-06-06",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-06-06: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-06-01",
+          "description": "5 days, round-trip Western Caribbean",
+          "detail": "ADDED Carnival Breeze 2026-06-01: 5 days, round-trip Western Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-06-01",
+          "description": "5 days, round-trip The Bahamas",
+          "detail": "ADDED Carnival Freedom 2026-06-01: 5 days, round-trip The Bahamas"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-06-07",
+          "description": "7 days, round-trip San Juan, St. Maarten  Perfect Day",
+          "detail": "ADDED Celebrity Beyond 2026-06-07: 7 days, round-trip San Juan, St. Maarten  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-05-29",
+          "description": "3 days, round-trip Bahamian Cruise From Port Canaveral",
+          "detail": "ADDED Disney Wish 2026-05-29: 3 days, round-trip Bahamian Cruise From Port Canaveral"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-06-07",
+          "description": "7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau",
+          "detail": "ADDED Norwegian Encore 2026-06-07: 7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-05-29",
+          "description": "3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
+          "detail": "ADDED Norwegian Getaway 2026-05-29: 3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-05-24",
+          "was": "Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "now": "Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-05-24: was [Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral] -> now [Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-05-31",
+          "description": "7 days, round-trip Eastern Caribbean with Puerto Rico",
+          "detail": "ADDED Caribbean Princess 2026-05-31: 7 days, round-trip Eastern Caribbean with Puerto Rico"
+        },
+        {
+          "type": "FIXED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-05-24",
+          "was": "Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston",
+          "now": "Galveston, At Sea, At Sea, Costa Maya, Roatan, Cozumel, At Sea, Galveston",
+          "detail": "FIXED MSC Seascape 2026-05-24: was [Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston] -> now [Galveston, At Sea, At Sea, Costa Maya, Roatan, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-05-31",
+          "was": "Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston",
+          "now": "Galveston, At Sea, At Sea, Costa Maya, Roatan, Cozumel, At Sea, Galveston",
+          "detail": "FIXED MSC Seascape 2026-05-31: was [Galveston, At Sea, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Galveston] -> now [Galveston, At Sea, At Sea, Costa Maya, Roatan, Cozumel, At Sea, Galveston]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-06-07",
+          "description": "7 days, round-trip Western Caribbean",
+          "detail": "ADDED MSC Seascape 2026-06-07: 7 days, round-trip Western Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Scarlet Lady",
+          "departure_date": "2026-06-07",
+          "description": "7 days, round-trip Greek Isles  Mykonos Overnight",
+          "detail": "ADDED Scarlet Lady 2026-06-07: 7 days, round-trip Greek Isles  Mykonos Overnight"
+        }
+      ],
+      "errors": []
     }
   ]
 }
