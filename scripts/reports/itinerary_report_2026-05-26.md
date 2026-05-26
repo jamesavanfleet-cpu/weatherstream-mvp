@@ -2,22 +2,22 @@
 **My Cruising Weather -- www.mycruisingweather.com**
 
 **Report Period:** May 19 -- May 26, 2026
-**Generated:** May 26, 2026 at 11:06 PM UTC
+**Generated:** May 26, 2026 at 11:14 PM UTC
 **Source:** CruiseMapper.com (automated verification)
 
 ---
 
 ## Summary
 
-This report covers **2 verification run(s)** conducted between May 19 and May 26, 2026. A total of **132 ship sailings** were checked against CruiseMapper.com.
+This report covers **2 verification run(s)** conducted between May 19 and May 26, 2026. A total of **108 ship sailings** were checked against CruiseMapper.com.
 
-**41 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
+**33 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
 
 | Category | Count |
 |---|---|
 | Itineraries corrected (wrong ports or dates) | 10 |
-| New sailings added from CruiseMapper | 31 |
-| Errors (CruiseMapper fetch failures) | 0 |
+| New sailings added from CruiseMapper | 23 |
+| Errors (CruiseMapper fetch failures) | 8 |
 
 ---
 
@@ -39,17 +39,17 @@ The following itineraries were found to be incorrect and were replaced with the 
 
 ### Princess Cruises
 
-**Caribbean Princess** -- Departure 2026-05-17 _(detected 2026-05-19)_
-
-- **Was:** Port Canaveral > Nassau > Princess Cays > At Sea > Puerto Plata > Grand Turk > At Sea > Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
-- **Corrected to:** Port Canaveral > Nassau > Princess Cays > At Sea > Puerto Plata > Grand Turk > At Sea > Port Canaveral
-
-**Caribbean Princess** -- Departure 2026-05-17 _(detected 2026-05-19)_
-
-- **Was:** Port Canaveral > Nassau > Princess Cays > At Sea > Puerto Plata > Grand Turk > At Sea > Port Canaveral
-- **Corrected to:** Port Canaveral > Nassau > Princess Cays > At Sea > Puerto Plata > Grand Turk > At Sea > Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
-
 **Caribbean Princess** -- Departure 2026-05-24 _(detected 2026-05-22)_
+
+- **Was:** Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
+- **Corrected to:** Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
+
+**Caribbean Princess** -- Departure 2026-05-24 _(detected 2026-05-26)_
+
+- **Was:** Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
+- **Corrected to:** Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
+
+**Caribbean Princess** -- Departure 2026-05-24 _(detected 2026-05-26)_
 
 - **Was:** Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
 - **Corrected to:** Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral > At Sea > Grand Turk > Puerto Plata > San Juan > At Sea > At Sea > Port Canaveral
@@ -89,30 +89,24 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 
 | Ship | Departure Date | Description |
 |---|---|---|
-| Carnival Breeze | 2026-05-28 | 4 days, round-trip Western Caribbean |
 | Carnival Breeze | 2026-06-01 | 5 days, round-trip Western Caribbean |
-| Carnival Freedom | 2026-05-28 | 4 days, round-trip The Bahamas |
+| Carnival Breeze | 2026-06-06 | 5 days, round-trip Western Caribbean |
 | Carnival Freedom | 2026-06-01 | 5 days, round-trip The Bahamas |
-| Carnival Vista | 2026-06-07 | 6 days, round-trip Eastern Caribbean |
-| Mardi Gras | 2026-05-23 | 7 days, round-trip Eastern Caribbean |
+| Carnival Freedom | 2026-06-06 | 5 days, round-trip The Bahamas |
 | Mardi Gras | 2026-05-23 | 7 days, round-trip Eastern Caribbean |
 | Mardi Gras | 2026-05-30 | 7 days, round-trip Western Caribbean |
-| Mardi Gras | 2026-05-30 | 7 days, round-trip Western Caribbean |
-| Mardi Gras | 2026-06-06 | 7 days, round-trip Eastern Caribbean |
 | Mardi Gras | 2026-06-06 | 7 days, round-trip Eastern Caribbean |
 
 ### Celebrity Cruises
 
 | Ship | Departure Date | Description |
 |---|---|---|
-| Celebrity Apex | 2026-06-20 | 7 days, round-trip Norwegian Fjords |
 | Celebrity Beyond | 2026-06-07 | 7 days, round-trip San Juan, St. Maarten  Perfect Day |
 
 ### Disney Cruise Line
 
 | Ship | Departure Date | Description |
 |---|---|---|
-| Disney Wish | 2026-05-25 | 4 days, round-trip Bahamian Cruise From Port Canaveral |
 | Disney Wish | 2026-05-29 | 3 days, round-trip Bahamian Cruise From Port Canaveral |
 
 ### MSC Cruises
@@ -126,8 +120,8 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Ship | Departure Date | Description |
 |---|---|---|
 | Norwegian Encore | 2026-06-07 | 7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau |
-| Norwegian Getaway | 2026-05-25 | 4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau |
 | Norwegian Getaway | 2026-05-29 | 3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau |
+| Norwegian Getaway | 2026-06-01 | 4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau |
 
 ### Princess Cruises
 
@@ -139,15 +133,13 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 
 | Ship | Departure Date | Description |
 |---|---|---|
-| Adventure of the Seas | 2026-06-06 | 6 days, round-trip Western Caribbean  Perfect Day |
-| Allure of the Seas | 2026-06-07 | 6 days, round-trip Western Caribbean  Perfect Day |
-| Freedom of the Seas | 2026-05-30 | 5 days, round-trip Caribbean Getaway Cruise |
-| Icon of the Seas | 2026-06-06 | 7 days, round-trip Eastern Caribbean  Perfect Day |
-| Mariner of the Seas | 2026-05-30 | 5 days, round-trip Western Caribbean Cruise |
-| Navigator of the Seas | 2026-06-05 | 7 days, round-trip Cabo, Vallarta  Mazatlan Cruise |
-| Oasis of the Seas | 2026-06-05 | 7 days, round-trip Perfect Day Bahamas Cruise |
+| Adventure of the Seas | 2026-06-12 | 8 days, round-trip Southern Caribbean  Perfect Day |
+| Freedom of the Seas | 2026-06-04 | 4 days, round-trip Perfect Day Cococay  Bahamas |
+| Harmony of the Seas | 2026-06-07 | 7 days, round-trip Western Mediterranean Cruise |
+| Mariner of the Seas | 2026-06-04 | 4 days, round-trip Western Caribbean Cruise |
+| Navigator of the Seas | 2026-06-12 | 7 days, round-trip Ensenada, Cabo  Mazatlan |
+| Oasis of the Seas | 2026-06-12 | 7 days, round-trip Perfect Day Bahamas Cruise |
 | Symphony of the Seas | 2026-06-07 | 7 days, round-trip Western Caribbean Cruise |
-| Wonder of the Seas | 2026-05-25 | 4 days, round-trip Bahamas  Perfect Day Cruise |
 | Wonder of the Seas | 2026-05-29 | 3 days, round-trip Bahamas  Perfect Day Cruise |
 
 ### Virgin Voyages
@@ -155,6 +147,19 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Ship | Departure Date | Description |
 |---|---|---|
 | Scarlet Lady | 2026-06-07 | 7 days, round-trip Greek Isles  Mykonos Overnight |
+
+## Fetch Errors
+
+The following ships encountered errors when fetching data from CruiseMapper. Their stored itineraries were not modified. These will be retried on the next run.
+
+- Icon of the Seas: no sailings found on CruiseMapper
+- Symphony of the Seas: no sailings found on CruiseMapper
+- Wonder of the Seas: no sailings found on CruiseMapper
+- Mardi Gras: no sailings found on CruiseMapper
+- Celebrity Apex: no sailings found on CruiseMapper
+- Disney Wish: no sailings found on CruiseMapper
+- Norwegian Encore: no sailings found on CruiseMapper
+- Scarlet Lady: no sailings found on CruiseMapper
 
 ---
 
