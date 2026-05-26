@@ -1574,7 +1574,7 @@ export default function Home() {
                             Single-cam ports (Miami / Nassau / etc) render one;
                             multi-cam ports (Manhattan / Brooklyn / Bayonne)
                             render both NY Harbor + Port NY cameras stacked. */}
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-row gap-1">
                           {getPtzCameras(loc.location).map((_, i) => (
                             <PtzThumb key={i} portName={loc.location} size="compact" cameraIndex={i} />
                           ))}
