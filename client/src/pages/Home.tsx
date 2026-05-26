@@ -185,6 +185,16 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
   const wx = wxRes.status === 'fulfilled' ? wxRes.value : null;
   const marine = marineRes.status === 'fulfilled' ? marineRes.value : null;
 
+  // If the weather API returned an error payload or no current data, throw so the
+  // modal's .catch() handler fires and shows "Unable to retrieve live data" instead
+  // of rendering zero-filled atmospheric values that look like real data.
+  if (!wx?.current?.temperature_2m && wx?.current?.temperature_2m !== 0) {
+    throw new Error('Weather API unavailable');
+  }
+  if (wx?.error) {
+    throw new Error(wx.reason ?? 'Weather API error');
+  }
+
   // Pressure tendency: compare current to 1 hour ago from hourly
   let pressurePrev: number | null = null;
   if (wx?.hourly?.pressure_msl) {
