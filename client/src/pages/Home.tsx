@@ -1061,8 +1061,9 @@ export default function Home() {
             const dt = new Date(d.generated_at);
             const formatted = dt.toLocaleString('en-US', {
               month: 'short', day: 'numeric', year: 'numeric',
-              hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC'
-            }) + ' UTC';
+              hour: 'numeric', minute: '2-digit', hour12: true,
+              timeZone: 'America/New_York', timeZoneName: 'short'
+            });
             setLiveConditionsUpdatedAt(formatted);
           }
         })
