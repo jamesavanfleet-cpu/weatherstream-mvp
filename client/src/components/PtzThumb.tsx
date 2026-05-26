@@ -53,7 +53,7 @@ export default function PtzThumb({ portName, size = "default", className = "", c
   // Compact = home page Live Conditions card (very tight 3-column grid)
   // Default = forecast region accordion header (more room)
   const dims = size === "compact"
-    ? "w-full h-12"
+    ? "w-10 h-10"
     : "w-24 h-[54px]";
 
   if (errored) {
