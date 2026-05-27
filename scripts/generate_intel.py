@@ -177,6 +177,52 @@ def fetch_weather(lat: float, lon: float) -> dict:
                 raise
 
 
+def fetch_precip_probability(lat: float, lon: float) -> list:
+    """
+    Fetch standard Probability of Precipitation (PoP) values from Open-Meteo
+    using the default best_match model (GFS/ICON blend).
+    This is a SEPARATE call from fetch_weather() which uses ecmwf_ifs025 for all
+    other parameters. The ECMWF IFS025 precipitation_probability field is an
+    ensemble-spread metric, not a standard PoP, and systematically overstates
+    rain chances in humid tropical/subtropical climates. The best_match model
+    provides standard PoP values consistent with NWS and professional tools.
+    Returns a list of daily mean PoP values (one per forecast day, up to 3 days).
+    """
+    url = (
+        f"https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        f"&daily=precipitation_probability_max"
+        f"&hourly=precipitation_probability"
+        f"&timezone=auto&forecast_days=3"
+    )
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=15) as resp:
+                data = json.loads(resp.read())
+            # Compute daily mean from hourly values (same logic as _compute_daily_mean_precip_prob)
+            hourly_probs = data.get("hourly", {}).get("precipitation_probability", [])
+            daily_times = data.get("daily", {}).get("time", [])
+            daily_max = data.get("daily", {}).get("precipitation_probability_max", [])
+            daily_means = []
+            for day_idx in range(len(daily_times)):
+                start = day_idx * 24
+                end = start + 24
+                day_probs = [p for p in hourly_probs[start:end] if p is not None]
+                if day_probs:
+                    daily_means.append(round(sum(day_probs) / len(day_probs)))
+                else:
+                    daily_means.append(daily_max[day_idx] or 0)
+            return daily_means
+        except Exception as e:
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"  PoP fetch attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                print(f"  PoP fetch failed after 3 attempts ({e}) -- falling back to None", file=sys.stderr)
+                return []
+
+
 def ms_to_kt(ms: float) -> int:
     return round(ms * 1.94384)
 
@@ -245,22 +291,27 @@ def _compute_daily_mean_precip_prob(wx: dict) -> list:
     return daily_means
 
 
-def build_weather_summary(wx: dict) -> dict:
+def build_weather_summary(wx: dict, pop_means: list = None) -> dict:
     """
     Build a structured weather data dict for the AI prompt.
     IMPORTANT: Temperature values are intentionally excluded from this summary.
     The AI briefing must never mention current or forecast temperatures -- they
     date the briefing and erode credibility. Wind, sky condition, sea state, and
     rain probability are the only parameters passed to the AI.
+    pop_means: list of daily mean PoP values from fetch_precip_probability().
+    If provided, these are used instead of the ECMWF precipitation_probability
+    field (which is an ensemble-spread metric, not a standard PoP).
     Returns a dict with 'summary' (string for prompt) and 'significant'
     (list of alert strings for conditions meeting significance thresholds).
     """
     c = wx["current"]
     d = wx["daily"]
-    # Compute daily mean precipitation probability from hourly ensemble data.
-    # This replaces the misleading precipitation_probability_max (peak-hour value)
-    # with a representative daily average that aligns with NWS/professional forecasts.
-    daily_rain_means = _compute_daily_mean_precip_prob(wx)
+    # Use the separately fetched standard PoP values if available.
+    # Fall back to the ECMWF hourly mean only if the separate call failed.
+    if pop_means:
+        daily_rain_means = pop_means
+    else:
+        daily_rain_means = _compute_daily_mean_precip_prob(wx)
 
     # Temperature is fetched but deliberately NOT included in the summary string
     wind_kt = ms_to_kt(c["wind_speed_10m"])
@@ -804,7 +855,8 @@ def main():
             time.sleep(5)
         try:
             wx = fetch_weather(region["lat"], region["lon"])
-            weather_data = build_weather_summary(wx)
+            pop_means = fetch_precip_probability(region["lat"], region["lon"])
+            weather_data = build_weather_summary(wx, pop_means=pop_means)
             intel = call_groq(region, weather_data)
             # Validate: must be a non-empty string of at least 20 characters
             if not intel or len(intel.strip()) < 20:
