@@ -161,7 +161,7 @@ def fetch_weather(lat: float, lon: float) -> dict:
         f"&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,"
         f"precipitation_probability_max,weathercode"
         f"&hourly=precipitation_probability"
-        f"&models=ecmwf_ifs025&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3"
+        f"&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3"
     )
     # Retry up to 3 times with backoff for transient network errors
     for attempt in range(3):
