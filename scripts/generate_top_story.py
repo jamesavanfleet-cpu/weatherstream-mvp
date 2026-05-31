@@ -8,7 +8,7 @@ Each story starts directly with the weather content -- no opener phrase.
 Outputs: client/public/top_story.json
 """
 
-import asyncio, json, math, os, sys, time, urllib.request, urllib.error
+import asyncio, concurrent.futures, json, math, os, sys, time, urllib.request, urllib.error
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -73,7 +73,104 @@ def _normalize_low_rain_phrasing(text: str) -> str:
         )
     return rewritten
 
-# ── Port registry ─────────────────────────────────────────────────────────────
+
+# -- NWS-eligible ports (US / US territories) ----------------------------------
+# Keyed as (rounded_lat, rounded_lon) tuples. These ports use NWS api.weather.gov
+# for PoP instead of the ECMWF precipitation threshold method.
+_NWS_ELIGIBLE_TS = {
+    (18.47, -66.12): True,   # San Juan, PR
+    (18.34, -64.93): True,   # St. Thomas, USVI
+    (33.73, -118.26): True,  # Los Angeles, CA
+}
+
+
+def _nws_pop_sync(lat: float, lon: float) -> list:
+    """
+    Synchronous NWS PoP fetch for US/territory ports via api.weather.gov.
+    Returns up to 7 daily mean PoP values (one per forecast day).
+    Nudges 0.05 deg inland if the exact coordinates fall in a marine zone (404).
+    """
+    NWS_HEADERS = {"User-Agent": "mycruisingweather.com/1.0 james@mycruisingweather.com"}
+
+    def _fetch_hourly(la: float, lo: float) -> list:
+        url1 = f"https://api.weather.gov/points/{la:.4f},{lo:.4f}"
+        req = urllib.request.Request(url1, headers=NWS_HEADERS)
+        with urllib.request.urlopen(req, timeout=15) as r:
+            pts = json.loads(r.read())
+        fx_url = pts["properties"]["forecastHourly"]
+        req2 = urllib.request.Request(fx_url, headers=NWS_HEADERS)
+        with urllib.request.urlopen(req2, timeout=15) as r:
+            fx = json.loads(r.read())
+        return fx["properties"]["periods"]
+
+    for attempt in range(3):
+        try:
+            try:
+                periods = _fetch_hourly(lat, lon)
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    periods = _fetch_hourly(lat + 0.05, lon + 0.05)
+                else:
+                    raise
+            # Group into days of 24 hourly periods each (up to 7 days)
+            daily_means = []
+            for day_idx in range(7):
+                day_periods = periods[day_idx * 24: (day_idx + 1) * 24]
+                if not day_periods:
+                    break
+                pops = [p["probabilityOfPrecipitation"]["value"] or 0 for p in day_periods]
+                daily_means.append(round(sum(pops) / len(pops)))
+            return daily_means
+        except Exception as e:
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"  NWS PoP attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                print(f"  NWS PoP failed after 3 attempts ({e}) -- will fall back to ECMWF threshold", file=sys.stderr)
+                return []
+
+
+def _ecmwf_precip_threshold_pop_sync(lat: float, lon: float, num_days: int = 7) -> list:
+    """
+    Derive PoP from ECMWF IFS025 hourly precipitation (mm) using a 0.5mm/3hr threshold.
+    PoP = fraction of 3-hour blocks in the day where accumulated precipitation >= 0.5mm.
+    Returns up to num_days daily PoP values (0-100).
+    """
+    url = (
+        f"https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        f"&hourly=precipitation"
+        f"&timezone=auto&forecast_days={num_days}&models=ecmwf_ifs025"
+    )
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=15) as resp:
+                data = json.loads(resp.read())
+            hourly_precip = data.get("hourly", {}).get("precipitation", [])
+            daily_means = []
+            for day_idx in range(num_days):
+                start = day_idx * 24
+                end = start + 24
+                day_precip = [p if p is not None else 0.0 for p in hourly_precip[start:end]]
+                if not day_precip:
+                    break
+                blocks = [day_precip[i:i+3] for i in range(0, len(day_precip), 3)]
+                wet_blocks = sum(1 for b in blocks if sum(b) >= 0.5)
+                pop = round(wet_blocks / len(blocks) * 100)
+                daily_means.append(pop)
+            return daily_means
+        except Exception as e:
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"  ECMWF precip PoP attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                print(f"  ECMWF precip PoP failed after 3 attempts ({e}) -- returning empty", file=sys.stderr)
+                return []
+
+
+# -- Port registry -------------------------------------------------------------
 PORTS = [
     # Eastern Caribbean
     {"name": "San Juan",          "region": "Eastern Caribbean",    "group": "caribbean", "lat": 18.47, "lon": -66.12},
@@ -150,7 +247,7 @@ NHC_NWS_RULES = (
     "Never apply a classification that exceeds what the data supports.\n\n"
 )
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# -- Helpers -------------------------------------------------------------------
 def ms_to_kt(ms: float) -> float:
     return ms * 1.94384
 
@@ -170,7 +267,7 @@ def impact_score(data: dict) -> float:
     score += max_rain * 0.5
     return score
 
-# ── Async fetch ───────────────────────────────────────────────────────────────
+# -- Async fetch ---------------------------------------------------------------
 async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
     lat, lon = port["lat"], port["lon"]
     weather_url = (
@@ -178,17 +275,6 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
         f"?latitude={lat}&longitude={lon}"
         f"&daily=wind_speed_10m_max,wind_direction_10m_dominant,weathercode"
         f"&wind_speed_unit=ms&timezone=auto&forecast_days=7"
-    )
-    # Separate PoP fetch using default best_match model (no model parameter).
-    # The ECMWF IFS025 precipitation_probability field is an ensemble-spread metric,
-    # not a standard PoP, and systematically overstates rain chances in humid climates.
-    # The best_match model provides standard PoP values consistent with NWS.
-    pop_url = (
-        f"https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}"
-        f"&daily=precipitation_probability_max"
-        f"&hourly=precipitation_probability"
-        f"&timezone=auto&forecast_days=7"
     )
     marine_url = (
         f"https://marine-api.open-meteo.com/v1/marine"
@@ -208,23 +294,27 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
     except Exception as e:
         print(f"  Weather fetch failed for {port['name']}: {e}", file=sys.stderr)
 
+    # PoP fetch: NWS for US/territory ports, ECMWF precipitation threshold for all others.
+    # NWS is the authoritative source for US ports; ECMWF IFS025 precipitation_probability
+    # is an ensemble-spread metric that overstates rain chances in humid climates.
+    # The threshold method (>=0.5mm/3hr block) gives physically accurate PoP for non-US ports.
     try:
-        async with session.get(pop_url, timeout=aiohttp.ClientTimeout(total=15)) as r:
-            p = await r.json()
-            pd = p.get("daily", {})
-            hourly_probs = p.get("hourly", {}).get("precipitation_probability", [])
-            num_days = len(pd.get("time", []))
-            daily_max = pd.get("precipitation_probability_max", [])
-            daily_means = []
-            for day_idx in range(num_days):
-                start = day_idx * 24
-                end = start + 24
-                day_probs = [v for v in hourly_probs[start:end] if v is not None]
-                if day_probs:
-                    daily_means.append(round(sum(day_probs) / len(day_probs)))
-                else:
-                    daily_means.append(daily_max[day_idx] if day_idx < len(daily_max) else 0)
-            result["daily_rain"] = daily_means
+        _pop_key = (round(lat, 2), round(lon, 2))
+        _use_nws = _pop_key in _NWS_ELIGIBLE_TS
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            if _use_nws:
+                pop_values = await loop.run_in_executor(pool, _nws_pop_sync, lat, lon)
+                if not pop_values:
+                    # NWS failed -- fall back to ECMWF threshold
+                    pop_values = await loop.run_in_executor(
+                        pool, _ecmwf_precip_threshold_pop_sync, lat, lon, 7
+                    )
+            else:
+                pop_values = await loop.run_in_executor(
+                    pool, _ecmwf_precip_threshold_pop_sync, lat, lon, 7
+                )
+        result["daily_rain"] = pop_values
     except Exception as e:
         print(f"  PoP fetch failed for {port['name']}: {e}", file=sys.stderr)
 
@@ -245,7 +335,7 @@ async def fetch_all() -> list[dict]:
         tasks = [fetch_port(session, p) for p in PORTS]
         return await asyncio.gather(*tasks)
 
-# ── Groq story writer ─────────────────────────────────────────────────────────
+# -- Groq story writer ---------------------------------------------------------
 def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[str, str]:
     if not GROQ_API_KEY:
         print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
@@ -357,7 +447,7 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
 
     return headline, paragraph
 
-# ── Data-driven fallback (used when Groq API call fails) ─────────────────────
+# -- Data-driven fallback (used when Groq API call fails) ----------------------
 def build_fallback(top: dict, group_label: str) -> tuple[str, str]:
     """Produce a specific, data-driven headline and paragraph without Groq."""
     max_wind_kt = round(max((ms_to_kt(v) for v in top["daily_wind_max"] if v is not None), default=0))
@@ -394,7 +484,7 @@ def build_fallback(top: dict, group_label: str) -> tuple[str, str]:
     return headline, paragraph
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# -- Main ----------------------------------------------------------------------
 async def main():
     print("Fetching forecast data for all ports...")
     all_ports = await fetch_all()
