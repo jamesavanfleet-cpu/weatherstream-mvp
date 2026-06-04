@@ -87,6 +87,50 @@ interface GtwoFeature {
   properties: GtwoProperties;
 }
 
+// ── NHC pre-baked data types (from /nhc_data.json) ───────────────────────────
+interface NhcTrackPoint {
+  TAU: number;          // forecast hour (0 = current position)
+  DATELBL: string;      // e.g. "8:00 AM Thu"
+  FLDATELBL: string;    // e.g. "2026-06-04 5:00 AM Thu PDT"
+  MAXWIND: number;      // max wind speed in knots
+  MSLP: number | null;  // min sea level pressure in mb (null if missing)
+  TCDIR: number | null; // movement direction in degrees (null if missing)
+  TCSPD: number | null; // movement speed in knots (null if missing)
+  STORMTYPE: string;    // e.g. "TS", "HU"
+  TCDVLP: string;       // e.g. "Tropical Storm", "Hurricane"
+  lon: number;
+  lat: number;
+  [key: string]: unknown;
+}
+
+interface NhcStormData {
+  id: string;
+  name: string;
+  basin: string;        // "al" | "ep" | "cp"
+  classification: string;
+  intensity: string | number | null;
+  pressure: string | number | null;
+  latitude: string | null;
+  longitude: string | null;
+  latitudeNumeric: number | null;
+  longitudeNumeric: number | null;
+  movementDir: number | null;
+  movementSpeed: number | null;
+  lastUpdate: string | null;
+  publicAdvisory: Record<string, unknown> | null;
+  forecastTrack: Record<string, unknown> | null;
+  trackPoints: NhcTrackPoint[];
+  coneCoords: [number, number][];
+}
+
+interface NhcData {
+  generated: string;
+  storms: NhcStormData[];
+  gtwoFeatures: GtwoFeature[];
+}
+
+type BasinTab = "al" | "ep" | "cp";
+
 // CORS proxy for NHC endpoints that lack Access-Control-Allow-Origin
 const ALLORIGINS = (url: string) =>
   `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
@@ -869,6 +913,156 @@ function StormMarkersLayer({ storms }: { storms: NHCStorm[] }) {
   return null;
 }
 
+// ── NHC forecast track cone polygon layer ────────────────────────────────────
+function TrackConeLayer({ storm }: { storm: NhcStormData }) {
+  if (!storm.coneCoords || storm.coneCoords.length < 3) return null;
+
+  const geojson: GeoJSON.GeoJsonObject = {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [storm.coneCoords],
+    },
+    properties: {},
+  } as GeoJSON.GeoJsonObject;
+
+  return (
+    <GeoJSON
+      key={`cone-${storm.id}`}
+      data={geojson}
+      style={() => ({
+        color: "rgba(200,180,140,0.6)",
+        weight: 1,
+        fillColor: "rgba(200,180,140,0.18)",
+        fillOpacity: 1,
+        opacity: 0.7,
+      })}
+    />
+  );
+}
+
+// ── NHC forecast track waypoint markers ──────────────────────────────────────
+function TrackWaypointsLayer({ storm }: { storm: NhcStormData }) {
+  const map = useMap();
+  const markersRef = useRef<L.Marker[]>([]);
+
+  useEffect(() => {
+    markersRef.current.forEach(m => { try { map.removeLayer(m); } catch { /* ignore */ } });
+    markersRef.current = [];
+
+    if (!storm.trackPoints || storm.trackPoints.length === 0) return;
+
+    storm.trackPoints.forEach((pt, idx) => {
+      if (!pt.lat || !pt.lon) return;
+
+      const col = stormSymbolColor(pt.STORMTYPE || storm.classification);
+      const isCurrentPos = pt.TAU === 0;
+      const radius = isCurrentPos ? 14 : 10;
+
+      const svgIcon = L.divIcon({
+        className: "",
+        iconSize: [radius * 2, radius * 2],
+        iconAnchor: [radius, radius],
+        html: `<svg width="${radius * 2}" height="${radius * 2}" viewBox="0 0 ${radius * 2} ${radius * 2}" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="${radius}" cy="${radius}" r="${radius - 2}" fill="${col}" fill-opacity="${isCurrentPos ? 0.9 : 0.75}" stroke="#000" stroke-width="1.5"/>
+  ${isCurrentPos ? `<text x="${radius}" y="${radius + 4}" text-anchor="middle" font-family="monospace" font-size="${radius - 1}" font-weight="700" fill="#000">${stormSymbol(pt.STORMTYPE || storm.classification)}</text>` : `<text x="${radius}" y="${radius + 3}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="600" fill="#000">${pt.TAU}h</text>`}
+</svg>`,
+      });
+
+      const marker = L.marker([pt.lat, pt.lon], { icon: svgIcon, zIndexOffset: isCurrentPos ? 600 : 400 + idx });
+
+      // Build tooltip content
+      const windMph = Math.round((pt.MAXWIND || 0) * 1.15078);
+      const dirStr = pt.TCDIR != null ? `${pt.TCDIR}\u00b0` : "N/A";
+      const spdStr = pt.TCSPD != null ? `${pt.TCSPD} kt` : "N/A";
+      const pressStr = pt.MSLP != null ? `${pt.MSLP} mb` : "N/A";
+
+      const tooltipHtml = `<div style="font-family:monospace;font-size:12px;line-height:1.6;padding:6px 10px;background:#0D1520;border:1px solid ${col};color:#E8F4FF;min-width:200px">
+  <div style="font-weight:700;color:${col};font-size:13px;margin-bottom:4px">${storm.name} &bull; ${pt.TCDVLP || pt.STORMTYPE}</div>
+  <div style="margin-bottom:2px">${isCurrentPos ? "Current Position" : `+${pt.TAU}h Forecast`}</div>
+  <div style="margin-bottom:2px">${pt.DATELBL || pt.FLDATELBL || ""}</div>
+  <div style="margin-bottom:2px">Max winds: ${pt.MAXWIND} kt (${windMph} mph)</div>
+  <div style="margin-bottom:2px">Pressure: ${pressStr}</div>
+  <div style="margin-bottom:2px">Movement: ${dirStr} at ${spdStr}</div>
+</div>`;
+
+      marker.bindTooltip(tooltipHtml, {
+        permanent: false,
+        direction: "top",
+        offset: [0, -(radius + 4)],
+        opacity: 1,
+      });
+
+      marker.addTo(map);
+      markersRef.current.push(marker);
+    });
+
+    return () => {
+      markersRef.current.forEach(m => { try { map.removeLayer(m); } catch { /* ignore */ } });
+    };
+  }, [storm, map]);
+
+  return null;
+}
+
+// ── Map auto-fit to basin storms/disturbances ─────────────────────────────────
+function MapFitBounds({
+  storms,
+  disturbances,
+  basin,
+}: {
+  storms: NhcStormData[];
+  disturbances: GtwoFeature[];
+  basin: BasinTab;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    const basinStorms = storms.filter(s => s.basin === basin);
+    const basinDist = disturbances.filter(f => {
+      const b = (f.properties.basin || "").toLowerCase();
+      if (basin === "al") return b.includes("atl") || b.includes("atlantic");
+      if (basin === "ep") return b.includes("pac") || b.includes("pacific") || b.includes("east");
+      if (basin === "cp") return b.includes("central");
+      return false;
+    });
+
+    const points: [number, number][] = [];
+
+    basinStorms.forEach(s => {
+      if (s.latitudeNumeric && s.longitudeNumeric) {
+        points.push([s.latitudeNumeric, s.longitudeNumeric]);
+      }
+      s.trackPoints.forEach(pt => {
+        if (pt.lat && pt.lon) points.push([pt.lat, pt.lon]);
+      });
+    });
+
+    basinDist.forEach(f => {
+      const geom = f.geometry as GeoJSON.Polygon;
+      if (geom.type === "Polygon" && geom.coordinates[0]) {
+        geom.coordinates[0].forEach(([lon, lat]) => {
+          points.push([lat, lon]);
+        });
+      }
+    });
+
+    if (points.length > 0) {
+      const lats = points.map(p => p[0]);
+      const lons = points.map(p => p[1]);
+      const minLat = Math.min(...lats) - 3;
+      const maxLat = Math.max(...lats) + 3;
+      const minLon = Math.min(...lons) - 5;
+      const maxLon = Math.max(...lons) + 5;
+      try {
+        map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { animate: true, duration: 0.8 });
+      } catch { /* ignore */ }
+    }
+  }, [storms, disturbances, basin, map]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function TropicalAdvisories() {
   const [, navigate] = useLocation();
@@ -920,8 +1114,14 @@ export default function TropicalAdvisories() {
   // NHC tropical outlook toggle: off | 2day | 7day
   const [outlookMode, setOutlookMode] = useState<OutlookMode>("off");
 
-  // NHC active storms
+  // NHC active storms (legacy -- still used for graphics section NHC image URLs)
   const [nhcStorms, setNhcStorms] = useState<NHCStorm[]>([]);
+
+  // NHC pre-baked data (storms + tracks + cones + disturbances from /nhc_data.json)
+  const [nhcData, setNhcData] = useState<NhcData | null>(null);
+
+  // Basin tab selection: auto-select first basin with active storms, default Atlantic
+  const [activeBasin, setActiveBasin] = useState<BasinTab>("al");
 
   // NHC GTWO disturbance GeoJSON features
   const [gtwoFeatures, setGtwoFeatures] = useState<GtwoFeature[]>([]);
@@ -1012,6 +1212,28 @@ export default function TropicalAdvisories() {
     const interval = setInterval(() => {
       fetchNHCStorms().then(setNhcStorms);
     }, 1_800_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch NHC pre-baked data (storms + tracks + cones + disturbances) on mount and every 6 hours
+  useEffect(() => {
+    const loadNhcData = async () => {
+      try {
+        const res = await fetch("/nhc_data.json");
+        if (!res.ok) return;
+        const data = await res.json() as NhcData;
+        setNhcData(data);
+        // Auto-select basin with active storms, fallback to Atlantic
+        if (data.storms && data.storms.length > 0) {
+          const firstStormBasin = data.storms[0].basin as BasinTab;
+          setActiveBasin(firstStormBasin || "al");
+        }
+      } catch {
+        // Silently fail -- nhc_data.json is optional
+      }
+    };
+    loadNhcData();
+    const interval = setInterval(loadNhcData, 21_600_000); // 6 hours
     return () => clearInterval(interval);
   }, []);
 
@@ -1338,6 +1560,26 @@ export default function TropicalAdvisories() {
 
             {/* NHC GTWO disturbance ellipses -- interactive GeoJSON polygons on the map */}
             <GtwoLayer features={gtwoFeatures} mode={outlookMode} />
+
+            {/* NHC forecast track cone + waypoints from pre-baked nhc_data.json */}
+            {nhcData && nhcData.storms
+              .filter(s => s.basin === activeBasin)
+              .map(storm => (
+                <>
+                  <TrackConeLayer key={`cone-${storm.id}`} storm={storm} />
+                  <TrackWaypointsLayer key={`wpts-${storm.id}`} storm={storm} />
+                </>
+              ))
+            }
+
+            {/* Auto-fit map to active basin systems when basin tab changes */}
+            {nhcData && (
+              <MapFitBounds
+                storms={nhcData.storms}
+                disturbances={nhcData.gtwoFeatures}
+                basin={activeBasin}
+              />
+            )}
           </MapContainer>
 
           {/* ── Scroll-zoom hint -- WHEEL_ZOOM_GATE_v1 ── */}
@@ -1633,6 +1875,303 @@ export default function TropicalAdvisories() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── NHC TROPICAL WEATHER TRACKER SECTION ── */}
+      {/* NHC_TRACKER_SECTION_MARKER */}
+      <div style={{
+        background: "#0A0E14",
+        borderTop: "2px solid #1A2D42",
+        padding: "24px 20px 32px",
+      }}>
+        {/* Section header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: "0.85rem", color: "#FF4500", letterSpacing: "0.15em", marginBottom: 6 }}>
+            NHC TROPICAL WEATHER TRACKER
+          </div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.04em", lineHeight: 1.2 }}>
+            Active Storms &amp; Disturbances
+          </div>
+          <div style={{ fontSize: "0.9rem", color: "#7B9BB5", marginTop: 6 }}>
+            Official NHC forecast tracks, uncertainty cones, and tropical weather outlook. Data refreshes 4x daily.
+          </div>
+        </div>
+
+        {/* Basin tabs */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #1A2D42", overflow: "hidden", width: "fit-content" }}>
+          {([
+            { id: "al" as BasinTab, label: "Atlantic" },
+            { id: "ep" as BasinTab, label: "E. Pacific" },
+            { id: "cp" as BasinTab, label: "C. Pacific" },
+          ]).map(({ id, label }) => {
+            const basinStorms = nhcData?.storms.filter(s => s.basin === id) ?? [];
+            const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => {
+              const b = (f.properties.basin || "").toLowerCase();
+              if (id === "al") return b.includes("atl") || b.includes("atlantic");
+              if (id === "ep") return (b.includes("pac") || b.includes("pacific")) && !b.includes("central");
+              if (id === "cp") return b.includes("central");
+              return false;
+            });
+            const badgeCount = basinStorms.length + basinDist.length;
+            const isActive = activeBasin === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveBasin(id)}
+                style={{
+                  padding: "8px 16px",
+                  background: isActive ? "rgba(255,69,0,0.18)" : "rgba(13,21,32,0.85)",
+                  color: isActive ? "#FF4500" : "#7B9BB5",
+                  border: "none",
+                  borderLeft: id !== "al" ? "1px solid #1A2D42" : "none",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  letterSpacing: "0.06em",
+                  fontFamily: "inherit",
+                  fontWeight: isActive ? 700 : 400,
+                  transition: "all 0.15s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  minHeight: 44,
+                }}
+              >
+                {label}
+                {badgeCount > 0 && (
+                  <span style={{
+                    background: isActive ? "#FF4500" : "#1A2D42",
+                    color: isActive ? "#fff" : "#7B9BB5",
+                    borderRadius: 10,
+                    padding: "1px 7px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    minWidth: 20,
+                    textAlign: "center",
+                  }}>
+                    {badgeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active storms for selected basin */}
+        {(() => {
+          const basinStorms = nhcData?.storms.filter(s => s.basin === activeBasin) ?? [];
+          const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => {
+            const b = (f.properties.basin || "").toLowerCase();
+            if (activeBasin === "al") return b.includes("atl") || b.includes("atlantic");
+            if (activeBasin === "ep") return (b.includes("pac") || b.includes("pacific")) && !b.includes("central");
+            if (activeBasin === "cp") return b.includes("central");
+            return false;
+          });
+
+          if (!nhcData) {
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "32px 0" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00D4FF" }} />
+                <span style={{ fontSize: "1rem", color: "#7B9BB5" }}>LOADING NHC DATA...</span>
+              </div>
+            );
+          }
+
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* Storm stat cards */}
+              {basinStorms.length === 0 && basinDist.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#39FF14", letterSpacing: "0.12em", marginBottom: 8 }}>
+                    NO ACTIVE STORMS
+                  </div>
+                  <div style={{ fontSize: "0.95rem", color: "#7B9BB5" }}>
+                    No active tropical cyclones or disturbances in this basin.
+                  </div>
+                </div>
+              )}
+
+              {basinStorms.map(storm => {
+                const col = stormSymbolColor(storm.classification);
+                const windKt = typeof storm.intensity === "number" ? storm.intensity : parseInt(String(storm.intensity || "0"), 10);
+                const windMph = Math.round(windKt * 1.15078);
+                const pressureMb = typeof storm.pressure === "number" ? storm.pressure : parseInt(String(storm.pressure || "0"), 10);
+                const movDir = storm.movementDir != null ? `${storm.movementDir}\u00b0` : "";
+                const movSpd = storm.movementSpeed != null ? `${storm.movementSpeed} kt` : "";
+                const movStr = movDir && movSpd ? `${movDir} at ${movSpd}` : movDir || movSpd || "N/A";
+                const advNum = (storm.publicAdvisory as Record<string, unknown> | null)?.advNum as string | undefined;
+
+                return (
+                  <div
+                    key={storm.id}
+                    style={{
+                      background: "#0D1520",
+                      border: `1px solid ${col}40`,
+                      padding: 18,
+                      boxShadow: `0 0 20px ${col}15`,
+                    }}
+                  >
+                    {/* Storm header */}
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: "50%",
+                            background: col, display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "1rem", fontWeight: 700, color: "#000", flexShrink: 0,
+                          }}>
+                            {stormSymbol(storm.classification)}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "1.3rem", fontWeight: 700, color: col, letterSpacing: "0.08em" }}>
+                              {storm.name}
+                            </div>
+                            <div style={{ fontSize: "0.9rem", color: "#7B9BB5", marginTop: 2 }}>
+                              {storm.classification === "TS" ? "Tropical Storm" :
+                               storm.classification === "HU" ? "Hurricane" :
+                               storm.classification === "MH" ? "Major Hurricane" :
+                               storm.classification === "TD" ? "Tropical Depression" :
+                               storm.classification === "DB" ? "Tropical Disturbance" :
+                               storm.classification}
+                              {advNum ? ` · Advisory #${advNum}` : ""}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#3A5068", textAlign: "right" }}>
+                        {storm.lastUpdate || ""}
+                      </div>
+                    </div>
+
+                    {/* Storm stat grid */}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                      gap: 10,
+                      marginBottom: 16,
+                    }}>
+                      {[
+                        { label: "MAX WINDS", value: `${windMph} mph (${windKt} kt)`, color: col },
+                        { label: "PRESSURE", value: pressureMb ? `${pressureMb} mb` : "N/A", color: "#E8F4FF" },
+                        { label: "MOVEMENT", value: movStr, color: "#E8F4FF" },
+                        { label: "POSITION", value: `${storm.latitude || ""} ${storm.longitude || ""}`, color: "#E8F4FF" },
+                      ].map(stat => (
+                        <div key={stat.label} style={{ background: "rgba(0,0,0,0.3)", padding: "8px 10px", border: "1px solid #1A2D42" }}>
+                          <div style={{ fontSize: "0.72rem", color: "#3A5068", letterSpacing: "0.1em", marginBottom: 4 }}>{stat.label}</div>
+                          <div style={{ fontSize: "0.95rem", fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Forecast waypoint table */}
+                    {storm.trackPoints && storm.trackPoints.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: "0.8rem", color: "#3A5068", letterSpacing: "0.1em", marginBottom: 8 }}>FORECAST TRACK</div>
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                            <thead>
+                              <tr style={{ borderBottom: "1px solid #1A2D42" }}>
+                                {["Time", "Date", "Type", "Winds", "Pressure"].map(h => (
+                                  <th key={h} style={{ padding: "4px 8px", textAlign: "left", color: "#3A5068", fontWeight: 600, letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {storm.trackPoints.map((pt, i) => {
+                                const ptCol = stormSymbolColor(pt.STORMTYPE || storm.classification);
+                                const ptWindMph = Math.round((pt.MAXWIND || 0) * 1.15078);
+                                return (
+                                  <tr key={i} style={{ borderBottom: "1px solid rgba(26,45,66,0.5)", background: pt.TAU === 0 ? "rgba(255,255,255,0.04)" : "transparent" }}>
+                                    <td style={{ padding: "4px 8px", color: pt.TAU === 0 ? "#E8F4FF" : "#7B9BB5", whiteSpace: "nowrap" }}>
+                                      {pt.TAU === 0 ? "NOW" : `+${pt.TAU}h`}
+                                    </td>
+                                    <td style={{ padding: "4px 8px", color: "#7B9BB5", whiteSpace: "nowrap", fontSize: "0.8rem" }}>
+                                      {pt.DATELBL || ""}
+                                    </td>
+                                    <td style={{ padding: "4px 8px", color: ptCol, fontWeight: 600, whiteSpace: "nowrap" }}>
+                                      {pt.TCDVLP || pt.STORMTYPE || ""}
+                                    </td>
+                                    <td style={{ padding: "4px 8px", color: ptCol, whiteSpace: "nowrap" }}>
+                                      {pt.MAXWIND} kt ({ptWindMph} mph)
+                                    </td>
+                                    <td style={{ padding: "4px 8px", color: "#7B9BB5", whiteSpace: "nowrap" }}>
+                                      {pt.MSLP != null ? `${pt.MSLP} mb` : "N/A"}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Disturbance cards */}
+              {basinDist.length > 0 && (
+                <div>
+                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", letterSpacing: "0.1em", marginBottom: 12 }}>TROPICAL WEATHER OUTLOOK</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+                    {basinDist.map((feat, i) => {
+                      const p = feat.properties;
+                      const color = outlookMode === "2day" ? p.color_2day : p.color_7day;
+                      const prob = outlookMode === "2day" ? p.prob_2day : p.prob_7day;
+                      const risk = outlookMode === "2day" ? p.risk_2day : p.risk_7day;
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            background: "#0D1520",
+                            border: `1px solid ${color}40`,
+                            padding: 14,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                            <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF" }}>{p.name}</div>
+                            <div style={{
+                              background: `${color}20`,
+                              border: `1px solid ${color}`,
+                              color,
+                              padding: "2px 8px",
+                              fontSize: "0.8rem",
+                              fontWeight: 700,
+                              letterSpacing: "0.06em",
+                            }}>
+                              {risk || "LOW"}
+                            </div>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <div style={{ background: "rgba(0,0,0,0.3)", padding: "6px 10px", border: "1px solid #1A2D42" }}>
+                              <div style={{ fontSize: "0.7rem", color: "#3A5068", letterSpacing: "0.1em", marginBottom: 3 }}>2-DAY</div>
+                              <div style={{ fontSize: "1rem", fontWeight: 700, color: p.color_2day }}>{p.prob_2day || "N/A"}</div>
+                              <div style={{ fontSize: "0.75rem", color: "#7B9BB5" }}>{p.risk_2day || ""}</div>
+                            </div>
+                            <div style={{ background: "rgba(0,0,0,0.3)", padding: "6px 10px", border: "1px solid #1A2D42" }}>
+                              <div style={{ fontSize: "0.7rem", color: "#3A5068", letterSpacing: "0.1em", marginBottom: 3 }}>7-DAY</div>
+                              <div style={{ fontSize: "1rem", fontWeight: 700, color: p.color_7day }}>{p.prob_7day || "N/A"}</div>
+                              <div style={{ fontSize: "0.75rem", color: "#7B9BB5" }}>{p.risk_7day || ""}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Data timestamp */}
+              {nhcData.generated && (
+                <div style={{ fontSize: "0.8rem", color: "#3A5068", marginTop: 4 }}>
+                  NHC data last updated: {new Date(nhcData.generated).toLocaleString("en-US", {
+                    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                    hour12: true, timeZoneName: "short",
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── TROPICAL WEATHER GRAPHICS SECTION ── */}
