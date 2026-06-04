@@ -49,7 +49,7 @@ git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
 
 # Preserve persistent data files before clearing old build artifacts
 # These files must NEVER be overwritten by a code deploy
-PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json briefing_video.json nhc_gtwo.json marine_zones.json marine_forecasts.json"
+PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json briefing_video.json nhc_gtwo.json nhc_data.json marine_zones.json marine_forecasts.json"
 for PFILE in $PRESERVE_FILES; do
   if [ -f "$PFILE" ]; then
     cp "$PFILE" "/tmp/deploy_preserve_${PFILE}"
