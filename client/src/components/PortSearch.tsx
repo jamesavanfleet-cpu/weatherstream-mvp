@@ -242,6 +242,34 @@ async function fetchEcmwfPrecipDetailed(lat: number, lon: number, numDays = 8): 
 }
 
 // ============================================================
+// Weather fetch with ecmwf_ifs025 -> best_match fallback
+// FIX_MARKER: ECMWF_FALLBACK_v1
+// ============================================================
+async function fetchWeatherWithFallbackPS(url: string): Promise<any> {
+  const tryFetch = async (fetchUrl: string): Promise<any> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const r = await fetch(fetchUrl, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (json && typeof json === "object" && (json as any).error === true) throw new Error("API error payload");
+      return json;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  };
+  try {
+    return await tryFetch(url);
+  } catch {
+    const fallbackUrl = url.replace("models=ecmwf_ifs025", "models=best_match");
+    return await tryFetch(fallbackUrl);
+  }
+}
+
+// ============================================================
 // Data Fetching
 // ============================================================
 async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData> {
@@ -261,7 +289,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
 
   // Fetch weather, marine, and authoritative PoP in parallel
   const [weatherRes, marineRes, popRes] = await Promise.allSettled([
-    fetch(weatherUrl).then(r => r.json()),
+    fetchWeatherWithFallbackPS(weatherUrl),
     fetch(marineUrl).then(r => r.json()),
     useNws
       ? fetchNwsPopDetailed(lat, lon)

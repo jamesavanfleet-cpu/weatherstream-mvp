@@ -247,6 +247,34 @@ async function fetchAuthoritativePop(lat: number, lon: number): Promise<number[]
 }
 
 // Bounded retry with exponential backoff for the per-port forecast fetches.
+// Fetches a weather URL with ecmwf_ifs025 first; if that model times out or errors,
+// retries once with best_match so the site stays operational during ECMWF outages.
+// FIX_MARKER: ECMWF_FALLBACK_v1
+async function fetchWeatherWithFallback(url: string): Promise<any> {
+  const tryFetch = async (fetchUrl: string): Promise<any> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const r = await fetch(fetchUrl, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (json && typeof json === "object" && (json as any).error === true) throw new Error("API error payload");
+      return json;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  };
+  try {
+    return await tryFetch(url);
+  } catch {
+    // ecmwf_ifs025 failed or timed out -- fall back to best_match
+    const fallbackUrl = url.replace("models=ecmwf_ifs025", "models=best_match");
+    return await tryFetch(fallbackUrl);
+  }
+}
+
 // Root-cause fix for transient Open-Meteo failures (network blips / rate limiting)
 // that previously caused ports to permanently render "Data temporarily unavailable".
 // FIX_MARKER: NASSAU_RETRY_v1
@@ -289,7 +317,7 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
     `&length_unit=imperial&timezone=auto&forecast_days=7`;
 
   const [weatherRes, marineRes, popRes] = await Promise.allSettled([
-    fetchJsonWithRetry(weatherUrl),
+    fetchWeatherWithFallback(weatherUrl),
     fetchJsonWithRetry(marineUrl),
     fetchAuthoritativePop(port.lat, port.lon),
   ]);

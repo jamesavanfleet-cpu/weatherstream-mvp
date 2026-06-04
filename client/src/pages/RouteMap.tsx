@@ -319,6 +319,34 @@ async function fetchEcmwfDailyPopMap(lat: number, lon: number, numDays = 16): Pr
 }
 
 // ============================================================
+// Weather fetch with ecmwf_ifs025 -> best_match fallback
+// FIX_MARKER: ECMWF_FALLBACK_v1
+// ============================================================
+async function fetchWeatherWithFallbackRM(url: string): Promise<any> {
+  const tryFetch = async (fetchUrl: string): Promise<any> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const r = await fetch(fetchUrl, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (json && typeof json === "object" && (json as any).error === true) throw new Error("API error payload");
+      return json;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  };
+  try {
+    return await tryFetch(url);
+  } catch {
+    const fallbackUrl = url.replace("models=ecmwf_ifs025", "models=best_match");
+    return await tryFetch(fallbackUrl);
+  }
+}
+
+// ============================================================
 // Live forecast fetch for a specific date
 // ============================================================
 async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: string): Promise<LiveForecastDay | null> {
@@ -345,7 +373,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
     // Fetch weather, marine, and authoritative PoP in parallel
     const useNws = isNwsEligibleRM(lat, lon);
     const [weatherRes, marineRes, popMapRes] = await Promise.allSettled([
-      fetch(dailyUrl).then(r => r.json()),
+      fetchWeatherWithFallbackRM(dailyUrl),
       fetch(marineUrl).then(r => r.json()).then(async (data) => {
         // If marine API returns an error for this coordinate, try offshore fallback
         if (data?.error) {

@@ -160,6 +160,32 @@ interface PortLiveData {
 
 const portDataCache: Record<string, PortLiveData> = {};
 
+// Weather fetch with ecmwf_ifs025 -> best_match fallback
+// FIX_MARKER: ECMWF_FALLBACK_v1
+async function fetchWeatherWithFallbackHome(url: string): Promise<any> {
+  const tryFetch = async (fetchUrl: string): Promise<any> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const r = await fetch(fetchUrl, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (json && typeof json === 'object' && (json as any).error === true) throw new Error('API error payload');
+      return json;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  };
+  try {
+    return await tryFetch(url);
+  } catch {
+    const fallbackUrl = url.replace('models=ecmwf_ifs025', 'models=best_match');
+    return await tryFetch(fallbackUrl);
+  }
+}
+
 async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
   const key = `${lat},${lon}`;
   const cached = portDataCache[key];
@@ -178,7 +204,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
     `&timezone=auto`;
 
   const [wxRes, marineRes] = await Promise.allSettled([
-    fetch(wxUrl).then(r => r.json()),
+    fetchWeatherWithFallbackHome(wxUrl),
     fetch(marineUrl).then(r => r.json()),
   ]);
 

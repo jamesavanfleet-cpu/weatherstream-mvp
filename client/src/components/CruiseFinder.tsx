@@ -345,6 +345,32 @@ async function fetchEcmwfPopForCruise(lat: number, lon: number, numDays = 16): P
   return { dailyMap, hourlyTimes, hourlyPrecip };
 }
 
+// Weather fetch with ecmwf_ifs025 -> best_match fallback
+// FIX_MARKER: ECMWF_FALLBACK_v1
+async function fetchWeatherWithFallbackCF(url: string): Promise<any> {
+  const tryFetch = async (fetchUrl: string): Promise<any> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const r = await fetch(fetchUrl, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      if (json && typeof json === "object" && (json as any).error === true) throw new Error("API error payload");
+      return json;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
+    }
+  };
+  try {
+    return await tryFetch(url);
+  } catch {
+    const fallbackUrl = url.replace("models=ecmwf_ifs025", "models=best_match");
+    return await tryFetch(fallbackUrl);
+  }
+}
+
 async function fetchPortWeather(lat: number, lon: number, date: string): Promise<Partial<PortForecast>> {
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -362,15 +388,15 @@ async function fetchPortWeather(lat: number, lon: number, date: string): Promise
 
     // Fetch weather forecast (daily + hourly), marine data, and authoritative PoP in parallel
     const [weatherResp, marineResp, popRes] = await Promise.allSettled([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,cloudcover_mean,surface_pressure_mean&hourly=cloudcover,precipitation&wind_speed_unit=kn&timezone=auto&forecast_days=16&models=ecmwf_ifs025`),
+      fetchWeatherWithFallbackCF(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,windspeed_10m_max,winddirection_10m_dominant,precipitation_sum,cloudcover_mean,surface_pressure_mean&hourly=cloudcover,precipitation&wind_speed_unit=kn&timezone=auto&forecast_days=16&models=ecmwf_ifs025`),
       fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&daily=wave_height_max,swell_wave_height_max&timezone=auto&forecast_days=16`),
       useNws
         ? fetchNwsPopForCruise(lat, lon).catch(() => fetchEcmwfPopForCruise(lat, lon, 16))
         : fetchEcmwfPopForCruise(lat, lon, 16),
     ]);
 
-    if (weatherResp.status !== "fulfilled" || !weatherResp.value.ok) throw new Error("API error");
-    const data = await weatherResp.value.json();
+    if (weatherResp.status !== "fulfilled" || !weatherResp.value) throw new Error("API error");
+    const data = weatherResp.value;
     const idx = data.daily.time.indexOf(date);
     if (idx === -1) return { condition: "No data available", loading: false, error: false };
     const d = data.daily;
