@@ -1,0 +1,58 @@
+name: NHC Tropical Tracker Update
+
+# NHC issues advisories at approximately 5 AM, 11 AM, 5 PM, and 11 PM EDT
+# (09:00, 15:00, 21:00, 03:00 UTC). We run 3 minutes after each issuance
+# to catch NHC data as soon as it is published.
+# During the off-season (Dec-May) the storms list will be empty, which is correct.
+# During hurricane season (Jun-Nov) this will show active storm tracks and cones.
+on:
+  schedule:
+    - cron: '3 9 * * *'     # 09:03 UTC = ~5:03 AM EDT
+    - cron: '3 15 * * *'    # 15:03 UTC = ~11:03 AM EDT
+    - cron: '3 21 * * *'    # 21:03 UTC = ~5:03 PM EDT
+    - cron: '3 3 * * *'     # 03:03 UTC = ~11:03 PM EDT
+  workflow_dispatch:          # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  nhc-tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyshp
+
+      - name: Fetch NHC tropical tracker data
+        run: |
+          python3 scripts/generate_nhc_data.py
+          echo "nhc_data.json generated: $(wc -c < client/public/nhc_data.json) bytes"
+
+      - name: Push updated nhc_data.json to gh-pages
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+
+          cp client/public/nhc_data.json /tmp/nhc_data.json
+
+          git fetch origin gh-pages
+          git checkout -f gh-pages
+          git pull origin gh-pages
+
+          cp /tmp/nhc_data.json nhc_data.json
+
+          git add nhc_data.json
+          git diff --cached --quiet && echo "No changes to nhc_data.json, skipping push." && exit 0
+          git commit -m "NHC tracker update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
