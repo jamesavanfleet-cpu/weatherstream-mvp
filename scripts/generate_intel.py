@@ -8,6 +8,7 @@ Outputs intel.json to stdout (captured by GitHub Actions and committed to gh-pag
 
 import json
 import os
+import subprocess as _subprocess
 import sys
 import time
 import urllib.request
@@ -15,6 +16,23 @@ import urllib.error
 import urllib.parse
 from datetime import date, datetime, timezone
 from pathlib import Path
+
+# Sandbox TLS workaround: api.open-meteo.com (188.40.99.226) drops TLS connections
+# in this environment. subprocess curl with --retry-all-errors is the only reliable
+# transport. All Open-Meteo fetches use this helper instead of urllib.
+def _curl_fetch_json(url: str, timeout: int = 60, retries: int = 15, retry_delay: int = 2) -> dict:
+    """Fetch a URL via subprocess curl and return parsed JSON.
+    Uses --retry-all-errors so intermittent SSL_ERROR_SYSCALL failures are retried.
+    """
+    result = _subprocess.run(
+        ['curl', '-s', '--max-time', str(timeout),
+         '--retry', str(retries), '--retry-delay', str(retry_delay),
+         '--retry-all-errors', url],
+        capture_output=True, text=True
+    )
+    if not result.stdout.strip():
+        raise RuntimeError(f"curl failed rc={result.returncode}: {result.stderr.strip()[:120]}")
+    return json.loads(result.stdout)
 
 try:
     import httpx as _httpx
@@ -163,18 +181,11 @@ def fetch_weather(lat: float, lon: float) -> dict:
         f"&hourly=precipitation_probability"
         f"&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3"
     )
-    # Retry up to 3 times with backoff for transient network errors
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(url, timeout=15) as resp:
-                return json.loads(resp.read())
-        except Exception as e:
-            if attempt < 2:
-                wait = 5 * (attempt + 1)
-                print(f"  Open-Meteo fetch attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
-                time.sleep(wait)
-            else:
-                raise
+    # Use subprocess curl which reliably handles the TLS environment
+    try:
+        return _curl_fetch_json(url, timeout=60, retries=15, retry_delay=2)
+    except Exception as e:
+        raise RuntimeError(f"Open-Meteo fetch failed: {e}") from e
 
 
 def fetch_precip_probability(lat: float, lon: float) -> list:
@@ -195,32 +206,25 @@ def fetch_precip_probability(lat: float, lon: float) -> list:
         f"&hourly=precipitation_probability"
         f"&timezone=auto&forecast_days=3"
     )
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(url, timeout=15) as resp:
-                data = json.loads(resp.read())
-            # Compute daily mean from hourly values (same logic as _compute_daily_mean_precip_prob)
-            hourly_probs = data.get("hourly", {}).get("precipitation_probability", [])
-            daily_times = data.get("daily", {}).get("time", [])
-            daily_max = data.get("daily", {}).get("precipitation_probability_max", [])
-            daily_means = []
-            for day_idx in range(len(daily_times)):
-                start = day_idx * 24
-                end = start + 24
-                day_probs = [p for p in hourly_probs[start:end] if p is not None]
-                if day_probs:
-                    daily_means.append(round(sum(day_probs) / len(day_probs)))
-                else:
-                    daily_means.append(daily_max[day_idx] or 0)
-            return daily_means
-        except Exception as e:
-            if attempt < 2:
-                wait = 5 * (attempt + 1)
-                print(f"  PoP fetch attempt {attempt+1} failed ({e}) -- retrying in {wait}s", file=sys.stderr)
-                time.sleep(wait)
-            else:
-                print(f"  PoP fetch failed after 3 attempts ({e}) -- falling back to None", file=sys.stderr)
-                return []
+    try:
+        data = _curl_fetch_json(url, timeout=60, retries=15, retry_delay=2)
+    except Exception as e:
+        print(f"  PoP fetch failed ({e}) -- falling back to empty", file=sys.stderr)
+        return []
+    # Compute daily mean from hourly values (same logic as _compute_daily_mean_precip_prob)
+    hourly_probs = data.get("hourly", {}).get("precipitation_probability", [])
+    daily_times = data.get("daily", {}).get("time", [])
+    daily_max = data.get("daily", {}).get("precipitation_probability_max", [])
+    daily_means = []
+    for day_idx in range(len(daily_times)):
+        start = day_idx * 24
+        end = start + 24
+        day_probs = [p for p in hourly_probs[start:end] if p is not None]
+        if day_probs:
+            daily_means.append(round(sum(day_probs) / len(day_probs)))
+        else:
+            daily_means.append(daily_max[day_idx] or 0)
+    return daily_means
 
 
 def ms_to_kt(ms: float) -> int:
