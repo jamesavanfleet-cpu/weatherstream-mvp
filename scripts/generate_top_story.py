@@ -385,7 +385,7 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
     payload = json.dumps({
         "model": GROQ_MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 300,
+        "max_tokens": 4000,  # raised -- reasoning models (gpt-5-mini) use ~2600 reasoning tokens before producing output; must be 4000+
         "temperature": 0.6,
     }).encode()
 
@@ -400,7 +400,7 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
     for attempt in range(4):
         try:
             if _USE_HTTPX:
-                resp = _httpx.post(url, content=payload, headers=headers, timeout=30)
+                resp = _httpx.post(url, content=payload, headers=headers, timeout=120)
                 if resp.status_code == 429 and attempt < 3:
                     wait = 10 * (2 ** attempt)
                     print(f"  Rate limit -- waiting {wait}s before retry {attempt+1}/3", file=sys.stderr)
@@ -410,7 +410,7 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
                 result = resp.json()
             else:
                 req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
-                with urllib.request.urlopen(req, timeout=30) as r:
+                with urllib.request.urlopen(req, timeout=120) as r:
                     result = json.loads(r.read())
             content = result["choices"][0]["message"]["content"].strip()
             break
