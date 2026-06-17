@@ -1464,6 +1464,15 @@ export default function TropicalAdvisories() {
                 maxZoom={19}
               />
             )}
+            {/* Satellite label overlay -- city names, borders, place labels */}
+            {basemap === "satellite" && (
+              <TileLayer
+                url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                attribution=""
+                maxZoom={19}
+                pane="shadowPane"
+              />
+            )}
 
             {/* Zone Forecasts -- NWS marine zone boundaries (pre-baked GeoJSON from marine_zones.json) */}
             {showZoneForecasts && marineZones && marineForecasts && (
