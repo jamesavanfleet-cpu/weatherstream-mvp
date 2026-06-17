@@ -2219,8 +2219,8 @@ export default function TropicalAdvisories() {
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
             </div>
-            {nhcStorms.length > 0 ? (
-              nhcStorms.map(storm => (
+            {(nhcData?.storms ?? []).length > 0 ? (
+              (nhcData?.storms ?? []).map(storm => (
                 <div key={storm.id} style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
                     {storm.name}
@@ -2255,8 +2255,8 @@ export default function TropicalAdvisories() {
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
             </div>
-            {nhcStorms.length > 0 ? (
-              nhcStorms.map(storm => (
+            {(nhcData?.storms ?? []).length > 0 ? (
+              (nhcData?.storms ?? []).map(storm => (
                 <div key={storm.id} style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
                     {storm.name}
