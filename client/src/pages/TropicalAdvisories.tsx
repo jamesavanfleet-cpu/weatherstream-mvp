@@ -931,11 +931,11 @@ function TrackConeLayer({ storm }: { storm: NhcStormData }) {
       key={`cone-${storm.id}`}
       data={geojson}
       style={() => ({
-        color: "rgba(200,180,140,0.6)",
-        weight: 1,
-        fillColor: "rgba(200,180,140,0.18)",
+        color: "rgba(120,0,30,0.85)",
+        weight: 2,
+        fillColor: "rgba(120,0,30,0.12)",
         fillOpacity: 1,
-        opacity: 0.7,
+        opacity: 0.85,
       })}
     />
   );
