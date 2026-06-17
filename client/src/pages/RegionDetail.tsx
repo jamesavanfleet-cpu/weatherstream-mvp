@@ -421,45 +421,35 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
         const hasCam = hasPtzCamera(pw.port.name);
         return (
           <div
-            className={`bg-gradient-to-r ${gradient} px-5 py-4 cursor-pointer select-none flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3`}
+            className={`bg-gradient-to-r ${gradient} px-5 py-4 cursor-pointer select-none flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}
             onClick={onToggle}
           >
-            <div className="flex items-start justify-between gap-3 sm:flex-1 sm:min-w-0">
+            {/* Port name -- always on its own line, never squeezed by camera section */}
+            <div className="flex items-center justify-between gap-3 min-w-0 flex-1">
               <div className="min-w-0 flex-1">
                 <p className="text-white font-bold text-lg leading-tight">{pw.port.name}</p>
                 {pw.port.sublabel && (
                   <p className="text-white/50 text-xs mt-0.5">{pw.port.sublabel}</p>
                 )}
               </div>
-              {/* Chevron: stays at the right end of the name row on every breakpoint. */}
+              {/* Chevron: always visible at the right of the name row */}
               <ChevronDown
-                className={`w-5 h-5 text-white/50 transition-transform duration-300 flex-shrink-0 ${expanded ? "rotate-180" : ""} ${hasCam ? "sm:hidden" : ""}`}
+                className={`w-5 h-5 text-white/50 transition-transform duration-300 flex-shrink-0 ${expanded ? "rotate-180" : ""}`}
               />
             </div>
             {hasCam && (
-              <div className="flex items-center gap-3 sm:flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  {/* Render one thumbnail per camera assigned to this port.
-                      Most ports have exactly one cam. Manhattan / Brooklyn /
-                      Bayonne have two (NY Harbor Webcam + Port NY Webcam),
-                      both shown side-by-side.
-                      Use size="dual" for multi-cam ports so both thumbnails
-                      fit without overflowing the port name text. */}
-                  {(() => {
-                    const cams = getPtzCameras(pw.port.name);
-                    const thumbSize = cams.length > 1 ? "dual" : "default";
-                    return cams.map((_, i) => (
-                      <PtzThumb key={i} portName={pw.port.name} cameraIndex={i} size={thumbSize} />
-                    ));
-                  })()}
-                  <p className="text-white/85 text-[10px] leading-tight">
-                    Port Camera via our<br />partners PTZtv
-                  </p>
-                </div>
-                {/* Desktop chevron: only shown for camera ports next to the thumbnail. */}
-                <ChevronDown
-                  className={`w-5 h-5 text-white/50 transition-transform duration-300 hidden sm:block flex-shrink-0 ${expanded ? "rotate-180" : ""}`}
-                />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Render one thumbnail per camera assigned to this port.
+                    Most ports have exactly one cam. Manhattan / Brooklyn /
+                    Bayonne have two (NY Harbor Webcam + Port NY Webcam),
+                    both shown side-by-side. Camera section wraps to its own
+                    line when the card is too narrow to fit beside the name. */}
+                {getPtzCameras(pw.port.name).map((_, i) => (
+                  <PtzThumb key={i} portName={pw.port.name} cameraIndex={i} />
+                ))}
+                <p className="text-white/85 text-[10px] leading-tight">
+                  Port Camera via our<br />partners PTZtv
+                </p>
               </div>
             )}
           </div>
