@@ -442,10 +442,16 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
                   {/* Render one thumbnail per camera assigned to this port.
                       Most ports have exactly one cam. Manhattan / Brooklyn /
                       Bayonne have two (NY Harbor Webcam + Port NY Webcam),
-                      both shown side-by-side. */}
-                  {getPtzCameras(pw.port.name).map((_, i) => (
-                    <PtzThumb key={i} portName={pw.port.name} cameraIndex={i} />
-                  ))}
+                      both shown side-by-side.
+                      Use size="dual" for multi-cam ports so both thumbnails
+                      fit without overflowing the port name text. */}
+                  {(() => {
+                    const cams = getPtzCameras(pw.port.name);
+                    const thumbSize = cams.length > 1 ? "dual" : "default";
+                    return cams.map((_, i) => (
+                      <PtzThumb key={i} portName={pw.port.name} cameraIndex={i} size={thumbSize} />
+                    ));
+                  })()}
                   <p className="text-white/85 text-[10px] leading-tight">
                     Port Camera via our<br />partners PTZtv
                   </p>

@@ -31,7 +31,7 @@ import { useState } from "react";
 import { Camera } from "lucide-react";
 import { getPtzCameras, ptzCacheBucket } from "@/lib/ptzCameras";
 
-type Size = "compact" | "default";
+type Size = "compact" | "default" | "dual";
 
 interface Props {
   portName: string;
@@ -51,10 +51,14 @@ export default function PtzThumb({ portName, size = "default", className = "", c
   const stop = (e: React.MouseEvent) => { e.stopPropagation(); };
 
   // Compact = home page Live Conditions card (very tight 3-column grid)
-  // Default = forecast region accordion header (more room)
+  // Default = forecast region accordion header, single camera (more room)
+  // Dual   = forecast region accordion header, two cameras side-by-side
+  //          (narrower so both fit without overflowing the port name text)
   const dims = size === "compact"
     ? "w-10 h-10"
-    : "w-24 h-[54px]";
+    : size === "dual"
+      ? "w-14 h-[32px]"
+      : "w-24 h-[54px]";
 
   if (errored) {
     return (
