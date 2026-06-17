@@ -1055,7 +1055,9 @@ function MapFitBounds({
       const minLon = Math.min(...lons) - 5;
       const maxLon = Math.max(...lons) + 5;
       try {
-        map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { animate: true, duration: 0.8 });
+        const containerWidth = map.getContainer().offsetWidth;
+        const maxZoom = containerWidth < 768 ? 5 : 6;
+        map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { animate: true, duration: 0.8, maxZoom });
       } catch { /* ignore */ }
     }
   }, [storms, disturbances, basin, map]); // eslint-disable-line react-hooks/exhaustive-deps
