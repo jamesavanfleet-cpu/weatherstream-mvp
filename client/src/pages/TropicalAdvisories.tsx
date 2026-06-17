@@ -2269,6 +2269,23 @@ export default function TropicalAdvisories() {
                     onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                     onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_models.png`)}
                   />
+                  <div style={{ fontSize: "0.78rem", color: "#3A5068", marginTop: 10, marginBottom: 4, letterSpacing: "0.06em" }}>UWM SPAGHETTI MODELS</div>
+                  <img
+                    src={`https://web.uwm.edu/hurricane-models/models/${storm.id}.png`}
+                    alt={`${storm.name} UWM spaghetti models early cycle`}
+                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer", marginBottom: 6 }}
+                    loading="lazy"
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onClick={() => setLightboxSrc(`https://web.uwm.edu/hurricane-models/models/${storm.id}.png`)}
+                  />
+                  <img
+                    src={`https://web.uwm.edu/hurricane-models/models/${storm.id}_late.png`}
+                    alt={`${storm.name} UWM spaghetti models late cycle`}
+                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
+                    loading="lazy"
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onClick={() => setLightboxSrc(`https://web.uwm.edu/hurricane-models/models/${storm.id}_late.png`)}
+                  />
                 </div>
               ))
             ) : (
