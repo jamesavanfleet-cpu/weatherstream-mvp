@@ -119,131 +119,25 @@ interface PortWeather {
 const COLS = 3; // Number of columns in the port grid -- used for row-level accordion toggling
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
-// ---- NWS eligibility: US ports and US territories ----
-// These ports use NWS api.weather.gov for authoritative PoP.
-// All other ports use the ECMWF IFS025 precipitation threshold method.
-// Key: "lat_lon" string with 2 decimal places.
-const NWS_ELIGIBLE_COORDS = new Set<string>([
-  // US Ports (regions.ts us-ports slug)
-  "39.29_-76.61",  // Baltimore
-  "40.67_-74.11",  // Bayonne
-  "42.36_-71.06",  // Boston
-  "40.68_-74.01",  // Brooklyn
-  "32.78_-79.93",  // Charleston
-  "29.30_-94.80",  // Galveston
-  "29.74_-95.01",  // Houston
-  "30.33_-81.66",  // Jacksonville
-  "33.77_-118.19", // Long Beach
-  "33.74_-118.29", // Los Angeles
-  "40.77_-74.00",  // Manhattan
-  "25.77_-80.19",  // Miami
-  "29.95_-90.07",  // New Orleans
-  "36.85_-76.30",  // Norfolk
-  "39.91_-75.14",  // Philadelphia
-  "28.41_-80.62",  // Port Canaveral
-  "26.08_-80.12",  // Port Everglades
-  "32.72_-117.16", // San Diego
-  "37.80_-122.41", // San Francisco
-  "32.08_-81.10",  // Savannah
-  "27.93_-82.45",  // Tampa Bay
-  // US territories (eastern-caribbean slug)
-  "18.47_-66.12",  // San Juan, PR
-  "18.34_-64.93",  // St. Thomas, USVI
-  "17.73_-64.73",  // St. Croix, USVI
-  // Key West (bahamas-central-caribbean slug)
-  "24.56_-81.78",  // Key West, FL
-  // Alaska (southeast-alaska slug)
-  "61.22_-149.90", // Anchorage
-  "58.30_-134.42", // Juneau
-  "55.34_-131.65", // Ketchikan
-  "47.61_-122.33", // Seattle
-  "57.05_-135.33", // Sitka
-  "59.46_-135.31", // Skagway
-  "57.85_-133.65", // Tracy Arm Fjord
-  "59.24_-135.45", // Haines
-  "49.28_-123.12", // Vancouver (Canada -- NWS won't cover, but included for completeness; will fall back to ECMWF)
-  "48.43_-123.37", // Victoria (Canada -- same)
-]);
-
-function isNwsEligible(lat: number, lon: number): boolean {
-  const key = `${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`;
-  return NWS_ELIGIBLE_COORDS.has(key);
-}
-
-// ---- NWS PoP fetch (US/territory ports) ----
-// Returns array of daily mean PoP values (0-100) for up to 7 days.
-// Automatically nudges 0.05 deg inland if the exact coordinates fall in a marine zone (404).
-async function fetchNwsPop(lat: number, lon: number): Promise<number[]> {
-  const NWS_HEADERS = { "User-Agent": "mycruisingweather.com/1.0 james@mycruisingweather.com" };
-
-  async function getHourlyPeriods(la: number, lo: number): Promise<any[]> {
-    const ptsRes = await fetch(`https://api.weather.gov/points/${la.toFixed(4)},${lo.toFixed(4)}`, { headers: NWS_HEADERS });
-    if (!ptsRes.ok) throw new Error(`NWS points ${ptsRes.status}`);
-    const pts = await ptsRes.json();
-    const fxUrl = pts.properties.forecastHourly;
-    const fxRes = await fetch(fxUrl, { headers: NWS_HEADERS });
-    if (!fxRes.ok) throw new Error(`NWS hourly ${fxRes.status}`);
-    const fx = await fxRes.json();
-    return fx.properties.periods;
-  }
-
-  let periods: any[];
-  try {
-    periods = await getHourlyPeriods(lat, lon);
-  } catch (e: any) {
-    if (e?.message?.includes("404")) {
-      // Marine zone -- nudge 0.05 deg inland
-      periods = await getHourlyPeriods(lat + 0.05, lon + 0.05);
-    } else {
-      throw e;
-    }
-  }
-
-  const dailyMeans: number[] = [];
-  for (let day = 0; day < 7; day++) {
-    const dayPeriods = periods.slice(day * 24, (day + 1) * 24);
-    if (dayPeriods.length === 0) break;
-    const pops = dayPeriods.map((p: any) => p.probabilityOfPrecipitation?.value ?? 0);
-    dailyMeans.push(Math.round(pops.reduce((a: number, b: number) => a + b, 0) / pops.length));
-  }
-  return dailyMeans;
-}
-
-// ---- ECMWF precipitation threshold PoP (non-US ports) ----
-// Derives PoP from ECMWF IFS025 hourly precipitation (mm) using a 0.5mm/3hr threshold.
-// Returns array of daily PoP values (0-100) for up to 7 days.
-async function fetchEcmwfPrecipThresholdPop(lat: number, lon: number): Promise<number[]> {
+// ---- ECMWF precipitation_probability PoP (all ports) ----
+// FIX_MARKER: ECMWF_PRECIP_PROB_v1
+// Returns array of daily mean PoP values (0-100) for up to 7 days
+// using ECMWF IFS025 precipitation_probability directly (no NWS, no mm threshold).
+async function fetchAuthoritativePop(lat: number, lon: number): Promise<number[]> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&hourly=precipitation&timezone=auto&forecast_days=7&models=ecmwf_ifs025`;
+    `&hourly=precipitation_probability&timezone=auto&forecast_days=7&models=ecmwf_ifs025`;
   const res = await fetchJsonWithRetry(url);
-  const hourlyPrecip: number[] = res.hourly?.precipitation ?? [];
+  const hourlyProbs: number[] = (res.hourly?.precipitation_probability ?? []).map((v: number | null) => v ?? 0);
   const dailyMeans: number[] = [];
   for (let day = 0; day < 7; day++) {
     const start = day * 24;
     const end = start + 24;
-    const dayPrecip = hourlyPrecip.slice(start, end).map(v => v ?? 0);
-    if (dayPrecip.length === 0) break;
-    const blocks: number[][] = [];
-    for (let i = 0; i < dayPrecip.length; i += 3) blocks.push(dayPrecip.slice(i, i + 3));
-    const wetBlocks = blocks.filter(b => b.reduce((a, v) => a + v, 0) >= 0.5).length;
-    dailyMeans.push(Math.round(wetBlocks / blocks.length * 100));
+    const dayProbs = hourlyProbs.slice(start, end);
+    if (dayProbs.length === 0) break;
+    dailyMeans.push(Math.round(dayProbs.reduce((a, b) => a + b, 0) / dayProbs.length));
   }
   return dailyMeans;
-}
-
-// ---- Authoritative PoP fetch ----
-// Returns array of daily mean PoP values (0-100) for up to 7 days.
-async function fetchAuthoritativePop(lat: number, lon: number): Promise<number[]> {
-  if (isNwsEligible(lat, lon)) {
-    try {
-      const result = await fetchNwsPop(lat, lon);
-      if (result.length > 0) return result;
-    } catch {
-      // NWS failed -- fall through to ECMWF threshold
-    }
-  }
-  return fetchEcmwfPrecipThresholdPop(lat, lon);
 }
 
 // Bounded retry with exponential backoff for the per-port forecast fetches.

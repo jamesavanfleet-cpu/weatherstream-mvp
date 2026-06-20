@@ -205,115 +205,29 @@ function resolvePort(q: string): typeof PORT_LIST[0] | null {
 }
 
 // ============================================================
-// NWS eligibility and authoritative PoP helpers (RouteMap)
+// ECMWF precipitation_probability PoP helpers (RouteMap)
+// FIX_MARKER: ECMWF_PRECIP_PROB_v1
 // ============================================================
-const NWS_ELIGIBLE_COORDS_RM = new Set<string>([
-  // US Ports
-  "39.29_-76.61",  // Baltimore
-  "40.67_-74.11",  // Bayonne
-  "42.36_-71.06",  // Boston
-  "40.68_-74.01",  // Brooklyn
-  "32.78_-79.93",  // Charleston
-  "29.30_-94.80",  // Galveston
-  "29.74_-95.01",  // Houston
-  "30.33_-81.66",  // Jacksonville
-  "33.77_-118.19", // Long Beach
-  "33.74_-118.29", // Los Angeles
-  "40.77_-74.00",  // Manhattan
-  "25.78_-80.17",  // Miami
-  "29.95_-90.07",  // New Orleans
-  "36.85_-76.30",  // Norfolk
-  "39.91_-75.14",  // Philadelphia
-  "28.41_-80.62",  // Port Canaveral
-  "26.08_-80.12",  // Port Everglades
-  "32.72_-117.16", // San Diego
-  "37.80_-122.41", // San Francisco
-  "32.08_-81.10",  // Savannah
-  "27.93_-82.45",  // Tampa Bay
-  // US territories
-  "18.47_-66.11",  // San Juan, PR
-  "18.34_-64.93",  // St. Thomas, USVI
-  "17.73_-64.73",  // St. Croix, USVI
-  "24.56_-81.78",  // Key West, FL
-  // Alaska
-  "61.22_-149.90", // Anchorage
-  "58.30_-134.42", // Juneau
-  "55.34_-131.65", // Ketchikan
-  "47.61_-122.33", // Seattle
-  "57.05_-135.33", // Sitka
-  "59.46_-135.31", // Skagway
-  "57.85_-133.65", // Tracy Arm Fjord
-  "59.24_-135.45", // Haines
-]);
-
-function isNwsEligibleRM(lat: number, lon: number): boolean {
-  const key = `${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`;
-  return NWS_ELIGIBLE_COORDS_RM.has(key);
-}
-
-// Returns Map<"YYYY-MM-DD", dailyMeanPoP> from NWS hourly forecast.
-// NWS hourly covers ~7 days; dates beyond that will be missing from the map.
-async function fetchNwsDailyPopMap(lat: number, lon: number): Promise<Map<string, number>> {
-  const NWS_HEADERS = { "User-Agent": "mycruisingweather.com/1.0 james@mycruisingweather.com" };
-
-  async function getHourlyPeriods(la: number, lo: number): Promise<any[]> {
-    const ptsRes = await fetch(`https://api.weather.gov/points/${la.toFixed(4)},${lo.toFixed(4)}`, { headers: NWS_HEADERS });
-    if (!ptsRes.ok) throw new Error(`NWS points ${ptsRes.status}`);
-    const pts = await ptsRes.json();
-    const fxRes = await fetch(pts.properties.forecastHourly, { headers: NWS_HEADERS });
-    if (!fxRes.ok) throw new Error(`NWS hourly ${fxRes.status}`);
-    const fx = await fxRes.json();
-    return fx.properties.periods;
-  }
-
-  let periods: any[];
-  try {
-    periods = await getHourlyPeriods(lat, lon);
-  } catch (e: any) {
-    if (e?.message?.includes("404")) {
-      periods = await getHourlyPeriods(lat + 0.05, lon + 0.05);
-    } else {
-      throw e;
-    }
-  }
-
-  const dayBuckets = new Map<string, number[]>();
-  for (const period of periods) {
-    const dayKey = period.startTime.slice(0, 10);
-    const pop = period.probabilityOfPrecipitation?.value ?? 0;
-    if (!dayBuckets.has(dayKey)) dayBuckets.set(dayKey, []);
-    dayBuckets.get(dayKey)!.push(pop);
-  }
-
-  const result = new Map<string, number>();
-  for (const [day, pops] of dayBuckets) {
-    result.set(day, Math.round(pops.reduce((a, b) => a + b, 0) / pops.length));
-  }
-  return result;
-}
-
-// Returns Map<"YYYY-MM-DD", thresholdPoP> from ECMWF IFS025 hourly precipitation.
+// Returns Map<"YYYY-MM-DD", dailyMeanPoP> using ECMWF IFS025 precipitation_probability
+// directly (no NWS, no mm threshold).
 async function fetchEcmwfDailyPopMap(lat: number, lon: number, numDays = 16): Promise<Map<string, number>> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&hourly=precipitation&timezone=auto&forecast_days=${numDays}&models=ecmwf_ifs025`;
+    `&hourly=precipitation_probability&timezone=auto&forecast_days=${numDays}&models=ecmwf_ifs025`;
   const res = await fetch(url).then(r => r.json());
   const hourlyTimes: string[] = res.hourly?.time ?? [];
-  const hourlyPrecip: number[] = (res.hourly?.precipitation ?? []).map((v: number | null) => v ?? 0);
+  const hourlyProbs: number[] = (res.hourly?.precipitation_probability ?? []).map((v: number | null) => v ?? 0);
 
   const dayBuckets = new Map<string, number[]>();
   hourlyTimes.forEach((t, i) => {
     const dayKey = t.slice(0, 10);
     if (!dayBuckets.has(dayKey)) dayBuckets.set(dayKey, []);
-    dayBuckets.get(dayKey)!.push(hourlyPrecip[i] ?? 0);
+    dayBuckets.get(dayKey)!.push(hourlyProbs[i] ?? 0);
   });
 
   const result = new Map<string, number>();
-  for (const [day, precips] of dayBuckets) {
-    const blocks: number[][] = [];
-    for (let i = 0; i < precips.length; i += 3) blocks.push(precips.slice(i, i + 3));
-    const wetBlocks = blocks.filter(b => b.reduce((a, v) => a + v, 0) >= 0.5).length;
-    result.set(day, Math.round(wetBlocks / blocks.length * 100));
+  for (const [day, probs] of dayBuckets) {
+    result.set(day, Math.round(probs.reduce((a, b) => a + b, 0) / probs.length));
   }
   return result;
 }
@@ -370,8 +284,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       `&hourly=wave_height` +
       `&length_unit=imperial&timezone=auto&forecast_days=16`;
 
-    // Fetch weather, marine, and authoritative PoP in parallel
-    const useNws = isNwsEligibleRM(lat, lon);
+    // Fetch weather, marine, and ECMWF precipitation_probability PoP in parallel
     const [weatherRes, marineRes, popMapRes] = await Promise.allSettled([
       fetchWeatherWithFallbackRM(dailyUrl),
       fetch(marineUrl).then(r => r.json()).then(async (data) => {
@@ -382,9 +295,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
         }
         return data;
       }).catch(() => null),
-      useNws
-        ? fetchNwsDailyPopMap(lat, lon).catch(() => fetchEcmwfDailyPopMap(lat, lon, 16))
-        : fetchEcmwfDailyPopMap(lat, lon, 16),
+      fetchEcmwfDailyPopMap(lat, lon, 16),
     ]);
 
     const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
