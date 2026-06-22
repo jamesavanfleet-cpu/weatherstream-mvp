@@ -269,7 +269,7 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
       `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,` +
       `weathercode,sunrise,sunset,moonrise,moonset` +
-      `&hourly=temperature_2m,wind_speed_10m,weathercode,dewpoint_2m,relativehumidity_2m,windgusts_10m` +
+      `&hourly=temperature_2m,wind_speed_10m,weathercode,dewpoint_2m,relativehumidity_2m,windgusts_10m,precipitation_probability` +
       `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=16&models=ecmwf_ifs025`;
     // Marine API -- try exact coordinates first, fall back to slightly offshore if it errors
     const marineUrl =
@@ -330,12 +330,11 @@ async function fetchLiveForecastForDate(lat: number, lon: number, dateStr: strin
         time: new Date(t).toLocaleTimeString("en-US", { hour: "numeric", hour12: true }),
         tempF: cToF(h.temperature_2m[i]),
         windKt: msToKt(h.wind_speed_10m[i]),
-        rainChance: authDayPop,
+        rainChance: Math.round(h.precipitation_probability?.[i] ?? authDayPop),
         condition: wmoToCondition(h.weathercode[i]),
       }));
 
-    // Rain chance by time of day -- use authDayPop as the daily value
-    // (sub-daily breakdown is not available from the authoritative sources)
+    // Rain chance by time of day -- use true hourly precipitation_probability values
     function avgRain(_startH: number, _endH: number): number | null {
       return authDayPop > 0 ? authDayPop : null;
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Ship, MapPin, Calendar, ChevronDown, Search, Navigation, Thermometer, Wind, Droplets, Gauge, Waves, Eye, Cloud, Sun, CloudRain, CloudLightning, Snowflake } from "lucide-react";
+import { PORT_LIST } from "../data/ports";
 
 // Types
 interface PortEntry {
@@ -227,7 +228,28 @@ function mmToIn(mm: number): number { return Math.round(mm / 25.4 * 100) / 100; 
 function hpaToInHg(hpa: number): number { return Math.round(hpa * 0.02953 * 100) / 100; }
 function mToFt(m: number): number { return Math.round(m * 3.281 * 10) / 10; }
 function ktToMph(kt: number): number { return Math.round(kt * 1.15078); }
-
+// ============================================================
+// Port coordinate resolution (CruiseFinder)
+// Falls back to PORT_LIST when cruise_itineraries.json has no lat/lon
+// ============================================================
+function normStrCF(s: string): string {
+  return s.toLowerCase()
+    .replace(/\bsaint\b/g, "st")
+    .replace(/[.&]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function resolvePortCF(q: string): typeof PORT_LIST[0] | null {
+  const lower = normStrCF(q);
+  if (!lower) return null;
+  const eq = (p: typeof PORT_LIST[0]) =>
+    normStrCF(p.name) === lower || (p.aliases ?? []).some(a => normStrCF(a) === lower);
+  const sw = (p: typeof PORT_LIST[0]) =>
+    normStrCF(p.name).startsWith(lower) || (p.aliases ?? []).some(a => normStrCF(a).startsWith(lower));
+  const inc = (p: typeof PORT_LIST[0]) =>
+    normStrCF(p.name).includes(lower) || (p.aliases ?? []).some(a => normStrCF(a).includes(lower));
+  return PORT_LIST.find(eq) ?? PORT_LIST.find(sw) ?? PORT_LIST.find(inc) ?? null;
+}
 // ============================================================
 // ECMWF precipitation_probability fetch (CruiseFinder)
 // FIX_MARKER: ECMWF_PRECIP_PROB_v1
@@ -547,7 +569,8 @@ export default function CruiseFinder({ isMetric: parentIsMetric }: CruiseFinderP
     setActivePort(null);
     const initial: PortForecast[] = ports.map((pe: PortEntry) => ({
       port: pe.port, date: pe.date, day: pe.day,
-      lat: pe.lat ?? 0, lon: pe.lon ?? 0,
+      lat: (pe.lat !== null && pe.lat !== 0) ? pe.lat : (resolvePortCF(pe.port)?.lat ?? 0),
+      lon: (pe.lon !== null && pe.lon !== 0) ? pe.lon : (resolvePortCF(pe.port)?.lon ?? 0),
       tempMaxC: null, tempMinC: null,
       windKt: null, windDir: "--", windDeg: null,
       precipMm: null, precipChance: null,
