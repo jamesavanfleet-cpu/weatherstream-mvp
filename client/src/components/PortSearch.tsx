@@ -117,129 +117,11 @@ interface PortSlot {
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 // ============================================================
-// NWS eligibility and authoritative PoP helpers
+// ECMWF precipitation_probability fetch (PortSearch)
+// FIX_MARKER: ECMWF_PRECIP_PROB_PS_v1
 // ============================================================
-// US ports and US territories use NWS api.weather.gov for authoritative PoP.
-// All other ports use the ECMWF IFS025 precipitation threshold method.
-// Key: "lat_lon" string with 2 decimal places.
-const NWS_ELIGIBLE_COORDS_PS = new Set<string>([
-  // US Ports (regions.ts us-ports slug)
-  "39.29_-76.61",  // Baltimore
-  "40.67_-74.11",  // Bayonne
-  "42.36_-71.06",  // Boston
-  "40.68_-74.01",  // Brooklyn
-  "32.78_-79.93",  // Charleston
-  "29.30_-94.80",  // Galveston
-  "29.74_-95.01",  // Houston
-  "30.33_-81.66",  // Jacksonville
-  "33.77_-118.19", // Long Beach
-  "33.74_-118.29", // Los Angeles
-  "40.77_-74.00",  // Manhattan
-  "25.78_-80.17",  // Miami (ports.ts lat/lon)
-  "29.95_-90.07",  // New Orleans
-  "36.85_-76.30",  // Norfolk
-  "39.91_-75.14",  // Philadelphia
-  "28.41_-80.62",  // Port Canaveral
-  "26.08_-80.12",  // Port Everglades
-  "32.72_-117.16", // San Diego
-  "37.80_-122.41", // San Francisco
-  "32.08_-81.10",  // Savannah
-  "27.93_-82.45",  // Tampa Bay
-  // US territories (eastern-caribbean slug)
-  "18.47_-66.11",  // San Juan, PR (ports.ts)
-  "18.34_-64.93",  // St. Thomas, USVI
-  "17.73_-64.73",  // St. Croix, USVI
-  // Key West (bahamas-central-caribbean slug)
-  "24.56_-81.78",  // Key West, FL
-  // Alaska
-  "61.22_-149.90", // Anchorage
-  "58.30_-134.42", // Juneau
-  "55.34_-131.65", // Ketchikan
-  "47.61_-122.33", // Seattle
-  "57.05_-135.33", // Sitka
-  "59.46_-135.31", // Skagway
-  "57.85_-133.65", // Tracy Arm Fjord
-  "59.24_-135.45", // Haines
-]);
-
-function isNwsEligiblePS(lat: number, lon: number): boolean {
-  const key = `${Math.round(lat * 100) / 100}_${Math.round(lon * 100) / 100}`;
-  return NWS_ELIGIBLE_COORDS_PS.has(key);
-}
-
-// Returns { dailyPop: number[], hourlyPop: Map<string, number> } for NWS ports.
-// dailyPop[i] = daily mean PoP for day i (0-indexed, today = 0).
-// hourlyPop: keyed by "YYYY-MM-DDTHH:00" -> PoP value.
-async function fetchNwsPopDetailed(lat: number, lon: number): Promise<{ dailyPop: number[]; hourlyPop: Map<string, number> }> {
-  const NWS_HEADERS = { "User-Agent": "mycruisingweather.com/1.0 james@mycruisingweather.com" };
-
-  async function getHourlyPeriods(la: number, lo: number): Promise<any[]> {
-    const ptsRes = await fetch(`https://api.weather.gov/points/${la.toFixed(4)},${lo.toFixed(4)}`, { headers: NWS_HEADERS });
-    if (!ptsRes.ok) throw new Error(`NWS points ${ptsRes.status}`);
-    const pts = await ptsRes.json();
-    const fxRes = await fetch(pts.properties.forecastHourly, { headers: NWS_HEADERS });
-    if (!fxRes.ok) throw new Error(`NWS hourly ${fxRes.status}`);
-    const fx = await fxRes.json();
-    return fx.properties.periods;
-  }
-
-  let periods: any[];
-  try {
-    periods = await getHourlyPeriods(lat, lon);
-  } catch (e: any) {
-    if (e?.message?.includes("404")) {
-      periods = await getHourlyPeriods(lat + 0.05, lon + 0.05);
-    } else {
-      throw e;
-    }
-  }
-
-  // Build hourlyPop map and dailyPop array
-  const hourlyPop = new Map<string, number>();
-  const dayBuckets = new Map<string, number[]>();
-
-  for (const period of periods) {
-    const startTime: string = period.startTime; // ISO 8601 e.g. "2026-05-31T14:00:00-04:00"
-    const pop = period.probabilityOfPrecipitation?.value ?? 0;
-    // Normalize to "YYYY-MM-DDTHH:00" local time
-    const localKey = startTime.slice(0, 13) + ":00";
-    hourlyPop.set(localKey, pop);
-    const dayKey = startTime.slice(0, 10);
-    if (!dayBuckets.has(dayKey)) dayBuckets.set(dayKey, []);
-    dayBuckets.get(dayKey)!.push(pop);
-  }
-
-  const dailyPop: number[] = [];
-  for (const [, pops] of dayBuckets) {
-    dailyPop.push(Math.round(pops.reduce((a, b) => a + b, 0) / pops.length));
-    if (dailyPop.length >= 8) break;
-  }
-
-  return { dailyPop, hourlyPop };
-}
-
-// Returns { dailyPop: number[], hourlyPrecip: number[] } for ECMWF threshold path.
-// dailyPop[i] = threshold-derived PoP for day i.
-// hourlyPrecip: raw mm values indexed 0..N*24-1.
-async function fetchEcmwfPrecipDetailed(lat: number, lon: number, numDays = 8): Promise<{ dailyPop: number[]; hourlyPrecip: number[] }> {
-  const url =
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&hourly=precipitation&timezone=auto&forecast_days=${numDays}&models=ecmwf_ifs025`;
-  const res = await fetch(url).then(r => r.json());
-  const hourlyPrecip: number[] = (res.hourly?.precipitation ?? []).map((v: number | null) => v ?? 0);
-  const dailyPop: number[] = [];
-  for (let day = 0; day < numDays; day++) {
-    const start = day * 24;
-    const end = start + 24;
-    const dayPrecip = hourlyPrecip.slice(start, end);
-    if (dayPrecip.length === 0) break;
-    const blocks: number[][] = [];
-    for (let i = 0; i < dayPrecip.length; i += 3) blocks.push(dayPrecip.slice(i, i + 3));
-    const wetBlocks = blocks.filter(b => b.reduce((a, v) => a + v, 0) >= 0.5).length;
-    dailyPop.push(Math.round(wetBlocks / blocks.length * 100));
-  }
-  return { dailyPop, hourlyPrecip };
-}
+// All ports use ECMWF IFS025 precipitation_probability directly.
+// No NWS path, no mm threshold -- matches Home.tsx fetchPortData exactly.
 
 // ============================================================
 // Weather fetch with ecmwf_ifs025 -> best_match fallback
@@ -276,7 +158,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
   const weatherUrl =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode` +
-    `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,relativehumidity_2m,uv_index,cloudcover,visibility,precipitation` +
+    `&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,relativehumidity_2m,uv_index,cloudcover,visibility,precipitation_probability` +
     `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,weathercode,uv_index_max,windspeed_10m_max,cloudcover_mean` +
     `&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=8&models=ecmwf_ifs025`;
 
@@ -285,20 +167,15 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
     `&length_unit=imperial&timezone=auto&forecast_days=8`;
 
-  const useNws = isNwsEligiblePS(lat, lon);
-
-  // Fetch weather, marine, and authoritative PoP in parallel
-  const [weatherRes, marineRes, popRes] = await Promise.allSettled([
+  // Fetch weather and marine in parallel
+  // precipitation_probability is included in the hourly weather request above
+  const [weatherRes, marineRes] = await Promise.allSettled([
     fetchWeatherWithFallbackPS(weatherUrl),
     fetch(marineUrl).then(r => r.json()),
-    useNws
-      ? fetchNwsPopDetailed(lat, lon)
-      : fetchEcmwfPrecipDetailed(lat, lon, 8),
   ]);
 
   const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
   const marine  = marineRes.status  === "fulfilled" ? marineRes.value  : null;
-  const popData  = popRes.status === "fulfilled" ? popRes.value : null;
 
   if (!weather || weather.error) throw new Error("Weather fetch failed");
 
@@ -324,17 +201,6 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
 
   // No midnight slot needed for 6a-10p range
   const nextLocalDate = "";
-
-  // For ECMWF non-NWS path: today's daily PoP for scaling hourly precipitation signal
-  const todayDailyPop = popData?.dailyPop?.[0] ?? 0;
-  // For NWS path: hourlyPop map keyed by "YYYY-MM-DDTHH:00"
-  const nwsHourlyPop: Map<string, number> | null = useNws && popData && "hourlyPop" in popData
-    ? (popData as { dailyPop: number[]; hourlyPop: Map<string, number> }).hourlyPop
-    : null;
-  // For ECMWF path: hourly precipitation array
-  const ecmwfHourlyPrecip: number[] | null = !useNws && popData && "hourlyPrecip" in popData
-    ? (popData as { dailyPop: number[]; hourlyPrecip: number[] }).hourlyPrecip
-    : null;
 
   const hourlySlots: HourlySlot[] = [];
   const seenHours = new Set<number>();
@@ -367,18 +233,9 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
       const vis = h.visibility?.[idx] ?? 0; // metres
       const visKm = Math.round(vis / 100) / 10; // km with 1 decimal
 
-      // Authoritative hourly rain chance:
-      // NWS path: use NWS hourly PoP directly
-      // ECMWF path: if this hour has >= 0.1mm precip, show today's daily PoP; else 0
-      let rain = 0;
-      if (nwsHourlyPop) {
-        // Try exact key match first, then fall back to nearest hour
-        const key = `${datePart}T${String(hourPart).padStart(2, "0")}:00`;
-        rain = nwsHourlyPop.get(key) ?? 0;
-      } else if (ecmwfHourlyPrecip) {
-        const precip = ecmwfHourlyPrecip[idx] ?? 0;
-        rain = precip >= 0.1 ? todayDailyPop : 0;
-      }
+      // ECMWF precipitation_probability: read per-hour value directly
+      // FIX_MARKER: ECMWF_PRECIP_PROB_PS_v1
+      const rain = h.precipitation_probability?.[idx] ?? 0;
 
       hourlySlots.push({
         hour: effectiveHour,
@@ -405,8 +262,15 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     const i = rawIdx + 1;
     const wKt = msToKt(d.wind_speed_10m_max[i]);
     const swellDeg = md?.swell_wave_direction_dominant?.[i];
-    // Use authoritative daily PoP for each forecast day
-    const dayMeanRain = popData?.dailyPop?.[i] ?? 0;
+    // Compute daily mean PoP from hourly precipitation_probability for this forecast day
+    // FIX_MARKER: ECMWF_PRECIP_PROB_PS_v1
+    const dayHourlyProbs: number[] = (h.time as string[])
+      .map((t: string, hi: number) => ({ t, hi }))
+      .filter(({ t }) => t.slice(0, 10) === dateStr)
+      .map(({ hi }) => h.precipitation_probability?.[hi] ?? 0);
+    const dayMeanRain = dayHourlyProbs.length > 0
+      ? Math.round(dayHourlyProbs.reduce((a: number, b: number) => a + b, 0) / dayHourlyProbs.length)
+      : 0;
     return {
       date: dateStr,
       maxF: cToF(d.temperature_2m_max[i]),
