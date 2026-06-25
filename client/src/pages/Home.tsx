@@ -193,7 +193,7 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
 
   const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,dew_point_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,pressure_msl` +
-    `&hourly=pressure_msl,temperature_2m,wind_speed_10m,wind_direction_10m,precipitation_probability` +
+    `&hourly=pressure_msl,temperature_2m,wind_speed_10m,wind_direction_10m` +
     `&past_hours=2&forecast_hours=26` +
     `&wind_speed_unit=kn&temperature_unit=celsius&timezone=auto&models=ecmwf_ifs025`;
 
@@ -203,13 +203,26 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
     `&past_hours=2&forecast_hours=26` +
     `&timezone=auto`;
 
-  const [wxRes, marineRes] = await Promise.allSettled([
+  // Separate best_match PoP fetch -- no models= parameter so Open-Meteo defaults to
+  // GFS/ICON blend, which is a standard NWS-style PoP. The ECMWF IFS025 field is an
+  // ensemble-spread metric that systematically overstates rain chances in tropical
+  // climates and must not be used for precipPct display.
+  // FIX_MARKER: BESTMATCH_PRECIP_PROB_HOME_v2
+  const popUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&hourly=precipitation_probability&past_hours=2&forecast_hours=26&timezone=auto`;
+
+  const [wxRes, marineRes, popRes] = await Promise.allSettled([
     fetchWeatherWithFallbackHome(wxUrl),
     fetch(marineUrl).then(r => r.json()),
+    fetch(popUrl).then(r => r.json()),
   ]);
 
   const wx = wxRes.status === 'fulfilled' ? wxRes.value : null;
   const marine = marineRes.status === 'fulfilled' ? marineRes.value : null;
+  // popHourly: flat array of hourly best_match PoP values, same length as wx.hourly.time
+  const popHourly: number[] = popRes.status === 'fulfilled'
+    ? ((popRes.value?.hourly?.precipitation_probability as number[]) ?? [])
+    : [];
 
   // If the weather API returned an error payload or no current data, throw so the
   // modal's .catch() handler fires and shows "Unable to retrieve live data" instead
@@ -257,7 +270,10 @@ async function fetchPortData(lat: number, lon: number): Promise<PortLiveData> {
           tempC: wx.hourly.temperature_2m?.[i] ?? 0,
           windSpeedKt: wx.hourly.wind_speed_10m?.[i] ?? 0,
           windDir: wx.hourly.wind_direction_10m?.[i] ?? 0,
-          precipPct: wx.hourly.precipitation_probability?.[i] ?? 0,
+          // Use best_match PoP from the separate popHourly array.
+          // Falls back to 0 if the PoP fetch failed or the index is out of range.
+          // FIX_MARKER: BESTMATCH_PRECIP_PROB_HOME_v2
+          precipPct: popHourly[i] ?? 0,
           waveHeightM: mIdx >= 0 ? (marine.hourly.wave_height?.[mIdx] ?? null) : null,
           swellHeightM: mIdx >= 0 ? (marine.hourly.swell_wave_height?.[mIdx] ?? null) : null,
           swellDirDeg: mIdx >= 0 ? (marine.hourly.swell_wave_direction?.[mIdx] ?? null) : null,
@@ -1180,15 +1196,17 @@ export default function Home() {
       .catch(() => { /* silently fail -- static wind speed still shown */ });
   }, []);
 
-  // Fetch live ECMWF precipitation probability for all route cards
-  // Uses hourly precipitation_probability and computes the daily mean to align
-  // with NWS professional forecasts instead of the misleading peak-hour max.
+  // Fetch best_match precipitation probability for all route cards.
+  // No models= parameter -- Open-Meteo defaults to best_match (GFS/ICON blend),
+  // which is a standard NWS-style PoP. The ECMWF IFS025 field is an ensemble-spread
+  // metric that systematically overstates rain chances in tropical climates.
+  // FIX_MARKER: BESTMATCH_PRECIP_PROB_HOME_v2
   useEffect(() => {
     const entries = Object.entries(ROUTE_COORDS);
     const lats = entries.map(([, c]) => c.lat).join(",");
     const lons = entries.map(([, c]) => c.lon).join(",");
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&hourly=precipitation_probability&models=ecmwf_ifs025&timezone=auto&forecast_days=1`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&hourly=precipitation_probability&timezone=auto&forecast_days=1`
     )
       .then(r => r.json())
       .then((data: unknown) => {

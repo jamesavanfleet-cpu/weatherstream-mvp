@@ -117,11 +117,35 @@ interface PortSlot {
 const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 // ============================================================
-// ECMWF precipitation_probability fetch (PortSearch)
-// FIX_MARKER: ECMWF_PRECIP_PROB_PS_v1
+// best_match PoP fetch (PortSearch)
+// FIX_MARKER: BESTMATCH_PRECIP_PROB_PS_v2
 // ============================================================
-// All ports use ECMWF IFS025 precipitation_probability directly.
-// No NWS path, no mm threshold -- matches Home.tsx fetchPortData exactly.
+// All ports fetch precipitation_probability from the default best_match model
+// (GFS/ICON blend), which is a standard NWS-style PoP. The ECMWF IFS025 field
+// is an ensemble-spread metric that systematically overstates rain chances in
+// tropical/subtropical climates and must not be used for rain-chance display.
+// This matches the source used by generate_intel.py (fetch_precip_probability).
+async function fetchBestMatchPoP(
+  lat: number,
+  lon: number,
+  forecastDays: number
+): Promise<number[]> {
+  // No models= parameter -- Open-Meteo defaults to best_match (GFS/ICON blend)
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&hourly=precipitation_probability&timezone=auto&forecast_days=${forecastDays}`;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    const r = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const json = await r.json();
+    return (json?.hourly?.precipitation_probability as number[]) ?? [];
+  } catch {
+    return []; // fall back to 0% for all slots if this fetch fails
+  }
+}
 
 // ============================================================
 // Weather fetch with ecmwf_ifs025 -> best_match fallback
@@ -167,15 +191,19 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     `&daily=wave_height_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max` +
     `&length_unit=imperial&timezone=auto&forecast_days=8`;
 
-  // Fetch weather and marine in parallel
-  // precipitation_probability is included in the hourly weather request above
-  const [weatherRes, marineRes] = await Promise.allSettled([
-    fetchWeatherWithFallbackPS(weatherUrl),
-    fetch(marineUrl).then(r => r.json()),
-  ]);
+  // Fetch weather, marine, and best_match PoP in parallel.
+  // The best_match PoP fetch is a separate call -- no models= parameter -- so it
+  // uses the GFS/ICON blend standard PoP instead of the ECMWF ensemble-spread metric.
+  // FIX_MARKER: BESTMATCH_PRECIP_PROB_PS_v2
+  const [weatherRes, marineRes, popHourly] = await Promise.all([
+    Promise.allSettled([fetchWeatherWithFallbackPS(weatherUrl), fetch(marineUrl).then(r => r.json())]),
+    fetchBestMatchPoP(lat, lon, 8),
+  ]).then(([settled, pop]) => [...settled, pop]);
 
-  const weather = weatherRes.status === "fulfilled" ? weatherRes.value : null;
-  const marine  = marineRes.status  === "fulfilled" ? marineRes.value  : null;
+  const weather = (weatherRes as PromiseSettledResult<any>).status === "fulfilled" ? (weatherRes as PromiseFulfilledResult<any>).value : null;
+  const marine  = (marineRes  as PromiseSettledResult<any>).status === "fulfilled" ? (marineRes  as PromiseFulfilledResult<any>).value : null;
+  // popHourly: flat array of hourly best_match PoP values aligned with weather.hourly.time
+  const popHourlyArr: number[] = Array.isArray(popHourly) ? (popHourly as number[]) : [];
 
   if (!weather || weather.error) throw new Error("Weather fetch failed");
 
@@ -233,9 +261,10 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
       const vis = h.visibility?.[idx] ?? 0; // metres
       const visKm = Math.round(vis / 100) / 10; // km with 1 decimal
 
-      // ECMWF precipitation_probability: read per-hour value directly
-      // FIX_MARKER: ECMWF_PRECIP_PROB_PS_v1
-      const rain = h.precipitation_probability?.[idx] ?? 0;
+      // best_match PoP: read per-hour value from the separately fetched array.
+      // Falls back to 0 if the PoP fetch failed or the index is out of range.
+      // FIX_MARKER: BESTMATCH_PRECIP_PROB_PS_v2
+      const rain = popHourlyArr[idx] ?? 0;
 
       hourlySlots.push({
         hour: effectiveHour,
@@ -262,12 +291,14 @@ async function fetchPortData(lat: number, lon: number): Promise<PortWeatherData>
     const i = rawIdx + 1;
     const wKt = msToKt(d.wind_speed_10m_max[i]);
     const swellDeg = md?.swell_wave_direction_dominant?.[i];
-    // Compute daily mean PoP from hourly precipitation_probability for this forecast day
-    // FIX_MARKER: ECMWF_PRECIP_PROB_PS_v1
+    // Compute daily mean PoP from the best_match hourly array for this forecast day.
+    // Uses the same index alignment as the ECMWF hourly.time array (both are hourly
+    // at the same timezone, so indices correspond 1:1).
+    // FIX_MARKER: BESTMATCH_PRECIP_PROB_PS_v2
     const dayHourlyProbs: number[] = (h.time as string[])
       .map((t: string, hi: number) => ({ t, hi }))
       .filter(({ t }) => t.slice(0, 10) === dateStr)
-      .map(({ hi }) => h.precipitation_probability?.[hi] ?? 0);
+      .map(({ hi }) => popHourlyArr[hi] ?? 0);
     const dayMeanRain = dayHourlyProbs.length > 0
       ? Math.round(dayHourlyProbs.reduce((a: number, b: number) => a + b, 0) / dayHourlyProbs.length)
       : 0;
