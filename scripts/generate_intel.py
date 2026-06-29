@@ -341,7 +341,7 @@ def build_weather_summary(wx: dict, pop_means: list = None) -> dict:
 
     # Significant weather flags -- conditions that MUST lead the briefing
     significant = []
-    if c["weathercode"] >= 80:  # rain showers or thunderstorms
+    if c["weathercode"] >= 80 and rain >= 30:  # rain showers or thunderstorms -- only flag when rain probability >= 30%
         significant.append(f"ACTIVE SIGNIFICANT WEATHER NOW: {cond} with {rain_phrase}")
     if wind_kt >= 20:
         significant.append(f"ELEVATED WINDS NOW: {wind_dir} {wind_kt}kt")
@@ -350,7 +350,7 @@ def build_weather_summary(wx: dict, pop_means: list = None) -> dict:
         r = daily_rain_means[i] if i < len(daily_rain_means) else (d["precipitation_probability_max"][i] or 0)
         cond_d = wmo_to_text(d["weathercode"][i])
         day_label = "today" if i == 0 else f"Day {i+1}"
-        if d["weathercode"][i] >= 80:
+        if d["weathercode"][i] >= 80 and r >= 30:  # only flag thunderstorm/shower conditions when rain probability >= 30%
             significant.append(f"SIGNIFICANT WEATHER {day_label.upper()}: {cond_d}, {_format_rain_prob(r)}")
         elif r >= 40:
             significant.append(f"ELEVATED RAIN CHANCE {day_label.upper()}: {_format_rain_prob(r)}, {cond_d}")
@@ -406,7 +406,7 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"(1) what is happening today and its impact on port operations and shore excursions, "
         f"(2) what to expect in the next 24-48 hours and which specific ports will be affected, "
         f"(3) any developing trends or changes beyond 48 hours that cruise passengers should know about. "
-        f"Write 4-5 sentences. Start with 'Today'. Use a direct, first-person operational voice as if speaking directly to passengers and crew. "
+        f"Write 4-5 sentences. Start with 'Today'. Use a direct, professional third-person operational voice -- write as a meteorologist describing conditions objectively. NEVER use first-person pronouns: do not write 'I', 'I am', 'I will', 'I have', 'I am monitoring', 'I am tracking', 'I am issuing', 'I am advising', 'I am flagging', or any other first-person construction. "
         f"ABSOLUTE RULES: "
         f"Every sentence must reference a specific data point from the live forecast (wind speed/direction, rain probability, sky condition). "
         f"You are FORBIDDEN from making any general, climatological, or typical-weather statements. "
