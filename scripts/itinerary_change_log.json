@@ -1684,6 +1684,148 @@
         }
       ],
       "errors": []
+    },
+    {
+      "run_timestamp": "2026-06-30T23:07:40.650055",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "ADDED",
+          "ship": "Icon of the Seas",
+          "departure_date": "2026-07-18",
+          "description": "7 days, round-trip Eastern Caribbean  Perfect Day",
+          "detail": "ADDED Icon of the Seas 2026-07-18: 7 days, round-trip Eastern Caribbean  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Allure of the Seas",
+          "departure_date": "2026-07-19",
+          "description": "6 days, round-trip Western Caribbean  Perfect Day",
+          "detail": "ADDED Allure of the Seas 2026-07-19: 6 days, round-trip Western Caribbean  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-07-11",
+          "description": "5 days, round-trip Western Caribbean Cruise",
+          "detail": "ADDED Mariner of the Seas 2026-07-11: 5 days, round-trip Western Caribbean Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Navigator of the Seas",
+          "departure_date": "2026-07-17",
+          "description": "7 days, round-trip Cabo, Vallarta  Mazatlan Cruise",
+          "detail": "ADDED Navigator of the Seas 2026-07-17: 7 days, round-trip Cabo, Vallarta  Mazatlan Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-07-06",
+          "description": "4 days, round-trip 4 Night Bahamas and Perfect Day Cruise",
+          "detail": "ADDED Wonder of the Seas 2026-07-06: 4 days, round-trip 4 Night Bahamas and Perfect Day Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Adventure of the Seas",
+          "departure_date": "2026-07-18",
+          "description": "6 days, round-trip Western Caribbean  Perfect Day",
+          "detail": "ADDED Adventure of the Seas 2026-07-18: 6 days, round-trip Western Caribbean  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Freedom of the Seas",
+          "departure_date": "2026-07-11",
+          "description": "5 days, round-trip Caribbean Getaway Cruise",
+          "detail": "ADDED Freedom of the Seas 2026-07-11: 5 days, round-trip Caribbean Getaway Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-04",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-07-04: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-11",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-07-11: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-18",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-07-18: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-07-19",
+          "description": "6 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Carnival Vista 2026-07-19: 6 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-07-09",
+          "description": "4 days, round-trip Western Caribbean",
+          "detail": "ADDED Carnival Breeze 2026-07-09: 4 days, round-trip Western Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-07-09",
+          "description": "4 days, round-trip The Bahamas",
+          "detail": "ADDED Carnival Freedom 2026-07-09: 4 days, round-trip The Bahamas"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Apex",
+          "departure_date": "2026-07-23",
+          "description": "9 days, round-trip Spain, Portugal  France",
+          "detail": "ADDED Celebrity Apex 2026-07-23: 9 days, round-trip Spain, Portugal  France"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-07-06",
+          "description": "4 days, round-trip 4 Night Bahamas Cruise",
+          "detail": "ADDED Disney Wish 2026-07-06: 4 days, round-trip 4 Night Bahamas Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-07-06",
+          "description": "4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
+          "detail": "ADDED Norwegian Getaway 2026-07-06: 4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-06-28",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-06-28: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-06-28",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-06-28: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Scarlet Lady",
+          "departure_date": "2026-08-10",
+          "description": "12 days, one-way from Barcelona to Civitavecchia-Rome",
+          "detail": "ADDED Scarlet Lady 2026-08-10: 12 days, one-way from Barcelona to Civitavecchia-Rome"
+        }
+      ],
+      "errors": []
     }
   ]
 }
