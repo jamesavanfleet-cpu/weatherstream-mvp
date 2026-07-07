@@ -508,7 +508,7 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity. Focus only on: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Do not use em dashes. Do not mention the data source. "
         f"ABSOLUTE RULE -- TEMPERATURES: You must NEVER include general temperature values (e.g., 'highs in the 80s', 'warm at 80 degrees', 'mild temperatures'). "
-        f"EXCEPTION: If and ONLY IF the data block above explicitly flags a Heat Advisory, Excessive Heat Warning, Wind Chill Advisory, or Extreme Cold Warning, you MAY include the specific heat index, wind chill, or extreme temperature values provided in that alert to provide better context for the hazard. "
+        f"EXCEPTION: If and ONLY IF the data block above explicitly flags a Heat Advisory, Excessive Heat Warning, Wind Chill Advisory, Freeze Warning, or Extreme Cold Warning, you MUST include the specific peak heat index or wind chill or extreme temperature value in the SAME sentence as the advisory mention. For example: 'A Heat Advisory is in effect with heat index values reaching 108 degrees, posing a serious risk to passengers during outdoor shore excursions.' Do NOT put the advisory label in one sentence and the temperature value in a separate sentence -- they must appear together. "
         f"If there is no heat or cold alert flagged in the data block, you must NOT mention temperatures at all. "
         f"NWS ATTRIBUTION RULE: Do NOT attribute any advisories or warnings to the National Weather Service or NWS. State the threat authoritatively as your own forecast (e.g., 'I am tracking dangerous heat indices today...'). "
         f"CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only: "
@@ -656,19 +656,28 @@ def strip_temperatures(text: str) -> str:
         r"\b\d+\s+degrees?\b",                       # 59 degrees
         r"\btemperatures?\b",                        # any use of the word temperature/temperatures
         r"\bin\s+the\s+\d+0s?\b",                   # in the 70s, in the 80s
+        r"\b(?:upper|lower|mid(?:dle)?)\s+\d+0s?\b",  # upper 80s, lower 90s, mid 70s
         r"\b(?:mild|warm|cool|cold|hot|chilly|balmy)\s+(?:air|conditions|weather)\b",  # warm conditions
         r"\bhigh\s+(?:near|around|of)\s+\d",        # high near 85
         r"\blow\s+(?:near|around|of)\s+\d",         # low near 70
     ]
     combined = re.compile("|".join(TEMP_PATTERNS), re.IGNORECASE)
     
-    # Exception patterns: if a sentence contains an active advisory keyword, 
-    # we allow temperatures in that specific sentence per James's rule update.
+    # Exception patterns: if a sentence contains an active advisory keyword or
+    # is describing the intensity of an advisory hazard (heat index value, wind chill
+    # value, dangerously hot/cold language), we allow temperatures in that sentence.
     EXCEPTION_PATTERNS = [
         r"\b(?:heat|cold)\s+(?:advisory|warning|watch|index)\b",
         r"\bwind\s+chill\b",
         r"\bexcessive\s+heat\b",
-        r"\bextreme\s+cold\b"
+        r"\bextreme\s+cold\b",
+        r"\bheat\s+index\s+(?:values?\s+)?(?:reaching|of|near|around|up\s+to)\b",
+        r"\bheat\s+index\b",
+        r"\bfreeze\s+(?:warning|watch|advisory)\b",
+        r"\bdangerously\s+(?:hot|cold|warm)\b",
+        r"\blife-threatening\s+heat\b",
+        r"\bfeel(?:s)?\s+like\b",
+        r"\bapparent\s+temperature\b"
     ]
     exceptions = re.compile("|".join(EXCEPTION_PATTERNS), re.IGNORECASE)
 
