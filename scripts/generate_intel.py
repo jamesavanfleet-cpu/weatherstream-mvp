@@ -54,6 +54,7 @@ REGIONS = [
         "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
         "priority_note": "PORT PRIORITY DIRECTIVE (do not quote any of this in your output): open the briefing by addressing conditions at Miami. The lead port priority order for this region is: Miami, then Port Everglades, then Port Canaveral, then Tampa Bay. Other US ports may be referenced only when their conditions are operationally significant for cruise operations, and never as the opening sentence.",
         "required_lead_port": "Miami",
+        "nws_states": ["FL", "TX", "LA", "NJ", "NY", "MD", "MA", "VA", "SC", "GA", "CA"],
     },
     {
         "slug": "bahamas-central-caribbean",
@@ -70,6 +71,7 @@ REGIONS = [
         "lat": 18.47,
         "lon": -66.12,
         "ports": ["San Juan", "St. Thomas", "St. Croix", "St. Maarten", "St. Kitts", "Antigua"],
+        "nws_states": ["PR", "VI"],
     },
     {
         "slug": "western-caribbean",
@@ -167,8 +169,78 @@ REGIONS = [
         "lon": -134.42,
         "ports": ["Juneau", "Ketchikan", "Skagway", "Sitka", "Haines", "Icy Strait Point", "Anchorage", "Seattle", "Vancouver", "Victoria"],
         "priority_note": "PORT PRIORITY FOR ALASKA REGION: Juneau, Ketchikan, and Skagway are the three highest-volume Alaska cruise ports and must be named first and addressed prominently. Sitka, Haines, Icy Strait Point, and Anchorage may be mentioned when conditions are operationally significant. Seattle is the primary embarkation port and must be addressed when embarkation-day weather is notable. CRITICAL ALASKA RULE: You are ABSOLUTELY FORBIDDEN from making any climatological, seasonal, or typical-weather statements about Alaska. Do NOT write anything about what Alaska weather is usually like, what the Inside Passage typically experiences, what season offers the best conditions, or any general geographic or climate description. Every single sentence must be based exclusively on the live forecast data provided. Do not mention ice conditions, bergy bits, or glacier navigation unless the live forecast data specifically supports an operational concern.",
+        "nws_states": ["AK", "WA"],
     },
 ]
+
+
+def fetch_nws_advisories(region: dict) -> list:
+    """
+    Fetch active heat and cold advisories from the NWS API for the region's states.
+    Only returns alerts whose areaDesc matches one of the region's ports.
+    """
+    states = region.get("nws_states")
+    if not states:
+        return []
+
+    NWS_HEADERS = {"User-Agent": "mycruisingweather.com/1.0 james@mycruisingweather.com"}
+    events = "Excessive%20Heat%20Warning,Heat%20Advisory,Excessive%20Heat%20Watch,Extreme%20Cold%20Warning,Wind%20Chill%20Warning,Wind%20Chill%20Advisory"
+    
+    advisories = []
+    for state in states:
+        url = f"https://api.weather.gov/alerts/active?area={state}&event={events}"
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(url, headers=NWS_HEADERS)
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    data = json.loads(r.read())
+                
+                for feat in data.get("features", []):
+                    props = feat.get("properties", {})
+                    area = props.get("areaDesc", "")
+                    
+                    # Check if any of our ports are in this alert's area
+                    # (Simple substring match is usually sufficient for NWS county/zone names)
+                    affected_ports = []
+                    for port in region["ports"]:
+                        # NWS often uses "Miami Dade" instead of just "Miami", "San Juan", etc.
+                        search_port = port.split(",")[0].split("/")[0].strip()
+                        if search_port.lower() in area.lower() or (search_port == "Miami" and "Miami" in area):
+                            affected_ports.append(search_port)
+                            
+                    if affected_ports:
+                        event = props.get("event")
+                        # Include the max temperature/heat index from the description if present
+                        desc = props.get("description", "")
+                        temp_context = ""
+                        import re
+                        # Look for "up to X" or "around X" or "exceed X" in the description
+                        m = re.search(r'(?:heat indic(?:es|ex)|temperatures).*?(?:up to|around|exceed|near|of)\s*(\d{2,3})', desc, re.IGNORECASE)
+                        if m:
+                            temp_context = f" with values near {m.group(1)}F"
+                        
+                        port_str = ", ".join(affected_ports)
+                        advisories.append(f"{event} active for {port_str}{temp_context}.")
+                break # Success, move to next state
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(2 * (attempt + 1))
+                else:
+                    print(f"  NWS alerts fetch failed for {state}: {e}", file=sys.stderr)
+                    
+    # Deduplicate: for the same port + event type, keep only the entry with the
+    # highest numeric value (e.g., if two zones both flag LA, keep the higher heat index).
+    import re as _re
+    deduped = {}
+    for adv in advisories:
+        # Key: event type + port name (strip the numeric value for comparison)
+        key = _re.sub(r'\s+with values near \d+F', '', adv)
+        # Extract numeric value if present
+        m = _re.search(r'with values near (\d+)F', adv)
+        val = int(m.group(1)) if m else 0
+        if key not in deduped or val > deduped[key][1]:
+            deduped[key] = (adv, val)
+    return [v[0] for v in deduped.values()]
 
 
 def fetch_weather(lat: float, lon: float) -> dict:
@@ -176,7 +248,7 @@ def fetch_weather(lat: float, lon: float) -> dict:
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
         f"&current=temperature_2m,wind_speed_10m,wind_direction_10m,weathercode,precipitation_probability"
-        f"&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,"
+        f"&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,wind_speed_10m_max,wind_direction_10m_dominant,"
         f"precipitation_probability_max,weathercode"
         f"&hourly=precipitation_probability"
         f"&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=3"
@@ -295,7 +367,7 @@ def _compute_daily_mean_precip_prob(wx: dict) -> list:
     return daily_means
 
 
-def build_weather_summary(wx: dict, pop_means: list = None) -> dict:
+def build_weather_summary(wx: dict, pop_means: list = None, advisories: list = None) -> dict:
     """
     Build a structured weather data dict for the AI prompt.
     IMPORTANT: Temperature values are intentionally excluded from this summary.
@@ -341,6 +413,26 @@ def build_weather_summary(wx: dict, pop_means: list = None) -> dict:
 
     # Significant weather flags -- conditions that MUST lead the briefing
     significant = []
+    
+    # Add NWS heat/cold advisories
+    if advisories:
+        for adv in advisories:
+            significant.append(f"ACTIVE ADVISORY: {adv}")
+            
+    # Fallback for international ports without NWS coverage: calculate heat index equivalent
+    # Only if we didn't already flag heat from NWS
+    has_heat_advisory = any("heat" in a.lower() for a in (advisories or []))
+    if not has_heat_advisory and "apparent_temperature_max" in d:
+        for i in range(min(3, len(d["time"]))):
+            app_temp_c = d["apparent_temperature_max"][i]
+            if app_temp_c is not None:
+                app_temp_f = c_to_f(app_temp_c)
+                day_label = "today" if i == 0 else f"Day {i+1}"
+                if app_temp_f >= 105:
+                    significant.append(f"EXCESSIVE HEAT {day_label.upper()}: Heat Index reaching {app_temp_f}F")
+                elif app_temp_f >= 100:
+                    significant.append(f"ELEVATED HEAT {day_label.upper()}: Heat Index reaching {app_temp_f}F")
+                    
     if c["weathercode"] >= 80 and rain >= 30:  # rain showers or thunderstorms -- only flag when rain probability >= 30%
         significant.append(f"ACTIVE SIGNIFICANT WEATHER NOW: {cond} with {rain_phrase}")
     if wind_kt >= 20:
@@ -415,11 +507,10 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"Name specific ports when describing impacts. "
         f"This briefing is exclusively for cruise passengers and cruise vessels. Do NOT mention fishing captains, fishing boats, charter captains, charter vessels, yachts, or any non-cruise marine activity. Focus only on: port conditions, embarkation/disembarkation weather, shore excursion impacts, and cruise ship operations. "
         f"Do not use em dashes. Do not mention the data source. "
-        f"ABSOLUTE RULE -- TEMPERATURES: You must NEVER include any temperature value of any kind in this briefing. "
-        f"This means no current temperatures, no forecast high or low temperatures, no feels-like values, no dew point values, and no heat index values. "
-        f"Do not write phrases like 'temperatures in the 70s', 'mild temperatures', 'warm at 80 degrees', '59F', '25C', or any variation. "
-        f"The briefing is a forward-looking threat and hazard summary only. Describe wind speed and direction, rain probability, visibility, sea state, and sky conditions. "
-        f"Temperatures are displayed separately in the live conditions section of the site and must never appear in this briefing. "
+        f"ABSOLUTE RULE -- TEMPERATURES: You must NEVER include general temperature values (e.g., 'highs in the 80s', 'warm at 80 degrees', 'mild temperatures'). "
+        f"EXCEPTION: If and ONLY IF the data block above explicitly flags a Heat Advisory, Excessive Heat Warning, Wind Chill Advisory, or Extreme Cold Warning, you MAY include the specific heat index, wind chill, or extreme temperature values provided in that alert to provide better context for the hazard. "
+        f"If there is no heat or cold alert flagged in the data block, you must NOT mention temperatures at all. "
+        f"NWS ATTRIBUTION RULE: Do NOT attribute any advisories or warnings to the National Weather Service or NWS. State the threat authoritatively as your own forecast (e.g., 'I am tracking dangerous heat indices today...'). "
         f"CRITICAL METEOROLOGICAL TERMINOLOGY RULES -- use official NWS/NHC/NOAA thresholds only: "
         f"TROPICAL CYCLONES (NHC, 1-minute sustained winds): "
         f"'Tropical Wave' = trough or cyclonic curvature in trade-wind easterlies, no closed circulation, no wind threshold. "
@@ -570,6 +661,16 @@ def strip_temperatures(text: str) -> str:
         r"\blow\s+(?:near|around|of)\s+\d",         # low near 70
     ]
     combined = re.compile("|".join(TEMP_PATTERNS), re.IGNORECASE)
+    
+    # Exception patterns: if a sentence contains an active advisory keyword, 
+    # we allow temperatures in that specific sentence per James's rule update.
+    EXCEPTION_PATTERNS = [
+        r"\b(?:heat|cold)\s+(?:advisory|warning|watch|index)\b",
+        r"\bwind\s+chill\b",
+        r"\bexcessive\s+heat\b",
+        r"\bextreme\s+cold\b"
+    ]
+    exceptions = re.compile("|".join(EXCEPTION_PATTERNS), re.IGNORECASE)
 
     # Split into sentences, filter out any that contain a temperature pattern
     # Use a sentence splitter that preserves abbreviations like kt, mph, etc.
@@ -577,7 +678,7 @@ def strip_temperatures(text: str) -> str:
     clean = []
     stripped_count = 0
     for sentence in sentences:
-        if combined.search(sentence):
+        if combined.search(sentence) and not exceptions.search(sentence):
             stripped_count += 1
             print(
                 f"  [TEMP FILTER] Removed sentence containing temperature: {sentence[:120]}",
@@ -860,7 +961,8 @@ def main():
         try:
             wx = fetch_weather(region["lat"], region["lon"])
             pop_means = fetch_precip_probability(region["lat"], region["lon"])
-            weather_data = build_weather_summary(wx, pop_means=pop_means)
+            advisories = fetch_nws_advisories(region)
+            weather_data = build_weather_summary(wx, pop_means=pop_means, advisories=advisories)
             intel = call_groq(region, weather_data)
             # Validate: must be a non-empty string of at least 20 characters
             if not intel or len(intel.strip()) < 20:
