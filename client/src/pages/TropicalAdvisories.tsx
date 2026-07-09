@@ -1570,7 +1570,8 @@ export default function TropicalAdvisories() {
             )}
 
             {/* NHC GTWO disturbance ellipses -- interactive GeoJSON polygons on the map */}
-            <GtwoLayer features={gtwoFeatures} mode={outlookMode} />
+            {/* FIX: read from nhcData.gtwoFeatures (same source as tracker cards) -- nhc_gtwo.json was empty */}
+            <GtwoLayer features={nhcData?.gtwoFeatures ?? []} mode={outlookMode} />
 
             {/* NHC forecast track cone + waypoints from pre-baked nhc_data.json */}
             {nhcData && nhcData.storms
