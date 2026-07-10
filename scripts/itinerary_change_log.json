@@ -1826,6 +1826,133 @@
         }
       ],
       "errors": []
+    },
+    {
+      "run_timestamp": "2026-07-10T23:15:41.054883",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "ADDED",
+          "ship": "Oasis of the Seas",
+          "departure_date": "2026-07-26",
+          "description": "7 days, round-trip Perfect Day Bahamas Cruise",
+          "detail": "ADDED Oasis of the Seas 2026-07-26: 7 days, round-trip Perfect Day Bahamas Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Allure of the Seas",
+          "departure_date": "2026-07-25",
+          "description": "8 days, round-trip Eastern Caribbean  Perfect Day",
+          "detail": "ADDED Allure of the Seas 2026-07-25: 8 days, round-trip Eastern Caribbean  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Harmony of the Seas",
+          "departure_date": "2026-07-26",
+          "description": "13 days, one-way from Barcelona to Port Canaveral",
+          "detail": "ADDED Harmony of the Seas 2026-07-26: 13 days, one-way from Barcelona to Port Canaveral"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-07-20",
+          "description": "5 days, round-trip Western Caribbean Cruise",
+          "detail": "ADDED Mariner of the Seas 2026-07-20: 5 days, round-trip Western Caribbean Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-07-17",
+          "description": "3 days, round-trip 3 Night Bahamas and Perfect Day Cruise",
+          "detail": "ADDED Wonder of the Seas 2026-07-17: 3 days, round-trip 3 Night Bahamas and Perfect Day Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Freedom of the Seas",
+          "departure_date": "2026-07-20",
+          "description": "5 days, round-trip Western Caribbean  Perfect Day",
+          "detail": "ADDED Freedom of the Seas 2026-07-20: 5 days, round-trip Western Caribbean  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-11",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-07-11: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-18",
+          "description": "7 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Mardi Gras 2026-07-18: 7 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-25",
+          "description": "7 days, round-trip Western Caribbean",
+          "detail": "ADDED Mardi Gras 2026-07-25: 7 days, round-trip Western Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-07-25",
+          "description": "8 days, round-trip Eastern Caribbean",
+          "detail": "ADDED Carnival Vista 2026-07-25: 8 days, round-trip Eastern Caribbean"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-07-26",
+          "description": "7 days, round-trip Grand Cayman, Mexico  Perfect Day",
+          "detail": "ADDED Celebrity Beyond 2026-07-26: 7 days, round-trip Grand Cayman, Mexico  Perfect Day"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-07-17",
+          "description": "3 days, round-trip 3 Night Bahamas Cruise",
+          "detail": "ADDED Disney Wish 2026-07-17: 3 days, round-trip 3 Night Bahamas Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-07-26",
+          "description": "7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau",
+          "detail": "ADDED Norwegian Encore 2026-07-26: 7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-07-17",
+          "description": "3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
+          "detail": "ADDED Norwegian Getaway 2026-07-17: 3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-07-12",
+          "was": "Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-07-12: was [Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-07-19",
+          "description": "7 days, round-trip Eastern Caribbean with Turks  Caicos",
+          "detail": "ADDED Caribbean Princess 2026-07-19: 7 days, round-trip Eastern Caribbean with Turks  Caicos"
+        },
+        {
+          "type": "ADDED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-07-26",
+          "description": "7 days, round-trip Western Caribbean",
+          "detail": "ADDED MSC Seascape 2026-07-26: 7 days, round-trip Western Caribbean"
+        }
+      ],
+      "errors": []
     }
   ]
 }
