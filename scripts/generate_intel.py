@@ -51,7 +51,30 @@ REGIONS = [
         "rep_port": "Miami, Florida",
         "lat": 25.76,
         "lon": -80.19,
-        "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
+        "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Philadelphia", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
+        "alert_points": [
+            {"name": "Miami", "lat": 25.7753, "lon": -80.1698},
+            {"name": "Port Everglades", "lat": 26.0833, "lon": -80.1167},
+            {"name": "Port Canaveral", "lat": 28.4083, "lon": -80.6167},
+            {"name": "Tampa Bay", "lat": 27.9333, "lon": -82.4500},
+            {"name": "Jacksonville", "lat": 30.3322, "lon": -81.6557},
+            {"name": "Charleston", "lat": 32.7765, "lon": -79.9311},
+            {"name": "Savannah", "lat": 32.0835, "lon": -81.0998},
+            {"name": "Norfolk", "lat": 36.8468, "lon": -76.2951},
+            {"name": "Baltimore", "lat": 39.2904, "lon": -76.6122},
+            {"name": "Philadelphia", "lat": 39.9077, "lon": -75.1389},
+            {"name": "Manhattan", "lat": 40.7680, "lon": -74.0020},
+            {"name": "Brooklyn", "lat": 40.6782, "lon": -74.0060},
+            {"name": "Bayonne", "lat": 40.6668, "lon": -74.1143},
+            {"name": "Boston", "lat": 42.3601, "lon": -71.0589},
+            {"name": "New Orleans", "lat": 29.9511, "lon": -90.0715},
+            {"name": "Galveston", "lat": 29.3013, "lon": -94.7977},
+            {"name": "Houston", "lat": 29.7355, "lon": -95.0089},
+            {"name": "Los Angeles", "lat": 33.7361, "lon": -118.2922},
+            {"name": "Long Beach", "lat": 33.7701, "lon": -118.1937},
+            {"name": "San Diego", "lat": 32.7157, "lon": -117.1611},
+            {"name": "San Francisco", "lat": 37.8044, "lon": -122.4079},
+        ],
         "priority_note": "PORT PRIORITY DIRECTIVE (do not quote any of this in your output): open the briefing by addressing conditions at Miami. The lead port priority order for this region is: Miami, then Port Everglades, then Port Canaveral, then Tampa Bay. Other US ports may be referenced only when their conditions are operationally significant for cruise operations, and never as the opening sentence.",
         "required_lead_port": "Miami",
         "nws_states": ["FL", "TX", "LA", "NJ", "NY", "MD", "MA", "VA", "SC", "GA", "CA"],
@@ -243,6 +266,161 @@ def fetch_nws_advisories(region: dict) -> list:
     return [v[0] for v in deduped.values()]
 
 
+US_PORT_HEAT_EVENTS = {
+    "Heat Advisory",
+    "Extreme Heat Warning",
+    "Extreme Heat Watch",
+}
+
+
+def _fetch_nws_json(url: str) -> dict:
+    """Fetch one NWS API response with the required contact header and bounded retries."""
+    headers = {"User-Agent": "mycruisingweather.com/1.0 james@mycruisingweather.com"}
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=15) as response:
+                return json.loads(response.read())
+        except Exception:
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1))
+            else:
+                raise
+    raise RuntimeError("NWS request failed after 3 attempts")
+
+
+def _extract_heat_value(event: str, description: str) -> tuple:
+    """Extract the port-relevant NWS heat-index or temperature hazard value."""
+    import re
+
+    normalized = re.sub(r"\s+", " ", description or "").strip()
+    sentences = re.split(r"(?<=[.!?])\s+", normalized)
+    heat_index_sentences = [
+        sentence for sentence in sentences
+        if re.search(r"\b(?:heat\s+index|heat\s+indices)\b", sentence, re.IGNORECASE)
+    ]
+    heat_index_values = [
+        int(value)
+        for sentence in heat_index_sentences
+        for value in re.findall(r"(?<!\d)(\d{2,3})(?!\d)", sentence)
+        if 80 <= int(value) <= 140
+    ]
+    if heat_index_values:
+        return max(heat_index_values), "heat index values"
+
+    temperature_sentences = [
+        sentence for sentence in sentences
+        if re.search(r"\btemperatures?\b", sentence, re.IGNORECASE)
+    ]
+    coastal_values = []
+    temperature_values = []
+    for sentence in temperature_sentences:
+        ranges = list(re.finditer(r"(?<!\d)(\d{2,3})\s*(?:to|-)\s*(\d{2,3})(?!\d)", sentence))
+        for match in ranges:
+            low, high = int(match.group(1)), int(match.group(2))
+            if 80 <= low <= 140 and 80 <= high <= 140:
+                temperature_values.extend((low, high))
+        for pattern in (
+            r"(?<!\d)(\d{2,3})\s*(?:to|-)\s*(\d{2,3})\s+(?:degrees\s+)?(?:near|along|at)\s+(?:the\s+)?(?:coast|shore)",
+            r"(?:near|along|at)\s+(?:the\s+)?(?:coast|shore)\D{0,40}(\d{2,3})\s*(?:to|-)\s*(\d{2,3})(?!\d)",
+        ):
+            for match in re.finditer(pattern, sentence, re.IGNORECASE):
+                low, high = int(match.group(1)), int(match.group(2))
+                if 80 <= low <= 140 and 80 <= high <= 140:
+                    coastal_values.extend((low, high))
+        if not ranges:
+            temperature_values.extend(
+                int(value)
+                for value in re.findall(r"(?<!\d)(\d{2,3})(?!\d)", sentence)
+                if 80 <= int(value) <= 140
+            )
+
+    values = coastal_values or temperature_values
+    if values:
+        return max(values), "temperatures"
+    raise ValueError(f"No required heat hazard value found in active {event}")
+
+
+def fetch_us_port_heat_advisories(region: dict) -> list:
+    """Fetch active heat alerts at every displayed US port coordinate."""
+    alert_groups = {}
+    for port in region.get("alert_points", []):
+        url = f"https://api.weather.gov/alerts/active?point={port['lat']},{port['lon']}"
+        data = _fetch_nws_json(url)
+        for feature in data.get("features", []):
+            props = feature.get("properties", {})
+            event = props.get("event", "")
+            if event not in US_PORT_HEAT_EVENTS:
+                continue
+            value_f, value_label = _extract_heat_value(event, props.get("description", ""))
+            alert_id = feature.get("id") or props.get("id") or f"{event}:{value_label}:{value_f}"
+            key = (alert_id, event, value_label, value_f)
+            group = alert_groups.setdefault(
+                key,
+                {
+                    "event": event,
+                    "value_f": value_f,
+                    "value_label": value_label,
+                    "ports": [],
+                },
+            )
+            if port["name"] not in group["ports"]:
+                group["ports"].append(port["name"])
+
+    return list(alert_groups.values())
+
+
+def render_us_port_heat_advisory_lead(alerts: list) -> str:
+    """Render NWS heat-advisory facts deterministically so the model cannot alter them."""
+    sentences = []
+    for alert in alerts:
+        event = alert["event"]
+        ports = alert["ports"]
+        if len(ports) == 1:
+            port_text = ports[0]
+        elif len(ports) == 2:
+            port_text = f"{ports[0]} and {ports[1]}"
+        else:
+            port_text = f"{', '.join(ports[:-1])}, and {ports[-1]}"
+
+        article = "An" if event[0].lower() in "aeiou" else "A"
+        value_f = alert["value_f"]
+        hazard = f"{alert['value_label']} up to {value_f}°F"
+        impact = "posing a serious risk to passengers during outdoor shore excursions"
+
+        sentences.append(
+            f"{article} {event} is in effect for {port_text}, with {hazard}, {impact}."
+        )
+
+    return " ".join(sentences)
+
+
+def strip_us_port_heat_claims(text: str) -> str:
+    """Remove model-authored heat-alert claims before deterministic assembly."""
+    import re
+
+    alert_terms = re.compile(
+        r"\b(?:Heat Advisory|Extreme Heat Warning|Extreme Heat Watch|heat index|heat indices)\b",
+        re.IGNORECASE,
+    )
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    clean = [sentence for sentence in sentences if not alert_terms.search(sentence)]
+    return " ".join(clean).strip()
+
+
+def prepend_us_port_advisory_lead(intel: str, advisory_lead: str) -> str:
+    """Insert deterministic advisory facts after the required Miami opening sentence."""
+    import re
+
+    parts = re.split(r"(?<=[.!?])\s+", intel.strip(), maxsplit=1)
+    if not parts or "miami" not in parts[0].lower():
+        raise ValueError("US Ports model narrative lost the required Miami opening sentence")
+    if not advisory_lead:
+        return intel
+    body = parts[1] if len(parts) > 1 else ""
+    return " ".join(part for part in (parts[0], advisory_lead, body) if part).strip()
+
+
 def fetch_weather(lat: float, lon: float) -> dict:
     url = (
         f"https://api.open-meteo.com/v1/forecast"
@@ -367,7 +545,7 @@ def _compute_daily_mean_precip_prob(wx: dict) -> list:
     return daily_means
 
 
-def build_weather_summary(wx: dict, pop_means: list = None, advisories: list = None) -> dict:
+def build_weather_summary(wx: dict, pop_means: list = None, advisories: list = None, include_apparent_heat: bool = True) -> dict:
     """
     Build a structured weather data dict for the AI prompt.
     IMPORTANT: Temperature values are intentionally excluded from this summary.
@@ -422,7 +600,7 @@ def build_weather_summary(wx: dict, pop_means: list = None, advisories: list = N
     # Fallback for international ports without NWS coverage: calculate heat index equivalent
     # Only if we didn't already flag heat from NWS
     has_heat_advisory = any("heat" in a.lower() for a in (advisories or []))
-    if not has_heat_advisory and "apparent_temperature_max" in d:
+    if include_apparent_heat and not has_heat_advisory and "apparent_temperature_max" in d:
         for i in range(min(3, len(d["time"]))):
             app_temp_c = d["apparent_temperature_max"][i]
             if app_temp_c is not None:
@@ -970,8 +1148,22 @@ def main():
         try:
             wx = fetch_weather(region["lat"], region["lon"])
             pop_means = fetch_precip_probability(region["lat"], region["lon"])
-            advisories = fetch_nws_advisories(region)
-            weather_data = build_weather_summary(wx, pop_means=pop_means, advisories=advisories)
+            advisory_lead = ""
+            if region["slug"] == "us-ports":
+                us_port_alerts = fetch_us_port_heat_advisories(region)
+                advisory_lead = render_us_port_heat_advisory_lead(us_port_alerts)
+                advisories = [
+                    advisory for advisory in fetch_nws_advisories(region)
+                    if "heat" not in advisory.lower()
+                ]
+            else:
+                advisories = fetch_nws_advisories(region)
+            weather_data = build_weather_summary(
+                wx,
+                pop_means=pop_means,
+                advisories=advisories,
+                include_apparent_heat=region["slug"] != "us-ports",
+            )
             intel = call_groq(region, weather_data)
             # Validate: must be a non-empty string of at least 20 characters
             if not intel or len(intel.strip()) < 20:
@@ -994,6 +1186,9 @@ def main():
             # US cruise homeport"), regenerate; after max retries, mechanically strip.
             # Applies to ALL regions automatically.
             intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
+            if region["slug"] == "us-ports":
+                intel = strip_us_port_heat_claims(intel)
+                intel = prepend_us_port_advisory_lead(intel, advisory_lead)
             output["regions"][region["slug"]] = intel
             print(f"  OK: {intel[:80]}...", file=sys.stderr)
         except Exception as e:
