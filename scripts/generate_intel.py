@@ -371,28 +371,35 @@ def fetch_us_port_heat_advisories(region: dict) -> list:
 
 
 def render_us_port_heat_advisory_lead(alerts: list) -> str:
-    """Render NWS heat-advisory facts deterministically so the model cannot alter them."""
-    sentences = []
+    """Render each active NWS heat-alert product once with compact port/value entries."""
+    if not alerts:
+        return ""
+
+    def natural_join(items: list) -> str:
+        if len(items) == 1:
+            return items[0]
+        if len(items) == 2:
+            return f"{items[0]} and {items[1]}"
+        return f"{', '.join(items[:-1])}, and {items[-1]}"
+
+    by_event = {}
     for alert in alerts:
         event = alert["event"]
-        ports = alert["ports"]
-        if len(ports) == 1:
-            port_text = ports[0]
-        elif len(ports) == 2:
-            port_text = f"{ports[0]} and {ports[1]}"
-        else:
-            port_text = f"{', '.join(ports[:-1])}, and {ports[-1]}"
-
-        article = "An" if event[0].lower() in "aeiou" else "A"
+        ports = natural_join(alert["ports"])
         value_f = alert["value_f"]
-        hazard = f"{alert['value_label']} up to {value_f}°F"
-        impact = "posing a serious risk to passengers during outdoor shore excursions"
-
-        sentences.append(
-            f"{article} {event} is in effect for {port_text}, with {hazard}, {impact}."
+        value_label = "heat index" if alert["value_label"] == "heat index values" else "temperature"
+        by_event.setdefault(event, []).append(
+            f"{ports} ({value_label} up to {value_f}°F)"
         )
 
-    return " ".join(sentences)
+    event_order = ["Heat Advisory", "Extreme Heat Watch", "Extreme Heat Warning"]
+    ordered_events = [event for event in event_order if event in by_event]
+    ordered_events.extend(event for event in by_event if event not in ordered_events)
+    clauses = [
+        f"{event} in effect for {natural_join(by_event[event])}"
+        for event in ordered_events
+    ]
+    return "; ".join(clauses) + "."
 
 
 def strip_us_port_heat_claims(text: str) -> str:
@@ -646,6 +653,38 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     else:
         sig_block = ""
 
+    extreme_terms = (
+        "hurricane warning",
+        "major hurricane",
+        "tornado warning",
+        "tornado outbreak",
+        "extreme wind warning",
+    )
+    extreme_severe_weather = any(
+        term in item.lower()
+        for item in significant
+        for term in extreme_terms
+    )
+    if extreme_severe_weather:
+        brevity_rule = (
+            "EXTREME SEVERE WEATHER EXCEPTION: the live data contains a hurricane, tornado, "
+            "or equivalent extreme threat, so use no more than two short paragraphs, six concise "
+            "sentences, and 220 words. "
+        )
+    elif region["slug"] == "us-ports":
+        brevity_rule = (
+            "NORMAL DAILY BREVITY REQUIREMENT: write one compact paragraph with exactly two concise "
+            "narrative sentences and no more than 85 words. A deterministic alert summary will be "
+            "inserted separately, so do not repeat or paraphrase any heat alert. Combine the 24-48 hour "
+            "and beyond-48-hour outlook in the second sentence. "
+        )
+    else:
+        brevity_rule = (
+            "NORMAL DAILY BREVITY REQUIREMENT: write one compact paragraph with exactly three concise "
+            "sentences and no more than 110 words. Name each heat-alert product only once; if it must be "
+            "referenced again, call it 'the alert'. Do not repeat the same hazard or operational impact. "
+        )
+
     # LEAD-PORT HEADER: For regions that declare a required_lead_port, prepend a hard
     # rule as the very first content of the prompt. Models weigh the opening tokens of
     # a prompt heaviest, so this placement materially improves instruction-following on
@@ -676,7 +715,7 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"(1) what is happening today and its impact on port operations and shore excursions, "
         f"(2) what to expect in the next 24-48 hours and which specific ports will be affected, "
         f"(3) any developing trends or changes beyond 48 hours that cruise passengers should know about. "
-        f"Write 4-5 sentences. Start with 'Today'. Use a direct, professional third-person operational voice -- write as a meteorologist describing conditions objectively. NEVER use first-person pronouns: do not write 'I', 'I am', 'I will', 'I have', 'I am monitoring', 'I am tracking', 'I am issuing', 'I am advising', 'I am flagging', or any other first-person construction. "
+        f"{brevity_rule}Start with 'Today'. Output only the finished prose paragraph with no title, heading, date line, markdown, bullets, labels, or introductory text. Use a direct, professional third-person operational voice -- write as a meteorologist describing conditions objectively. NEVER use first-person pronouns: do not write 'I', 'I am', 'I will', 'I have', 'I am monitoring', 'I am tracking', 'I am issuing', 'I am advising', 'I am flagging', or any other first-person construction. "
         f"ABSOLUTE RULES: "
         f"Every sentence must reference a specific data point from the live forecast (wind speed/direction, rain probability, sky condition). "
         f"You are FORBIDDEN from making any general, climatological, or typical-weather statements. "
@@ -810,6 +849,22 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     raise RuntimeError("API failed after 4 attempts")
 
 
+def _clean_model_formatting(text: str) -> str:
+    """Remove model-added headings and markdown while preserving briefing prose."""
+    import re
+
+    lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or re.match(r"^#{1,6}\s+", stripped):
+            continue
+        lines.append(stripped)
+    cleaned = " ".join(lines)
+    cleaned = re.sub(r"\*{1,2}([^*]+?)\*{1,2}", r"\1", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
 def strip_temperatures(text: str) -> str:
     """
     Post-generation temperature filter (Layer 2 backstop).
@@ -850,7 +905,9 @@ def strip_temperatures(text: str) -> str:
         r"\bexcessive\s+heat\b",
         r"\bextreme\s+cold\b",
         r"\bheat\s+index\s+(?:values?\s+)?(?:reaching|of|near|around|up\s+to)\b",
-        r"\bheat\s+index\b",
+        r"\bheat\s+indic(?:es|ex)\b",
+        r"\belevated\s+heat\b",
+        r"\bindex\s+values?\s+(?:reaching|of|near|around|up\s+to)\b",
         r"\bfreeze\s+(?:warning|watch|advisory)\b",
         r"\bdangerously\s+(?:hot|cold|warm)\b",
         r"\blife-threatening\s+heat\b",
@@ -1026,7 +1083,8 @@ def _validate_and_repair_rule_leaks(region: dict, intel: str, weather_data: dict
         )
         try:
             new_intel = call_groq(region, weather_data, retry_prefix=retry_prefix)
-            new_intel = strip_temperatures(new_intel.strip())
+            new_intel = _clean_model_formatting(new_intel)
+            new_intel = strip_temperatures(new_intel)
             new_intel = _normalize_low_rain_phrasing(new_intel)
         except Exception as e:
             print(f"  [RULE-LEAK VALIDATOR] Retry {attempt+1} call_groq failed: {e}", file=sys.stderr)
@@ -1096,7 +1154,8 @@ def _validate_and_repair_lead(region: dict, intel: str, weather_data: dict, max_
         )
         try:
             new_intel = call_groq(region, weather_data, retry_prefix=retry_prefix)
-            new_intel = strip_temperatures(new_intel.strip())
+            new_intel = _clean_model_formatting(new_intel)
+            new_intel = strip_temperatures(new_intel)
             new_intel = _normalize_low_rain_phrasing(new_intel)
         except Exception as e:
             print(f"  [LEAD VALIDATOR] Retry {attempt+1} call_groq failed: {e}", file=sys.stderr)
@@ -1122,6 +1181,164 @@ def _validate_and_repair_lead(region: dict, intel: str, weather_data: dict, max_
     ).strip()
     print(
         f"  [LEAD VALIDATOR] All retries exhausted -- hard-repaired lead to '{required_lead}'.",
+        file=sys.stderr,
+    )
+    return repaired
+
+
+def _briefing_limits(region: dict, weather_data: dict) -> tuple:
+    """Return the ordinary or extreme-weather sentence and word limits."""
+    extreme_terms = (
+        "hurricane warning",
+        "major hurricane",
+        "tornado warning",
+        "tornado outbreak",
+        "extreme wind warning",
+    )
+    extreme_severe_weather = any(
+        term in item.lower()
+        for item in weather_data.get("significant", [])
+        for term in extreme_terms
+    )
+    if extreme_severe_weather:
+        return 6, 220
+    if region["slug"] == "us-ports":
+        return 2, 85
+    return 3, 110
+
+
+def _briefing_sentence_parts(text: str, maxsplit: int = 0) -> list:
+    """Split briefing prose without treating U.S. or St. as sentence endings."""
+    import re as _re
+
+    return [
+        part for part in _re.split(
+            r"(?<!U\.S\.)(?<!St\.)(?<=[.!?])\s+",
+            text.strip(),
+            maxsplit=maxsplit,
+        )
+        if part
+    ]
+
+
+def _deduplicate_heat_product_labels(text: str) -> str:
+    """Keep each heat-alert product name once while preserving the full prose."""
+    import re as _re
+
+    for product in (
+        "Excessive Heat Warning",
+        "Extreme Heat Warning",
+        "Extreme Heat Watch",
+        "Heat Advisory",
+    ):
+        pattern = _re.compile(
+            rf"\b(?:(?:a|an|the)\s+)?{_re.escape(product)}\b",
+            _re.IGNORECASE,
+        )
+        matches = list(pattern.finditer(text))
+        for match in reversed(matches[1:]):
+            preceding = text[:match.start()].rstrip()
+            replacement = "The alert" if not preceding or preceding.endswith((".", "!", "?")) else "the alert"
+            text = text[:match.start()] + replacement + text[match.end():]
+    return text
+
+
+def _briefing_size(text: str) -> tuple:
+    """Count prose sentences and words for the concise-output validator."""
+    import re as _re
+
+    sentences = _briefing_sentence_parts(text)
+    words = _re.findall(r"\b\w+(?:['’]\w+)?\b", text)
+    return len(sentences), len(words)
+
+
+def _briefing_format_ok(text: str) -> bool:
+    """Require one plain prose paragraph that opens with Today."""
+    import re as _re
+
+    stripped = text.strip()
+    return bool(
+        stripped.startswith("Today")
+        and "\n" not in stripped
+        and not _re.search(r"(?:^|\s)#{1,6}\s", stripped)
+    )
+
+
+def _today_fallback_sentence(region: dict, weather_data: dict) -> str:
+    """Build a factual Today sentence from the same current conditions supplied to the model."""
+    summary = weather_data.get("summary", "")
+    current = summary.split("3-day outlook:", 1)[0]
+    current = current.replace("Current conditions:", "", 1).strip().rstrip(".")
+    if not current:
+        return f"Today, conditions at {region['rep_port']} are available in the live regional forecast."
+    return f"Today, {region['rep_port']} reports {current}."
+
+
+def _validate_and_repair_brevity(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
+    """Regenerate output that is overlong or not a plain Today-led paragraph."""
+    import re as _re
+
+    intel = _clean_model_formatting(intel)
+    max_sentences, max_words = _briefing_limits(region, weather_data)
+    sentence_count, word_count = _briefing_size(intel)
+    if sentence_count <= max_sentences and word_count <= max_words and _briefing_format_ok(intel):
+        return intel
+
+    print(
+        f"  [BREVITY VALIDATOR] {sentence_count} sentences/{word_count} words exceeds "
+        f"{max_sentences} sentences/{max_words} words or fails the plain Today-led format.",
+        file=sys.stderr,
+    )
+    for attempt in range(max_retries):
+        retry_prefix = (
+            f"REGENERATION REQUIRED. The previous briefing was too long. Write no more than "
+            f"{max_sentences} concise sentences and {max_words} words, in one paragraph unless the "
+            f"live data explicitly contains an extreme severe-weather exception. Remove repetition "
+            f"and preserve the three forecast time periods. Start with Today and output only plain prose, "
+            f"with no heading, title, date line, markdown, bullets, or labels. "
+        )
+        try:
+            new_intel = call_groq(region, weather_data, retry_prefix=retry_prefix)
+            new_intel = _clean_model_formatting(new_intel)
+            new_intel = strip_temperatures(new_intel)
+            new_intel = _normalize_low_rain_phrasing(new_intel)
+        except Exception as e:
+            print(f"  [BREVITY VALIDATOR] Retry {attempt+1} call_groq failed: {e}", file=sys.stderr)
+            continue
+
+        required_lead = region.get("required_lead_port")
+        first_sentence = _briefing_sentence_parts(new_intel, maxsplit=1)[0]
+        if required_lead and required_lead.lower() not in first_sentence.lower():
+            print(f"  [BREVITY VALIDATOR] Retry {attempt+1} lost required lead port.", file=sys.stderr)
+            continue
+        if _detect_rule_leaks(new_intel):
+            print(f"  [BREVITY VALIDATOR] Retry {attempt+1} leaked directive text.", file=sys.stderr)
+            continue
+        if not _briefing_format_ok(new_intel):
+            print(f"  [BREVITY VALIDATOR] Retry {attempt+1} failed the plain Today-led format.", file=sys.stderr)
+            intel = new_intel
+            continue
+
+        sentence_count, word_count = _briefing_size(new_intel)
+        if sentence_count <= max_sentences and word_count <= max_words:
+            print(f"  [BREVITY VALIDATOR] Retry {attempt+1} produced concise output.", file=sys.stderr)
+            return new_intel
+        intel = new_intel
+        print(
+            f"  [BREVITY VALIDATOR] Retry {attempt+1} still has "
+            f"{sentence_count} sentences/{word_count} words.",
+            file=sys.stderr,
+        )
+
+    sentences = _briefing_sentence_parts(_clean_model_formatting(intel))
+    if not sentences or not sentences[0].startswith("Today"):
+        sentences = [_today_fallback_sentence(region, weather_data)] + sentences
+    repaired_sentences = sentences[:max_sentences]
+    while len(repaired_sentences) > 1 and _briefing_size(" ".join(repaired_sentences))[1] > max_words:
+        repaired_sentences.pop()
+    repaired = " ".join(repaired_sentences).strip()
+    print(
+        f"  [BREVITY VALIDATOR] Retries exhausted; applied the plain Today-led sentence and word cap.",
         file=sys.stderr,
     )
     return repaired
@@ -1165,6 +1382,7 @@ def main():
                 include_apparent_heat=region["slug"] != "us-ports",
             )
             intel = call_groq(region, weather_data)
+            intel = _clean_model_formatting(intel)
             # Validate: must be a non-empty string of at least 20 characters
             if not intel or len(intel.strip()) < 20:
                 raise ValueError(f"Groq returned suspiciously short response: {repr(intel)}")
@@ -1186,6 +1404,10 @@ def main():
             # US cruise homeport"), regenerate; after max retries, mechanically strip.
             # Applies to ALL regions automatically.
             intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
+            # --- BREVITY VALIDATOR ---
+            # Enforce the approved short daily format after every path that can regenerate text.
+            intel = _validate_and_repair_brevity(region, intel, weather_data)
+            intel = _deduplicate_heat_product_labels(intel)
             if region["slug"] == "us-ports":
                 intel = strip_us_port_heat_claims(intel)
                 intel = prepend_us_port_advisory_lead(intel, advisory_lead)
