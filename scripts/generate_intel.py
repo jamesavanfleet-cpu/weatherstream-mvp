@@ -121,6 +121,14 @@ REGIONS = [
         "ports": ["Barbados", "St. Lucia", "Martinique", "Dominica", "Antigua", "St. Kitts", "St. Maarten", "St. Vincent", "Grenada"],
     },
     {
+        "slug": "eastern-pacific",
+        "name": "Eastern Pacific",
+        "rep_port": "Cabo San Lucas, Mexico",
+        "lat": 22.89,
+        "lon": -109.91,
+        "ports": ["Cabo San Lucas", "Ensenada", "Huatulco", "Manzanillo", "Mazatlan", "Puerto Vallarta"],
+    },
+    {
         "slug": "los-angeles",
         "name": "Los Angeles",
         "rep_port": "Los Angeles / San Pedro",
@@ -681,8 +689,10 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     else:
         brevity_rule = (
             "NORMAL DAILY BREVITY REQUIREMENT: write one compact paragraph with exactly three concise "
-            "sentences and no more than 110 words. Name each heat-alert product only once; if it must be "
-            "referenced again, call it 'the alert'. Do not repeat the same hazard or operational impact. "
+            "sentences and no more than 110 words. Name each official heat-alert product only once; if an "
+            "official advisory, watch, or warning must be referenced again, call it 'the alert'. Never call "
+            "elevated heat an alert unless the live data explicitly names an official alert product. Do not "
+            "repeat the same hazard or operational impact. "
         )
 
     # LEAD-PORT HEADER: For regions that declare a required_lead_port, prepend a hard
