@@ -5,7 +5,7 @@
 #   1. Generate all region intel briefings (intel.json)
 #   2. Generate top story headline + paragraph (top_story.json)
 #   3. Rebuild Vite site with VITE_BASE_PATH=/weatherstream-mvp/
-#   4. Force-push dist/public to gh-pages
+#   4. Push dist/public to gh-pages without overwriting newer data commits
 #   5. Commit intel.json and top_story.json back to main
 set -e
 
@@ -65,7 +65,7 @@ cd "$TMPDIR"
 git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
 
 # Preserve persistent data files
-PRESERVE_FILES="briefing_video.json live_conditions.json cruise_itineraries.json"
+PRESERVE_FILES="briefing_video.json live_conditions.json cruise_itineraries.json nhc_gtwo.json nhc_data.json"
 for PFILE in $PRESERVE_FILES; do
   if [ -f "$PFILE" ]; then
     cp "$PFILE" "/tmp/deploy_preserve_${PFILE}"
@@ -96,7 +96,8 @@ fi
 
 git add -A
 git commit -m "Daily refresh: $(date -u '+%Y-%m-%d %H:%M UTC')" || echo "Nothing to commit."
-git push origin gh-pages --force
+git pull --rebase origin gh-pages
+git push origin gh-pages
 echo "gh-pages deploy complete." | tee -a "$LOG_FILE"
 
 # ── Step 5: Commit intel.json and top_story.json back to main ─────────────────
