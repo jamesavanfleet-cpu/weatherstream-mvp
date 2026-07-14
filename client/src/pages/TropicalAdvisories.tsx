@@ -132,6 +132,41 @@ interface NhcData {
 
 type BasinTab = "al" | "ep" | "cp";
 
+// Classify GTWO features into the tracker tabs. NHC labels both Eastern and
+// Central Pacific outlook areas as "Pacific", so use the official point
+// longitude when present and the polygon's longitude midpoint otherwise.
+// The NHC/CPHC operational boundary is 140°W.
+function gtwoFeatureBasin(feature: GtwoFeature): BasinTab | null {
+  const basinLabel = (feature.properties.basin || "").toLowerCase();
+
+  if (basinLabel.includes("atl")) return "al";
+  if (basinLabel.includes("central")) return "cp";
+  if (basinLabel.includes("east")) return "ep";
+  if (!basinLabel.includes("pac")) return null;
+
+  const officialPointLon = feature.properties.point?.[0];
+  if (Number.isFinite(officialPointLon)) {
+    return (officialPointLon as number) <= -140 ? "cp" : "ep";
+  }
+
+  let polygonLongitudes: number[] = [];
+  if (feature.geometry.type === "Polygon") {
+    polygonLongitudes = feature.geometry.coordinates
+      .flatMap(ring => ring.map(([lon]) => lon))
+      .filter(Number.isFinite);
+  } else if (feature.geometry.type === "MultiPolygon") {
+    polygonLongitudes = feature.geometry.coordinates
+      .flatMap(polygon => polygon.flatMap(ring => ring.map(([lon]) => lon)))
+      .filter(Number.isFinite);
+  }
+
+  if (polygonLongitudes.length === 0) return null;
+  const representativeLon = (
+    Math.min(...polygonLongitudes) + Math.max(...polygonLongitudes)
+  ) / 2;
+  return representativeLon <= -140 ? "cp" : "ep";
+}
+
 // CORS proxy for NHC endpoints that lack Access-Control-Allow-Origin
 const ALLORIGINS = (url: string) =>
   `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
@@ -1074,13 +1109,7 @@ function MapFitBounds({
 
   useEffect(() => {
     const basinStorms = storms.filter(s => s.basin === basin);
-    const basinDist = disturbances.filter(f => {
-      const b = (f.properties.basin || "").toLowerCase();
-      if (basin === "al") return b.includes("atl") || b.includes("atlantic");
-      if (basin === "ep") return b.includes("pac") || b.includes("pacific") || b.includes("east");
-      if (basin === "cp") return b.includes("central");
-      return false;
-    });
+    const basinDist = disturbances.filter(f => gtwoFeatureBasin(f) === basin);
 
     const points: [number, number][] = [];
 
@@ -1972,13 +2001,7 @@ export default function TropicalAdvisories() {
             { id: "cp" as BasinTab, label: "C. Pacific" },
           ]).map(({ id, label }) => {
             const basinStorms = nhcData?.storms.filter(s => s.basin === id) ?? [];
-            const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => {
-              const b = (f.properties.basin || "").toLowerCase();
-              if (id === "al") return b.includes("atl") || b.includes("atlantic");
-              if (id === "ep") return (b.includes("pac") || b.includes("pacific")) && !b.includes("central");
-              if (id === "cp") return b.includes("central");
-              return false;
-            });
+            const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => gtwoFeatureBasin(f) === id);
             const badgeCount = basinStorms.length + basinDist.length;
             const isActive = activeBasin === id;
             return (
@@ -2026,13 +2049,7 @@ export default function TropicalAdvisories() {
         {/* Active storms for selected basin */}
         {(() => {
           const basinStorms = nhcData?.storms.filter(s => s.basin === activeBasin) ?? [];
-          const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => {
-            const b = (f.properties.basin || "").toLowerCase();
-            if (activeBasin === "al") return b.includes("atl") || b.includes("atlantic");
-            if (activeBasin === "ep") return (b.includes("pac") || b.includes("pacific")) && !b.includes("central");
-            if (activeBasin === "cp") return b.includes("central");
-            return false;
-          });
+          const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => gtwoFeatureBasin(f) === activeBasin);
 
           if (!nhcData) {
             return (
