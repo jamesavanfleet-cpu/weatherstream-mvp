@@ -130,6 +130,46 @@ interface NhcData {
   gtwoFeatures: GtwoFeature[];
 }
 
+function isValidNhcData(value: unknown): value is NhcData {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<NhcData>;
+  if (
+    typeof candidate.generated !== "string" ||
+    !Number.isFinite(Date.parse(candidate.generated)) ||
+    !Array.isArray(candidate.storms) ||
+    !Array.isArray(candidate.gtwoFeatures)
+  ) {
+    return false;
+  }
+
+  const stormsAreValid = candidate.storms.every(storm =>
+    Boolean(storm) &&
+    typeof storm.id === "string" &&
+    ["al", "ep", "cp"].includes(storm.basin) &&
+    Array.isArray(storm.trackPoints) &&
+    Array.isArray(storm.coneCoords)
+  );
+
+  const featuresAreValid = candidate.gtwoFeatures.every(feature => {
+    const point = feature?.properties?.point;
+    return (
+      feature?.type === "Feature" &&
+      Boolean(feature.geometry) &&
+      Boolean(feature.properties) &&
+      (
+        point == null ||
+        (
+          Array.isArray(point) &&
+          point.length === 2 &&
+          point.every(Number.isFinite)
+        )
+      )
+    );
+  });
+
+  return stormsAreValid && featuresAreValid;
+}
+
 type BasinTab = "al" | "ep" | "cp";
 
 // Classify GTWO features into the tracker tabs. NHC labels both Eastern and
@@ -1208,6 +1248,7 @@ export default function TropicalAdvisories() {
 
   // Basin tab selection: auto-select first basin with active storms, default Atlantic
   const [activeBasin, setActiveBasin] = useState<BasinTab>("al");
+  const didAutoSelectNhcBasin = useRef(false);
 
   // NHC GTWO disturbance GeoJSON features
   const [gtwoFeatures, setGtwoFeatures] = useState<GtwoFeature[]>([]);
@@ -1301,26 +1342,46 @@ export default function TropicalAdvisories() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch NHC pre-baked data (storms + tracks + cones + disturbances) on mount and every 6 hours
+  // Fetch the canonical NHC payload on mount, every 10 minutes, and whenever
+  // the page regains focus. Cache-busting plus no-store prevents a six-hour-old
+  // browser response from masking a newly published NHC advisory. Malformed or
+  // older responses never replace the last known good payload in this session.
   useEffect(() => {
     const loadNhcData = async () => {
       try {
-        const res = await fetch("/nhc_data.json");
+        const res = await fetch(`/nhc_data.json?ts=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) return;
-        const data = await res.json() as NhcData;
-        setNhcData(data);
-        // Auto-select basin with active storms, fallback to Atlantic
-        if (data.storms && data.storms.length > 0) {
-          const firstStormBasin = data.storms[0].basin as BasinTab;
-          setActiveBasin(firstStormBasin || "al");
+        const candidate: unknown = await res.json();
+        if (!isValidNhcData(candidate)) return;
+
+        setNhcData(current => {
+          const currentGenerated = current ? Date.parse(current.generated) : 0;
+          const candidateGenerated = Date.parse(candidate.generated);
+          return candidateGenerated >= currentGenerated ? candidate : current;
+        });
+
+        if (!didAutoSelectNhcBasin.current && candidate.storms.length > 0) {
+          setActiveBasin(candidate.storms[0].basin as BasinTab);
+          didAutoSelectNhcBasin.current = true;
         }
       } catch {
-        // Silently fail -- nhc_data.json is optional
+        // Preserve the last known good payload when a refresh is unavailable.
       }
     };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadNhcData();
+    };
+
     loadNhcData();
-    const interval = setInterval(loadNhcData, 21_600_000); // 6 hours
-    return () => clearInterval(interval);
+    const interval = setInterval(loadNhcData, 600_000);
+    window.addEventListener("focus", loadNhcData);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", loadNhcData);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   // Fetch NHC GTWO disturbance GeoJSON on mount and every 3 hours

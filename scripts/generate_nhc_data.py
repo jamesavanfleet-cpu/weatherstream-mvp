@@ -343,14 +343,63 @@ def parse_gtwo_features(zip_data: bytes) -> list:
     return features
 
 
+def validate_gtwo_features(features: list) -> None:
+    """Reject malformed GTWO output before it can replace the last good artifact."""
+    if not isinstance(features, list):
+        raise ValueError("GTWO features must be a list")
+
+    for index, feature in enumerate(features):
+        if not isinstance(feature, dict) or feature.get("type") != "Feature":
+            raise ValueError(f"GTWO feature {index} is not a GeoJSON Feature")
+
+        geometry = feature.get("geometry")
+        if not isinstance(geometry, dict) or geometry.get("type") != "Polygon":
+            raise ValueError(f"GTWO feature {index} has invalid polygon geometry")
+        coordinates = geometry.get("coordinates")
+        if not isinstance(coordinates, list) or not coordinates:
+            raise ValueError(f"GTWO feature {index} has no polygon coordinates")
+
+        properties = feature.get("properties")
+        if not isinstance(properties, dict):
+            raise ValueError(f"GTWO feature {index} has no properties")
+        if not properties.get("basin") or not properties.get("area"):
+            raise ValueError(f"GTWO feature {index} is missing its basin/area identity")
+
+        point = properties.get("point")
+        if point is not None:
+            if (
+                not isinstance(point, list)
+                or len(point) != 2
+                or not all(isinstance(value, (int, float)) for value in point)
+            ):
+                raise ValueError(f"GTWO feature {index} has an invalid official point")
+
+
 def fetch_gtwo_features() -> list:
-    """Fetch and parse the current official NHC GTWO areas and points."""
+    """Fetch, parse, and validate the current official NHC GTWO dataset."""
     zip_data = fetch_url(GTWO_SHAPEFILE_URL, timeout=20)
-    return parse_gtwo_features(zip_data)
+    features = parse_gtwo_features(zip_data)
+    validate_gtwo_features(features)
+    return features
+
+
+def write_json_atomic(path: str, payload: dict) -> None:
+    """Atomically replace one artifact only after JSON serialization succeeds."""
+    temp_path = f"{path}.tmp"
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, separators=(",", ":"), default=str)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_path, path)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 def write_gtwo_artifact(features: list, generated_at: str) -> str:
-    """Write the canonical standalone GTWO GeoJSON artifact."""
+    """Validate and atomically write the canonical standalone GTWO artifact."""
+    validate_gtwo_features(features)
     gtwo_output = {
         "type": "FeatureCollection",
         "metadata": {
@@ -362,8 +411,7 @@ def write_gtwo_artifact(features: list, generated_at: str) -> str:
         "features": features,
     }
     out_path = os.path.join(OUT_DIR, "nhc_gtwo.json")
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(gtwo_output, f, separators=(",", ":"), default=str)
+    write_json_atomic(out_path, gtwo_output)
     return out_path
 
 
@@ -373,14 +421,12 @@ def main():
 
     # ── Fetch active storms ──────────────────────────────────────────────────
     print(f"  Fetching: {CURRENT_STORMS_URL}")
-    storms_raw = []
-    try:
-        raw = fetch_url(CURRENT_STORMS_URL, timeout=15)
-        data = json.loads(raw.decode("utf-8"))
-        storms_raw = data.get("activeStorms", [])
-        print(f"  Active storms: {len(storms_raw)}")
-    except Exception as e:
-        print(f"  WARNING: Could not fetch CurrentStorms.json: {e}", file=sys.stderr)
+    raw = fetch_url(CURRENT_STORMS_URL, timeout=15)
+    data = json.loads(raw.decode("utf-8"))
+    if not isinstance(data, dict) or not isinstance(data.get("activeStorms"), list):
+        raise ValueError("CurrentStorms.json is missing a valid activeStorms list")
+    storms_raw = data["activeStorms"]
+    print(f"  Active storms: {len(storms_raw)}")
 
     # ── Process each storm ───────────────────────────────────────────────────
     storms_out = []
@@ -426,12 +472,8 @@ def main():
 
     # ── Fetch GTWO disturbances ──────────────────────────────────────────────
     print(f"  Fetching GTWO: {GTWO_SHAPEFILE_URL}")
-    gtwo_features = []
-    try:
-        gtwo_features = fetch_gtwo_features()
-        print(f"  GTWO disturbances: {len(gtwo_features)}")
-    except Exception as e:
-        print(f"  WARNING: Could not fetch GTWO: {e}", file=sys.stderr)
+    gtwo_features = fetch_gtwo_features()
+    print(f"  GTWO disturbances: {len(gtwo_features)}")
 
     # ── Write both public artifacts from the same canonical GTWO dataset ──────
     output = {
@@ -441,8 +483,7 @@ def main():
     }
 
     out_path = os.path.join(OUT_DIR, "nhc_data.json")
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, separators=(",", ":"), default=str)
+    write_json_atomic(out_path, output)
 
     gtwo_out_path = write_gtwo_artifact(gtwo_features, generated_at)
 
