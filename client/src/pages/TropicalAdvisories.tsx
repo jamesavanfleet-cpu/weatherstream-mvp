@@ -79,6 +79,7 @@ interface GtwoProperties {
   risk_7day: string;
   prob_7day_pct: number | null;
   color_7day: string;
+  point?: [number, number] | null; // official NHC [longitude, latitude], null when none is issued
 }
 
 interface GtwoFeature {
@@ -822,6 +823,23 @@ function GtwoLayer({
 }) {
   if (mode === "off" || features.length === 0) return null;
 
+  // The polygon is the NHC formation area. Its marker must use only the
+  // separately issued official NHC point, never a computed polygon centroid.
+  // A null point is intentional and means the area is rendered without a marker.
+  const officialPointFeatures: GeoJSON.Feature<GeoJSON.Point, GtwoProperties>[] = features.flatMap(feature => {
+    const point = feature.properties.point;
+    if (
+      !Array.isArray(point) || point.length !== 2 ||
+      !Number.isFinite(point[0]) || !Number.isFinite(point[1])
+    ) return [];
+
+    return [{
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: point },
+      properties: feature.properties,
+    }];
+  });
+
   return (
     <>
       {features.map((feature, idx) => {
@@ -860,6 +878,43 @@ function GtwoLayer({
           />
         );
       })}
+
+      {/* Official NHC disturbance points. Areas with point: null intentionally have no marker. */}
+      {officialPointFeatures.length > 0 && (
+        <GeoJSON
+          key={`gtwo-official-points-${mode}-${officialPointFeatures.length}`}
+          data={{ type: "FeatureCollection", features: officialPointFeatures } as GeoJSON.GeoJsonObject}
+          pointToLayer={(feature, latlng) => {
+            const p = feature.properties as GtwoProperties;
+            const color = mode === "2day" ? p.color_2day : p.color_7day;
+            const icon = L.divIcon({
+              className: "",
+              iconSize: [28, 28],
+              iconAnchor: [14, 14],
+              html: `<svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M6 6L22 22M22 6L6 22" stroke="#000" stroke-width="7" stroke-linecap="round"/>
+  <path d="M6 6L22 22M22 6L6 22" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+            });
+            return L.marker(latlng, { icon, zIndexOffset: 550 });
+          }}
+          onEachFeature={(feature, layer) => {
+            const p = feature.properties as GtwoProperties;
+            const color = mode === "2day" ? p.color_2day : p.color_7day;
+            const prob = mode === "2day" ? p.prob_2day : p.prob_7day;
+            const risk = mode === "2day" ? p.risk_2day : p.risk_7day;
+            layer.bindTooltip(
+              `<div style="font-family:monospace;font-size:13px;line-height:1.6;padding:6px 10px;background:#0D1520;border:1px solid ${color};color:#E8F4FF;min-width:200px;max-width:280px">
+  <div style="font-weight:700;color:${color};font-size:14px;margin-bottom:4px">${p.name}</div>
+  <div style="margin-bottom:2px">Official NHC disturbance location</div>
+  <div style="margin-bottom:2px">${mode === "2day" ? "2-Day" : "7-Day"} Formation Chance: <span style="color:${color};font-weight:700">${prob || "N/A"}</span></div>
+  ${risk ? `<div>Risk Level: <span style="color:${color};font-weight:700">${risk}</span></div>` : ""}
+</div>`,
+              { opacity: 1, direction: "top", offset: [0, -16] }
+            );
+          }}
+        />
+      )}
     </>
   );
 }
