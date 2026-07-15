@@ -2,8 +2,11 @@
 """
 generate_nhc_data.py
 Fetches NHC active storm data (all 3 basins: Atlantic, E. Pacific, C. Pacific),
-forecast track waypoints, uncertainty cone polygon, and GTWO disturbance areas.
+forecast track waypoints, and uncertainty cone polygons.
 Writes client/public/nhc_data.json for the frontend to consume.
+
+The reusable GTWO parser remains in this module, but the standalone
+scripts/generate_nhc_gtwo.py publisher exclusively owns nhc_gtwo.json.
 
 This script runs server-side (GitHub Actions) -- no CORS issues.
 Runs 4x/day aligned to NHC advisory issuance times.
@@ -91,17 +94,28 @@ CURRENT_STORMS_URL = "https://www.nhc.noaa.gov/CurrentStorms.json"
 GTWO_SHAPEFILE_URL = "https://www.nhc.noaa.gov/xgtwo/gtwo_shapefiles.zip"
 
 
-def fetch_url(url: str, timeout: int = 30) -> bytes:
-    """Fetch a URL with NHC-friendly User-Agent. Raises on failure."""
+def fetch_url_with_metadata(url: str, timeout: int = 30) -> tuple[bytes, dict]:
+    """Fetch a URL and preserve official response provenance for validation."""
     req = urllib.request.Request(
         url,
         headers={
             "User-Agent": "MyCruisingWeather/1.0 (mycruisingweather.com; weather data fetch)",
             "Accept": "*/*",
+            "Cache-Control": "no-cache",
         },
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read()
+        return resp.read(), {
+            "source_url": resp.geturl(),
+            "source_last_modified": resp.headers.get("Last-Modified"),
+            "source_etag": resp.headers.get("ETag"),
+        }
+
+
+def fetch_url(url: str, timeout: int = 30) -> bytes:
+    """Fetch a URL with NHC-friendly headers. Raises on failure."""
+    payload, _ = fetch_url_with_metadata(url, timeout=timeout)
+    return payload
 
 
 def risk_to_color(risk_label: str, prob_str: str) -> str:
@@ -375,11 +389,17 @@ def validate_gtwo_features(features: list) -> None:
                 raise ValueError(f"GTWO feature {index} has an invalid official point")
 
 
-def fetch_gtwo_features() -> list:
-    """Fetch, parse, and validate the current official NHC GTWO dataset."""
-    zip_data = fetch_url(GTWO_SHAPEFILE_URL, timeout=20)
+def fetch_gtwo_dataset() -> tuple[list, dict]:
+    """Fetch and validate the current official NHC GTWO dataset with provenance."""
+    zip_data, source_metadata = fetch_url_with_metadata(GTWO_SHAPEFILE_URL, timeout=20)
     features = parse_gtwo_features(zip_data)
     validate_gtwo_features(features)
+    return features, source_metadata
+
+
+def fetch_gtwo_features() -> list:
+    """Compatibility helper returning only the validated GTWO features."""
+    features, _ = fetch_gtwo_dataset()
     return features
 
 
@@ -397,15 +417,20 @@ def write_json_atomic(path: str, payload: dict) -> None:
             os.remove(temp_path)
 
 
-def write_gtwo_artifact(features: list, generated_at: str) -> str:
+def write_gtwo_artifact(features: list, generated_at: str, source_metadata: dict | None = None) -> str:
     """Validate and atomically write the canonical standalone GTWO artifact."""
     validate_gtwo_features(features)
+    provenance = source_metadata or {}
     gtwo_output = {
         "type": "FeatureCollection",
         "metadata": {
             "generated_at": generated_at,
             "source": "NOAA National Hurricane Center",
-            "source_url": "https://www.nhc.noaa.gov/gtwo.php",
+            "source_url": provenance.get("source_url") or GTWO_SHAPEFILE_URL,
+            "product_url": "https://www.nhc.noaa.gov/gtwo.php",
+            "source_last_modified": provenance.get("source_last_modified"),
+            "source_etag": provenance.get("source_etag"),
+            "feature_count": len(features),
             "note": "Each area includes both probability periods and its official NHC point when one is published.",
         },
         "features": features,
@@ -470,26 +495,19 @@ def main():
             "coneCoords": cone_coords,
         })
 
-    # ── Fetch GTWO disturbances ──────────────────────────────────────────────
-    print(f"  Fetching GTWO: {GTWO_SHAPEFILE_URL}")
-    gtwo_features = fetch_gtwo_features()
-    print(f"  GTWO disturbances: {len(gtwo_features)}")
-
-    # ── Write both public artifacts from the same canonical GTWO dataset ──────
+    # ── Write storm-track artifact only ───────────────────────────────────────
+    # GTWO publication is intentionally owned by generate_nhc_gtwo.py so the
+    # frontend has one authoritative disturbance artifact and one publisher.
     output = {
         "generated": generated_at,
         "storms": storms_out,
-        "gtwoFeatures": gtwo_features,
     }
 
     out_path = os.path.join(OUT_DIR, "nhc_data.json")
     write_json_atomic(out_path, output)
 
-    gtwo_out_path = write_gtwo_artifact(gtwo_features, generated_at)
-
     size_kb = os.path.getsize(out_path) / 1024
-    print(f"  Wrote {out_path} ({size_kb:.1f} KB, {len(storms_out)} storms, {len(gtwo_features)} disturbances)")
-    print(f"  Wrote {gtwo_out_path} ({len(gtwo_features)} disturbances from the same GTWO dataset)")
+    print(f"  Wrote {out_path} ({size_kb:.1f} KB, {len(storms_out)} storms)")
     print(f"NHC data fetch complete: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}")
 
 

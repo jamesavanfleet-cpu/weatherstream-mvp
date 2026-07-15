@@ -9,14 +9,14 @@ and null-point semantics.
 
 from datetime import datetime, timezone
 
-from generate_nhc_data import fetch_gtwo_features, write_gtwo_artifact
+from generate_nhc_data import fetch_gtwo_dataset, write_gtwo_artifact
 
 
 def main():
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     print(f"NHC GTWO fetch started: {generated_at}")
-    features = fetch_gtwo_features()
-    out_path = write_gtwo_artifact(features, generated_at)
+    features, source_metadata = fetch_gtwo_dataset()
+    out_path = write_gtwo_artifact(features, generated_at, source_metadata)
     print(f"  Wrote {out_path} ({len(features)} disturbances from the canonical GTWO parser)")
     print(f"NHC GTWO fetch complete: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}")
     return features

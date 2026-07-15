@@ -25,6 +25,19 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLocation } from "wouter";
+import {
+  gtwoFeatureBasin,
+  isNhcArtifactStale,
+  isValidGtwoData,
+  isValidNhcData,
+  type BasinTab,
+  type GtwoData,
+  type GtwoFeature,
+  type GtwoProperties,
+  type NhcData,
+  type NhcStormData,
+  type NhcTrackPoint,
+} from "../lib/nhcTropicalData";
 
 // Fix Leaflet default marker icon paths broken by bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -65,147 +78,6 @@ interface NHCStorm {
 }
 
 type OutlookMode = "off" | "2day" | "7day";
-
-// ── NHC GTWO disturbance feature type ────────────────────────────────────────
-interface GtwoProperties {
-  name: string;
-  basin: string;
-  area: string;
-  prob_2day: string;
-  risk_2day: string;
-  prob_2day_pct: number | null;
-  color_2day: string;
-  prob_7day: string;
-  risk_7day: string;
-  prob_7day_pct: number | null;
-  color_7day: string;
-  point?: [number, number] | null; // official NHC [longitude, latitude], null when none is issued
-}
-
-interface GtwoFeature {
-  type: "Feature";
-  geometry: GeoJSON.Geometry;
-  properties: GtwoProperties;
-}
-
-// ── NHC pre-baked data types (from /nhc_data.json) ───────────────────────────
-interface NhcTrackPoint {
-  TAU: number;          // forecast hour (0 = current position)
-  DATELBL: string;      // e.g. "8:00 AM Thu"
-  FLDATELBL: string;    // e.g. "2026-06-04 5:00 AM Thu PDT"
-  MAXWIND: number;      // max wind speed in knots
-  MSLP: number | null;  // min sea level pressure in mb (null if missing)
-  TCDIR: number | null; // movement direction in degrees (null if missing)
-  TCSPD: number | null; // movement speed in knots (null if missing)
-  STORMTYPE: string;    // e.g. "TS", "HU"
-  TCDVLP: string;       // e.g. "Tropical Storm", "Hurricane"
-  lon: number;
-  lat: number;
-  [key: string]: unknown;
-}
-
-interface NhcStormData {
-  id: string;
-  name: string;
-  basin: string;        // "al" | "ep" | "cp"
-  classification: string;
-  intensity: string | number | null;
-  pressure: string | number | null;
-  latitude: string | null;
-  longitude: string | null;
-  latitudeNumeric: number | null;
-  longitudeNumeric: number | null;
-  movementDir: number | null;
-  movementSpeed: number | null;
-  lastUpdate: string | null;
-  publicAdvisory: Record<string, unknown> | null;
-  forecastTrack: Record<string, unknown> | null;
-  trackPoints: NhcTrackPoint[];
-  coneCoords: [number, number][];
-}
-
-interface NhcData {
-  generated: string;
-  storms: NhcStormData[];
-  gtwoFeatures: GtwoFeature[];
-}
-
-function isValidNhcData(value: unknown): value is NhcData {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<NhcData>;
-  if (
-    typeof candidate.generated !== "string" ||
-    !Number.isFinite(Date.parse(candidate.generated)) ||
-    !Array.isArray(candidate.storms) ||
-    !Array.isArray(candidate.gtwoFeatures)
-  ) {
-    return false;
-  }
-
-  const stormsAreValid = candidate.storms.every(storm =>
-    Boolean(storm) &&
-    typeof storm.id === "string" &&
-    ["al", "ep", "cp"].includes(storm.basin) &&
-    Array.isArray(storm.trackPoints) &&
-    Array.isArray(storm.coneCoords)
-  );
-
-  const featuresAreValid = candidate.gtwoFeatures.every(feature => {
-    const point = feature?.properties?.point;
-    return (
-      feature?.type === "Feature" &&
-      Boolean(feature.geometry) &&
-      Boolean(feature.properties) &&
-      (
-        point == null ||
-        (
-          Array.isArray(point) &&
-          point.length === 2 &&
-          point.every(Number.isFinite)
-        )
-      )
-    );
-  });
-
-  return stormsAreValid && featuresAreValid;
-}
-
-type BasinTab = "al" | "ep" | "cp";
-
-// Classify GTWO features into the tracker tabs. NHC labels both Eastern and
-// Central Pacific outlook areas as "Pacific", so use the official point
-// longitude when present and the polygon's longitude midpoint otherwise.
-// The NHC/CPHC operational boundary is 140°W.
-function gtwoFeatureBasin(feature: GtwoFeature): BasinTab | null {
-  const basinLabel = (feature.properties.basin || "").toLowerCase();
-
-  if (basinLabel.includes("atl")) return "al";
-  if (basinLabel.includes("central")) return "cp";
-  if (basinLabel.includes("east")) return "ep";
-  if (!basinLabel.includes("pac")) return null;
-
-  const officialPointLon = feature.properties.point?.[0];
-  if (Number.isFinite(officialPointLon)) {
-    return (officialPointLon as number) <= -140 ? "cp" : "ep";
-  }
-
-  let polygonLongitudes: number[] = [];
-  if (feature.geometry.type === "Polygon") {
-    polygonLongitudes = feature.geometry.coordinates
-      .flatMap(ring => ring.map(([lon]) => lon))
-      .filter(Number.isFinite);
-  } else if (feature.geometry.type === "MultiPolygon") {
-    polygonLongitudes = feature.geometry.coordinates
-      .flatMap(polygon => polygon.flatMap(ring => ring.map(([lon]) => lon)))
-      .filter(Number.isFinite);
-  }
-
-  if (polygonLongitudes.length === 0) return null;
-  const representativeLon = (
-    Math.min(...polygonLongitudes) + Math.max(...polygonLongitudes)
-  ) / 2;
-  return representativeLon <= -140 ? "cp" : "ep";
-}
 
 // CORS proxy for NHC endpoints that lack Access-Control-Allow-Origin
 const ALLORIGINS = (url: string) =>
@@ -1243,15 +1115,18 @@ export default function TropicalAdvisories() {
   // NHC active storms (legacy -- still used for graphics section NHC image URLs)
   const [nhcStorms, setNhcStorms] = useState<NHCStorm[]>([]);
 
-  // NHC pre-baked data (storms + tracks + cones + disturbances from /nhc_data.json)
+  // NHC storm tracks and cones from /nhc_data.json.
   const [nhcData, setNhcData] = useState<NhcData | null>(null);
+  const [nhcDataError, setNhcDataError] = useState<string | null>(null);
 
   // Basin tab selection: auto-select first basin with active storms, default Atlantic
   const [activeBasin, setActiveBasin] = useState<BasinTab>("al");
   const didAutoSelectNhcBasin = useRef(false);
 
-  // NHC GTWO disturbance GeoJSON features
-  const [gtwoFeatures, setGtwoFeatures] = useState<GtwoFeature[]>([]);
+  // Authoritative NHC GTWO payload. Disturbances are consumed only from
+  // /nhc_gtwo.json so a stale embedded copy cannot override the current outlook.
+  const [gtwoData, setGtwoData] = useState<GtwoData | null>(null);
+  const [gtwoError, setGtwoError] = useState<string | null>(null);
 
   // Marine zone boundaries GeoJSON (pre-baked, served from gh-pages)
   const [marineZones, setMarineZones] = useState<GeoJSON.FeatureCollection | null>(null);
@@ -1350,9 +1225,9 @@ export default function TropicalAdvisories() {
     const loadNhcData = async () => {
       try {
         const res = await fetch(`/nhc_data.json?ts=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`NHC storm data request failed (${res.status})`);
         const candidate: unknown = await res.json();
-        if (!isValidNhcData(candidate)) return;
+        if (!isValidNhcData(candidate)) throw new Error("NHC storm data failed validation");
 
         setNhcData(current => {
           const currentGenerated = current ? Date.parse(current.generated) : 0;
@@ -1360,12 +1235,14 @@ export default function TropicalAdvisories() {
           return candidateGenerated >= currentGenerated ? candidate : current;
         });
 
+        setNhcDataError(null);
+
         if (!didAutoSelectNhcBasin.current && candidate.storms.length > 0) {
           setActiveBasin(candidate.storms[0].basin as BasinTab);
           didAutoSelectNhcBasin.current = true;
         }
-      } catch {
-        // Preserve the last known good payload when a refresh is unavailable.
+      } catch (error) {
+        setNhcDataError(error instanceof Error ? error.message : "NHC storm data unavailable");
       }
     };
 
@@ -1384,21 +1261,51 @@ export default function TropicalAdvisories() {
     };
   }, []);
 
-  // Fetch NHC GTWO disturbance GeoJSON on mount and every 3 hours
+  // Fetch the authoritative GTWO payload on mount, every 10 minutes, and when
+  // the page regains focus. Invalid or older responses never replace the current
+  // session payload, and failures remain visible instead of becoming false zeroes.
   useEffect(() => {
     const loadGtwo = async () => {
       try {
-        const res = await fetch("/nhc_gtwo.json");
-        if (!res.ok) return;
-        const data = await res.json();
-        setGtwoFeatures((data.features ?? []) as GtwoFeature[]);
-      } catch {
-        // Silently fail -- GTWO layer is optional
+        const res = await fetch(`/nhc_gtwo.json?ts=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`NHC outlook request failed (${res.status})`);
+        const candidate: unknown = await res.json();
+        if (!isValidGtwoData(candidate)) throw new Error("NHC outlook data failed validation");
+
+        setGtwoData(current => {
+          const currentGenerated = current ? Date.parse(current.metadata.generated_at) : 0;
+          const candidateGenerated = Date.parse(candidate.metadata.generated_at);
+          return candidateGenerated >= currentGenerated ? candidate : current;
+        });
+        setGtwoError(null);
+
+        if (!didAutoSelectNhcBasin.current && candidate.features.length > 0) {
+          const firstBasin = candidate.features
+            .map(gtwoFeatureBasin)
+            .find((basin): basin is BasinTab => basin !== null);
+          if (firstBasin) {
+            setActiveBasin(firstBasin);
+            didAutoSelectNhcBasin.current = true;
+          }
+        }
+      } catch (error) {
+        setGtwoError(error instanceof Error ? error.message : "NHC outlook data unavailable");
       }
     };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadGtwo();
+    };
+
     loadGtwo();
-    const interval = setInterval(loadGtwo, 10_800_000); // 3 hours
-    return () => clearInterval(interval);
+    const interval = setInterval(loadGtwo, 600_000);
+    window.addEventListener("focus", loadGtwo);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", loadGtwo);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   // Fetch marine zone boundaries AND marine forecasts on mount (lazy -- only when
@@ -1440,6 +1347,19 @@ export default function TropicalAdvisories() {
     ? (["Extreme", "Severe", "Moderate", "Minor"].find(s => alerts.some(a => a.severity === s)) ?? "Unknown")
     : null;
   const sevColor = highestSeverity ? alertColor(highestSeverity) : "#39FF14";
+  const nhcDataStale = Boolean(nhcData && isNhcArtifactStale(nhcData.generated));
+  const gtwoSourceTimestamp = gtwoData?.metadata.source_last_modified || gtwoData?.metadata.generated_at;
+  const gtwoDataStale = Boolean(gtwoSourceTimestamp && isNhcArtifactStale(gtwoSourceTimestamp));
+  const tropicalDataWarnings = [
+    nhcDataError
+      ? `Storm-track refresh warning: ${nhcDataError}. ${nhcData ? "Showing the last validated payload." : "Storm tracks are unavailable."}`
+      : null,
+    gtwoError
+      ? `Outlook refresh warning: ${gtwoError}. ${gtwoData ? "Showing the last validated payload." : "Disturbance status is unavailable."}`
+      : null,
+    nhcDataStale ? "Storm-track data is older than 8 hours and may be stale." : null,
+    gtwoDataStale ? "Tropical outlook data is older than 8 hours and may be stale." : null,
+  ].filter((message): message is string => Boolean(message));
 
   // Detect mobile for sidebar layout
   const [isMobile, setIsMobile] = useState(false);
@@ -1714,9 +1634,8 @@ export default function TropicalAdvisories() {
               <StormMarkersLayer storms={nhcStorms} />
             )}
 
-            {/* NHC GTWO disturbance ellipses -- interactive GeoJSON polygons on the map */}
-            {/* FIX: read from nhcData.gtwoFeatures (same source as tracker cards) -- nhc_gtwo.json was empty */}
-            <GtwoLayer features={nhcData?.gtwoFeatures ?? []} mode={outlookMode} />
+            {/* NHC GTWO disturbance ellipses from the authoritative standalone payload */}
+            <GtwoLayer features={gtwoData?.features ?? []} mode={outlookMode} />
 
             {/* NHC forecast track cone + waypoints from pre-baked nhc_data.json */}
             {nhcData && nhcData.storms
@@ -1730,10 +1649,10 @@ export default function TropicalAdvisories() {
             }
 
             {/* Auto-fit map to active basin systems when basin tab changes */}
-            {nhcData && (
+            {(nhcData || gtwoData) && (
               <MapFitBounds
-                storms={nhcData.storms}
-                disturbances={nhcData.gtwoFeatures}
+                storms={nhcData?.storms ?? []}
+                disturbances={gtwoData?.features ?? []}
                 basin={activeBasin}
               />
             )}
@@ -2054,6 +1973,28 @@ export default function TropicalAdvisories() {
           </div>
         </div>
 
+        {tropicalDataWarnings.length > 0 && (
+          <div
+            role="status"
+            style={{
+              marginBottom: 16,
+              padding: "10px 12px",
+              border: "1px solid #FFB000",
+              background: "rgba(255,176,0,0.08)",
+              color: "#FFD166",
+              fontSize: "0.82rem",
+              lineHeight: 1.5,
+            }}
+          >
+            <div style={{ fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>
+              NHC DATA STATUS
+            </div>
+            {tropicalDataWarnings.map(message => (
+              <div key={message}>{message}</div>
+            ))}
+          </div>
+        )}
+
         {/* Basin tabs */}
         <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #1A2D42", overflow: "hidden", width: "fit-content" }}>
           {([
@@ -2062,7 +2003,7 @@ export default function TropicalAdvisories() {
             { id: "cp" as BasinTab, label: "C. Pacific" },
           ]).map(({ id, label }) => {
             const basinStorms = nhcData?.storms.filter(s => s.basin === id) ?? [];
-            const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => gtwoFeatureBasin(f) === id);
+            const basinDist = (gtwoData?.features ?? []).filter(f => gtwoFeatureBasin(f) === id);
             const badgeCount = basinStorms.length + basinDist.length;
             const isActive = activeBasin === id;
             return (
@@ -2110,9 +2051,9 @@ export default function TropicalAdvisories() {
         {/* Active storms for selected basin */}
         {(() => {
           const basinStorms = nhcData?.storms.filter(s => s.basin === activeBasin) ?? [];
-          const basinDist = (nhcData?.gtwoFeatures ?? []).filter(f => gtwoFeatureBasin(f) === activeBasin);
+          const basinDist = (gtwoData?.features ?? []).filter(f => gtwoFeatureBasin(f) === activeBasin);
 
-          if (!nhcData) {
+          if (!nhcData && !gtwoData && !nhcDataError && !gtwoError) {
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "32px 0" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00D4FF" }} />
@@ -2124,13 +2065,24 @@ export default function TropicalAdvisories() {
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* Storm stat cards */}
-              {basinStorms.length === 0 && basinDist.length === 0 && (
+              {basinStorms.length === 0 && basinDist.length === 0 && nhcData && gtwoData && (
                 <div style={{ textAlign: "center", padding: "40px 0" }}>
                   <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#39FF14", letterSpacing: "0.12em", marginBottom: 8 }}>
                     NO ACTIVE STORMS
                   </div>
                   <div style={{ fontSize: "0.95rem", color: "#7B9BB5" }}>
                     No active tropical cyclones or disturbances in this basin.
+                  </div>
+                </div>
+              )}
+
+              {basinStorms.length === 0 && basinDist.length === 0 && (!nhcData || !gtwoData) && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#FFD166", letterSpacing: "0.1em", marginBottom: 8 }}>
+                    ACTIVITY STATUS UNAVAILABLE
+                  </div>
+                  <div style={{ fontSize: "0.95rem", color: "#7B9BB5" }}>
+                    The complete NHC storm and disturbance feeds are not both available, so zero activity cannot be confirmed.
                   </div>
                 </div>
               )}
@@ -2305,15 +2257,35 @@ export default function TropicalAdvisories() {
                 </div>
               )}
 
-              {/* Data timestamp */}
-              {nhcData.generated && (
-                <div style={{ fontSize: "0.8rem", color: "#3A5068", marginTop: 4 }}>
-                  NHC data last updated: {new Date(nhcData.generated).toLocaleString("en-US", {
-                    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-                    hour12: true, timeZoneName: "short",
-                  })}
-                </div>
-              )}
+              {/* Independent source timestamps */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: "0.8rem", color: "#3A5068", marginTop: 4 }}>
+                {nhcData?.generated && (
+                  <div>
+                    Storm tracks updated: {new Date(nhcData.generated).toLocaleString("en-US", {
+                      month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                      hour12: true, timeZoneName: "short",
+                    })}
+                  </div>
+                )}
+                {gtwoData?.metadata.generated_at && (
+                  <>
+                    <div>
+                      NHC outlook source: {new Date(gtwoData.metadata.source_last_modified || gtwoData.metadata.generated_at).toLocaleString("en-US", {
+                        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                        hour12: true, timeZoneName: "short",
+                      })}
+                    </div>
+                    {gtwoData.metadata.source_last_modified && (
+                      <div>
+                        Outlook artifact validated: {new Date(gtwoData.metadata.generated_at).toLocaleString("en-US", {
+                          month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                          hour12: true, timeZoneName: "short",
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           );
         })()}
