@@ -1576,7 +1576,10 @@ export default function Home() {
               </button>
             </div>
             <p className="text-white/40 text-xs mb-3">Click on any port below for expanded conditions</p>
-            <div className="grid grid-cols-3 gap-2 overflow-hidden">
+            <div
+              className="grid grid-cols-3 auto-rows-[204px] sm:auto-rows-[179px] gap-2 overflow-hidden"
+              data-live-grid-stable="true"
+            >
               {Array.from({ length: 6 }, (_, i) => {
                 const loc = LIVE_DATA[(liveOffset + i) % LIVE_DATA.length];
                 const live = liveConditionsData?.[loc.location];
@@ -1591,7 +1594,7 @@ export default function Home() {
                 return (
                   <div
                     key={`${liveOffset}-${i}`}
-                    className="glass-dark rounded-2xl p-3 border border-white/5 hover:border-white/20 cursor-pointer transition-all duration-200 hover:scale-105"
+                    className="glass-dark h-full rounded-2xl p-3 border border-white/5 hover:border-white/20 cursor-pointer transition-all duration-200 hover:scale-105"
                     style={{
                       transition: 'opacity 0.45s ease, transform 0.45s ease',
                       transitionDelay: `${i * 35}ms`,
