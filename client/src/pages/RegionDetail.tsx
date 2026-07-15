@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PtzThumb from "@/components/PtzThumb";
-import { hasPtzCamera, getPtzCameras } from "@/lib/ptzCameras";
+import { getPtzCameras } from "@/lib/ptzCameras";
 
 
 // ---- Conversion helpers ----
@@ -306,19 +306,20 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
       className={`rounded-2xl overflow-hidden transition-all duration-300 ${expanded ? 'glass-dark border border-white/10' : ''}`}
     >
       {/* Port name tab -- always visible, tap/click to toggle.
-          For PTZ partner-camera ports we render a live thumbnail + LIVE badge
-          plus the "Port Camera via our partners PTZtv" attribution on the
-          right (desktop) or stacked below the port name (mobile). The thumb
-          stops click propagation so it opens the PTZ webcam page without also
-          toggling the accordion. */}
+          For PTZ partner-camera ports we render live thumbnails + LIVE badges
+          beside the attribution. Dual-camera thumbnails are stacked at a
+          reduced size so every tab keeps the same outer height. Each thumb
+          stops click propagation so opening a webcam does not toggle the tab. */}
       {(() => {
-        const hasCam = hasPtzCamera(pw.port.name);
+        const cameras = getPtzCameras(pw.port.name);
+        const hasCam = cameras.length > 0;
+        const hasMultipleCameras = cameras.length > 1;
         return (
           <div
-            className={`bg-gradient-to-r ${gradient} px-5 py-4 cursor-pointer select-none flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}
+            className={`bg-gradient-to-r ${gradient} min-h-[86px] px-5 py-4 cursor-pointer select-none flex flex-nowrap items-center justify-between gap-x-3`}
             onClick={onToggle}
+            data-camera-layout={hasMultipleCameras ? "dual-compact" : hasCam ? "single" : "none"}
           >
-            {/* Port name -- always on its own line, never squeezed by camera section */}
             <div className="flex items-center justify-between gap-3 min-w-0 flex-1">
               <div className="min-w-0 flex-1">
                 <p className="text-white font-bold text-lg leading-tight">{pw.port.name}</p>
@@ -326,22 +327,26 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
                   <p className="text-white/50 text-xs mt-0.5">{pw.port.sublabel}</p>
                 )}
               </div>
-              {/* Chevron: always visible at the right of the name row */}
               <ChevronDown
                 className={`w-5 h-5 text-white/50 transition-transform duration-300 flex-shrink-0 ${expanded ? "rotate-180" : ""}`}
               />
             </div>
             {hasCam && (
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Render one thumbnail per camera assigned to this port.
-                    Most ports have exactly one cam. Manhattan / Brooklyn /
-                    Bayonne have two (NY Harbor Webcam + Port NY Webcam),
-                    both shown side-by-side. Camera section wraps to its own
-                    line when the card is too narrow to fit beside the name. */}
-                {getPtzCameras(pw.port.name).map((_, i) => (
-                  <PtzThumb key={i} portName={pw.port.name} cameraIndex={i} />
-                ))}
-                <p className="text-white/85 text-[10px] leading-tight">
+              <div className={`flex items-center flex-shrink-0 ${hasMultipleCameras ? "gap-1" : "gap-2"}`}>
+                {/* Single-camera ports keep the original thumbnail. For ports
+                    with two cameras, the thumbnails stack at half-size so the
+                    full pair occupies no more space than one single camera. */}
+                <div className={`flex ${hasMultipleCameras ? "flex-col gap-0.5" : "flex-row"}`}>
+                  {cameras.map((_, i) => (
+                    <PtzThumb
+                      key={i}
+                      portName={pw.port.name}
+                      size={hasMultipleCameras ? "dual" : "default"}
+                      cameraIndex={i}
+                    />
+                  ))}
+                </div>
+                <p className={`text-white/85 leading-tight ${hasMultipleCameras ? "w-[72px] text-[8px]" : "text-[10px]"}`}>
                   Port Camera via our<br />partners PTZtv
                 </p>
               </div>

@@ -1590,7 +1590,9 @@ export default function Home() {
                 const windMph = Math.round(windKt * 1.15078);
                 const windDirDeg = live?.windDir ?? 0;
                 const windDirLabel = degToCompass(windDirDeg);
-                const isCam = hasPtzCamera(loc.location);
+                const cameras = getPtzCameras(loc.location);
+                const isCam = cameras.length > 0;
+                const hasMultipleCameras = cameras.length > 1;
                 return (
                   <div
                     key={`${liveOffset}-${i}`}
@@ -1628,12 +1630,17 @@ export default function Home() {
                     {isCam && (
                       <div className="mt-2 pt-2 border-t border-white/10">
                         {/* One thumbnail per camera assigned to this port.
-                            Single-cam ports (Miami / Nassau / etc) render one;
-                            multi-cam ports (Manhattan / Brooklyn / Bayonne)
-                            render both NY Harbor + Port NY cameras stacked. */}
-                        <div className="flex flex-row gap-1">
-                          {getPtzCameras(loc.location).map((_, i) => (
-                            <PtzThumb key={i} portName={loc.location} size="compact" cameraIndex={i} />
+                            Single-camera ports keep the original compact size.
+                            For multi-camera ports, each thumbnail is half-height
+                            and the pair is stacked inside that same footprint. */}
+                        <div className={`flex ${hasMultipleCameras ? "flex-col gap-0" : "flex-row gap-1"}`}>
+                          {cameras.map((_, i) => (
+                            <PtzThumb
+                              key={i}
+                              portName={loc.location}
+                              size={hasMultipleCameras ? "compact-dual" : "compact"}
+                              cameraIndex={i}
+                            />
                           ))}
                         </div>
                         <p className="text-white/60 text-[8px] leading-tight mt-1">
