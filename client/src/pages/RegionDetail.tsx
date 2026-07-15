@@ -10,7 +10,7 @@
 //      closing over stale state. Never replace it with a direct setState call.
 //   5. There is NO useEffect that resets expandedRows after mount.
 // =============================================================================
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { REGIONS, type Port } from "@/data/regions";
 import {
@@ -471,6 +471,20 @@ export default function RegionDetail() {
   // expandedRows must be declared before any early return to satisfy Rules of Hooks.
   // Starts empty (all rows collapsed). Each entry is a row index (Math.floor(portIndex / COLS)).
   const [expandedRows, setExpandedRows] = useState<Set<number>>(() => new Set<number>());
+
+  // Client-side navigation preserves the previous page's scroll offset. Reset
+  // each regional forecast to the top before paint so mobile users never land
+  // partway down the port list. Temporarily override the global smooth-scroll
+  // rule so the reset is immediate rather than visibly animated.
+  // FIX_MARKER: REGION_SCROLL_TOP_v1
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.dataset.regionScrollTopFix = "v1";
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+    root.style.scrollBehavior = previousScrollBehavior;
+  }, [slug]);
 
   useEffect(() => {
     if (!region) return;
