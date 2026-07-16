@@ -4,7 +4,7 @@
 # Steps:
 #   1. Generate all region intel briefings (intel.json)
 #   2. Generate top story headline + paragraph (top_story.json)
-#   3. Rebuild Vite site with VITE_BASE_PATH=/weatherstream-mvp/
+#   3. Rebuild the Vite site for the custom-domain root (/)
 #   4. Push dist/public to gh-pages without overwriting newer data commits
 #   5. Commit intel.json and top_story.json back to main
 set -e
@@ -13,6 +13,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 LOG_FILE="/tmp/vanfleet_daily_deploy.log"
+ROOT_BASE_PATH="/"
 echo "=== VanFleet Wx daily deploy started: $(date -u) ===" | tee "$LOG_FILE"
 
 # ── Step 1: Generate intel.json ───────────────────────────────────────────────
@@ -35,23 +36,15 @@ fi
 echo "top_story.json OK" | tee -a "$LOG_FILE"
 
 # ── Step 3: Build the site ────────────────────────────────────────────────────
-echo "[3/5] Building site (VITE_BASE_PATH=/weatherstream-mvp/)..." | tee -a "$LOG_FILE"
-VITE_BASE_PATH=/weatherstream-mvp/ pnpm run build:pages >> "$LOG_FILE" 2>&1
+echo "[3/5] Building site for custom-domain root (VITE_BASE_PATH=$ROOT_BASE_PATH)..." | tee -a "$LOG_FILE"
+VITE_BASE_PATH="$ROOT_BASE_PATH" pnpm run build:pages >> "$LOG_FILE" 2>&1
 if [ $? -ne 0 ]; then
   echo "ERROR: build failed" | tee -a "$LOG_FILE"
   exit 1
 fi
 
-# Validate build output
-if ! grep -q 'href="/weatherstream-mvp/' dist/public/index.html && ! grep -q 'src="/weatherstream-mvp/' dist/public/index.html; then
-  echo "ERROR: index.html missing /weatherstream-mvp/ base path. Aborting deploy." | tee -a "$LOG_FILE"
-  exit 1
-fi
-if ! grep -q 'src="/weatherstream-mvp/assets/' dist/public/index.html; then
-  echo "ERROR: index.html missing /weatherstream-mvp/assets/ reference. Aborting deploy." | tee -a "$LOG_FILE"
-  exit 1
-fi
-echo "Build validation passed." | tee -a "$LOG_FILE"
+# Validate the custom-domain build before any deployment work begins.
+scripts/validate_pages_root.sh dist/public | tee -a "$LOG_FILE"
 
 # ── Step 4: Deploy to gh-pages ────────────────────────────────────────────────
 echo "[4/5] Deploying to gh-pages..." | tee -a "$LOG_FILE"
@@ -88,11 +81,8 @@ for PFILE in $PRESERVE_FILES; do
   fi
 done
 
-# Final safety check
-if ! grep -q 'href="/weatherstream-mvp/' index.html && ! grep -q 'src="/weatherstream-mvp/' index.html; then
-  echo "ERROR: Deployed index.html is missing /weatherstream-mvp/ base path. Aborting." | tee -a "$LOG_FILE"
-  exit 1
-fi
+# Final safety check before committing to gh-pages.
+"$REPO_ROOT/scripts/validate_pages_root.sh" . | tee -a "$LOG_FILE"
 
 git add -A
 git commit -m "Daily refresh: $(date -u '+%Y-%m-%d %H:%M UTC')" || echo "Nothing to commit."
