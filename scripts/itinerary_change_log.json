@@ -2148,6 +2148,127 @@
         }
       ],
       "errors": []
+    },
+    {
+      "run_timestamp": "2026-07-17T23:10:32.188763",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "ADDED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-08-01",
+          "description": "8 days, round-trip Caribbean Symphony Of The Seas Galveston Tx",
+          "detail": "ADDED Symphony of the Seas 2026-08-01: 8 days, round-trip Caribbean Symphony Of The Seas Galveston Tx"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Harmony of the Seas",
+          "departure_date": "2026-08-18",
+          "description": "4 days, round-trip Bahamas Harmony Of The Seas Port Canaveral Orlando Fl",
+          "detail": "ADDED Harmony of the Seas 2026-08-18: 4 days, round-trip Bahamas Harmony Of The Seas Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-07-24",
+          "description": "3 days, round-trip 3 Night Bahamas and Perfect Day Cruise",
+          "detail": "ADDED Wonder of the Seas 2026-07-24: 3 days, round-trip 3 Night Bahamas and Perfect Day Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-18",
+          "description": "7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl",
+          "detail": "ADDED Mardi Gras 2026-07-18: 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-07-25",
+          "description": "7 days, round-trip Western Caribbean Mardi Gras Port Canaveral Orlando Fl",
+          "detail": "ADDED Mardi Gras 2026-07-25: 7 days, round-trip Western Caribbean Mardi Gras Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-08-01",
+          "description": "7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl",
+          "detail": "ADDED Mardi Gras 2026-08-01: 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-07-27",
+          "description": "5 days, round-trip Western Caribbean Carnival Breeze Galveston Tx",
+          "detail": "ADDED Carnival Breeze 2026-07-27: 5 days, round-trip Western Caribbean Carnival Breeze Galveston Tx"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-07-27",
+          "description": "5 days, round-trip Bahamas Carnival Freedom Port Canaveral Orlando Fl",
+          "detail": "ADDED Carnival Freedom 2026-07-27: 5 days, round-trip Bahamas Carnival Freedom Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-08-02",
+          "description": "7 days, round-trip Eastern Caribbean Celebrity Beyond Miami Fl",
+          "detail": "ADDED Celebrity Beyond 2026-08-02: 7 days, round-trip Eastern Caribbean Celebrity Beyond Miami Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-07-24",
+          "description": "3 days, round-trip 3 Night Bahamas Cruise",
+          "detail": "ADDED Disney Wish 2026-07-24: 3 days, round-trip 3 Night Bahamas Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-08-02",
+          "description": "7 days, round-trip Alaska Norwegian Encore Seattle Wa",
+          "detail": "ADDED Norwegian Encore 2026-08-02: 7 days, round-trip Alaska Norwegian Encore Seattle Wa"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-07-24",
+          "description": "3 days, round-trip Bahamas Norwegian Getaway Miami Fl",
+          "detail": "ADDED Norwegian Getaway 2026-07-24: 3 days, round-trip Bahamas Norwegian Getaway Miami Fl"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-07-19",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-07-19: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-07-19",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-07-19: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-07-26",
+          "description": "7 days, round-trip Eastern Caribbean Princess Port Canaveral Orlando Fl",
+          "detail": "ADDED Caribbean Princess 2026-07-26: 7 days, round-trip Eastern Caribbean Princess Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-08-09",
+          "description": "7 days, round-trip Western Caribbean Msc Seascape Galveston Tx",
+          "detail": "ADDED MSC Seascape 2026-08-09: 7 days, round-trip Western Caribbean Msc Seascape Galveston Tx"
+        }
+      ],
+      "errors": []
     }
   ]
 }
