@@ -1463,7 +1463,10 @@ export default function TropicalAdvisories() {
       </div>
 
       {/* ── Map + sidebar ── */}
-      <div style={{ flex: "0 0 auto", height: "calc(100dvh - 100px)", display: "flex", overflow: "hidden", position: "relative" }}>
+      <div
+        data-map-mobile-height="MOBILE_MAP_HEIGHT_480PX_V1"
+        style={{ flex: "0 0 auto", height: isMobile ? "480px" : "calc(100dvh - 100px)", display: "flex", overflow: "hidden", position: "relative" }}
+      >
         {/* Leaflet map -- flex:1 always so it fills remaining width after sidebar */}
         <div
           ref={mapContainerRef}
