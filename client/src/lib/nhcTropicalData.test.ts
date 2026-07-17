@@ -99,4 +99,22 @@ describe("Tropical page GTWO source ownership", () => {
     expect(pageSource).not.toMatch(/nhcData(?:\?|\.)?\.gtwoFeatures/);
     expect(pageSource).not.toMatch(/gtwoFeatures\s*\?\?/);
   });
+
+  it("defaults the visible outlook to 7-day and keeps its controls and legend explicit", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain('useState<OutlookMode>("7day")');
+    expect(pageSource).toContain('data-outlook-control="TROPICAL_OUTLOOK_DEFAULT_7DAY_V1"');
+    expect(pageSource).toContain('mode === "7day" ? "7-Day" : mode === "2day" ? "2-Day" : "Hide"');
+    expect(pageSource).toContain('data-outlook-legend="NHC_GTWO_LEGEND_V1"');
+  });
+
+  it("keeps every disturbance-card risk badge synchronized with an explicit outlook period", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain('const displayMode = outlookMode === "off" ? "7day" : outlookMode;');
+    expect(pageSource).toContain('{periodLabel} {risk || "LOW"}');
+  });
 });

@@ -1110,7 +1110,7 @@ export default function TropicalAdvisories() {
   }, []);
 
   // NHC tropical outlook toggle: off | 2day | 7day
-  const [outlookMode, setOutlookMode] = useState<OutlookMode>("off");
+  const [outlookMode, setOutlookMode] = useState<OutlookMode>("7day");
 
   // NHC active storms (legacy -- still used for graphics section NHC image URLs)
   const [nhcStorms, setNhcStorms] = useState<NHCStorm[]>([]);
@@ -1464,18 +1464,28 @@ export default function TropicalAdvisories() {
           <LayerBtn label="Active Alerts" active={showAlerts} color="#FF8C00" onClick={() => setShowAlerts(v => !v)} />
           <LayerBtn label="Weather Satellite" active={showSatellite} onClick={() => setShowSatellite(v => !v)} />
           <LayerBtn label="Zone Forecasts" active={showZoneForecasts} onClick={() => setShowZoneForecasts(v => !v)} />
-          {/* NHC Tropical Outlook three-state toggle */}
-          <div style={{ display: "flex", gap: 0, marginLeft: 8, border: "1px solid #1A2D42", overflow: "hidden" }}>
-            {(["off", "2day", "7day"] as OutlookMode[]).map(mode => (
+          {/* NHC Tropical Outlook period control */}
+          <div
+            role="group"
+            aria-label="NHC Tropical Outlook display period"
+            data-outlook-control="TROPICAL_OUTLOOK_DEFAULT_7DAY_V1"
+            data-outlook-mode={outlookMode}
+            style={{ display: "flex", alignItems: "center", gap: 0, marginLeft: 8, border: "1px solid #1A2D42", overflow: "hidden" }}
+          >
+            <span style={{ padding: "4px 8px", color: "#E8F4FF", fontSize: "0.78rem", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+              TROPICAL OUTLOOK
+            </span>
+            {(["7day", "2day", "off"] as OutlookMode[]).map(mode => (
               <button
                 key={mode}
                 onClick={() => setOutlookMode(mode)}
+                aria-pressed={outlookMode === mode}
                 style={{
                   padding: "4px 8px",
                   background: outlookMode === mode ? "rgba(255,69,0,0.18)" : "rgba(13,21,32,0.85)",
                   color: outlookMode === mode ? "#FF4500" : "#7B9BB5",
                   border: "none",
-                  borderLeft: mode !== "off" ? "1px solid #1A2D42" : "none",
+                  borderLeft: "1px solid #1A2D42",
                   cursor: "pointer",
                   fontSize: "0.78rem",
                   letterSpacing: "0.06em",
@@ -1484,7 +1494,7 @@ export default function TropicalAdvisories() {
                   transition: "all 0.15s",
                 }}
               >
-                {mode === "off" ? "Tropical Outlook OFF" : mode === "2day" ? "2-Day" : "7-Day"}
+                {mode === "7day" ? "7-Day" : mode === "2day" ? "2-Day" : "Hide"}
               </button>
             ))}
           </div>
@@ -1701,6 +1711,40 @@ export default function TropicalAdvisories() {
               >
                 ×
               </button>
+            </div>
+          )}
+
+          {outlookMode !== "off" && (
+            <div
+              aria-label={`${outlookMode === "2day" ? "2-day" : "7-day"} NHC Tropical Outlook color legend`}
+              data-outlook-legend="NHC_GTWO_LEGEND_V1"
+              style={{
+                position: "absolute",
+                bottom: pbActive ? 92 : 10,
+                left: 10,
+                zIndex: 1000,
+                background: "rgba(10,18,28,0.88)",
+                border: "1px solid #1A2D42",
+                borderRadius: 6,
+                padding: "7px 9px",
+                minWidth: 190,
+                fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              <div style={{ color: "#E8F4FF", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 5 }}>
+                NHC {outlookMode === "2day" ? "2-DAY" : "7-DAY"} DEVELOPMENT CHANCE
+              </div>
+              {[
+                { color: "#FFD700", label: "Yellow · Low (<40%)" },
+                { color: "#FF8C00", label: "Orange · Medium (40–60%)" },
+                { color: "#FF0000", label: "Red · High (>60%)" },
+              ].map(item => (
+                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+                  <span style={{ color: "#B0C8E0", fontSize: "0.7rem" }}>{item.label}</span>
+                </div>
+              ))}
             </div>
           )}
 
@@ -2208,16 +2252,21 @@ export default function TropicalAdvisories() {
               {/* Disturbance cards */}
               {basinDist.length > 0 && (
                 <div>
-                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", letterSpacing: "0.1em", marginBottom: 12 }}>TROPICAL WEATHER OUTLOOK</div>
+                  <div style={{ fontSize: "0.85rem", color: "#7B9BB5", letterSpacing: "0.1em", marginBottom: 12 }}>
+                    TROPICAL WEATHER OUTLOOK · {outlookMode === "2day" ? "2-DAY" : "7-DAY"} SUMMARY
+                  </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                     {basinDist.map((feat, i) => {
                       const p = feat.properties;
-                      const color = outlookMode === "2day" ? p.color_2day : p.color_7day;
-                      const prob = outlookMode === "2day" ? p.prob_2day : p.prob_7day;
-                      const risk = outlookMode === "2day" ? p.risk_2day : p.risk_7day;
+                      const displayMode = outlookMode === "off" ? "7day" : outlookMode;
+                      const periodLabel = displayMode === "2day" ? "2-DAY" : "7-DAY";
+                      const color = displayMode === "2day" ? p.color_2day : p.color_7day;
+                      const prob = displayMode === "2day" ? p.prob_2day : p.prob_7day;
+                      const risk = displayMode === "2day" ? p.risk_2day : p.risk_7day;
                       return (
-                        <div
+                          <div
                           key={i}
+                          data-outlook-card-mode={displayMode}
                           style={{
                             background: "#0D1520",
                             border: `1px solid ${color}40`,
@@ -2235,7 +2284,7 @@ export default function TropicalAdvisories() {
                               fontWeight: 700,
                               letterSpacing: "0.06em",
                             }}>
-                              {risk || "LOW"}
+                              {periodLabel} {risk || "LOW"}
                             </div>
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
