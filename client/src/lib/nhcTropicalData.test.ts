@@ -117,4 +117,16 @@ describe("Tropical page GTWO source ownership", () => {
     expect(pageSource).toContain('const displayMode = outlookMode === "off" ? "7day" : outlookMode;');
     expect(pageSource).toContain('{periodLabel} {risk || "LOW"}');
   });
+
+  it("keeps plain wheel and trackpad input available for page scrolling while preserving click and pinch map zoom", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain('data-map-scroll-mode="MAP_SCROLL_CLICK_OR_PINCH_ZOOM_V1"');
+    expect(pageSource).toContain("scrollWheelZoom={false}");
+    expect(pageSource).toContain("touchZoom={true}");
+    expect(pageSource).toContain("zoomControl={true}");
+    expect(pageSource).not.toContain("WheelZoomGate");
+    expect(pageSource).not.toContain("mcw_scroll_hint_dismissed");
+  });
 });
