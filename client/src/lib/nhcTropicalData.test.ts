@@ -138,3 +138,30 @@ describe("Tropical page GTWO source ownership", () => {
     expect(pageSource).toContain('height: isMobile ? "480px" : "calc(100dvh - 100px)"');
   });
 });
+
+
+describe("stale-storm regression safeguards", () => {
+  it("withholds stale storm artifacts before they can render as active storms", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain("if (isNhcArtifactStale(candidate.generated))");
+    expect(pageSource).toContain('throw new Error("NHC storm data is older than 8 hours and was withheld")');
+    expect(pageSource).toContain("const activeNhcData = nhcDataStale ? null : nhcData;");
+    expect(pageSource).toContain("activeNhcData && activeNhcData.storms");
+    expect(pageSource).toContain("has been withheld to avoid showing an outdated storm");
+  });
+
+  it("preserves independently published NHC artifacts during ordinary site deployments", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const deploySource = readFileSync(
+      new URL("../../../.github/workflows/deploy.yml", `file://${testDir}`),
+      "utf8",
+    );
+
+    expect(deploySource).toContain("cp nhc_data.json /tmp/nhc_data-backup.json");
+    expect(deploySource).toContain("cp nhc_gtwo.json /tmp/nhc_gtwo-backup.json");
+    expect(deploySource).toContain("cp /tmp/nhc_data-backup.json nhc_data.json");
+    expect(deploySource).toContain("cp /tmp/nhc_gtwo-backup.json nhc_gtwo.json");
+  });
+});

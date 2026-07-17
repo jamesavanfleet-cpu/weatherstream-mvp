@@ -1167,8 +1167,8 @@ export default function TropicalAdvisories() {
 
   // Fetch the canonical NHC payload on mount, every 10 minutes, and whenever
   // the page regains focus. Cache-busting plus no-store prevents a six-hour-old
-  // browser response from masking a newly published NHC advisory. Malformed or
-  // older responses never replace the last known good payload in this session.
+  // browser response from masking a newly published NHC advisory. Malformed,
+  // stale, or older responses never replace the last known good payload in this session.
   useEffect(() => {
     const loadNhcData = async () => {
       try {
@@ -1176,6 +1176,9 @@ export default function TropicalAdvisories() {
         if (!res.ok) throw new Error(`NHC storm data request failed (${res.status})`);
         const candidate: unknown = await res.json();
         if (!isValidNhcData(candidate)) throw new Error("NHC storm data failed validation");
+        if (isNhcArtifactStale(candidate.generated)) {
+          throw new Error("NHC storm data is older than 8 hours and was withheld");
+        }
 
         setNhcData(current => {
           const currentGenerated = current ? Date.parse(current.generated) : 0;
@@ -1296,16 +1299,17 @@ export default function TropicalAdvisories() {
     : null;
   const sevColor = highestSeverity ? alertColor(highestSeverity) : "#39FF14";
   const nhcDataStale = Boolean(nhcData && isNhcArtifactStale(nhcData.generated));
+  const activeNhcData = nhcDataStale ? null : nhcData;
   const gtwoSourceTimestamp = gtwoData?.metadata.source_last_modified || gtwoData?.metadata.generated_at;
   const gtwoDataStale = Boolean(gtwoSourceTimestamp && isNhcArtifactStale(gtwoSourceTimestamp));
   const tropicalDataWarnings = [
     nhcDataError
-      ? `Storm-track refresh warning: ${nhcDataError}. ${nhcData ? "Showing the last validated payload." : "Storm tracks are unavailable."}`
+      ? `Storm-track refresh warning: ${nhcDataError}. ${activeNhcData ? "Showing the last validated payload." : "Storm tracks are unavailable."}`
       : null,
     gtwoError
       ? `Outlook refresh warning: ${gtwoError}. ${gtwoData ? "Showing the last validated payload." : "Disturbance status is unavailable."}`
       : null,
-    nhcDataStale ? "Storm-track data is older than 8 hours and may be stale." : null,
+    nhcDataStale ? "Storm-track data is older than 8 hours and has been withheld to avoid showing an outdated storm." : null,
     gtwoDataStale ? "Tropical outlook data is older than 8 hours and may be stale." : null,
   ].filter((message): message is string => Boolean(message));
 
@@ -1603,7 +1607,7 @@ export default function TropicalAdvisories() {
             <GtwoLayer features={gtwoData?.features ?? []} mode={outlookMode} />
 
             {/* NHC forecast track cone + waypoints from pre-baked nhc_data.json */}
-            {nhcData && nhcData.storms
+            {activeNhcData && activeNhcData.storms
               .filter(s => s.basin === activeBasin)
               .map(storm => (
                 <>
@@ -1614,9 +1618,9 @@ export default function TropicalAdvisories() {
             }
 
             {/* Auto-fit map to active basin systems when basin tab changes */}
-            {(nhcData || gtwoData) && (
+            {(activeNhcData || gtwoData) && (
               <MapFitBounds
-                storms={nhcData?.storms ?? []}
+                storms={activeNhcData?.storms ?? []}
                 disturbances={gtwoData?.features ?? []}
                 basin={activeBasin}
               />
@@ -1956,7 +1960,7 @@ export default function TropicalAdvisories() {
             { id: "ep" as BasinTab, label: "E. Pacific" },
             { id: "cp" as BasinTab, label: "C. Pacific" },
           ]).map(({ id, label }) => {
-            const basinStorms = nhcData?.storms.filter(s => s.basin === id) ?? [];
+            const basinStorms = activeNhcData?.storms.filter(s => s.basin === id) ?? [];
             const basinDist = (gtwoData?.features ?? []).filter(f => gtwoFeatureBasin(f) === id);
             const badgeCount = basinStorms.length + basinDist.length;
             const isActive = activeBasin === id;
@@ -2004,10 +2008,10 @@ export default function TropicalAdvisories() {
 
         {/* Active storms for selected basin */}
         {(() => {
-          const basinStorms = nhcData?.storms.filter(s => s.basin === activeBasin) ?? [];
+          const basinStorms = activeNhcData?.storms.filter(s => s.basin === activeBasin) ?? [];
           const basinDist = (gtwoData?.features ?? []).filter(f => gtwoFeatureBasin(f) === activeBasin);
 
-          if (!nhcData && !gtwoData && !nhcDataError && !gtwoError) {
+          if (!activeNhcData && !gtwoData && !nhcDataError && !gtwoError) {
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "32px 0" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00D4FF" }} />
@@ -2019,7 +2023,7 @@ export default function TropicalAdvisories() {
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* Storm stat cards */}
-              {basinStorms.length === 0 && basinDist.length === 0 && nhcData && gtwoData && (
+              {basinStorms.length === 0 && basinDist.length === 0 && activeNhcData && gtwoData && (
                 <div style={{ textAlign: "center", padding: "40px 0" }}>
                   <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#39FF14", letterSpacing: "0.12em", marginBottom: 8 }}>
                     NO ACTIVE STORMS
@@ -2030,7 +2034,7 @@ export default function TropicalAdvisories() {
                 </div>
               )}
 
-              {basinStorms.length === 0 && basinDist.length === 0 && (!nhcData || !gtwoData) && (
+              {basinStorms.length === 0 && basinDist.length === 0 && (!activeNhcData || !gtwoData) && (
                 <div style={{ textAlign: "center", padding: "40px 0" }}>
                   <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#FFD166", letterSpacing: "0.1em", marginBottom: 8 }}>
                     ACTIVITY STATUS UNAVAILABLE
@@ -2218,9 +2222,9 @@ export default function TropicalAdvisories() {
 
               {/* Independent source timestamps */}
               <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: "0.8rem", color: "#3A5068", marginTop: 4 }}>
-                {nhcData?.generated && (
+                {activeNhcData?.generated && (
                   <div>
-                    Storm tracks updated: {new Date(nhcData.generated).toLocaleString("en-US", {
+                    Storm tracks updated: {new Date(activeNhcData.generated).toLocaleString("en-US", {
                       month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                       hour12: true, timeZoneName: "short",
                     })}
@@ -2286,8 +2290,8 @@ export default function TropicalAdvisories() {
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
             </div>
-            {(nhcData?.storms ?? []).length > 0 ? (
-              (nhcData?.storms ?? []).map(storm => (
+            {(activeNhcData?.storms ?? []).length > 0 ? (
+              (activeNhcData?.storms ?? []).map(storm => (
                 <div key={storm.id} style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
                     {storm.name}
@@ -2322,8 +2326,8 @@ export default function TropicalAdvisories() {
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
             </div>
-            {(nhcData?.storms ?? []).length > 0 ? (
-              (nhcData?.storms ?? []).map(storm => (
+            {(activeNhcData?.storms ?? []).length > 0 ? (
+              (activeNhcData?.storms ?? []).map(storm => (
                 <div key={storm.id} style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
                     {storm.name}
