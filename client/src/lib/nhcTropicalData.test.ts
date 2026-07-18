@@ -7,6 +7,7 @@ import {
   isNhcArtifactStale,
   isValidGtwoData,
   isValidNhcData,
+  isValidNhcModelGuidanceData,
   type GtwoFeature,
 } from "./nhcTropicalData";
 
@@ -81,6 +82,44 @@ describe("GTWO basin classification", () => {
   });
 });
 
+describe("official model-guidance artifact validation", () => {
+  const guidancePayload = () => ({
+    generated: "2026-07-17T18:10:00Z",
+    source: "NOAA National Hurricane Center ATCF public A-deck",
+    activeStormSourceUrl: "https://www.nhc.noaa.gov/CurrentStorms.json",
+    disclaimer: "Model guidance is not an official NHC forecast.",
+    storms: [{
+      id: "ep052026",
+      name: "Elida",
+      basin: "ep",
+      sourceCycle: "2026071718",
+      sourceUrl: "https://ftp.nhc.noaa.gov/atcf/aid_public/aep052026.dat.gz",
+      models: [{
+        id: "AVNI",
+        label: "GFS",
+        points: [
+          { forecastHour: 0, lat: 15.2, lon: -108.4, windKt: 55, pressureMb: 996 },
+          { forecastHour: 12, lat: 15.8, lon: -109.6, windKt: 60, pressureMb: 990 },
+        ],
+      }],
+    }],
+  });
+
+  it("accepts a current official A-deck payload with usable track and intensity points", () => {
+    expect(isValidNhcModelGuidanceData(guidancePayload())).toBe(true);
+  });
+
+  it("rejects nonofficial sources and non-increasing forecast hours", () => {
+    const nonofficial = guidancePayload();
+    nonofficial.source = "Copied third-party plot";
+    expect(isValidNhcModelGuidanceData(nonofficial)).toBe(false);
+
+    const outOfOrder = guidancePayload();
+    outOfOrder.storms[0].models[0].points[1].forecastHour = 0;
+    expect(isValidNhcModelGuidanceData(outOfOrder)).toBe(false);
+  });
+});
+
 describe("artifact freshness", () => {
   it("treats artifacts older than eight hours and invalid timestamps as stale", () => {
     const now = Date.parse("2026-07-15T16:00:00Z");
@@ -140,6 +179,31 @@ describe("Tropical page GTWO source ownership", () => {
 });
 
 
+describe("WeatherStream model-guidance interface", () => {
+  it("loads only the validated current model artifact and never shows guidance for a storm absent from the current NHC tracker", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain("/nhc_model_guidance.json?ts=${Date.now()}");
+    expect(pageSource).toContain("isValidNhcModelGuidanceData(candidate)");
+    expect(pageSource).toContain('throw new Error("NHC model guidance is older than 8 hours and was withheld")');
+    expect(pageSource).toContain("const currentModelGuidanceStorms = (activeModelGuidance?.storms ?? []).filter(storm => currentStormIds.has(storm.id));");
+    expect(pageSource).toContain('<ModelGuidancePanel storm={storm} />');
+  });
+
+  it("renders the custom track and intensity plots instead of external model-image embeds", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const componentSource = readFileSync(new URL("../components/ModelGuidancePanel.tsx", `file://${testDir}`), "utf8");
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(componentSource).toContain('data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_V1"');
+    expect(componentSource).toContain('data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_V1"');
+    expect(componentSource).toContain("INTENSITY GUIDANCE: MAX SUSTAINED WIND");
+    expect(pageSource).not.toContain("web.uwm.edu/hurricane-models/models");
+    expect(pageSource).not.toContain("_5day_models.png");
+  });
+});
+
 describe("stale-storm regression safeguards", () => {
   it("withholds stale storm artifacts before they can render as active storms", () => {
     const testDir = fileURLToPath(new URL(".", import.meta.url));
@@ -161,7 +225,9 @@ describe("stale-storm regression safeguards", () => {
 
     expect(deploySource).toContain("cp nhc_data.json /tmp/nhc_data-backup.json");
     expect(deploySource).toContain("cp nhc_gtwo.json /tmp/nhc_gtwo-backup.json");
+    expect(deploySource).toContain("cp nhc_model_guidance.json /tmp/nhc_model_guidance-backup.json");
     expect(deploySource).toContain("cp /tmp/nhc_data-backup.json nhc_data.json");
     expect(deploySource).toContain("cp /tmp/nhc_gtwo-backup.json nhc_gtwo.json");
+    expect(deploySource).toContain("cp /tmp/nhc_model_guidance-backup.json nhc_model_guidance.json");
   });
 });

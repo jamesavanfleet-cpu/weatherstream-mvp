@@ -25,16 +25,19 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLocation } from "wouter";
+import { ModelGuidancePanel } from "../components/ModelGuidancePanel";
 import {
   gtwoFeatureBasin,
   isNhcArtifactStale,
   isValidGtwoData,
   isValidNhcData,
+  isValidNhcModelGuidanceData,
   type BasinTab,
   type GtwoData,
   type GtwoFeature,
   type GtwoProperties,
   type NhcData,
+  type NhcModelGuidanceData,
   type NhcStormData,
   type NhcTrackPoint,
 } from "../lib/nhcTropicalData";
@@ -1067,6 +1070,11 @@ export default function TropicalAdvisories() {
   const [nhcData, setNhcData] = useState<NhcData | null>(null);
   const [nhcDataError, setNhcDataError] = useState<string | null>(null);
 
+  // Validated public NHC ATCF A-deck model guidance. This stays separate from
+  // the official forecast artifact and is displayed only for currently active storms.
+  const [modelGuidance, setModelGuidance] = useState<NhcModelGuidanceData | null>(null);
+  const [modelGuidanceError, setModelGuidanceError] = useState<string | null>(null);
+
   // Basin tab selection: auto-select first basin with active storms, default Atlantic
   const [activeBasin, setActiveBasin] = useState<BasinTab>("al");
   const didAutoSelectNhcBasin = useRef(false);
@@ -1212,6 +1220,46 @@ export default function TropicalAdvisories() {
     };
   }, []);
 
+  // Fetch current model guidance on mount, every 10 minutes, and on focus.
+  // The artifact is accepted only when it has strict public NHC A-deck provenance,
+  // validates structurally, is current, and is no older than the session payload.
+  useEffect(() => {
+    const loadModelGuidance = async () => {
+      try {
+        const res = await fetch(`/nhc_model_guidance.json?ts=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`NHC model guidance request failed (${res.status})`);
+        const candidate: unknown = await res.json();
+        if (!isValidNhcModelGuidanceData(candidate)) throw new Error("NHC model guidance failed validation");
+        if (isNhcArtifactStale(candidate.generated)) {
+          throw new Error("NHC model guidance is older than 8 hours and was withheld");
+        }
+
+        setModelGuidance(current => {
+          const currentGenerated = current ? Date.parse(current.generated) : 0;
+          const candidateGenerated = Date.parse(candidate.generated);
+          return candidateGenerated >= currentGenerated ? candidate : current;
+        });
+        setModelGuidanceError(null);
+      } catch (error) {
+        setModelGuidanceError(error instanceof Error ? error.message : "NHC model guidance unavailable");
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadModelGuidance();
+    };
+
+    loadModelGuidance();
+    const interval = setInterval(loadModelGuidance, 600_000);
+    window.addEventListener("focus", loadModelGuidance);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", loadModelGuidance);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
+
   // Fetch the authoritative GTWO payload on mount, every 10 minutes, and when
   // the page regains focus. Invalid or older responses never replace the current
   // session payload, and failures remain visible instead of becoming false zeroes.
@@ -1300,6 +1348,12 @@ export default function TropicalAdvisories() {
   const sevColor = highestSeverity ? alertColor(highestSeverity) : "#39FF14";
   const nhcDataStale = Boolean(nhcData && isNhcArtifactStale(nhcData.generated));
   const activeNhcData = nhcDataStale ? null : nhcData;
+  const modelGuidanceStale = Boolean(modelGuidance && isNhcArtifactStale(modelGuidance.generated));
+  const activeModelGuidance = modelGuidanceStale ? null : modelGuidance;
+  // Never render guidance for a storm that is absent from the independently
+  // validated current-storm artifact, even if its guidance payload is recent.
+  const currentStormIds = new Set((activeNhcData?.storms ?? []).map(storm => storm.id));
+  const currentModelGuidanceStorms = (activeModelGuidance?.storms ?? []).filter(storm => currentStormIds.has(storm.id));
   const gtwoSourceTimestamp = gtwoData?.metadata.source_last_modified || gtwoData?.metadata.generated_at;
   const gtwoDataStale = Boolean(gtwoSourceTimestamp && isNhcArtifactStale(gtwoSourceTimestamp));
   const tropicalDataWarnings = [
@@ -1310,6 +1364,10 @@ export default function TropicalAdvisories() {
       ? `Outlook refresh warning: ${gtwoError}. ${gtwoData ? "Showing the last validated payload." : "Disturbance status is unavailable."}`
       : null,
     nhcDataStale ? "Storm-track data is older than 8 hours and has been withheld to avoid showing an outdated storm." : null,
+    modelGuidanceError
+      ? `Model-guidance refresh warning: ${modelGuidanceError}. ${currentModelGuidanceStorms.length > 0 ? "Showing the last validated guidance." : "Model guidance is unavailable."}`
+      : null,
+    modelGuidanceStale ? "Model guidance is older than 8 hours and has been withheld to avoid showing outdated model output." : null,
     gtwoDataStale ? "Tropical outlook data is older than 8 hours and may be stale." : null,
   ].filter((message): message is string => Boolean(message));
 
@@ -2317,56 +2375,35 @@ export default function TropicalAdvisories() {
             </div>
           </div>
 
-          {/* Card 2 -- Spaghetti Models (storm-dependent) */}
-          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          {/* Card 2 -- Official public A-deck track and intensity guidance */}
+          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16, gridColumn: "1 / -1" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
               <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>ENSEMBLE TRACK MODELS</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Spaghetti Models · NHC · Active storms only</div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>TRACK &amp; INTENSITY GUIDANCE</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>WeatherStream spaghetti plots · Public NHC A-deck · Current active storms only</div>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
+              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC ATCF</div>
             </div>
-            {(activeNhcData?.storms ?? []).length > 0 ? (
-              (activeNhcData?.storms ?? []).map(storm => (
-                <div key={storm.id} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
-                    {storm.name}
-                  </div>
-                  <img
-                    src={`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_models.png`}
-                    alt={`${storm.name} ensemble track models`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-                    loading="lazy"
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_models.png`)}
-                  />
-                  <div style={{ fontSize: "0.78rem", color: "#3A5068", marginTop: 10, marginBottom: 4, letterSpacing: "0.06em" }}>UWM SPAGHETTI MODELS</div>
-                  <img
-                    src={`https://web.uwm.edu/hurricane-models/models/${storm.id}.png`}
-                    alt={`${storm.name} UWM spaghetti models early cycle`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer", marginBottom: 6 }}
-                    loading="lazy"
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    onClick={() => setLightboxSrc(`https://web.uwm.edu/hurricane-models/models/${storm.id}.png`)}
-                  />
-                  <img
-                    src={`https://web.uwm.edu/hurricane-models/models/${storm.id}_late.png`}
-                    alt={`${storm.name} UWM spaghetti models late cycle`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-                    loading="lazy"
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    onClick={() => setLightboxSrc(`https://web.uwm.edu/hurricane-models/models/${storm.id}_late.png`)}
-                  />
+            {currentModelGuidanceStorms.length > 0 ? (
+              currentModelGuidanceStorms.map(storm => (
+                <div key={storm.id} style={{ marginBottom: 18 }}>
+                  <ModelGuidancePanel storm={storm} />
                 </div>
               ))
             ) : (
-              <div style={{ padding: "32px 0", textAlign: "center" }}>
-                <div style={{ fontSize: "1.1rem", color: "#39FF14", letterSpacing: "0.1em", marginBottom: 8 }}>NO ACTIVE STORMS</div>
-                <div style={{ fontSize: "0.9rem", color: "#7B9BB5" }}>Ensemble track models will appear here when a named storm is active in the Atlantic or Caribbean.</div>
+              <div data-model-guidance-no-current-storm="WEATHERSTREAM_CURRENT_STORM_GUARD_V1" style={{ padding: "32px 0", textAlign: "center" }}>
+                <div style={{ fontSize: "1.1rem", color: (activeNhcData?.storms ?? []).length > 0 ? "#FFD166" : "#39FF14", letterSpacing: "0.1em", marginBottom: 8 }}>
+                  {(activeNhcData?.storms ?? []).length > 0 ? "GUIDANCE PENDING" : "NO ACTIVE STORMS"}
+                </div>
+                <div style={{ fontSize: "0.9rem", color: "#7B9BB5", maxWidth: 640, margin: "0 auto", lineHeight: 1.5 }}>
+                  {(activeNhcData?.storms ?? []).length > 0
+                    ? "The current official storm is confirmed, but a complete current public model cycle is not yet available. Guidance will appear only after it passes validation."
+                    : "Current official NHC track and intensity guidance will appear here only for an active storm."}
+                </div>
               </div>
             )}
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              Each line represents a different computer model's predicted track. A tight cluster means high confidence; a wide spread means uncertainty. Use the cone of uncertainty on the map for the official NHC forecast.
+              Track spread is an uncertainty signal, not a confidence forecast. The intensity plot below the tracks shows each available aid's maximum sustained wind guidance in knots. The official NHC forecast cone and local NWS products remain the authoritative forecast products.
             </div>
           </div>
 

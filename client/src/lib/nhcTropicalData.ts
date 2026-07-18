@@ -178,3 +178,94 @@ export function isNhcArtifactStale(
   const generatedMs = Date.parse(generatedAt);
   return !Number.isFinite(generatedMs) || nowMs - generatedMs > maxAgeMs;
 }
+
+export interface NhcModelGuidancePoint {
+  forecastHour: number;
+  lat: number;
+  lon: number;
+  windKt: number | null;
+  pressureMb: number | null;
+}
+
+export interface NhcModelGuidanceModel {
+  id: string;
+  label: string;
+  points: NhcModelGuidancePoint[];
+}
+
+export interface NhcModelGuidanceStorm {
+  id: string;
+  name: string;
+  basin: BasinTab;
+  sourceCycle?: string;
+  sourceUrl: string;
+  models: NhcModelGuidanceModel[];
+  noDataReason?: string;
+}
+
+export interface NhcModelGuidanceData {
+  generated: string;
+  source: string;
+  activeStormSourceUrl: string;
+  disclaimer: string;
+  storms: NhcModelGuidanceStorm[];
+}
+
+function isValidGuidancePoint(value: unknown): value is NhcModelGuidancePoint {
+  if (!value || typeof value !== "object") return false;
+  const point = value as Partial<NhcModelGuidancePoint>;
+  const optionalIntensityIsValid = (candidate: unknown, minimum: number, maximum: number) =>
+    candidate === null || (Number.isInteger(candidate) && (candidate as number) >= minimum && (candidate as number) <= maximum);
+
+  return (
+    Number.isInteger(point.forecastHour) && point.forecastHour! >= 0 && point.forecastHour! <= 168 &&
+    typeof point.lat === "number" && Number.isFinite(point.lat) && point.lat >= -90 && point.lat <= 90 &&
+    typeof point.lon === "number" && Number.isFinite(point.lon) && point.lon >= -180 && point.lon <= 180 &&
+    optionalIntensityIsValid(point.windKt, 1, 250) &&
+    optionalIntensityIsValid(point.pressureMb, 800, 1100)
+  );
+}
+
+function isValidGuidanceModel(value: unknown): value is NhcModelGuidanceModel {
+  if (!value || typeof value !== "object") return false;
+  const model = value as Partial<NhcModelGuidanceModel>;
+
+  return (
+    typeof model.id === "string" && /^[A-Z0-9]{3,4}$/.test(model.id) &&
+    typeof model.label === "string" && model.label.length > 0 &&
+    Array.isArray(model.points) && model.points.length >= 2 &&
+    model.points.every(isValidGuidancePoint) &&
+    model.points.every((point, index) => index === 0 || point.forecastHour > model.points![index - 1].forecastHour)
+  );
+}
+
+export function isValidNhcModelGuidanceData(value: unknown): value is NhcModelGuidanceData {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<NhcModelGuidanceData>;
+
+  return (
+    typeof candidate.generated === "string" && Number.isFinite(Date.parse(candidate.generated)) &&
+    candidate.source === "NOAA National Hurricane Center ATCF public A-deck" &&
+    typeof candidate.activeStormSourceUrl === "string" &&
+    typeof candidate.disclaimer === "string" && candidate.disclaimer.length > 0 &&
+    Array.isArray(candidate.storms) &&
+    candidate.storms.every(storm => {
+      const ids = new Set<string>();
+      return (
+        Boolean(storm) &&
+        typeof storm.id === "string" && /^[a-z]{2}\d{6}$/.test(storm.id) &&
+        typeof storm.name === "string" && storm.name.length > 0 &&
+        ["al", "ep", "cp"].includes(storm.basin) &&
+        typeof storm.sourceUrl === "string" && storm.sourceUrl.startsWith("https://ftp.nhc.noaa.gov/atcf/aid_public/a") &&
+        Array.isArray(storm.models) &&
+        storm.models.every(model => {
+          if (!isValidGuidanceModel(model) || ids.has(model.id)) return false;
+          ids.add(model.id);
+          return true;
+        }) &&
+        (storm.models.length > 0 || typeof storm.noDataReason === "string") &&
+        (storm.models.length === 0 || (/^\d{10}$/.test(storm.sourceCycle ?? "")))
+      );
+    })
+  );
+}

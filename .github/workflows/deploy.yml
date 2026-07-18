@@ -60,6 +60,12 @@ jobs:
           cp top_story.json /tmp/top_story-backup.json 2>/dev/null || true
           cp live_conditions.json /tmp/live_conditions-backup.json 2>/dev/null || true
           cp cruise_itineraries.json /tmp/cruise_itineraries-backup.json 2>/dev/null || true
+          # NHC tracker artifacts are published independently from the official NHC feed.
+          # Preserve them so an ordinary code deploy cannot replace a current advisory
+          # with the checked-in build fallback.
+          cp nhc_data.json /tmp/nhc_data-backup.json 2>/dev/null || true
+          cp nhc_gtwo.json /tmp/nhc_gtwo-backup.json 2>/dev/null || true
+          cp nhc_model_guidance.json /tmp/nhc_model_guidance-backup.json 2>/dev/null || true
           # Replace old assets with new build
           rm -f assets/*.js assets/*.css
           cp -r /tmp/deploy-output/assets/. assets/
@@ -76,6 +82,9 @@ jobs:
           cp /tmp/top_story-backup.json top_story.json 2>/dev/null || true
           cp /tmp/live_conditions-backup.json live_conditions.json 2>/dev/null || true
           cp /tmp/cruise_itineraries-backup.json cruise_itineraries.json 2>/dev/null || true
+          cp /tmp/nhc_data-backup.json nhc_data.json 2>/dev/null || true
+          cp /tmp/nhc_gtwo-backup.json nhc_gtwo.json 2>/dev/null || true
+          cp /tmp/nhc_model_guidance-backup.json nhc_model_guidance.json 2>/dev/null || true
           # Commit and push
           git add -A
           git diff --cached --quiet && echo "No changes to deploy" && exit 0

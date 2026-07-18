@@ -34,25 +34,34 @@ jobs:
       - name: Install dependencies
         run: pip install pyshp
 
-      - name: Fetch NHC tropical tracker data
+      - name: Generate validated official NHC data artifacts
         run: |
+          set -euo pipefail
           python3 scripts/generate_nhc_data.py
+          python3 scripts/generate_model_guidance.py
           echo "nhc_data.json generated: $(wc -c < client/public/nhc_data.json) bytes"
+          echo "nhc_model_guidance.json generated: $(wc -c < client/public/nhc_model_guidance.json) bytes"
 
-      - name: Push updated nhc_data.json to gh-pages
+      - name: Atomically publish updated NHC data artifacts to gh-pages
         run: |
+          set -euo pipefail
           git config user.email "deploy@mycruisingweather.com"
           git config user.name "WeatherStream Deploy"
 
+          # Both temporary copies must exist before gh-pages is checked out. If
+          # either generator failed, this step never runs and the last verified
+          # live artifacts remain untouched.
           cp client/public/nhc_data.json /tmp/nhc_data.json
+          cp client/public/nhc_model_guidance.json /tmp/nhc_model_guidance.json
 
           git fetch origin gh-pages
           git checkout -f gh-pages
-          git pull origin gh-pages
+          git pull --ff-only origin gh-pages
 
           cp /tmp/nhc_data.json nhc_data.json
+          cp /tmp/nhc_model_guidance.json nhc_model_guidance.json
 
-          git add nhc_data.json
-          git diff --cached --quiet && echo "No changes to nhc_data.json, skipping push." && exit 0
-          git commit -m "NHC tracker update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git add nhc_data.json nhc_model_guidance.json
+          git diff --cached --quiet && echo "No NHC artifact changes, skipping push." && exit 0
+          git commit -m "NHC tracker and model guidance update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
           git push origin gh-pages
