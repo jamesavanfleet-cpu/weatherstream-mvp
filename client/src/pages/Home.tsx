@@ -1701,7 +1701,7 @@ export default function Home() {
         />
       )}
 
-      {/* Briefing Video Modal -- PORTRAIT_VIDEO_MODAL_V2: mobile full-screen contain, desktop 380px portrait box, object-fit contain always, no crop ever */}
+      {/* Briefing Video Modal: portrait briefing fills the mobile viewport; desktop retains the focused 380px frame. */}
       {briefingVideoOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
@@ -1709,19 +1709,11 @@ export default function Home() {
           onClick={closeBriefingVideo}
         >
           <div
-            className="relative flex flex-col"
-            style={briefingVideoUrl
-              ? {
-                  /* On mobile: fill full screen height so portrait video sits edge-to-edge */
-                  /* On desktop: cap at 380px wide so portrait video doesn't explode across landscape screen */
-                  width: 'min(380px, 100vw)',
-                  height: '100dvh',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                }
-              : { width: 'min(480px, 90vw)' }
+            className={briefingVideoUrl
+              ? "relative flex h-[100dvh] w-screen flex-col justify-center md:w-[380px]"
+              : "relative flex flex-col"
             }
+            style={briefingVideoUrl ? undefined : { width: 'min(480px, 90vw)' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Close button -- always top-right overlay */}
@@ -1737,17 +1729,14 @@ export default function Home() {
 
             {briefingVideoUrl ? (
               <>
-                {/* Video fills the portrait container with contain -- never crops */}
-                <div
-                  className="overflow-hidden"
-                  style={{ width: '100%', height: '100dvh', background: 'black' }}
-                >
+                {/* The portrait briefing uses the full phone viewport; native controls retain the viewer's full-screen action. */}
+                <div className="h-full w-full overflow-hidden bg-black">
                   <video
                     src={briefingVideoUrl}
                     controls
                     autoPlay
                     playsInline
-                    className="w-full h-full object-cover md:object-contain"
+                    className="h-full w-full object-contain"
                     style={{ display: 'block', background: 'black' }}
                   />
                 </div>
