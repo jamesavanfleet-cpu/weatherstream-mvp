@@ -1,0 +1,119 @@
+name: Briefing Freshness Verification
+
+# Verifies the public briefing artifacts about 75 minutes after each normal
+# briefing cycle. All four seasonal UTC expressions are listed; the active
+# Eastern-time daylight-saving expression is selected at runtime.
+on:
+  schedule:
+    - cron: '15 9 * * *'     # 5:15 AM EDT, after the 4:00 AM EDT refresh
+    - cron: '15 10 * * *'    # 5:15 AM EST, after the 4:00 AM EST refresh
+    - cron: '0 21 * * *'     # 5:00 PM EDT, after the 3:45 PM EDT refresh
+    - cron: '0 22 * * *'     # 5:00 PM EST, after the 3:45 PM EST refresh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-briefings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select the active Eastern-time verification cycle
+        id: cycle
+        shell: bash
+        run: |
+          EVENT_NAME="${{ github.event_name }}"
+          SCHEDULE_EXPR="${{ github.event.schedule }}"
+          ET_TZ=$(TZ=America/New_York date +%Z)
+          ET_DATE=$(TZ=America/New_York date +%F)
+
+          if [ "$ET_TZ" = "EDT" ]; then
+            ACTIVE_AM_CRON='15 9 * * *'
+            ACTIVE_PM_CRON='0 21 * * *'
+          else
+            ACTIVE_AM_CRON='15 10 * * *'
+            ACTIVE_PM_CRON='0 22 * * *'
+          fi
+
+          if [ "$EVENT_NAME" = "schedule" ] && [ "$SCHEDULE_EXPR" != "$ACTIVE_AM_CRON" ] && [ "$SCHEDULE_EXPR" != "$ACTIVE_PM_CRON" ]; then
+            echo "Inactive seasonal verification cron '${SCHEDULE_EXPR}' for ${ET_TZ}; skipping."
+            echo "should_verify=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_verify=true" >> "$GITHUB_OUTPUT"
+          echo "expected_date=${ET_DATE}" >> "$GITHUB_OUTPUT"
+          echo "Verifying public briefing freshness for Eastern date ${ET_DATE}."
+
+      - name: Verify current public briefing artifacts
+        if: steps.cycle.outputs.should_verify == 'true'
+        env:
+          EXPECTED_DATE: ${{ steps.cycle.outputs.expected_date }}
+        run: |
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import sys
+          import time
+          import urllib.request
+
+          expected_date = os.environ['EXPECTED_DATE']
+          cache_buster = int(time.time())
+          endpoints = {
+              'intel': f'https://www.mycruisingweather.com/intel.json?ts={cache_buster}',
+              'top_story': f'https://www.mycruisingweather.com/top_story.json?ts={cache_buster}',
+          }
+
+          def fetch_json(label, url):
+              try:
+                  with urllib.request.urlopen(url, timeout=30) as response:
+                      return json.load(response)
+              except Exception as exc:
+                  raise RuntimeError(f'{label} could not be fetched or parsed: {exc}') from exc
+
+          errors = []
+          intel = fetch_json('intel.json', endpoints['intel'])
+          story = fetch_json('top_story.json', endpoints['top_story'])
+
+          if intel.get('generated') != expected_date:
+              errors.append(
+                  f"intel.json generated={intel.get('generated')!r}; expected {expected_date!r}"
+              )
+
+          regions = intel.get('regions')
+          if not isinstance(regions, dict) or not regions:
+              errors.append('intel.json has no populated regions object')
+          else:
+              incomplete = [
+                  name for name, text in regions.items()
+                  if not isinstance(text, str) or len(text.strip()) < 80
+              ]
+              if incomplete:
+                  errors.append('intel.json has incomplete regions: ' + ', '.join(sorted(incomplete)))
+
+          if story.get('date') != expected_date:
+              errors.append(
+                  f"top_story.json date={story.get('date')!r}; expected {expected_date!r}"
+              )
+
+          for required_section in ('caribbean', 'mediterranean'):
+              section = story.get(required_section)
+              if not isinstance(section, dict) or not str(section.get('headline', '')).strip():
+                  errors.append(f'top_story.json missing {required_section} headline')
+
+          if errors:
+              print('::error::PUBLIC BRIEFING FRESHNESS CHECK FAILED')
+              for error in errors:
+                  print(f'::error::{error}')
+              sys.exit(1)
+
+          print(
+              'Public briefing freshness verified: '
+              f"intel={intel.get('generated')}, top_story={story.get('date')}, "
+              f"regions={len(regions)}"
+          )
+          PYEOF
+
+      - name: Record skipped inactive seasonal cycle
+        if: steps.cycle.outputs.should_verify != 'true'
+        run: echo "Inactive seasonal verification schedule skipped intentionally."
