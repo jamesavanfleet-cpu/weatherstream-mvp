@@ -180,14 +180,15 @@ describe("Tropical page GTWO source ownership", () => {
 
 
 describe("WeatherStream model-guidance interface", () => {
-  it("loads only the validated current model artifact and never shows guidance for a storm absent from the current NHC tracker", () => {
+  it("loads only the validated current model artifact and permits a fresh verified invest without an advisory tracker record", () => {
     const testDir = fileURLToPath(new URL(".", import.meta.url));
     const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
 
     expect(pageSource).toContain("/nhc_model_guidance.json?ts=${Date.now()}");
     expect(pageSource).toContain("isValidNhcModelGuidanceData(candidate)");
     expect(pageSource).toContain('throw new Error("NHC model guidance is older than 8 hours and was withheld")');
-    expect(pageSource).toContain("const currentModelGuidanceStorms = (activeModelGuidance?.storms ?? []).filter(storm => currentStormIds.has(storm.id));");
+    expect(pageSource).toContain('storm.systemType === "invest" || currentStormIds.has(storm.id)');
+    expect(pageSource).toContain('data-model-guidance-no-current-system="WEATHERSTREAM_CURRENT_SYSTEM_GUIDANCE_V2"');
     expect(pageSource).toContain('<ModelGuidancePanel storm={storm} />');
   });
 
@@ -199,6 +200,7 @@ describe("WeatherStream model-guidance interface", () => {
     expect(componentSource).toContain('data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_V1"');
     expect(componentSource).toContain('data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_V1"');
     expect(componentSource).toContain("INTENSITY GUIDANCE: MAX SUSTAINED WIND");
+    expect(componentSource).toContain("INVEST GUIDANCE ONLY: NO OFFICIAL NHC ADVISORY OR FORECAST CONE");
     expect(pageSource).not.toContain("web.uwm.edu/hurricane-models/models");
     expect(pageSource).not.toContain("_5day_models.png");
   });

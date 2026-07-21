@@ -156,7 +156,7 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
   if (allWindPoints.length === 0) {
     return (
       <div style={{ padding: "18px 0", color: "#7B9BB5", fontSize: "0.86rem" }}>
-        Intensity guidance is unavailable for this advisory cycle.
+        Intensity guidance is unavailable for this public guidance cycle.
       </div>
     );
   }
@@ -226,12 +226,13 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
 export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) {
   const models = useMemo(() => withColor(storm.models), [storm.models]);
   const initializedCycle = cycleLabel(storm.sourceCycle);
+  const isInvest = storm.systemType === "invest";
 
   if (models.length === 0) {
     return (
       <div data-model-guidance-empty="WEATHERSTREAM_OFFICIAL_ADECK_EMPTY_V1" style={{ padding: "28px 0", textAlign: "center" }}>
         <div style={{ fontSize: "1rem", color: "#FFD166", letterSpacing: "0.08em", fontWeight: 700 }}>GUIDANCE UNAVAILABLE</div>
-        <div style={{ color: "#7B9BB5", fontSize: "0.86rem", lineHeight: 1.5, marginTop: 8 }}>{storm.noDataReason ?? "No complete public model guidance is available for this active storm."}</div>
+        <div style={{ color: "#7B9BB5", fontSize: "0.86rem", lineHeight: 1.5, marginTop: 8 }}>{storm.noDataReason ?? "No complete public model guidance is available for this current system."}</div>
       </div>
     );
   }
@@ -242,6 +243,11 @@ export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) 
         <div>
           <div style={{ color: "#00D4FF", fontSize: "0.92rem", fontWeight: 700, letterSpacing: "0.08em" }}>{storm.name.toUpperCase()}</div>
           <div style={{ color: "#607D93", fontSize: "0.72rem", marginTop: 3 }}>{initializedCycle ? `Model initialization ${initializedCycle}` : "Current published model cycle"}</div>
+          {isInvest && (
+            <div style={{ color: "#FFD166", fontSize: "0.7rem", marginTop: 5, letterSpacing: "0.05em" }}>
+              INVEST GUIDANCE ONLY: NO OFFICIAL NHC ADVISORY OR FORECAST CONE
+            </div>
+          )}
         </div>
         <a href={storm.sourceUrl} target="_blank" rel="noreferrer" style={{ color: "#7B9BB5", fontSize: "0.72rem", textDecoration: "underline", textUnderlineOffset: 3 }}>
           Official NHC A-deck source
@@ -261,7 +267,7 @@ export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) 
       </div>
 
       <p style={{ margin: "10px 0 0", color: "#7B9BB5", fontSize: "0.78rem", lineHeight: 1.5 }}>
-        These are public computer-model guidance aids from the NOAA National Hurricane Center ATCF A-deck. They are not an official NHC forecast. Use the official NHC forecast cone and local NWS products for decisions.
+        These are public computer-model guidance aids from the NOAA National Hurricane Center ATCF A-deck. They are not an official NHC forecast. {isInvest ? "This invest does not have an official NHC advisory or forecast cone. " : ""}Use official NHC forecasts and local NWS products for decisions.
       </p>
     </section>
   );

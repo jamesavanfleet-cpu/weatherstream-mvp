@@ -86,6 +86,52 @@ class ModelGuidanceParserTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "al012026"):
             guidance.build_payload(current_storms, fetcher, generated_at="2026-07-17T23:31:00Z")
 
+    def test_adds_a_fresh_complete_official_invest_cycle(self) -> None:
+        directory = '<a href="aal902026.dat.gz">aal902026.dat.gz</a>  2026-07-17 23:00  42K'
+        payload = guidance.build_payload(
+            {"activeStorms": [{"id": "ep052026", "name": "Elida"}]},
+            lambda storm_id: ADECK_FIXTURE if storm_id in {"ep052026", "al902026"} else "",
+            generated_at="2026-07-17T23:31:00Z",
+            directory_fetcher=lambda: directory,
+        )
+        guidance.validate_payload(payload)
+
+        invest = next(storm for storm in payload["storms"] if storm["id"] == "al902026")
+        self.assertEqual(invest["name"], "Invest 90L")
+        self.assertEqual(invest["systemType"], "invest")
+        self.assertEqual(invest["sourceCycle"], "2026071712")
+        self.assertGreaterEqual(len(invest["models"]), 2)
+
+    def test_omits_historical_invest_directory_entries(self) -> None:
+        directory = '<a href="aal902026.dat.gz">aal902026.dat.gz</a>  2026-07-17 23:00  42K'
+        fetched_ids: list[str] = []
+
+        def fetcher(storm_id: str) -> str:
+            fetched_ids.append(storm_id)
+            return ADECK_FIXTURE
+
+        payload = guidance.build_payload(
+            {"activeStorms": []},
+            fetcher,
+            generated_at="2026-07-19T23:31:00Z",
+            directory_fetcher=lambda: directory,
+        )
+        guidance.validate_payload(payload)
+        self.assertEqual(payload["storms"], [])
+        self.assertEqual(fetched_ids, [])
+
+    def test_does_not_duplicate_an_active_invest_numbered_system(self) -> None:
+        directory = '<a href="aal902026.dat.gz">aal902026.dat.gz</a>  2026-07-17 23:00  42K'
+        payload = guidance.build_payload(
+            {"activeStorms": [{"id": "al902026", "name": "Potential Tropical Cyclone One"}]},
+            lambda storm_id: ADECK_FIXTURE,
+            generated_at="2026-07-17T23:31:00Z",
+            directory_fetcher=lambda: directory,
+        )
+        guidance.validate_payload(payload)
+        self.assertEqual([storm["id"] for storm in payload["storms"]], ["al902026"])
+        self.assertEqual(payload["storms"][0]["systemType"], "advisory")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

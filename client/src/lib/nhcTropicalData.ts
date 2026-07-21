@@ -197,6 +197,8 @@ export interface NhcModelGuidanceStorm {
   id: string;
   name: string;
   basin: BasinTab;
+  /** Omitted by older artifacts. Invest records have a fresh official A-deck but no NHC advisory cone. */
+  systemType?: "advisory" | "invest";
   sourceCycle?: string;
   sourceUrl: string;
   models: NhcModelGuidanceModel[];
@@ -207,6 +209,8 @@ export interface NhcModelGuidanceData {
   generated: string;
   source: string;
   activeStormSourceUrl: string;
+  /** Official NHC directory used to discover fresh invest-numbered A-decks. */
+  investDiscoverySourceUrl?: string;
   disclaimer: string;
   storms: NhcModelGuidanceStorm[];
 }
@@ -257,6 +261,8 @@ export function isValidNhcModelGuidanceData(value: unknown): value is NhcModelGu
         typeof storm.name === "string" && storm.name.length > 0 &&
         ["al", "ep", "cp"].includes(storm.basin) &&
         typeof storm.sourceUrl === "string" && storm.sourceUrl.startsWith("https://ftp.nhc.noaa.gov/atcf/aid_public/a") &&
+        (storm.systemType === undefined || storm.systemType === "advisory" || storm.systemType === "invest") &&
+        (storm.systemType !== "invest" || /^[a-z]{2}9\d{6}$/.test(storm.id)) &&
         Array.isArray(storm.models) &&
         storm.models.every(model => {
           if (!isValidGuidanceModel(model) || ids.has(model.id)) return false;
@@ -264,7 +270,8 @@ export function isValidNhcModelGuidanceData(value: unknown): value is NhcModelGu
           return true;
         }) &&
         (storm.models.length > 0 || typeof storm.noDataReason === "string") &&
-        (storm.models.length === 0 || (/^\d{10}$/.test(storm.sourceCycle ?? "")))
+        (storm.models.length === 0 || (/^\d{10}$/.test(storm.sourceCycle ?? ""))) &&
+        (storm.systemType !== "invest" || storm.models.length > 0)
       );
     })
   );

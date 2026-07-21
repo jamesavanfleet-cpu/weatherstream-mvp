@@ -13,9 +13,10 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.request
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +25,7 @@ OUT_DIR = os.path.join(REPO_ROOT, "client", "public")
 OUTPUT_PATH = os.path.join(OUT_DIR, "nhc_model_guidance.json")
 
 CURRENT_STORMS_URL = "https://www.nhc.noaa.gov/CurrentStorms.json"
+AID_PUBLIC_DIRECTORY_URL = "https://ftp.nhc.noaa.gov/atcf/aid_public/"
 AID_PUBLIC_URL_TEMPLATE = "https://ftp.nhc.noaa.gov/atcf/aid_public/a{storm_id}.dat.gz"
 
 # This curated list intentionally excludes NHC official forecast aids and all
@@ -72,9 +74,15 @@ PUBLIC_AID_LABELS: dict[str, str] = {
 }
 
 ACTIVE_BASINS = {"al", "ep", "cp"}
+INVEST_BASIN_SUFFIXES = {"al": "L", "ep": "E", "cp": "C"}
+INVEST_ID_PATTERN = re.compile(r"(?:al|ep|cp)9\d\d{4}")
+PUBLIC_ADECK_INVEST_PATTERN = re.compile(r"a((?:al|ep|cp)9\d\d{4})\.dat\.gz", re.IGNORECASE)
+DIRECTORY_TIMESTAMP_PATTERN = re.compile(r"\b(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\b")
 MIN_POINTS_PER_AID = 2
 MIN_AIDS_PER_CYCLE = 2
 MAX_FORECAST_HOUR = 168
+MAX_INVEST_CYCLE_AGE = timedelta(hours=18)
+MAX_INVEST_DIRECTORY_AGE = timedelta(hours=30)
 
 
 def fetch_url(url: str, timeout: int = 30) -> bytes:
@@ -263,10 +271,14 @@ def storm_guidance_from_adeck(storm: dict[str, Any], adeck_text: str) -> dict[st
 
     selected = select_latest_complete_cycle(parse_adeck(adeck_text))
     source_url = AID_PUBLIC_URL_TEMPLATE.format(storm_id=storm_id)
+    system_type = str(storm.get("systemType") or "advisory")
+    if system_type not in {"advisory", "invest"}:
+        raise ValueError("Guidance system has an invalid type")
     result: dict[str, Any] = {
         "id": storm_id,
         "name": str(storm.get("name") or storm_id).strip(),
         "basin": storm_id[:2],
+        "systemType": system_type,
         "sourceUrl": source_url,
         "models": [],
     }
@@ -281,7 +293,7 @@ def storm_guidance_from_adeck(storm: dict[str, Any], adeck_text: str) -> dict[st
 
 
 def active_nhc_storms(current_storms: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract only currently active NHC or CPHC basin systems eligible for guidance."""
+    """Extract every currently active NHC or CPHC basin system eligible for guidance."""
     raw_storms = current_storms.get("activeStorms")
     if not isinstance(raw_storms, list):
         raise ValueError("CurrentStorms.json is missing a valid activeStorms list")
@@ -292,20 +304,89 @@ def active_nhc_storms(current_storms: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         storm_id = normalize_storm_id(raw_storm.get("id"))
         if storm_id and storm_id[:2] in ACTIVE_BASINS:
-            storms.append(raw_storm)
+            storms.append({**raw_storm, "systemType": "advisory"})
     return storms
+
+
+def parse_directory_timestamp(raw_timestamp: str) -> datetime | None:
+    """Return a UTC timestamp from an Apache-style public directory listing."""
+    try:
+        return datetime.strptime(raw_timestamp, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def public_invest_ids(directory_html: str, excluded_ids: set[str], generated_at: str) -> list[str]:
+    """Return only recently updated official invest A-decks from the public index."""
+    try:
+        generated = datetime.fromisoformat(generated_at.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        raise ValueError("Invest discovery requires a valid generated timestamp")
+
+    discovered: set[str] = set()
+    for line in directory_html.splitlines():
+        match = PUBLIC_ADECK_INVEST_PATTERN.search(line)
+        timestamp_match = DIRECTORY_TIMESTAMP_PATTERN.search(line)
+        if match is None or timestamp_match is None:
+            continue
+        storm_id = normalize_storm_id(match.group(1))
+        modified_at = parse_directory_timestamp(timestamp_match.group(1))
+        if storm_id is None or storm_id in excluded_ids or modified_at is None:
+            continue
+        if not INVEST_ID_PATTERN.fullmatch(storm_id):
+            continue
+        age = generated - modified_at
+        if not timedelta(hours=-1) <= age <= MAX_INVEST_DIRECTORY_AGE:
+            continue
+        discovered.add(storm_id)
+    return sorted(discovered)
+
+
+def invest_display_name(storm_id: str) -> str:
+    """Return an unambiguous public label for an official ATCF invest identifier."""
+    normalized = normalize_storm_id(storm_id)
+    if normalized is None or not INVEST_ID_PATTERN.fullmatch(normalized):
+        raise ValueError("Invest is missing a valid ATCF identifier")
+    return f"Invest {normalized[2:4]}{INVEST_BASIN_SUFFIXES[normalized[:2]]}"
+
+
+def parse_cycle_timestamp(cycle: str) -> datetime | None:
+    """Return a UTC datetime for an ATCF model cycle, or None when malformed."""
+    if not re.fullmatch(r"\d{10}", cycle):
+        return None
+    try:
+        return datetime.strptime(cycle, "%Y%m%d%H").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def is_current_invest_cycle(cycle: str, generated_at: str) -> bool:
+    """Require an invest guidance cycle to be fresh at artifact generation time."""
+    cycle_at = parse_cycle_timestamp(cycle)
+    try:
+        generated = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if cycle_at is None or generated.tzinfo is None:
+        return False
+    age = generated.astimezone(timezone.utc) - cycle_at
+    return timedelta(hours=-1) <= age <= MAX_INVEST_CYCLE_AGE
 
 
 def build_payload(
     current_storms: dict[str, Any],
     adeck_fetcher: Callable[[str], str],
     generated_at: str | None = None,
+    directory_fetcher: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
-    """Build a complete artifact, failing before publication if an active source fetch fails."""
+    """Build the official artifact for all current advisory systems and fresh public invests."""
     active_storms = active_nhc_storms(current_storms)
     generated = generated_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     records: list[dict[str, Any]] = []
 
+    # Advisory, potential tropical cyclone, and post-tropical systems present in
+    # CurrentStorms.json remain strict. A source failure must preserve the last
+    # verified artifact instead of publishing a partial official-storm view.
     for storm in active_storms:
         storm_id = normalize_storm_id(storm.get("id"))
         if storm_id is None:
@@ -318,10 +399,44 @@ def build_payload(
             raise RuntimeError(f"Public A-deck for active storm {storm_id} was empty")
         records.append(storm_guidance_from_adeck(storm, adeck_text))
 
+    # NHC retains historical invest files in the public directory. Each invest
+    # therefore requires both a complete allowed-model cycle and a recent cycle
+    # timestamp. Directory entries with no fresh, verifiable guidance are omitted.
+    if directory_fetcher is not None:
+        try:
+            directory_html = directory_fetcher()
+        except Exception as error:
+            raise RuntimeError("Could not retrieve the public A-deck directory") from error
+        if not isinstance(directory_html, str) or not directory_html.strip():
+            raise RuntimeError("Public A-deck directory was empty")
+
+        active_ids = {record["id"] for record in records}
+        for storm_id in public_invest_ids(directory_html, active_ids, generated):
+            try:
+                adeck_text = adeck_fetcher(storm_id)
+            except Exception as error:
+                # An invest is eligible only when its own official source is
+                # available now. Do not block current advisory guidance because
+                # an optional invest record disappeared or is temporarily absent.
+                print(f"Skipping unverifiable public invest {storm_id}: {error}", file=sys.stderr)
+                continue
+            if not isinstance(adeck_text, str) or not adeck_text.strip():
+                continue
+
+            invest = storm_guidance_from_adeck(
+                {"id": storm_id, "name": invest_display_name(storm_id), "systemType": "invest"},
+                adeck_text,
+            )
+            source_cycle = str(invest.get("sourceCycle") or "")
+            if not invest["models"] or not is_current_invest_cycle(source_cycle, generated):
+                continue
+            records.append(invest)
+
     return {
         "generated": generated,
         "source": "NOAA National Hurricane Center ATCF public A-deck",
         "activeStormSourceUrl": CURRENT_STORMS_URL,
+        "investDiscoverySourceUrl": AID_PUBLIC_DIRECTORY_URL,
         "disclaimer": "Model guidance is not an official NHC forecast. Consult official NHC forecasts and local NWS products.",
         "storms": records,
     }
@@ -351,6 +466,12 @@ def validate_payload(payload: dict[str, Any]) -> None:
         if storm.get("sourceUrl") != expected_source_url:
             raise ValueError("Guidance artifact storm source URL is invalid")
 
+        system_type = storm.get("systemType")
+        if system_type not in {"advisory", "invest"}:
+            raise ValueError("Guidance artifact storm has an invalid system type")
+        if system_type == "invest" and not INVEST_ID_PATTERN.fullmatch(storm_id):
+            raise ValueError("Guidance artifact invest has an invalid ATCF identifier")
+
         models = storm.get("models")
         if not isinstance(models, list):
             raise ValueError("Guidance artifact models must be a list")
@@ -358,6 +479,11 @@ def validate_payload(payload: dict[str, Any]) -> None:
             raise ValueError("Guidance artifact needs a no-data reason when models are absent")
         if models and not re.fullmatch(r"\d{10}", str(storm.get("sourceCycle") or "")):
             raise ValueError("Guidance artifact modeled storm needs a valid source cycle")
+        if system_type == "invest":
+            if not models:
+                raise ValueError("Guidance artifact invest needs complete public guidance")
+            if not is_current_invest_cycle(str(storm.get("sourceCycle") or ""), str(payload["generated"])):
+                raise ValueError("Guidance artifact invest cycle is not current")
 
         seen_aids: set[str] = set()
         for model in models:
@@ -402,6 +528,11 @@ def fetch_adeck_text(storm_id: str) -> str:
     return gzip.decompress(raw).decode("utf-8", errors="replace")
 
 
+def fetch_public_adeck_directory() -> str:
+    """Fetch the official public A-deck directory used only for invest discovery."""
+    return fetch_url(AID_PUBLIC_DIRECTORY_URL, timeout=30).decode("utf-8", errors="replace")
+
+
 def main() -> None:
     """Generate and atomically publish only a fully validated official artifact."""
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -411,7 +542,12 @@ def main() -> None:
     if not isinstance(current_storms, dict):
         raise ValueError("CurrentStorms.json response is not an object")
 
-    payload = build_payload(current_storms, fetch_adeck_text, generated_at)
+    payload = build_payload(
+        current_storms,
+        fetch_adeck_text,
+        generated_at,
+        directory_fetcher=fetch_public_adeck_directory,
+    )
     validate_payload(payload)
     write_json_atomic(OUTPUT_PATH, payload)
 

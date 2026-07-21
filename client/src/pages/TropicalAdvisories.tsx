@@ -1071,7 +1071,8 @@ export default function TropicalAdvisories() {
   const [nhcDataError, setNhcDataError] = useState<string | null>(null);
 
   // Validated public NHC ATCF A-deck model guidance. This stays separate from
-  // the official forecast artifact and is displayed only for currently active storms.
+  // the official forecast artifact and includes current advisory systems plus
+  // fresh, complete public invest cycles that pass independent validation.
   const [modelGuidance, setModelGuidance] = useState<NhcModelGuidanceData | null>(null);
   const [modelGuidanceError, setModelGuidanceError] = useState<string | null>(null);
 
@@ -1350,10 +1351,13 @@ export default function TropicalAdvisories() {
   const activeNhcData = nhcDataStale ? null : nhcData;
   const modelGuidanceStale = Boolean(modelGuidance && isNhcArtifactStale(modelGuidance.generated));
   const activeModelGuidance = modelGuidanceStale ? null : modelGuidance;
-  // Never render guidance for a storm that is absent from the independently
-  // validated current-storm artifact, even if its guidance payload is recent.
+  // Advisory, PTC, and post-tropical systems must remain in the independently
+  // validated current-storm artifact. A verified invest is eligible directly
+  // from its fresh official public A-deck, because no advisory record exists yet.
   const currentStormIds = new Set((activeNhcData?.storms ?? []).map(storm => storm.id));
-  const currentModelGuidanceStorms = (activeModelGuidance?.storms ?? []).filter(storm => currentStormIds.has(storm.id));
+  const currentModelGuidanceStorms = (activeModelGuidance?.storms ?? []).filter(
+    storm => storm.systemType === "invest" || currentStormIds.has(storm.id),
+  );
   const gtwoSourceTimestamp = gtwoData?.metadata.source_last_modified || gtwoData?.metadata.generated_at;
   const gtwoDataStale = Boolean(gtwoSourceTimestamp && isNhcArtifactStale(gtwoSourceTimestamp));
   const tropicalDataWarnings = [
@@ -2380,7 +2384,7 @@ export default function TropicalAdvisories() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
               <div>
                 <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>TRACK &amp; INTENSITY GUIDANCE</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>WeatherStream spaghetti plots · Public NHC A-deck · Current active storms only</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>WeatherStream spaghetti plots · Public NHC A-deck · Current advisory systems and fresh verified invests</div>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC ATCF</div>
             </div>
@@ -2391,19 +2395,17 @@ export default function TropicalAdvisories() {
                 </div>
               ))
             ) : (
-              <div data-model-guidance-no-current-storm="WEATHERSTREAM_CURRENT_STORM_GUARD_V1" style={{ padding: "32px 0", textAlign: "center" }}>
+              <div data-model-guidance-no-current-system="WEATHERSTREAM_CURRENT_SYSTEM_GUIDANCE_V2" style={{ padding: "32px 0", textAlign: "center" }}>
                 <div style={{ fontSize: "1.1rem", color: (activeNhcData?.storms ?? []).length > 0 ? "#FFD166" : "#39FF14", letterSpacing: "0.1em", marginBottom: 8 }}>
-                  {(activeNhcData?.storms ?? []).length > 0 ? "GUIDANCE PENDING" : "NO ACTIVE STORMS"}
+                  {(activeNhcData?.storms ?? []).length > 0 ? "GUIDANCE PENDING" : "NO CURRENT MODEL GUIDANCE"}
                 </div>
                 <div style={{ fontSize: "0.9rem", color: "#7B9BB5", maxWidth: 640, margin: "0 auto", lineHeight: 1.5 }}>
-                  {(activeNhcData?.storms ?? []).length > 0
-                    ? "The current official storm is confirmed, but a complete current public model cycle is not yet available. Guidance will appear only after it passes validation."
-                    : "Current official NHC track and intensity guidance will appear here only for an active storm."}
+                  "Guidance appears only after a current official NHC public A-deck cycle passes validation. An unnumbered outlook area is not plotted as a tropical system."
                 </div>
               </div>
             )}
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              Track spread is an uncertainty signal, not a confidence forecast. The intensity plot below the tracks shows each available aid's maximum sustained wind guidance in knots. The official NHC forecast cone and local NWS products remain the authoritative forecast products.
+              Track spread is an uncertainty signal, not a confidence forecast. Invest guidance does not imply an NHC advisory or official forecast cone. The intensity plot below the tracks shows each available aid's maximum sustained wind guidance in knots. Official NHC forecasts and local NWS products remain authoritative.
             </div>
           </div>
 
