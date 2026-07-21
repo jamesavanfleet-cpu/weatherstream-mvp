@@ -74,6 +74,11 @@ jobs:
           cp /tmp/deploy-output/maritime_routes.json maritime_routes.json 2>/dev/null || true
           cp /tmp/deploy-output/climate_database.json climate_database.json 2>/dev/null || true
           cp /tmp/deploy-output/climate_data.json climate_data.json 2>/dev/null || true
+          # Seed model guidance only on its first deploy. Once the NHC publisher
+          # has created it, the backup restore below always preserves current official data.
+          if [ ! -s nhc_model_guidance.json ] && [ -s /tmp/deploy-output/nhc_model_guidance.json ]; then
+            cp /tmp/deploy-output/nhc_model_guidance.json nhc_model_guidance.json
+          fi
           cp /tmp/404-backup 404.html 2>/dev/null || true
 
           # Restore JSON data files (never overwrite with empty/missing files)
