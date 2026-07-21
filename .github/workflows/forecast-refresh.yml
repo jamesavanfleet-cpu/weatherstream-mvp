@@ -72,24 +72,17 @@ jobs:
           echo "Active cron pair: AM=${ACTIVE_AM_CRON}, PM=${ACTIVE_PM_CRON}"
 
           if [ "$EVENT_NAME" = "schedule" ]; then
+            # GitHub can delay scheduled workflow delivery. The active DST-selected
+            # cron identity, rather than the eventual runner start time, determines
+            # whether this is the scheduled morning or afternoon refresh.
             if [ "$SCHEDULE_EXPR" = "$ACTIVE_AM_CRON" ]; then
               echo "cycle=am" >> "$GITHUB_OUTPUT"
-              if [ "$AM_WINDOW" -eq 1 ]; then
-                echo "should_run=true" >> "$GITHUB_OUTPUT"
-                echo "Correct AM run window (${ET_HOUR}:${ET_MINUTE} ET) -- proceeding with refresh."
-              else
-                echo "should_run=false" >> "$GITHUB_OUTPUT"
-                echo "Active AM cron fired outside allowed window (${ET_HOUR}:${ET_MINUTE} ET) -- skipping."
-              fi
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+              echo "Active AM cron received at ${ET_HOUR}:${ET_MINUTE} ET -- proceeding with refresh."
             elif [ "$SCHEDULE_EXPR" = "$ACTIVE_PM_CRON" ]; then
               echo "cycle=pm" >> "$GITHUB_OUTPUT"
-              if [ "$PM_WINDOW" -eq 1 ]; then
-                echo "should_run=true" >> "$GITHUB_OUTPUT"
-                echo "Correct PM run window (${ET_HOUR}:${ET_MINUTE} ET) -- proceeding with refresh."
-              else
-                echo "should_run=false" >> "$GITHUB_OUTPUT"
-                echo "Active PM cron fired outside allowed window (${ET_HOUR}:${ET_MINUTE} ET) -- skipping."
-              fi
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+              echo "Active PM cron received at ${ET_HOUR}:${ET_MINUTE} ET -- proceeding with refresh."
             else
               echo "cycle=inactive_schedule" >> "$GITHUB_OUTPUT"
               echo "should_run=false" >> "$GITHUB_OUTPUT"
