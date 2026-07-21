@@ -1,4 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { CircleMarker, MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 import type {
   NhcModelGuidanceModel,
@@ -11,6 +14,8 @@ const MODEL_COLORS = [
   "#2DD4BF", "#E879F9", "#60A5FA", "#F87171", "#A3E635",
 ];
 
+const TRACK_MAP_HEIGHT = 330;
+
 const CHART = {
   width: 720,
   height: 330,
@@ -20,6 +25,20 @@ const CHART = {
   bottom: 40,
 };
 
+const INTENSITY_CHART = {
+  ...CHART,
+  right: 150,
+};
+
+const INTENSITY_THRESHOLDS = [
+  { wind: 34, label: "Tropical Storm", color: "#38BDF8" },
+  { wind: 64, label: "Category 1", color: "#FACC15" },
+  { wind: 83, label: "Category 2", color: "#FB923C" },
+  { wind: 96, label: "Category 3", color: "#F97316" },
+  { wind: 113, label: "Category 4", color: "#EF4444" },
+  { wind: 137, label: "Category 5", color: "#D946EF" },
+];
+
 type Coordinate = { lat: number; lon: number };
 type ColoredModel = NhcModelGuidanceModel & { color: string };
 
@@ -28,28 +47,6 @@ function withColor(models: NhcModelGuidanceModel[]): ColoredModel[] {
     ...model,
     color: MODEL_COLORS[index % MODEL_COLORS.length],
   }));
-}
-
-function unwrapLongitudes(points: Coordinate[]): Coordinate[] {
-  if (points.length === 0) return [];
-  let previous = points[0].lon;
-  return points.map((point, index) => {
-    if (index === 0) return { ...point };
-    let longitude = point.lon;
-    while (longitude - previous > 180) longitude -= 360;
-    while (longitude - previous < -180) longitude += 360;
-    previous = longitude;
-    return { ...point, lon: longitude };
-  });
-}
-
-function latitudeLabel(latitude: number): string {
-  return `${Math.abs(latitude).toFixed(0)}°${latitude < 0 ? "S" : "N"}`;
-}
-
-function longitudeLabel(longitude: number): string {
-  const wrapped = ((longitude + 540) % 360) - 180;
-  return `${Math.abs(wrapped).toFixed(0)}°${wrapped < 0 ? "W" : "E"}`;
 }
 
 function pathFromPoints(points: Array<{ x: number; y: number }>): string {
@@ -65,86 +62,81 @@ function cycleLabel(cycle: string | undefined): string | null {
   return `${year}-${month}-${day} ${hour}Z`;
 }
 
+function ModelTrackMapBounds({ points }: { points: Coordinate[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (points.length === 0) return;
+    const bounds = L.latLngBounds(points.map(point => [point.lat, point.lon] as [number, number]));
+    if (!bounds.isValid()) return;
+
+    map.fitBounds(bounds.pad(0.18), {
+      animate: false,
+      maxZoom: 6,
+      padding: [12, 12],
+    });
+  }, [map, points]);
+
+  return null;
+}
+
 function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: string }) {
   const projectedModels = useMemo(() => models.map(model => ({
     ...model,
-    track: unwrapLongitudes(model.points.map(point => ({ lat: point.lat, lon: point.lon }))),
+    track: model.points.map(point => ({ lat: point.lat, lon: point.lon })),
   })), [models]);
 
-  const allPoints = projectedModels.flatMap(model => model.track);
+  const allPoints = useMemo(() => projectedModels.flatMap(model => model.track), [projectedModels]);
   if (allPoints.length === 0) return null;
 
-  const minLat = Math.min(...allPoints.map(point => point.lat));
-  const maxLat = Math.max(...allPoints.map(point => point.lat));
-  const minLon = Math.min(...allPoints.map(point => point.lon));
-  const maxLon = Math.max(...allPoints.map(point => point.lon));
-  const latPadding = Math.max((maxLat - minLat) * 0.12, 1.2);
-  const lonPadding = Math.max((maxLon - minLon) * 0.12, 1.8);
-  const bounds = {
-    minLat: minLat - latPadding,
-    maxLat: maxLat + latPadding,
-    minLon: minLon - lonPadding,
-    maxLon: maxLon + lonPadding,
-  };
-  const innerWidth = CHART.width - CHART.left - CHART.right;
-  const innerHeight = CHART.height - CHART.top - CHART.bottom;
-  const x = (longitude: number) => CHART.left + ((longitude - bounds.minLon) / (bounds.maxLon - bounds.minLon || 1)) * innerWidth;
-  const y = (latitude: number) => CHART.top + ((bounds.maxLat - latitude) / (bounds.maxLat - bounds.minLat || 1)) * innerHeight;
-  const gridSteps = [0, 1, 2, 3, 4];
   const initial = allPoints[0];
 
   return (
-    <div data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_V1">
+    <div data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_GEOGRAPHY_V2">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
         <div style={{ fontSize: "0.76rem", color: "#9DB6C9", letterSpacing: "0.08em", fontWeight: 700 }}>
           TRACK GUIDANCE
         </div>
-        <div style={{ fontSize: "0.7rem", color: "#607D93" }}>Each line is one public model aid</div>
+        <div style={{ fontSize: "0.7rem", color: "#607D93" }}>Coastlines and place names provide geographic reference</div>
       </div>
       <div style={{ border: "1px solid #19374D", background: "#08111A", overflow: "hidden" }}>
-        <svg
-          viewBox={`0 0 ${CHART.width} ${CHART.height}`}
-          role="img"
-          aria-label={`${stormName} model track guidance plot`}
-          style={{ display: "block", width: "100%", height: "auto", minHeight: 190 }}
+        <MapContainer
+          center={[initial.lat, initial.lon]}
+          zoom={4}
+          style={{ height: TRACK_MAP_HEIGHT, width: "100%" }}
+          zoomControl={true}
+          scrollWheelZoom={false}
+          attributionControl={true}
+          aria-label={`${stormName} model track guidance map`}
         >
-          <rect x="0" y="0" width={CHART.width} height={CHART.height} fill="#08111A" />
-          {gridSteps.map(step => {
-            const longitude = bounds.minLon + ((bounds.maxLon - bounds.minLon) * step) / 4;
-            const left = x(longitude);
-            return (
-              <g key={`lon-${step}`}>
-                <line x1={left} y1={CHART.top} x2={left} y2={CHART.height - CHART.bottom} stroke="#1A3345" strokeWidth="1" />
-                <text x={left} y={CHART.height - 16} textAnchor="middle" fill="#6D899D" fontSize="11">{longitudeLabel(longitude)}</text>
-              </g>
-            );
-          })}
-          {gridSteps.map(step => {
-            const latitude = bounds.minLat + ((bounds.maxLat - bounds.minLat) * step) / 4;
-            const top = y(latitude);
-            return (
-              <g key={`lat-${step}`}>
-                <line x1={CHART.left} y1={top} x2={CHART.width - CHART.right} y2={top} stroke="#1A3345" strokeWidth="1" />
-                <text x={CHART.left - 8} y={top + 4} textAnchor="end" fill="#6D899D" fontSize="11">{latitudeLabel(latitude)}</text>
-              </g>
-            );
-          })}
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            maxZoom={19}
+          />
+          <ModelTrackMapBounds points={allPoints} />
           {projectedModels.map(model => (
-            <path
+            <Polyline
               key={model.id}
-              d={pathFromPoints(model.track.map(point => ({ x: x(point.lon), y: y(point.lat) })))}
-              fill="none"
-              stroke={model.color}
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.88"
+              positions={model.track.map(point => [point.lat, point.lon] as [number, number])}
+              pathOptions={{
+                color: model.color,
+                weight: 1.35,
+                opacity: 0.78,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
             />
           ))}
-          <circle cx={x(initial.lon)} cy={y(initial.lat)} r="5" fill="#F4FBFF" stroke="#0B1017" strokeWidth="2" />
-          <text x={x(initial.lon) + 9} y={y(initial.lat) - 8} fill="#DCECF6" fontSize="11" fontWeight="700">INITIAL</text>
-          <text x={CHART.width - CHART.right} y={CHART.top + 12} textAnchor="end" fill="#607D93" fontSize="11">Forecast positions through 168 h</text>
-        </svg>
+          <CircleMarker
+            center={[initial.lat, initial.lon]}
+            radius={5}
+            pathOptions={{ color: "#0B1017", weight: 2, fillColor: "#F4FBFF", fillOpacity: 1 }}
+          />
+        </MapContainer>
+      </div>
+      <div style={{ color: "#607D93", fontSize: "0.7rem", lineHeight: 1.45, marginTop: 7 }}>
+        Thin colored lines are public model aids. The white marker is the model initialization position.
       </div>
     </div>
   );
@@ -163,15 +155,16 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
 
   const highestWind = Math.max(...allWindPoints.map(point => point.windKt ?? 0));
   const topWind = Math.max(80, Math.ceil(highestWind / 20) * 20);
-  const innerWidth = CHART.width - CHART.left - CHART.right;
-  const innerHeight = CHART.height - CHART.top - CHART.bottom;
-  const x = (hour: number) => CHART.left + (hour / 168) * innerWidth;
-  const y = (wind: number) => CHART.top + ((topWind - wind) / topWind) * innerHeight;
+  const innerWidth = INTENSITY_CHART.width - INTENSITY_CHART.left - INTENSITY_CHART.right;
+  const innerHeight = INTENSITY_CHART.height - INTENSITY_CHART.top - INTENSITY_CHART.bottom;
+  const x = (hour: number) => INTENSITY_CHART.left + (hour / 168) * innerWidth;
+  const y = (wind: number) => INTENSITY_CHART.top + ((topWind - wind) / topWind) * innerHeight;
   const xTicks = [0, 24, 48, 72, 96, 120, 144, 168];
   const yTicks = Array.from({ length: Math.floor(topWind / 20) + 1 }, (_, index) => index * 20);
+  const thresholdLabelX = INTENSITY_CHART.width - INTENSITY_CHART.right + 8;
 
   return (
-    <div data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_V1" style={{ marginTop: 18 }}>
+    <div data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_THRESHOLDS_V2" style={{ marginTop: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
         <div style={{ fontSize: "0.76rem", color: "#9DB6C9", letterSpacing: "0.08em", fontWeight: 700 }}>
           INTENSITY GUIDANCE: MAX SUSTAINED WIND
@@ -180,25 +173,53 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
       </div>
       <div style={{ border: "1px solid #19374D", background: "#08111A", overflow: "hidden" }}>
         <svg
-          viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+          viewBox={`0 0 ${INTENSITY_CHART.width} ${INTENSITY_CHART.height}`}
           role="img"
-          aria-label={`${stormName} model maximum sustained wind guidance plot`}
+          aria-label={`${stormName} model maximum sustained wind guidance plot with tropical cyclone category thresholds`}
           style={{ display: "block", width: "100%", height: "auto", minHeight: 190 }}
         >
-          <rect x="0" y="0" width={CHART.width} height={CHART.height} fill="#08111A" />
+          <rect x="0" y="0" width={INTENSITY_CHART.width} height={INTENSITY_CHART.height} fill="#08111A" />
+          <rect
+            x={INTENSITY_CHART.left}
+            y={y(34)}
+            width={innerWidth}
+            height={INTENSITY_CHART.height - INTENSITY_CHART.bottom - y(34)}
+            fill="#38BDF8"
+            opacity="0.045"
+          />
           {xTicks.map(hour => (
             <g key={`hour-${hour}`}>
-              <line x1={x(hour)} y1={CHART.top} x2={x(hour)} y2={CHART.height - CHART.bottom} stroke="#1A3345" strokeWidth="1" />
-              <text x={x(hour)} y={CHART.height - 16} textAnchor="middle" fill="#6D899D" fontSize="11">{hour}h</text>
+              <line x1={x(hour)} y1={INTENSITY_CHART.top} x2={x(hour)} y2={INTENSITY_CHART.height - INTENSITY_CHART.bottom} stroke="#1A3345" strokeWidth="1" />
+              <text x={x(hour)} y={INTENSITY_CHART.height - 16} textAnchor="middle" fill="#6D899D" fontSize="11">{hour}h</text>
             </g>
           ))}
           {yTicks.map(wind => (
             <g key={`wind-${wind}`}>
-              <line x1={CHART.left} y1={y(wind)} x2={CHART.width - CHART.right} y2={y(wind)} stroke="#1A3345" strokeWidth="1" />
-              <text x={CHART.left - 8} y={y(wind) + 4} textAnchor="end" fill="#6D899D" fontSize="11">{wind}</text>
+              <line x1={INTENSITY_CHART.left} y1={y(wind)} x2={INTENSITY_CHART.width - INTENSITY_CHART.right} y2={y(wind)} stroke="#1A3345" strokeWidth="1" />
+              <text x={INTENSITY_CHART.left - 8} y={y(wind) + 4} textAnchor="end" fill="#6D899D" fontSize="11">{wind}</text>
             </g>
           ))}
-          <text x={12} y={CHART.top + 4} fill="#6D899D" fontSize="11">kt</text>
+          {INTENSITY_THRESHOLDS.filter(threshold => threshold.wind <= topWind).map(threshold => (
+            <g key={threshold.label}>
+              <line
+                x1={INTENSITY_CHART.left}
+                y1={y(threshold.wind)}
+                x2={INTENSITY_CHART.width - INTENSITY_CHART.right}
+                y2={y(threshold.wind)}
+                stroke={threshold.color}
+                strokeWidth="1.2"
+                strokeDasharray="5 4"
+                opacity="0.9"
+              />
+              <text x={thresholdLabelX} y={y(threshold.wind) + 4} fill={threshold.color} fontSize="10" fontWeight="700">
+                {threshold.label} · {threshold.wind} kt
+              </text>
+            </g>
+          ))}
+          <text x={thresholdLabelX} y={INTENSITY_CHART.height - INTENSITY_CHART.bottom - 5} fill="#7DD3FC" fontSize="10" fontWeight="700">
+            Tropical Depression &lt;34 kt
+          </text>
+          <text x={12} y={INTENSITY_CHART.top + 4} fill="#6D899D" fontSize="11">kt</text>
           {modelsWithIntensity.map(model => {
             const points = model.points
               .filter((point): point is typeof point & { windKt: number } => point.windKt !== null)
@@ -209,14 +230,14 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
                 d={pathFromPoints(points)}
                 fill="none"
                 stroke={model.color}
-                strokeWidth="2.4"
+                strokeWidth="1.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity="0.88"
+                opacity="0.78"
               />
             );
           })}
-          <text x={CHART.width - CHART.right} y={CHART.top + 12} textAnchor="end" fill="#607D93" fontSize="11">Forecast guidance, not an official forecast</text>
+          <text x={INTENSITY_CHART.width - INTENSITY_CHART.right} y={INTENSITY_CHART.top + 12} textAnchor="end" fill="#607D93" fontSize="11">Forecast guidance, not an official forecast</text>
         </svg>
       </div>
     </div>
@@ -238,7 +259,7 @@ export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) 
   }
 
   return (
-    <section data-model-guidance-panel="WEATHERSTREAM_OFFICIAL_ADECK_GUIDANCE_V1" aria-label={`${storm.name} model guidance`}>
+    <section data-model-guidance-panel="WEATHERSTREAM_OFFICIAL_ADECK_GUIDANCE_GEOGRAPHY_V2" aria-label={`${storm.name} model guidance`}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div>
           <div style={{ color: "#00D4FF", fontSize: "0.92rem", fontWeight: 700, letterSpacing: "0.08em" }}>{storm.name.toUpperCase()}</div>
@@ -260,7 +281,7 @@ export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) 
       <div style={{ display: "flex", gap: "6px 10px", flexWrap: "wrap", marginTop: 12, padding: "8px 0", borderTop: "1px solid #19374D" }} aria-label="Model legend">
         {models.map(model => (
           <div key={model.id} style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#AFC4D3", fontSize: "0.69rem" }}>
-            <span aria-hidden="true" style={{ width: 10, height: 3, borderRadius: 3, background: model.color, display: "inline-block" }} />
+            <span aria-hidden="true" style={{ width: 10, height: 2, borderRadius: 3, background: model.color, display: "inline-block" }} />
             {model.label}
           </div>
         ))}

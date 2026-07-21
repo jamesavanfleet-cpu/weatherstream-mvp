@@ -192,15 +192,23 @@ describe("WeatherStream model-guidance interface", () => {
     expect(pageSource).toContain('<ModelGuidancePanel storm={storm} />');
   });
 
-  it("renders the custom track and intensity plots instead of external model-image embeds", () => {
+  it("renders official cone geometry plus geographic track and threshold-aware intensity guidance", () => {
     const testDir = fileURLToPath(new URL(".", import.meta.url));
     const componentSource = readFileSync(new URL("../components/ModelGuidancePanel.tsx", `file://${testDir}`), "utf8");
     const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
 
-    expect(componentSource).toContain('data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_V1"');
-    expect(componentSource).toContain('data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_V1"');
+    expect(componentSource).toContain('data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_GEOGRAPHY_V2"');
+    expect(componentSource).toContain('data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_THRESHOLDS_V2"');
+    expect(componentSource).toContain("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+    expect(componentSource).toContain("weight: 1.35");
+    expect(componentSource).toContain("INTENSITY_THRESHOLDS");
+    expect(componentSource).toContain("Tropical Depression &lt;34 kt");
     expect(componentSource).toContain("INTENSITY GUIDANCE: MAX SUSTAINED WIND");
     expect(componentSource).toContain("INVEST GUIDANCE ONLY: NO OFFICIAL NHC ADVISORY OR FORECAST CONE");
+    expect(pageSource).toContain('data-nhc-five-day-cone-card="WEATHERSTREAM_OFFICIAL_NHC_CONE_CARDS_V2"');
+    expect(pageSource).toContain("OfficialFiveDayConeMap storm={storm}");
+    expect(pageSource).toContain('data-official-nhc-five-day-cone="WEATHERSTREAM_OFFICIAL_NHC_CONE_GEOMETRY_V2"');
+    expect(pageSource).not.toContain("storm_graphics/${storm.id.toUpperCase()}");
     expect(pageSource).not.toContain("web.uwm.edu/hurricane-models/models");
     expect(pageSource).not.toContain("_5day_models.png");
   });

@@ -969,6 +969,70 @@ function TrackWaypointsLayer({ storm }: { storm: NhcStormData }) {
   return null;
 }
 
+// ── Compact official five-day cone map for the lower graphics section ───────────
+function ConeMapFitBounds({ storm }: { storm: NhcStormData }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const points: [number, number][] = [];
+
+    storm.coneCoords.forEach(([lon, lat]) => {
+      if (Number.isFinite(lat) && Number.isFinite(lon)) points.push([lat, lon]);
+    });
+    storm.trackPoints.forEach(point => {
+      if (Number.isFinite(point.lat) && Number.isFinite(point.lon)) points.push([point.lat, point.lon]);
+    });
+
+    if (points.length === 0) return;
+
+    try {
+      map.fitBounds(L.latLngBounds(points).pad(0.1), {
+        animate: false,
+        maxZoom: 7,
+        padding: [10, 10],
+      });
+    } catch {
+      // Keep the initial basin framing if an upstream official geometry is incomplete.
+    }
+  }, [map, storm]);
+
+  return null;
+}
+
+function OfficialFiveDayConeMap({ storm }: { storm: NhcStormData }) {
+  const initialLat = storm.latitudeNumeric ?? storm.trackPoints[0]?.lat ?? 20;
+  const initialLon = storm.longitudeNumeric ?? storm.trackPoints[0]?.lon ?? -70;
+
+  return (
+    <div
+      data-official-nhc-five-day-cone="WEATHERSTREAM_OFFICIAL_NHC_CONE_GEOMETRY_V2"
+      style={{ height: 340, border: "1px solid #19374D", overflow: "hidden", background: "#08111A" }}
+    >
+      <MapContainer
+        center={[initialLat, initialLon]}
+        zoom={5}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
+        scrollWheelZoom={false}
+        dragging={false}
+        touchZoom={false}
+        doubleClickZoom={false}
+        boxZoom={false}
+        keyboard={false}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
+        />
+        <ConeMapFitBounds storm={storm} />
+        <TrackConeLayer storm={storm} />
+        <TrackWaypointsLayer storm={storm} />
+      </MapContainer>
+    </div>
+  );
+}
+
 // ── Map auto-fit to basin storms/disturbances ─────────────────────────────────
 function MapFitBounds({
   storms,
@@ -2343,39 +2407,66 @@ export default function TropicalAdvisories() {
           gap: 20,
         }}>
 
-          {/* Card 1 -- NHC 5-Day Forecast Cone (storm-dependent) */}
-          <div style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          {/* Card 1 -- Official NHC five-day forecast cone for every active advisory system */}
+          <div
+            data-nhc-five-day-cone-card="WEATHERSTREAM_OFFICIAL_NHC_CONE_CARDS_V2"
+            style={{ background: "#0D1520", border: "1px solid #1A2D42", padding: 16, gridColumn: "1 / -1" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
               <div>
-                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>NHC 5-DAY FORECAST CONE</div>
-                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Official Track Forecast · NHC · Active storms only</div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.06em" }}>NHC 5-DAY FORECAST CONES</div>
+                <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 2 }}>Official NHC forecast-cone geometry and forecast track for every active advisory system</div>
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>NHC</div>
+              <div style={{ fontSize: "0.75rem", color: "#3A5068", letterSpacing: "0.08em" }}>OFFICIAL NHC</div>
             </div>
             {(activeNhcData?.storms ?? []).length > 0 ? (
-              (activeNhcData?.storms ?? []).map(storm => (
-                <div key={storm.id} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: "0.85rem", color: "#00D4FF", marginBottom: 6, letterSpacing: "0.06em" }}>
-                    {storm.name}
-                  </div>
-                  <img
-                    src={`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`}
-                    alt={`${storm.name} 5-day forecast cone`}
-                    style={{ width: "100%", display: "block", background: "#0A0E14", cursor: "pointer" }}
-                    loading="lazy"
-                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    onClick={() => setLightboxSrc(`https://www.nhc.noaa.gov/storm_graphics/${storm.id.toUpperCase().slice(0,2)}/${storm.id.toUpperCase()}_5day_cone_no_line_and_wind.png`)}
-                  />
-                </div>
-              ))
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 18 }}>
+                {(activeNhcData?.storms ?? []).map(storm => {
+                  const advisory = storm.publicAdvisory as Record<string, unknown> | null;
+                  const advisoryUrl = typeof advisory?.url === "string" ? advisory.url : undefined;
+                  const advisoryNumber = typeof advisory?.advNum === "string" ? advisory.advNum : undefined;
+                  const coneAvailable = storm.coneCoords.length >= 3 && storm.trackPoints.length > 0;
+                  const stormColor = stormSymbolColor(storm.classification);
+
+                  return (
+                    <article key={storm.id} style={{ background: "#08111A", border: `1px solid ${stormColor}55`, padding: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                        <div>
+                          <div style={{ color: stormColor, fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.08em" }}>{storm.name.toUpperCase()}</div>
+                          <div style={{ color: "#AFC4D3", fontSize: "0.78rem", marginTop: 3 }}>
+                            {storm.classification === "TS" ? "Tropical Storm" : storm.classification === "TD" ? "Tropical Depression" : storm.classification === "HU" ? "Hurricane" : storm.classification}
+                            {advisoryNumber ? ` · Advisory #${advisoryNumber}` : ""}
+                          </div>
+                        </div>
+                        {advisoryUrl && (
+                          <a href={advisoryUrl} target="_blank" rel="noreferrer" style={{ color: "#7DD3FC", fontSize: "0.73rem", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap" }}>
+                            Official advisory
+                          </a>
+                        )}
+                      </div>
+                      {coneAvailable ? (
+                        <OfficialFiveDayConeMap storm={storm} />
+                      ) : (
+                        <div style={{ minHeight: 240, display: "grid", placeItems: "center", textAlign: "center", color: "#FFD166", fontSize: "0.86rem", lineHeight: 1.5, padding: 18, border: "1px solid #19374D" }}>
+                          The official NHC forecast geometry for this advisory is not yet available. Check the official advisory link above.
+                        </div>
+                      )}
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 9, color: "#7B9BB5", fontSize: "0.72rem", lineHeight: 1.4 }}>
+                        <span><span style={{ color: "#78001E", fontWeight: 700 }}>Shaded cone</span> · probable five-day center track envelope</span>
+                        <span><span style={{ color: stormColor, fontWeight: 700 }}>Labeled points</span> · official forecast positions</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             ) : (
               <div style={{ padding: "32px 0", textAlign: "center" }}>
                 <div style={{ fontSize: "1.1rem", color: "#39FF14", letterSpacing: "0.1em", marginBottom: 8 }}>NO ACTIVE STORMS</div>
-                <div style={{ fontSize: "0.9rem", color: "#7B9BB5" }}>The official NHC 5-day forecast cone will appear here when a named storm is active.</div>
+                <div style={{ fontSize: "0.9rem", color: "#7B9BB5" }}>An official NHC five-day forecast cone will appear here when a named storm has an active advisory.</div>
               </div>
             )}
-            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              The cone represents the probable track of the storm center over 5 days. Roughly 60-70% of historical storm centers have remained within the cone. Impacts can extend well outside the cone.
+            <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 12, lineHeight: 1.5 }}>
+              Each cone is generated from the current official NHC forecast geometry for that system. The cone represents the probable track of the storm center over five days. Impacts can extend well outside the cone.
             </div>
           </div>
 
