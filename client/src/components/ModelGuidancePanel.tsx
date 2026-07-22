@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CircleMarker, MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -15,14 +15,34 @@ const MODEL_COLORS = [
 ];
 
 const TRACK_MAP_HEIGHT = 330;
+const TRACK_MAP_COMPACT_HEIGHT = 300;
 const TRACK_MAP_FALLBACK_ZOOM = 5;
+
 // Pixel padding keeps useful coastlines and place names in view without adding
 // the large geographic margin that made some initial track maps look global.
-const TRACK_MAP_BOUNDS_OPTIONS: L.FitBoundsOptions = {
-  animate: false,
-  maxZoom: 6,
-  padding: [20, 20],
-};
+function trackMapBoundsOptions(compact: boolean): L.FitBoundsOptions {
+  return {
+    animate: false,
+    maxZoom: compact ? 5 : 6,
+    padding: compact ? [14, 14] : [20, 20],
+  };
+}
+
+function useCompactViewport() {
+  const [compact, setCompact] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setCompact(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return compact;
+}
 
 const CHART = {
   width: 720,
@@ -70,27 +90,58 @@ function cycleLabel(cycle: string | undefined): string | null {
   return `${year}-${month}-${day} ${hour}Z`;
 }
 
-function ModelTrackMapBounds({ bounds }: { bounds: L.LatLngBounds }) {
+function ModelTrackMapBounds({ bounds, compact }: { bounds: L.LatLngBounds; compact: boolean }) {
   const map = useMap();
 
   useEffect(() => {
-    // The MapContainer receives these same bounds during creation. Re-fitting on
-    // the next rendered frame makes the initial view robust to flex/grid layout
-    // measurement, so a newly opened map cannot stay at a globe-scale fallback.
-    let frame = requestAnimationFrame(() => {
-      map.invalidateSize({ animate: false, pan: false });
-      frame = requestAnimationFrame(() => {
-        map.fitBounds(bounds, TRACK_MAP_BOUNDS_OPTIONS);
-      });
-    });
+    const frames: number[] = [];
+    let resizeTimer: number | undefined;
+    let disposed = false;
 
-    return () => cancelAnimationFrame(frame);
-  }, [bounds, map]);
+    const fit = () => {
+      if (disposed) return;
+      const container = map.getContainer();
+      if (!container.offsetWidth || !container.offsetHeight) return;
+      map.invalidateSize({ animate: false, pan: false });
+      map.fitBounds(bounds, trackMapBoundsOptions(compact));
+    };
+
+    // MapContainer can mount before its final layout width is known, especially
+    // after a static deployment or a mobile orientation change. Fit on subsequent
+    // frames and once the panel settles so the opening view reflects track bounds.
+    const scheduleFit = () => {
+      const first = window.requestAnimationFrame(() => {
+        const second = window.requestAnimationFrame(fit);
+        frames.push(second);
+      });
+      frames.push(first);
+    };
+
+    scheduleFit();
+    const settleTimer = window.setTimeout(scheduleFit, 140);
+    const finalTimer = window.setTimeout(scheduleFit, 460);
+    const observer = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(() => {
+          window.clearTimeout(resizeTimer);
+          resizeTimer = window.setTimeout(scheduleFit, 110);
+        });
+    observer?.observe(map.getContainer());
+
+    return () => {
+      disposed = true;
+      frames.forEach(frame => window.cancelAnimationFrame(frame));
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(finalTimer);
+      window.clearTimeout(resizeTimer);
+      observer?.disconnect();
+    };
+  }, [bounds, compact, map]);
 
   return null;
 }
 
-function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: string }) {
+function TrackPlot({ models, stormName, compact }: { models: ColoredModel[]; stormName: string; compact: boolean }) {
   const projectedModels = useMemo(() => models.map(model => ({
     ...model,
     track: model.points.map(point => ({ lat: point.lat, lon: point.lon })),
@@ -115,10 +166,9 @@ function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: s
       </div>
       <div style={{ border: "1px solid #19374D", background: "#08111A", overflow: "hidden" }}>
         <MapContainer
-          {...(trackBounds
-            ? { bounds: trackBounds, boundsOptions: TRACK_MAP_BOUNDS_OPTIONS }
-            : { center: [initial.lat, initial.lon] as L.LatLngExpression, zoom: TRACK_MAP_FALLBACK_ZOOM })}
-          style={{ height: TRACK_MAP_HEIGHT, width: "100%" }}
+          center={[initial.lat, initial.lon] as L.LatLngExpression}
+          zoom={TRACK_MAP_FALLBACK_ZOOM}
+          style={{ height: compact ? TRACK_MAP_COMPACT_HEIGHT : TRACK_MAP_HEIGHT, width: "100%" }}
           zoomControl={true}
           scrollWheelZoom={false}
           attributionControl={true}
@@ -129,7 +179,7 @@ function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: s
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             maxZoom={19}
           />
-          {trackBounds && <ModelTrackMapBounds bounds={trackBounds} />}
+          {trackBounds && <ModelTrackMapBounds bounds={trackBounds} compact={compact} />}
           {projectedModels.map(model => (
             <Polyline
               key={model.id}
@@ -157,7 +207,10 @@ function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: s
   );
 }
 
-function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormName: string }) {
+function IntensityPlot({ models, stormName, compact }: { models: ColoredModel[]; stormName: string; compact: boolean }) {
+  const chart = compact
+    ? { ...INTENSITY_CHART, width: 480, height: 300, left: 38, right: 120, top: 18, bottom: 36 }
+    : INTENSITY_CHART;
   const modelsWithIntensity = models.filter(model => model.points.some(point => point.windKt !== null));
   const allWindPoints = modelsWithIntensity.flatMap(model => model.points.filter(point => point.windKt !== null));
   if (allWindPoints.length === 0) {
@@ -170,13 +223,13 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
 
   const highestWind = Math.max(...allWindPoints.map(point => point.windKt ?? 0));
   const topWind = Math.max(80, Math.ceil(highestWind / 20) * 20);
-  const innerWidth = INTENSITY_CHART.width - INTENSITY_CHART.left - INTENSITY_CHART.right;
-  const innerHeight = INTENSITY_CHART.height - INTENSITY_CHART.top - INTENSITY_CHART.bottom;
-  const x = (hour: number) => INTENSITY_CHART.left + (hour / 168) * innerWidth;
-  const y = (wind: number) => INTENSITY_CHART.top + ((topWind - wind) / topWind) * innerHeight;
-  const xTicks = [0, 24, 48, 72, 96, 120, 144, 168];
+  const innerWidth = chart.width - chart.left - chart.right;
+  const innerHeight = chart.height - chart.top - chart.bottom;
+  const x = (hour: number) => chart.left + (hour / 168) * innerWidth;
+  const y = (wind: number) => chart.top + ((topWind - wind) / topWind) * innerHeight;
+  const xTicks = compact ? [0, 48, 96, 144, 168] : [0, 24, 48, 72, 96, 120, 144, 168];
   const yTicks = Array.from({ length: Math.floor(topWind / 20) + 1 }, (_, index) => index * 20);
-  const thresholdLabelX = INTENSITY_CHART.width - INTENSITY_CHART.right + 8;
+  const thresholdLabelX = chart.width - chart.right + 8;
 
   return (
     <div data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_THRESHOLDS_V2" style={{ marginTop: 18 }}>
@@ -188,38 +241,38 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
       </div>
       <div style={{ border: "1px solid #19374D", background: "#08111A", overflow: "hidden" }}>
         <svg
-          viewBox={`0 0 ${INTENSITY_CHART.width} ${INTENSITY_CHART.height}`}
+          viewBox={`0 0 ${chart.width} ${chart.height}`}
           role="img"
           aria-label={`${stormName} model maximum sustained wind guidance plot with tropical cyclone category thresholds`}
-          style={{ display: "block", width: "100%", height: "auto", minHeight: 190 }}
+          style={{ display: "block", width: "100%", height: "auto", minHeight: compact ? 250 : 190 }}
         >
-          <rect x="0" y="0" width={INTENSITY_CHART.width} height={INTENSITY_CHART.height} fill="#08111A" />
+          <rect x="0" y="0" width={chart.width} height={chart.height} fill="#08111A" />
           <rect
-            x={INTENSITY_CHART.left}
+            x={chart.left}
             y={y(34)}
             width={innerWidth}
-            height={INTENSITY_CHART.height - INTENSITY_CHART.bottom - y(34)}
+            height={chart.height - chart.bottom - y(34)}
             fill="#38BDF8"
             opacity="0.045"
           />
           {xTicks.map(hour => (
             <g key={`hour-${hour}`}>
-              <line x1={x(hour)} y1={INTENSITY_CHART.top} x2={x(hour)} y2={INTENSITY_CHART.height - INTENSITY_CHART.bottom} stroke="#1A3345" strokeWidth="1" />
-              <text x={x(hour)} y={INTENSITY_CHART.height - 16} textAnchor="middle" fill="#6D899D" fontSize="11">{hour}h</text>
+              <line x1={x(hour)} y1={chart.top} x2={x(hour)} y2={chart.height - chart.bottom} stroke="#1A3345" strokeWidth="1" />
+              <text x={x(hour)} y={chart.height - 16} textAnchor="middle" fill="#6D899D" fontSize="11">{hour}h</text>
             </g>
           ))}
           {yTicks.map(wind => (
             <g key={`wind-${wind}`}>
-              <line x1={INTENSITY_CHART.left} y1={y(wind)} x2={INTENSITY_CHART.width - INTENSITY_CHART.right} y2={y(wind)} stroke="#1A3345" strokeWidth="1" />
-              <text x={INTENSITY_CHART.left - 8} y={y(wind) + 4} textAnchor="end" fill="#6D899D" fontSize="11">{wind}</text>
+              <line x1={chart.left} y1={y(wind)} x2={chart.width - chart.right} y2={y(wind)} stroke="#1A3345" strokeWidth="1" />
+              <text x={chart.left - 8} y={y(wind) + 4} textAnchor="end" fill="#6D899D" fontSize="11">{wind}</text>
             </g>
           ))}
           {INTENSITY_THRESHOLDS.filter(threshold => threshold.wind <= topWind).map(threshold => (
             <g key={threshold.label}>
               <line
-                x1={INTENSITY_CHART.left}
+                x1={chart.left}
                 y1={y(threshold.wind)}
-                x2={INTENSITY_CHART.width - INTENSITY_CHART.right}
+                x2={chart.width - chart.right}
                 y2={y(threshold.wind)}
                 stroke={threshold.color}
                 strokeWidth="1.2"
@@ -227,14 +280,14 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
                 opacity="0.9"
               />
               <text x={thresholdLabelX} y={y(threshold.wind) + 4} fill={threshold.color} fontSize="10" fontWeight="700">
-                {threshold.label} · {threshold.wind} kt
+                {compact ? threshold.label.replace("Category", "Cat.") : threshold.label} · {threshold.wind} kt
               </text>
             </g>
           ))}
-          <text x={thresholdLabelX} y={INTENSITY_CHART.height - INTENSITY_CHART.bottom - 5} fill="#7DD3FC" fontSize="10" fontWeight="700">
+          <text x={thresholdLabelX} y={chart.height - chart.bottom - 5} fill="#7DD3FC" fontSize="10" fontWeight="700">
             Tropical Depression &lt;34 kt
           </text>
-          <text x={12} y={INTENSITY_CHART.top + 4} fill="#6D899D" fontSize="11">kt</text>
+          <text x={12} y={chart.top + 4} fill="#6D899D" fontSize="11">kt</text>
           {modelsWithIntensity.map(model => {
             const points = model.points
               .filter((point): point is typeof point & { windKt: number } => point.windKt !== null)
@@ -252,7 +305,7 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
               />
             );
           })}
-          <text x={INTENSITY_CHART.width - INTENSITY_CHART.right} y={INTENSITY_CHART.top + 12} textAnchor="end" fill="#607D93" fontSize="11">Forecast guidance, not an official forecast</text>
+          <text x={chart.width - chart.right} y={chart.top + 12} textAnchor="end" fill="#607D93" fontSize="11">Forecast guidance, not an official forecast</text>
         </svg>
       </div>
     </div>
@@ -260,6 +313,7 @@ function IntensityPlot({ models, stormName }: { models: ColoredModel[]; stormNam
 }
 
 export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) {
+  const compact = useCompactViewport();
   const models = useMemo(() => withColor(storm.models), [storm.models]);
   const initializedCycle = cycleLabel(storm.sourceCycle);
   const isInvest = storm.systemType === "invest";
@@ -290,8 +344,8 @@ export function ModelGuidancePanel({ storm }: { storm: NhcModelGuidanceStorm }) 
         </a>
       </div>
 
-      <TrackPlot models={models} stormName={storm.name} />
-      <IntensityPlot models={models} stormName={storm.name} />
+      <TrackPlot models={models} stormName={storm.name} compact={compact} />
+      <IntensityPlot models={models} stormName={storm.name} compact={compact} />
 
       <div style={{ display: "flex", gap: "6px 10px", flexWrap: "wrap", marginTop: 12, padding: "8px 0", borderTop: "1px solid #19374D" }} aria-label="Model legend">
         {models.map(model => (

@@ -567,7 +567,8 @@ function LayerBtn({
       onClick={onClick}
       style={{
         display: "flex", alignItems: "center", gap: 4,
-        padding: "4px 7px",
+        minHeight: 36,
+        padding: "6px 8px",
         border: `1px solid ${active ? color : "#1A2D42"}`,
         background: active ? `rgba(${rgb},0.12)` : "rgba(13,21,32,0.85)",
         color: active ? color : "#7B9BB5",
@@ -1048,15 +1049,14 @@ function MapFitBounds({
   useEffect(() => {
     const basinStorms = storms.filter(s => s.basin === basin);
     const basinDist = disturbances.filter(f => gtwoFeatureBasin(f) === basin);
-
     const points: [number, number][] = [];
 
     basinStorms.forEach(s => {
-      if (s.latitudeNumeric && s.longitudeNumeric) {
+      if (Number.isFinite(s.latitudeNumeric) && Number.isFinite(s.longitudeNumeric)) {
         points.push([s.latitudeNumeric, s.longitudeNumeric]);
       }
       s.trackPoints.forEach(pt => {
-        if (pt.lat && pt.lon) points.push([pt.lat, pt.lon]);
+        if (Number.isFinite(pt.lat) && Number.isFinite(pt.lon)) points.push([pt.lat, pt.lon]);
       });
     });
 
@@ -1064,24 +1064,56 @@ function MapFitBounds({
       const geom = f.geometry as GeoJSON.Polygon;
       if (geom.type === "Polygon" && geom.coordinates[0]) {
         geom.coordinates[0].forEach(([lon, lat]) => {
-          points.push([lat, lon]);
+          if (Number.isFinite(lat) && Number.isFinite(lon)) points.push([lat, lon]);
         });
       }
     });
 
-    if (points.length > 0) {
-      const lats = points.map(p => p[0]);
-      const lons = points.map(p => p[1]);
-      const minLat = Math.min(...lats) - 3;
-      const maxLat = Math.max(...lats) + 3;
-      const minLon = Math.min(...lons) - 5;
-      const maxLon = Math.max(...lons) + 5;
+    if (points.length === 0) return;
+
+    const lats = points.map(p => p[0]);
+    const lons = points.map(p => p[1]);
+    const bounds: L.LatLngBoundsExpression = [
+      [Math.min(...lats) - 3, Math.min(...lons) - 5],
+      [Math.max(...lats) + 3, Math.max(...lons) + 5],
+    ];
+    let animationFrame: number | undefined;
+    let delayedFit: number | undefined;
+
+    const applyFit = () => {
       try {
-        const containerWidth = map.getContainer().offsetWidth;
-        const maxZoom = containerWidth < 768 ? 5 : 6;
-        map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { animate: true, duration: 0.8, maxZoom });
-      } catch { /* ignore */ }
-    }
+        const container = map.getContainer();
+        const containerWidth = container.offsetWidth;
+        if (containerWidth <= 0 || container.offsetHeight <= 0) return;
+
+        // The mobile map is measured after its first Leaflet render. Re-fitting
+        // after that measurement prevents the default, globe-scale starting view.
+        map.invalidateSize({ pan: false });
+        map.fitBounds(bounds, {
+          animate: false,
+          maxZoom: containerWidth < 768 ? 5 : 6,
+          padding: containerWidth < 768 ? [12, 12] : [20, 20],
+        });
+      } catch {
+        // Preserve the initial map view if an upstream geometry is incomplete.
+      }
+    };
+
+    const scheduleFit = () => {
+      if (animationFrame !== undefined) window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(applyFit);
+    };
+
+    scheduleFit();
+    delayedFit = window.setTimeout(scheduleFit, 180);
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scheduleFit);
+    resizeObserver?.observe(map.getContainer());
+
+    return () => {
+      if (animationFrame !== undefined) window.cancelAnimationFrame(animationFrame);
+      if (delayedFit !== undefined) window.clearTimeout(delayedFit);
+      resizeObserver?.disconnect();
+    };
   }, [storms, disturbances, basin, map]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
@@ -1140,9 +1172,12 @@ export default function TropicalAdvisories() {
   const [modelGuidance, setModelGuidance] = useState<NhcModelGuidanceData | null>(null);
   const [modelGuidanceError, setModelGuidanceError] = useState<string | null>(null);
 
-  // Basin tab selection: auto-select first basin with active storms, default Atlantic
+  // Basin tab selection is deferred until both validated NHC payloads settle.
+  // This prevents fetch timing from opening the phone on an unrelated basin.
   const [activeBasin, setActiveBasin] = useState<BasinTab>("al");
   const didAutoSelectNhcBasin = useRef(false);
+  const [nhcInitialLoadSettled, setNhcInitialLoadSettled] = useState(false);
+  const [gtwoInitialLoadSettled, setGtwoInitialLoadSettled] = useState(false);
 
   // Authoritative NHC GTWO payload. Disturbances are consumed only from
   // /nhc_gtwo.json so a stale embedded copy cannot override the current outlook.
@@ -1260,13 +1295,10 @@ export default function TropicalAdvisories() {
         });
 
         setNhcDataError(null);
-
-        if (!didAutoSelectNhcBasin.current && candidate.storms.length > 0) {
-          setActiveBasin(candidate.storms[0].basin as BasinTab);
-          didAutoSelectNhcBasin.current = true;
-        }
       } catch (error) {
         setNhcDataError(error instanceof Error ? error.message : "NHC storm data unavailable");
+      } finally {
+        setNhcInitialLoadSettled(true);
       }
     };
 
@@ -1342,18 +1374,10 @@ export default function TropicalAdvisories() {
           return candidateGenerated >= currentGenerated ? candidate : current;
         });
         setGtwoError(null);
-
-        if (!didAutoSelectNhcBasin.current && candidate.features.length > 0) {
-          const firstBasin = candidate.features
-            .map(gtwoFeatureBasin)
-            .find((basin): basin is BasinTab => basin !== null);
-          if (firstBasin) {
-            setActiveBasin(firstBasin);
-            didAutoSelectNhcBasin.current = true;
-          }
-        }
       } catch (error) {
         setGtwoError(error instanceof Error ? error.message : "NHC outlook data unavailable");
+      } finally {
+        setGtwoInitialLoadSettled(true);
       }
     };
 
@@ -1371,6 +1395,25 @@ export default function TropicalAdvisories() {
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
+
+  // Choose the first active basin in Atlantic, Eastern Pacific, Central Pacific
+  // order only after both source payloads have had their first response. This keeps
+  // the default stable across mobile and desktop instead of depending on fetch order.
+  useEffect(() => {
+    if (didAutoSelectNhcBasin.current || !nhcInitialLoadSettled || !gtwoInitialLoadSettled) return;
+
+    const preferredBasins: BasinTab[] = ["al", "ep", "cp"];
+    const selected = preferredBasins.find(basin => {
+      const hasStorm = (nhcData?.storms ?? []).some(storm => storm.basin === basin);
+      const hasDisturbance = (gtwoData?.features ?? []).some(feature => gtwoFeatureBasin(feature) === basin);
+      return hasStorm || hasDisturbance;
+    });
+
+    if (selected) {
+      setActiveBasin(selected);
+      didAutoSelectNhcBasin.current = true;
+    }
+  }, [gtwoData, gtwoInitialLoadSettled, nhcData, nhcInitialLoadSettled]);
 
   // Fetch marine zone boundaries AND marine forecasts on mount (lazy -- only when
   // Zone Forecasts is first toggled on). Both files come from gh-pages and are
@@ -1469,11 +1512,11 @@ export default function TropicalAdvisories() {
       <div style={{
         background: "#0D1520",
         borderBottom: "1px solid #1A2D42",
-        padding: "8px 14px",
+        padding: isMobile ? "8px 10px" : "8px 14px",
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: isMobile ? 8 : 12,
       }}>
         <button
           onClick={() => navigate("/")}
@@ -1498,11 +1541,11 @@ export default function TropicalAdvisories() {
           HOME
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.08em" }}>
+          <div style={{ fontSize: isMobile ? "0.84rem" : "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: isMobile ? "0.04em" : "0.08em", lineHeight: 1.2 }}>
             TROPICAL &amp; MARINE ADVISORIES
           </div>
-          <div style={{ fontSize: "0.9rem", color: "#7B9BB5", marginTop: 2 }}>
-            NWS Marine + NHC Tropical Watches, Warnings &amp; Statements
+          <div style={{ fontSize: isMobile ? "0.66rem" : "0.9rem", color: "#7B9BB5", marginTop: 3, lineHeight: 1.35 }}>
+            {isMobile ? "NHC tropical · NWS marine" : "NWS Marine + NHC Tropical Watches, Warnings & Statements"}
           </div>
         </div>
         {/* Mobile sidebar toggle */}
@@ -1514,9 +1557,9 @@ export default function TropicalAdvisories() {
               border: `1px solid ${showSidebar ? "#00D4FF" : "#1A2D42"}`,
               color: showSidebar ? "#00D4FF" : "#7B9BB5",
               cursor: "pointer",
-              fontSize: "1rem",
-              letterSpacing: "0.08em",
-              padding: "6px 14px",
+              fontSize: isMobile ? "0.74rem" : "1rem",
+              letterSpacing: isMobile ? "0.05em" : "0.08em",
+              padding: isMobile ? "7px 9px" : "6px 14px",
               fontFamily: "inherit",
               flexShrink: 0,
             }}
@@ -1530,7 +1573,7 @@ export default function TropicalAdvisories() {
       <div style={{
         background: "#0D1520",
         borderBottom: "1px solid #1A2D42",
-        padding: "7px 14px",
+        padding: isMobile ? "7px 10px" : "7px 14px",
         flexShrink: 0,
       }}>
         <div style={{
@@ -1550,7 +1593,7 @@ export default function TropicalAdvisories() {
             data-outlook-mode={outlookMode}
             style={{ display: "flex", alignItems: "center", gap: 0, marginLeft: 8, border: "1px solid #1A2D42", overflow: "hidden" }}
           >
-            <span style={{ padding: "4px 8px", color: "#E8F4FF", fontSize: "0.78rem", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+            <span style={{ minHeight: 36, display: "flex", alignItems: "center", padding: "6px 8px", color: "#E8F4FF", fontSize: "0.78rem", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
               TROPICAL OUTLOOK
             </span>
             {(["7day", "2day", "off"] as OutlookMode[]).map(mode => (
@@ -1559,7 +1602,8 @@ export default function TropicalAdvisories() {
                 onClick={() => setOutlookMode(mode)}
                 aria-pressed={outlookMode === mode}
                 style={{
-                  padding: "4px 8px",
+                  minHeight: 36,
+                  padding: "6px 8px",
                   background: outlookMode === mode ? "rgba(255,69,0,0.18)" : "rgba(13,21,32,0.85)",
                   color: outlookMode === mode ? "#FF4500" : "#7B9BB5",
                   border: "none",
@@ -1579,7 +1623,7 @@ export default function TropicalAdvisories() {
           <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", gap: 4 }}>
             {(["street", "satellite"] as const).map(b => (
               <button key={b} onClick={() => setBasemap(b)} style={{
-                padding: "4px 9px", cursor: "pointer", fontSize: "0.78rem", letterSpacing: "0.06em",
+                minHeight: 36, padding: "6px 9px", cursor: "pointer", fontSize: "0.78rem", letterSpacing: "0.06em",
                 border: `1px solid ${basemap === b ? "#00D4FF" : "#1A2D42"}`,
                 background: basemap === b ? "rgba(0,212,255,0.12)" : "rgba(13,21,32,0.85)",
                 color: basemap === b ? "#00D4FF" : "#7B9BB5",
@@ -1594,8 +1638,8 @@ export default function TropicalAdvisories() {
 
       {/* ── Map + sidebar ── */}
       <div
-        data-map-mobile-height="MOBILE_MAP_HEIGHT_480PX_V1"
-        style={{ flex: "0 0 auto", height: isMobile ? "480px" : "calc(100dvh - 100px)", display: "flex", overflow: "hidden", position: "relative" }}
+        data-map-mobile-height="MOBILE_MAP_HEIGHT_RESPONSIVE_V2"
+        style={{ flex: "0 0 auto", height: isMobile ? "clamp(360px, 60dvh, 500px)" : "calc(100dvh - 100px)", display: "flex", overflow: "hidden", position: "relative" }}
       >
         {/* Leaflet map -- flex:1 always so it fills remaining width after sidebar */}
         <div
@@ -1714,8 +1758,8 @@ export default function TropicalAdvisories() {
               />
             )}
 
-            {/* Invalidate Leaflet canvas size when sidebar shows/hides on mobile */}
-            <MapInvalidator trigger={showSidebar} />
+            {/* Recalculate Leaflet after sidebar, viewport, or mobile layout changes. */}
+            <MapInvalidator trigger={isMobile || showSidebar} />
 
             {/* Clickable GeoJSON alert zones from NWS API */}
             <AlertZonesLayer
@@ -2042,17 +2086,17 @@ export default function TropicalAdvisories() {
       <div style={{
         background: "#0A0E14",
         borderTop: "2px solid #1A2D42",
-        padding: "24px 20px 32px",
+        padding: isMobile ? "20px 14px 28px" : "24px 20px 32px",
       }}>
         {/* Section header */}
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: "0.85rem", color: "#FF4500", letterSpacing: "0.15em", marginBottom: 6 }}>
+          <div style={{ fontSize: isMobile ? "0.72rem" : "0.85rem", color: "#FF4500", letterSpacing: isMobile ? "0.1em" : "0.15em", marginBottom: 6 }}>
             NHC TROPICAL WEATHER TRACKER
           </div>
-          <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.04em", lineHeight: 1.2 }}>
+          <div style={{ fontSize: isMobile ? "1.16rem" : "1.4rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.04em", lineHeight: 1.2 }}>
             Active Storms &amp; Disturbances
           </div>
-          <div style={{ fontSize: "0.9rem", color: "#7B9BB5", marginTop: 6 }}>
+          <div style={{ fontSize: isMobile ? "0.78rem" : "0.9rem", color: "#7B9BB5", marginTop: 6, lineHeight: 1.5 }}>
             Official NHC forecast tracks, uncertainty cones, and tropical weather outlook. Data refreshes 4x daily.
           </div>
         </div>
@@ -2080,7 +2124,7 @@ export default function TropicalAdvisories() {
         )}
 
         {/* Basin tabs */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #1A2D42", overflow: "hidden", width: "fit-content" }}>
+        <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #1A2D42", overflow: "hidden", width: isMobile ? "100%" : "fit-content" }}>
           {([
             { id: "al" as BasinTab, label: "Atlantic" },
             { id: "ep" as BasinTab, label: "E. Pacific" },
@@ -2095,20 +2139,22 @@ export default function TropicalAdvisories() {
                 key={id}
                 onClick={() => setActiveBasin(id)}
                 style={{
-                  padding: "8px 16px",
+                  padding: isMobile ? "8px 7px" : "8px 16px",
                   background: isActive ? "rgba(255,69,0,0.18)" : "rgba(13,21,32,0.85)",
                   color: isActive ? "#FF4500" : "#7B9BB5",
                   border: "none",
                   borderLeft: id !== "al" ? "1px solid #1A2D42" : "none",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
-                  letterSpacing: "0.06em",
+                  fontSize: isMobile ? "0.72rem" : "0.9rem",
+                  letterSpacing: isMobile ? "0.02em" : "0.06em",
                   fontFamily: "inherit",
                   fontWeight: isActive ? 700 : 400,
                   transition: "all 0.15s",
                   display: "flex",
                   alignItems: "center",
-                  gap: 6,
+                  justifyContent: "center",
+                  flex: isMobile ? 1 : undefined,
+                  gap: isMobile ? 4 : 6,
                   minHeight: 44,
                 }}
               >

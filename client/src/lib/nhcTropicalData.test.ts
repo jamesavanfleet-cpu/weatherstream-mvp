@@ -169,12 +169,15 @@ describe("Tropical page GTWO source ownership", () => {
     expect(pageSource).not.toContain("mcw_scroll_hint_dismissed");
   });
 
-  it("uses a compact mobile-only map height while preserving the current desktop height", () => {
+  it("uses a responsive mobile map height, preserves desktop height, and re-fits after layout", () => {
     const testDir = fileURLToPath(new URL(".", import.meta.url));
     const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
 
-    expect(pageSource).toContain('data-map-mobile-height="MOBILE_MAP_HEIGHT_480PX_V1"');
-    expect(pageSource).toContain('height: isMobile ? "480px" : "calc(100dvh - 100px)"');
+    expect(pageSource).toContain('data-map-mobile-height="MOBILE_MAP_HEIGHT_RESPONSIVE_V2"');
+    expect(pageSource).toContain('height: isMobile ? "clamp(360px, 60dvh, 500px)" : "calc(100dvh - 100px)"');
+    expect(pageSource).toContain("new ResizeObserver(scheduleFit)");
+    expect(pageSource).toContain("map.fitBounds(bounds, {");
+    expect(pageSource).toContain("padding: containerWidth < 768 ? [12, 12] : [20, 20]");
   });
 });
 
