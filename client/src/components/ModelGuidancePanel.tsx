@@ -15,6 +15,14 @@ const MODEL_COLORS = [
 ];
 
 const TRACK_MAP_HEIGHT = 330;
+const TRACK_MAP_FALLBACK_ZOOM = 5;
+// Pixel padding keeps useful coastlines and place names in view without adding
+// the large geographic margin that made some initial track maps look global.
+const TRACK_MAP_BOUNDS_OPTIONS: L.FitBoundsOptions = {
+  animate: false,
+  maxZoom: 6,
+  padding: [20, 20],
+};
 
 const CHART = {
   width: 720,
@@ -62,20 +70,22 @@ function cycleLabel(cycle: string | undefined): string | null {
   return `${year}-${month}-${day} ${hour}Z`;
 }
 
-function ModelTrackMapBounds({ points }: { points: Coordinate[] }) {
+function ModelTrackMapBounds({ bounds }: { bounds: L.LatLngBounds }) {
   const map = useMap();
 
   useEffect(() => {
-    if (points.length === 0) return;
-    const bounds = L.latLngBounds(points.map(point => [point.lat, point.lon] as [number, number]));
-    if (!bounds.isValid()) return;
-
-    map.fitBounds(bounds.pad(0.18), {
-      animate: false,
-      maxZoom: 6,
-      padding: [12, 12],
+    // The MapContainer receives these same bounds during creation. Re-fitting on
+    // the next rendered frame makes the initial view robust to flex/grid layout
+    // measurement, so a newly opened map cannot stay at a globe-scale fallback.
+    let frame = requestAnimationFrame(() => {
+      map.invalidateSize({ animate: false, pan: false });
+      frame = requestAnimationFrame(() => {
+        map.fitBounds(bounds, TRACK_MAP_BOUNDS_OPTIONS);
+      });
     });
-  }, [map, points]);
+
+    return () => cancelAnimationFrame(frame);
+  }, [bounds, map]);
 
   return null;
 }
@@ -87,6 +97,10 @@ function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: s
   })), [models]);
 
   const allPoints = useMemo(() => projectedModels.flatMap(model => model.track), [projectedModels]);
+  const trackBounds = useMemo(() => {
+    const bounds = L.latLngBounds(allPoints.map(point => [point.lat, point.lon] as [number, number]));
+    return bounds.isValid() ? bounds : null;
+  }, [allPoints]);
   if (allPoints.length === 0) return null;
 
   const initial = allPoints[0];
@@ -101,8 +115,9 @@ function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: s
       </div>
       <div style={{ border: "1px solid #19374D", background: "#08111A", overflow: "hidden" }}>
         <MapContainer
-          center={[initial.lat, initial.lon]}
-          zoom={4}
+          {...(trackBounds
+            ? { bounds: trackBounds, boundsOptions: TRACK_MAP_BOUNDS_OPTIONS }
+            : { center: [initial.lat, initial.lon] as L.LatLngExpression, zoom: TRACK_MAP_FALLBACK_ZOOM })}
           style={{ height: TRACK_MAP_HEIGHT, width: "100%" }}
           zoomControl={true}
           scrollWheelZoom={false}
@@ -114,7 +129,7 @@ function TrackPlot({ models, stormName }: { models: ColoredModel[]; stormName: s
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             maxZoom={19}
           />
-          <ModelTrackMapBounds points={allPoints} />
+          {trackBounds && <ModelTrackMapBounds bounds={trackBounds} />}
           {projectedModels.map(model => (
             <Polyline
               key={model.id}
