@@ -32,6 +32,7 @@ import {
   isValidGtwoData,
   isValidNhcData,
   isValidNhcModelGuidanceData,
+  nextNhcReleaseWindowRefreshAt,
   type BasinTab,
   type GtwoData,
   type GtwoFeature,
@@ -1052,8 +1053,13 @@ function MapFitBounds({
     const points: [number, number][] = [];
 
     basinStorms.forEach(s => {
-      if (Number.isFinite(s.latitudeNumeric) && Number.isFinite(s.longitudeNumeric)) {
-        points.push([s.latitudeNumeric, s.longitudeNumeric]);
+      const latitude = s.latitudeNumeric;
+      const longitude = s.longitudeNumeric;
+      if (
+        latitude !== null && longitude !== null &&
+        Number.isFinite(latitude) && Number.isFinite(longitude)
+      ) {
+        points.push([latitude, longitude]);
       }
       s.trackPoints.forEach(pt => {
         if (Number.isFinite(pt.lat) && Number.isFinite(pt.lon)) points.push([pt.lat, pt.lon]);
@@ -1306,12 +1312,23 @@ export default function TropicalAdvisories() {
       if (document.visibilityState === "visible") loadNhcData();
     };
 
+    let releaseWindowTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleReleaseWindowRefresh = () => {
+      const refreshAt = nextNhcReleaseWindowRefreshAt();
+      releaseWindowTimer = setTimeout(() => {
+        if (document.visibilityState === "visible") loadNhcData();
+        scheduleReleaseWindowRefresh();
+      }, Math.max(0, refreshAt - Date.now()));
+    };
+
     loadNhcData();
+    scheduleReleaseWindowRefresh();
     const interval = setInterval(loadNhcData, 600_000);
     window.addEventListener("focus", loadNhcData);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       clearInterval(interval);
+      if (releaseWindowTimer) clearTimeout(releaseWindowTimer);
       window.removeEventListener("focus", loadNhcData);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
@@ -1346,12 +1363,23 @@ export default function TropicalAdvisories() {
       if (document.visibilityState === "visible") loadModelGuidance();
     };
 
+    let releaseWindowTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleReleaseWindowRefresh = () => {
+      const refreshAt = nextNhcReleaseWindowRefreshAt();
+      releaseWindowTimer = setTimeout(() => {
+        if (document.visibilityState === "visible") loadModelGuidance();
+        scheduleReleaseWindowRefresh();
+      }, Math.max(0, refreshAt - Date.now()));
+    };
+
     loadModelGuidance();
+    scheduleReleaseWindowRefresh();
     const interval = setInterval(loadModelGuidance, 600_000);
     window.addEventListener("focus", loadModelGuidance);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       clearInterval(interval);
+      if (releaseWindowTimer) clearTimeout(releaseWindowTimer);
       window.removeEventListener("focus", loadModelGuidance);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };

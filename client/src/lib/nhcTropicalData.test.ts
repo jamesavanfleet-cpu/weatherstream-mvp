@@ -8,6 +8,7 @@ import {
   isValidGtwoData,
   isValidNhcData,
   isValidNhcModelGuidanceData,
+  nextNhcReleaseWindowRefreshAt,
   type GtwoFeature,
 } from "./nhcTropicalData";
 
@@ -129,6 +130,22 @@ describe("artifact freshness", () => {
   });
 });
 
+describe("NHC release-window client refresh timing", () => {
+  it("selects the next :06 or :14 UTC refresh after the four NHC release anchors", () => {
+    expect(new Date(nextNhcReleaseWindowRefreshAt(Date.parse("2026-07-22T09:00:00Z"))).toISOString())
+      .toBe("2026-07-22T09:06:00.000Z");
+    expect(new Date(nextNhcReleaseWindowRefreshAt(Date.parse("2026-07-22T09:06:00Z"))).toISOString())
+      .toBe("2026-07-22T09:14:00.000Z");
+    expect(new Date(nextNhcReleaseWindowRefreshAt(Date.parse("2026-07-22T09:14:00Z"))).toISOString())
+      .toBe("2026-07-22T15:06:00.000Z");
+  });
+
+  it("rolls safely across the UTC day boundary without a continuous minute loop", () => {
+    expect(new Date(nextNhcReleaseWindowRefreshAt(Date.parse("2026-07-22T21:14:00Z"))).toISOString())
+      .toBe("2026-07-23T03:06:00.000Z");
+  });
+});
+
 describe("Tropical page GTWO source ownership", () => {
   it("fetches the standalone artifact and never reads an embedded GTWO collection", () => {
     const testDir = fileURLToPath(new URL(".", import.meta.url));
@@ -204,6 +221,9 @@ describe("WeatherStream model-guidance interface", () => {
     expect(pageSource).toContain('storm.systemType === "invest" || currentStormIds.has(storm.id)');
     expect(pageSource).toContain('data-model-guidance-no-current-system="WEATHERSTREAM_CURRENT_SYSTEM_GUIDANCE_V2"');
     expect(pageSource).toContain('<ModelGuidancePanel storm={storm} />');
+    expect(pageSource).toContain("nextNhcReleaseWindowRefreshAt");
+    expect(pageSource).toContain("scheduleReleaseWindowRefresh");
+    expect(pageSource).toContain('document.visibilityState === "visible"');
   });
 
   it("renders official cone geometry plus geographic track and threshold-aware intensity guidance", () => {
@@ -252,8 +272,26 @@ describe("stale-storm regression safeguards", () => {
     expect(deploySource).toContain("cp nhc_data.json /tmp/nhc_data-backup.json");
     expect(deploySource).toContain("cp nhc_gtwo.json /tmp/nhc_gtwo-backup.json");
     expect(deploySource).toContain("cp nhc_model_guidance.json /tmp/nhc_model_guidance-backup.json");
+    expect(deploySource).toContain("cp nhc_release_status.json /tmp/nhc_release_status-backup.json");
     expect(deploySource).toContain("cp /tmp/nhc_data-backup.json nhc_data.json");
     expect(deploySource).toContain("cp /tmp/nhc_gtwo-backup.json nhc_gtwo.json");
     expect(deploySource).toContain("cp /tmp/nhc_model_guidance-backup.json nhc_model_guidance.json");
+    expect(deploySource).toContain("cp /tmp/nhc_release_status-backup.json nhc_release_status.json");
+  });
+
+  it("keeps the narrow release-window source gate and short publish retry in the tracker workflow", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const workflowSource = readFileSync(
+      new URL("../../../.github/workflows/nhc-tracker.yml", `file://${testDir}`),
+      "utf8",
+    );
+
+    expect(workflowSource).toContain("target_release:");
+    expect(workflowSource).toContain("scripts/check_nhc_release_ready.py");
+    expect(workflowSource).toContain("steps.release_gate.outputs.state == 'ready'");
+    expect(workflowSource).toContain("steps.release_gate.outputs.state == 'already_published'");
+    expect(workflowSource).toContain("nhc_release_status.json");
+    expect(workflowSource).toContain("for attempt in 1 2 3; do");
+    expect(workflowSource).not.toContain("concurrency:");
   });
 });

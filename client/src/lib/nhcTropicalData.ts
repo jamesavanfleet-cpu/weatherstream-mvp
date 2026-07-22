@@ -170,6 +170,53 @@ export function gtwoFeatureBasin(feature: GtwoFeature): BasinTab | null {
 
 export const NHC_ARTIFACT_MAX_AGE_MS = 8 * 60 * 60 * 1000;
 
+/** Nominal NHC release anchors in UTC. */
+export const NHC_RELEASE_HOURS_UTC = [3, 9, 15, 21] as const;
+/** Efficient client refreshes after each nominal official NHC release. */
+export const NHC_RELEASE_REFRESH_MINUTES_UTC = [6, 14] as const;
+
+/**
+ * Return the next UTC-aligned refresh time after a nominal NHC advisory release.
+ * This schedules only the eight post-release checks per day, never a continuous
+ * polling loop. A visible page schedules the following time after each refresh.
+ */
+export function nextNhcReleaseWindowRefreshAt(nowMs = Date.now()): number {
+  const now = new Date(nowMs);
+  const candidates: number[] = [];
+
+  for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
+    const day = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + dayOffset,
+      0,
+      0,
+      0,
+      0,
+    ));
+
+    for (const hour of NHC_RELEASE_HOURS_UTC) {
+      for (const minute of NHC_RELEASE_REFRESH_MINUTES_UTC) {
+        candidates.push(Date.UTC(
+          day.getUTCFullYear(),
+          day.getUTCMonth(),
+          day.getUTCDate(),
+          hour,
+          minute,
+          0,
+          0,
+        ));
+      }
+    }
+  }
+
+  const next = candidates.filter(candidate => candidate > nowMs).sort((a, b) => a - b)[0];
+  if (!Number.isFinite(next)) {
+    throw new Error("Unable to calculate the next NHC release-window refresh");
+  }
+  return next;
+}
+
 export function isNhcArtifactStale(
   generatedAt: string,
   nowMs = Date.now(),

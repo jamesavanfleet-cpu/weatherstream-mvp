@@ -1,17 +1,21 @@
 name: NHC Tropical Tracker Update
 
-# NHC issues advisories at approximately 5 AM, 11 AM, 5 PM, and 11 PM EDT
-# (09:00, 15:00, 21:00, 03:00 UTC). We run 3 minutes after each issuance
-# to catch NHC data as soon as it is published.
-# During the off-season (Dec-May) the storms list will be empty, which is correct.
-# During hurricane season (Jun-Nov) this will show active storm tracks and cones.
+# NHC nominal advisory releases are 03Z, 09Z, 15Z, and 21Z. A small external
+# dispatcher invokes workflow_dispatch at :04 and :12 after each anchor. The
+# GitHub schedule remains a recovery path because GitHub schedule delivery can
+# be delayed under platform load.
 on:
   schedule:
-    - cron: '3 9 * * *'     # 09:03 UTC = ~5:03 AM EDT
-    - cron: '3 15 * * *'    # 15:03 UTC = ~11:03 AM EDT
-    - cron: '3 21 * * *'    # 21:03 UTC = ~5:03 PM EDT
-    - cron: '3 3 * * *'     # 03:03 UTC = ~11:03 PM EDT
-  workflow_dispatch:          # allow manual trigger from GitHub UI
+    - cron: '3 9 * * *'     # 09:03 UTC = about 5:03 AM EDT
+    - cron: '3 15 * * *'    # 15:03 UTC = about 11:03 AM EDT
+    - cron: '3 21 * * *'    # 21:03 UTC = about 5:03 PM EDT
+    - cron: '3 3 * * *'     # 03:03 UTC = about 11:03 PM EDT
+  workflow_dispatch:
+    inputs:
+      target_release:
+        description: 'Exact UTC NHC release anchor, for example 2026-07-22T09:00:00Z'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -34,7 +38,38 @@ jobs:
       - name: Install dependencies
         run: pip install pyshp
 
+      - name: Verify the official NHC release is current
+        id: release_gate
+        env:
+          TARGET_RELEASE: ${{ inputs.target_release }}
+        run: |
+          set -euo pipefail
+          args=(--output /tmp/nhc_release_gate.json)
+          if [ -n "${TARGET_RELEASE:-}" ]; then
+            args+=(--target-release "$TARGET_RELEASE")
+          fi
+          python3 scripts/check_nhc_release_ready.py "${args[@]}"
+          cat /tmp/nhc_release_gate.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          payload = json.load(open('/tmp/nhc_release_gate.json', encoding='utf-8'))
+          print(f"state={payload['state']}")
+          print(f"target_release={payload['targetRelease']}")
+          PY
+
+      - name: Record a harmless duplicate release check
+        if: steps.release_gate.outputs.state == 'already_published'
+        run: |
+          echo "NHC release ${{ steps.release_gate.outputs.target_release }} is already published."
+
+      - name: Record an incomplete official source check
+        if: steps.release_gate.outputs.state == 'not_ready'
+        run: |
+          echo "Official NHC source is not ready for ${{ steps.release_gate.outputs.target_release }}."
+          echo "The next release-window check or scheduled recovery run will retry."
+
       - name: Generate validated official NHC data artifacts
+        if: steps.release_gate.outputs.state == 'ready'
         run: |
           set -euo pipefail
           python3 scripts/generate_nhc_data.py
@@ -42,26 +77,70 @@ jobs:
           echo "nhc_data.json generated: $(wc -c < client/public/nhc_data.json) bytes"
           echo "nhc_model_guidance.json generated: $(wc -c < client/public/nhc_model_guidance.json) bytes"
 
-      - name: Atomically publish updated NHC data artifacts to gh-pages
+      - name: Create verified release-status metadata
+        if: steps.release_gate.outputs.state == 'ready'
+        env:
+          TARGET_RELEASE: ${{ steps.release_gate.outputs.target_release }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+
+          payload = {
+              "schemaVersion": 1,
+              "verifiedRelease": os.environ["TARGET_RELEASE"],
+              "publishedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "source": "NOAA National Hurricane Center official public advisory and ATCF A-deck data",
+              "verification": "CurrentStorms.json, public A-deck directory, and each active public A-deck were Last-Modified at or after verifiedRelease.",
+          }
+          with open("/tmp/nhc_release_status.json", "w", encoding="utf-8") as handle:
+              json.dump(payload, handle, indent=2)
+              handle.write("\n")
+          PY
+          cat /tmp/nhc_release_status.json
+
+      - name: Atomically publish verified NHC artifacts with a conflict-safe retry
+        if: steps.release_gate.outputs.state == 'ready'
         run: |
           set -euo pipefail
           git config user.email "deploy@mycruisingweather.com"
           git config user.name "WeatherStream Deploy"
 
-          # Both temporary copies must exist before gh-pages is checked out. If
-          # either generator failed, this step never runs and the last verified
-          # live artifacts remain untouched.
+          # All generated files must exist before touching gh-pages. A validation
+          # or generator failure leaves the last verified public release in place.
           cp client/public/nhc_data.json /tmp/nhc_data.json
           cp client/public/nhc_model_guidance.json /tmp/nhc_model_guidance.json
+          test -s /tmp/nhc_release_status.json
 
-          git fetch origin gh-pages
-          git checkout -f gh-pages
-          git pull --ff-only origin gh-pages
+          published=false
+          for attempt in 1 2 3; do
+            git fetch origin gh-pages
+            git checkout -f -B gh-pages origin/gh-pages
+            cp /tmp/nhc_data.json nhc_data.json
+            cp /tmp/nhc_model_guidance.json nhc_model_guidance.json
+            cp /tmp/nhc_release_status.json nhc_release_status.json
+            git add nhc_data.json nhc_model_guidance.json nhc_release_status.json
 
-          cp /tmp/nhc_data.json nhc_data.json
-          cp /tmp/nhc_model_guidance.json nhc_model_guidance.json
+            if git diff --cached --quiet; then
+              echo "No verified NHC artifact changes to publish."
+              published=true
+              break
+            fi
 
-          git add nhc_data.json nhc_model_guidance.json
-          git diff --cached --quiet && echo "No NHC artifact changes, skipping push." && exit 0
-          git commit -m "NHC tracker and model guidance update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
-          git push origin gh-pages
+            git commit -m "NHC tracker and model guidance update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+            if git push origin HEAD:gh-pages; then
+              published=true
+              break
+            fi
+
+            echo "gh-pages changed during publish attempt $attempt. Retrying."
+            git reset --hard origin/gh-pages
+            sleep "$((attempt * 2))"
+          done
+
+          if [ "$published" != true ]; then
+            echo "Unable to publish verified NHC artifacts after three safe retries." >&2
+            exit 1
+          fi

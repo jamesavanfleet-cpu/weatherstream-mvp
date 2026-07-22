@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mycruisingweather-nhc-release-window-dispatcher",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-22",
+  "workers_dev": false,
+  "vars": {
+    "GITHUB_REPOSITORY": "jamesavanfleet-cpu/weatherstream-mvp",
+    "GITHUB_WORKFLOW_FILE": "nhc-tracker.yml",
+    "GITHUB_REF": "main"
+  },
+  "triggers": {
+    "crons": [
+      "4 3,9,15,21 * * *",
+      "12 3,9,15,21 * * *"
+    ]
+  }
+}
