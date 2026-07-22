@@ -11,6 +11,8 @@
 #   cruise_itineraries.json -- updated by dedicated itinerary script
 #   briefing_video.json    -- updated manually via briefing_video.json on gh-pages
 #   nhc_gtwo.json          -- updated by generate_nhc_gtwo.py (hourly via GitHub Actions)
+#   nhc_data.json          -- updated by generate_nhc_data.py (with NHC tracker workflow)
+#   nhc_model_guidance.json -- updated by generate_model_guidance.py (with NHC tracker workflow)
 #   marine_zones.json      -- updated by generate_marine_zones.py (every 6 hours via GitHub Actions)
 #   marine_forecasts.json  -- updated by generate_marine_forecasts.py (every 6 hours via GitHub Actions)
 
@@ -49,7 +51,7 @@ git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
 
 # Preserve persistent data files before clearing old build artifacts
 # These files must NEVER be overwritten by a code deploy
-PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json briefing_video.json nhc_gtwo.json nhc_data.json marine_zones.json marine_forecasts.json"
+PRESERVE_FILES="live_conditions.json intel.json top_story.json cruise_itineraries.json briefing_video.json nhc_gtwo.json nhc_data.json nhc_model_guidance.json marine_zones.json marine_forecasts.json"
 for PFILE in $PRESERVE_FILES; do
   if [ -f "$PFILE" ]; then
     cp "$PFILE" "/tmp/deploy_preserve_${PFILE}"
@@ -80,6 +82,7 @@ fi
 
 git add -A
 git commit -m "Deploy: $(date '+%Y-%m-%d %H:%M')" || echo "Nothing to commit."
-git push origin gh-pages --force
+# Do not force-push: a concurrent NHC tracker update must win rather than be overwritten.
+git push origin gh-pages
 
 echo "Deployed successfully to https://www.mycruisingweather.com"
