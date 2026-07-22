@@ -1172,7 +1172,7 @@ export default function TropicalAdvisories() {
   const [modelGuidance, setModelGuidance] = useState<NhcModelGuidanceData | null>(null);
   const [modelGuidanceError, setModelGuidanceError] = useState<string | null>(null);
 
-  // Basin tab selection is deferred until both validated NHC payloads settle.
+  // Basin tab selection waits for both validated payloads to commit state.
   // This prevents fetch timing from opening the phone on an unrelated basin.
   const [activeBasin, setActiveBasin] = useState<BasinTab>("al");
   const didAutoSelectNhcBasin = useRef(false);
@@ -1396,24 +1396,31 @@ export default function TropicalAdvisories() {
     };
   }, []);
 
-  // Choose the first active basin in Atlantic, Eastern Pacific, Central Pacific
-  // order only after both source payloads have had their first response. This keeps
-  // the default stable across mobile and desktop instead of depending on fetch order.
+  // Choose an active-storm basin first, then fall back to outlook-only activity.
+  // State must be committed, not merely fetched, before choosing a default. On an
+  // active Atlantic day this keeps the first mobile and desktop view on the Atlantic
+  // even if the outlook payload resolves a render earlier than the storm payload.
   useEffect(() => {
     if (didAutoSelectNhcBasin.current || !nhcInitialLoadSettled || !gtwoInitialLoadSettled) return;
 
+    const nhcReady = Boolean(nhcData) || Boolean(nhcDataError);
+    const gtwoReady = Boolean(gtwoData) || Boolean(gtwoError);
+    if (!nhcReady || !gtwoReady) return;
+
     const preferredBasins: BasinTab[] = ["al", "ep", "cp"];
-    const selected = preferredBasins.find(basin => {
-      const hasStorm = (nhcData?.storms ?? []).some(storm => storm.basin === basin);
-      const hasDisturbance = (gtwoData?.features ?? []).some(feature => gtwoFeatureBasin(feature) === basin);
-      return hasStorm || hasDisturbance;
-    });
+    const selectedStormBasin = preferredBasins.find(basin =>
+      (nhcData?.storms ?? []).some(storm => storm.basin === basin),
+    );
+    const selectedDisturbanceBasin = preferredBasins.find(basin =>
+      (gtwoData?.features ?? []).some(feature => gtwoFeatureBasin(feature) === basin),
+    );
+    const selected = selectedStormBasin ?? selectedDisturbanceBasin;
 
     if (selected) {
       setActiveBasin(selected);
       didAutoSelectNhcBasin.current = true;
     }
-  }, [gtwoData, gtwoInitialLoadSettled, nhcData, nhcInitialLoadSettled]);
+  }, [gtwoData, gtwoError, gtwoInitialLoadSettled, nhcData, nhcDataError, nhcInitialLoadSettled]);
 
   // Fetch marine zone boundaries AND marine forecasts on mount (lazy -- only when
   // Zone Forecasts is first toggled on). Both files come from gh-pages and are

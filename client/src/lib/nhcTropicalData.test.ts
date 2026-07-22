@@ -179,6 +179,17 @@ describe("Tropical page GTWO source ownership", () => {
     expect(pageSource).toContain("map.fitBounds(bounds, {");
     expect(pageSource).toContain("padding: containerWidth < 768 ? [12, 12] : [20, 20]");
   });
+
+  it("waits for committed payloads and prefers active storms when choosing the first basin", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain("const nhcReady = Boolean(nhcData) || Boolean(nhcDataError);");
+    expect(pageSource).toContain("const gtwoReady = Boolean(gtwoData) || Boolean(gtwoError);");
+    expect(pageSource).toContain("const selectedStormBasin = preferredBasins.find");
+    expect(pageSource).toContain("const selectedDisturbanceBasin = preferredBasins.find");
+    expect(pageSource).toContain("const selected = selectedStormBasin ?? selectedDisturbanceBasin;");
+  });
 });
 
 
@@ -200,7 +211,9 @@ describe("WeatherStream model-guidance interface", () => {
     const componentSource = readFileSync(new URL("../components/ModelGuidancePanel.tsx", `file://${testDir}`), "utf8");
     const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
 
-    expect(componentSource).toContain('data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_GEOGRAPHY_V2"');
+    expect(componentSource).toContain('data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_GEOGRAPHY_V3"');
+    expect(componentSource).toContain("const TRACK_MAP_INITIAL_HORIZON_HOURS = 96;");
+    expect(componentSource).toContain('"SHOW FULL 7-DAY"');
     expect(componentSource).toContain('data-model-guidance-intensity-plot="WEATHERSTREAM_OFFICIAL_ADECK_INTENSITY_THRESHOLDS_V2"');
     expect(componentSource).toContain("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
     expect(componentSource).toContain("weight: 1.35");

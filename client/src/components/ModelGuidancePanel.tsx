@@ -17,6 +17,7 @@ const MODEL_COLORS = [
 const TRACK_MAP_HEIGHT = 330;
 const TRACK_MAP_COMPACT_HEIGHT = 300;
 const TRACK_MAP_FALLBACK_ZOOM = 5;
+const TRACK_MAP_INITIAL_HORIZON_HOURS = 96;
 
 // Pixel padding keeps useful coastlines and place names in view without adding
 // the large geographic margin that made some initial track maps look global.
@@ -142,27 +143,50 @@ function ModelTrackMapBounds({ bounds, compact }: { bounds: L.LatLngBounds; comp
 }
 
 function TrackPlot({ models, stormName, compact }: { models: ColoredModel[]; stormName: string; compact: boolean }) {
+  const [showFullGuidance, setShowFullGuidance] = useState(false);
   const projectedModels = useMemo(() => models.map(model => ({
     ...model,
-    track: model.points.map(point => ({ lat: point.lat, lon: point.lon })),
+    track: model.points.map(point => ({ lat: point.lat, lon: point.lon, forecastHour: point.forecastHour })),
   })), [models]);
 
   const allPoints = useMemo(() => projectedModels.flatMap(model => model.track), [projectedModels]);
-  const trackBounds = useMemo(() => {
-    const bounds = L.latLngBounds(allPoints.map(point => [point.lat, point.lon] as [number, number]));
-    return bounds.isValid() ? bounds : null;
+  const initialFramePoints = useMemo(() => {
+    const operationalPoints = allPoints.filter(point => point.forecastHour <= TRACK_MAP_INITIAL_HORIZON_HOURS);
+    return operationalPoints.length >= 2 ? operationalPoints : allPoints;
   }, [allPoints]);
+  const boundsFor = (points: Array<{ lat: number; lon: number }>) => {
+    const bounds = L.latLngBounds(points.map(point => [point.lat, point.lon] as [number, number]));
+    return bounds.isValid() ? bounds : null;
+  };
+  const initialTrackBounds = useMemo(() => boundsFor(initialFramePoints), [initialFramePoints]);
+  const fullTrackBounds = useMemo(() => boundsFor(allPoints), [allPoints]);
+  const hasExtendedGuidance = allPoints.length > initialFramePoints.length && Boolean(fullTrackBounds && initialTrackBounds);
+  const trackBounds = showFullGuidance ? fullTrackBounds : initialTrackBounds;
   if (allPoints.length === 0) return null;
 
   const initial = allPoints[0];
 
   return (
-    <div data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_GEOGRAPHY_V2">
+    <div data-model-guidance-track-plot="WEATHERSTREAM_OFFICIAL_ADECK_TRACK_GEOGRAPHY_V3">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
         <div style={{ fontSize: "0.76rem", color: "#9DB6C9", letterSpacing: "0.08em", fontWeight: 700 }}>
           TRACK GUIDANCE
         </div>
-        <div style={{ fontSize: "0.7rem", color: "#607D93" }}>Coastlines and place names provide geographic reference</div>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ fontSize: "0.7rem", color: "#607D93" }}>
+            {showFullGuidance ? "Full published guidance envelope" : `Initial view: first ${TRACK_MAP_INITIAL_HORIZON_HOURS} hours`}
+          </div>
+          {hasExtendedGuidance && (
+            <button
+              type="button"
+              onClick={() => setShowFullGuidance(current => !current)}
+              aria-pressed={showFullGuidance}
+              style={{ minHeight: 30, padding: "5px 9px", border: "1px solid #31546E", borderRadius: 4, background: "#0D1C2A", color: "#A9DDF6", fontSize: "0.67rem", fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer" }}
+            >
+              {showFullGuidance ? "FOCUS 96H" : "SHOW FULL 7-DAY"}
+            </button>
+          )}
+        </div>
       </div>
       <div style={{ border: "1px solid #19374D", background: "#08111A", overflow: "hidden" }}>
         <MapContainer
@@ -201,7 +225,7 @@ function TrackPlot({ models, stormName, compact }: { models: ColoredModel[]; sto
         </MapContainer>
       </div>
       <div style={{ color: "#607D93", fontSize: "0.7rem", lineHeight: 1.45, marginTop: 7 }}>
-        Thin colored lines are public model aids. The white marker is the model initialization position.
+        Thin colored lines are public model aids. The white marker is the model initialization position. {hasExtendedGuidance && !showFullGuidance ? "Use Show Full 7-Day to reframe the map around every published long-range point." : ""}
       </div>
     </div>
   );
