@@ -32,6 +32,8 @@ export interface GtwoData {
     note?: string;
   };
   features: GtwoFeature[];
+  /** Optional validated current A-deck payload published by the existing GTWO job. */
+  modelGuidance?: NhcModelGuidanceData;
 }
 
 export interface NhcTrackPoint {
@@ -131,10 +133,22 @@ export function isValidGtwoData(value: unknown): value is GtwoData {
     typeof candidate.metadata?.source_url === "string" &&
     Array.isArray(candidate.features) &&
     candidate.features.every(isValidGtwoFeature) &&
+    (candidate.modelGuidance === undefined || isValidNhcModelGuidanceData(candidate.modelGuidance)) &&
     (candidate.metadata?.feature_count === undefined ||
       (Number.isInteger(candidate.metadata.feature_count) &&
         candidate.metadata.feature_count === candidate.features.length))
   );
+}
+
+export function validatedEmbeddedModelGuidance(
+  gtwoData: GtwoData | null,
+  nowMs = Date.now(),
+): NhcModelGuidanceData | null {
+  const candidate = gtwoData?.modelGuidance;
+  if (!candidate || !isValidNhcModelGuidanceData(candidate) || isNhcArtifactStale(candidate.generated, nowMs)) {
+    return null;
+  }
+  return candidate;
 }
 
 export function gtwoFeatureBasin(feature: GtwoFeature): BasinTab | null {
@@ -262,7 +276,7 @@ export function isValidNhcModelGuidanceData(value: unknown): value is NhcModelGu
         ["al", "ep", "cp"].includes(storm.basin) &&
         typeof storm.sourceUrl === "string" && storm.sourceUrl.startsWith("https://ftp.nhc.noaa.gov/atcf/aid_public/a") &&
         (storm.systemType === undefined || storm.systemType === "advisory" || storm.systemType === "invest") &&
-        (storm.systemType !== "invest" || /^[a-z]{2}9\d{6}$/.test(storm.id)) &&
+        (storm.systemType !== "invest" || /^[a-z]{2}9\d{5}$/.test(storm.id)) &&
         Array.isArray(storm.models) &&
         storm.models.every(model => {
           if (!isValidGuidanceModel(model) || ids.has(model.id)) return false;

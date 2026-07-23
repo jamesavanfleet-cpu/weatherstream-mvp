@@ -32,6 +32,7 @@ import {
   isValidGtwoData,
   isValidNhcData,
   isValidNhcModelGuidanceData,
+  validatedEmbeddedModelGuidance,
   type BasinTab,
   type GtwoData,
   type GtwoFeature,
@@ -81,6 +82,11 @@ interface NHCStorm {
 }
 
 type OutlookMode = "off" | "2day" | "7day";
+
+// The guidance publisher checks each current public A-deck cycle in bounded
+// five-minute increments. An open page refreshes its two guidance artifacts
+// every minute so a verified publish becomes visible promptly.
+const MODEL_GUIDANCE_REFRESH_MS = 60_000;
 
 // CORS proxy for NHC endpoints that lack Access-Control-Allow-Origin
 const ALLORIGINS = (url: string) =>
@@ -1317,7 +1323,7 @@ export default function TropicalAdvisories() {
     };
   }, []);
 
-  // Fetch current model guidance on mount, every 10 minutes, and on focus.
+  // Fetch current model guidance on mount, every minute, and on focus.
   // The artifact is accepted only when it has strict public NHC A-deck provenance,
   // validates structurally, is current, and is no older than the session payload.
   useEffect(() => {
@@ -1347,7 +1353,7 @@ export default function TropicalAdvisories() {
     };
 
     loadModelGuidance();
-    const interval = setInterval(loadModelGuidance, 600_000);
+    const interval = setInterval(loadModelGuidance, MODEL_GUIDANCE_REFRESH_MS);
     window.addEventListener("focus", loadModelGuidance);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
@@ -1357,7 +1363,7 @@ export default function TropicalAdvisories() {
     };
   }, []);
 
-  // Fetch the authoritative GTWO payload on mount, every 10 minutes, and when
+  // Fetch the authoritative GTWO payload on mount, every minute, and when
   // the page regains focus. Invalid or older responses never replace the current
   // session payload, and failures remain visible instead of becoming false zeroes.
   useEffect(() => {
@@ -1386,7 +1392,7 @@ export default function TropicalAdvisories() {
     };
 
     loadGtwo();
-    const interval = setInterval(loadGtwo, 600_000);
+    const interval = setInterval(loadGtwo, MODEL_GUIDANCE_REFRESH_MS);
     window.addEventListener("focus", loadGtwo);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
@@ -1464,7 +1470,10 @@ export default function TropicalAdvisories() {
   const nhcDataStale = Boolean(nhcData && isNhcArtifactStale(nhcData.generated));
   const activeNhcData = nhcDataStale ? null : nhcData;
   const modelGuidanceStale = Boolean(modelGuidance && isNhcArtifactStale(modelGuidance.generated));
-  const activeModelGuidance = modelGuidanceStale ? null : modelGuidance;
+  const directModelGuidance = modelGuidanceStale ? null : modelGuidance;
+  const embeddedModelGuidance = validatedEmbeddedModelGuidance(gtwoData);
+  const activeModelGuidance = directModelGuidance ?? embeddedModelGuidance;
+  const usingEmbeddedModelGuidance = Boolean(embeddedModelGuidance && !directModelGuidance);
   // Advisory, PTC, and post-tropical systems must remain in the independently
   // validated current-storm artifact. A verified invest is eligible directly
   // from its fresh official public A-deck, because no advisory record exists yet.
@@ -1483,7 +1492,7 @@ export default function TropicalAdvisories() {
       : null,
     nhcDataStale ? "Storm-track data is older than 8 hours and has been withheld to avoid showing an outdated storm." : null,
     modelGuidanceError
-      ? `Model-guidance refresh warning: ${modelGuidanceError}. ${currentModelGuidanceStorms.length > 0 ? "Showing the last validated guidance." : "Model guidance is unavailable."}`
+      ? `Model-guidance refresh warning: ${modelGuidanceError}. ${usingEmbeddedModelGuidance ? "Showing the current validated GTWO-published guidance fallback." : currentModelGuidanceStorms.length > 0 ? "Showing the last validated guidance." : "Model guidance is unavailable."}`
       : null,
     modelGuidanceStale ? "Model guidance is older than 8 hours and has been withheld to avoid showing outdated model output." : null,
     gtwoDataStale ? "Tropical outlook data is older than 8 hours and may be stale." : null,
