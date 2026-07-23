@@ -1509,7 +1509,7 @@ export default function Home() {
                 onClick={() => navigate("/advisories")}
               >
                 <AlertTriangle className="w-5 h-5 mr-2" />
-                Tropical Advisories Map
+                Tropical Advisories Page
               </Button>
               <Button
                 size="lg"
@@ -1660,7 +1660,7 @@ export default function Home() {
               onClick={() => navigate("/advisories")}
             >
               <AlertTriangle className="w-5 h-5 mr-2" />
-              Tropical Advisories Map
+              Tropical Advisories Page
             </Button>
             {/* James' Picks -- mobile only, shown below Tropical Advisories per James 2026-05-09 */}
             <Button

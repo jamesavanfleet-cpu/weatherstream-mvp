@@ -2642,7 +2642,7 @@ export default function TropicalAdvisories() {
               onClick={() => setLightboxSrc("https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/tm_long_order.gif")}
             />
             <div style={{ fontSize: "0.82rem", color: "#7B9BB5", marginTop: 8, lineHeight: 1.5 }}>
-              The Madden-Julian Oscillation is a large-scale pulse of enhanced rainfall and thunderstorm activity that originates over the Indian Ocean and travels eastward around the globe, completing one full circuit every 30 to 60 days. It was discovered in the early 1970s by Dr. Roland Madden and Dr. Paul Julian while studying tropical wind and pressure patterns. The MJO cycles through eight geographic phases as it propagates east. When the active, convective phase reaches the Atlantic basin (roughly Phases 8 through 3), it reduces wind shear, increases atmospheric moisture, and enhances upper-level divergence over the Caribbean and Gulf of Mexico -- conditions that strongly favor tropical cyclone formation and intensification. Research shows that Gulf of Mexico and Caribbean hurricanes are four times more likely to occur during an active, Atlantic-favorable MJO phase than during a suppressed phase. Forecasters use the MJO to extend tropical outlooks 2 to 4 weeks beyond what daily weather models can reliably predict.
+              The MJO is a 30 to 60-day pulse of tropical convection. Atlantic-favorable phases can lower wind shear and raise moisture over the Caribbean and Gulf, helping frame tropical potential two to four weeks ahead.
             </div>
           </div>
 
