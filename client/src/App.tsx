@@ -1,7 +1,8 @@
+import { useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Router as WouterRouter, Switch } from "wouter";
+import { Route, Router as WouterRouter, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import BookBriefing from "./pages/BookBriefing";
@@ -49,9 +50,31 @@ function HomeOrRouteMap() {
   return <Home />;
 }
 
+function ScrollToTopOnRouteChange() {
+  const [location] = useLocation();
+
+  useLayoutEffect(() => {
+    const root = document.scrollingElement;
+    if (!root) {
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // Override global smooth scrolling only for this route transition so the next page paints at its top.
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    root.scrollTop = 0;
+    window.scrollTo(0, 0);
+    root.style.scrollBehavior = previousScrollBehavior;
+  }, [location]);
+
+  return null;
+}
+
 function Router() {
   return (
     <WouterRouter base={basePath}>
+      <ScrollToTopOnRouteChange />
       <Switch>
         <Route path={"/"} component={HomeOrRouteMap} />
         <Route path={"/book-briefing"} component={BookBriefing} />
