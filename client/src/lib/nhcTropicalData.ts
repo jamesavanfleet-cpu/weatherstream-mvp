@@ -32,6 +32,8 @@ export interface GtwoData {
     note?: string;
   };
   features: GtwoFeature[];
+  /** Optional validated current A-deck payload published by the existing GTWO job. */
+  modelGuidance?: NhcModelGuidanceData;
 }
 
 export interface NhcTrackPoint {
@@ -131,10 +133,22 @@ export function isValidGtwoData(value: unknown): value is GtwoData {
     typeof candidate.metadata?.source_url === "string" &&
     Array.isArray(candidate.features) &&
     candidate.features.every(isValidGtwoFeature) &&
+    (candidate.modelGuidance === undefined || isValidNhcModelGuidanceData(candidate.modelGuidance)) &&
     (candidate.metadata?.feature_count === undefined ||
       (Number.isInteger(candidate.metadata.feature_count) &&
         candidate.metadata.feature_count === candidate.features.length))
   );
+}
+
+export function validatedEmbeddedModelGuidance(
+  gtwoData: GtwoData | null,
+  nowMs = Date.now(),
+): NhcModelGuidanceData | null {
+  const candidate = gtwoData?.modelGuidance;
+  if (!candidate || !isValidNhcModelGuidanceData(candidate) || isNhcArtifactStale(candidate.generated, nowMs)) {
+    return null;
+  }
+  return candidate;
 }
 
 export function gtwoFeatureBasin(feature: GtwoFeature): BasinTab | null {

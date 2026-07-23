@@ -417,9 +417,20 @@ def write_json_atomic(path: str, payload: dict) -> None:
             os.remove(temp_path)
 
 
-def write_gtwo_artifact(features: list, generated_at: str, source_metadata: dict | None = None) -> str:
+def write_gtwo_artifact(
+    features: list,
+    generated_at: str,
+    source_metadata: dict | None = None,
+    model_guidance: dict | None = None,
+    model_guidance_validator=None,
+) -> str:
     """Validate and atomically write the canonical standalone GTWO artifact."""
     validate_gtwo_features(features)
+    if model_guidance is not None:
+        if not callable(model_guidance_validator):
+            raise ValueError("Embedded model guidance requires its dedicated validator")
+        model_guidance_validator(model_guidance)
+
     provenance = source_metadata or {}
     gtwo_output = {
         "type": "FeatureCollection",
@@ -435,6 +446,9 @@ def write_gtwo_artifact(features: list, generated_at: str, source_metadata: dict
         },
         "features": features,
     }
+    if model_guidance is not None:
+        gtwo_output["modelGuidance"] = model_guidance
+
     out_path = os.path.join(OUT_DIR, "nhc_gtwo.json")
     write_json_atomic(out_path, gtwo_output)
     return out_path

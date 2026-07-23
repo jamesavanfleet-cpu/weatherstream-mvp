@@ -8,6 +8,8 @@ import {
   isValidGtwoData,
   isValidNhcData,
   isValidNhcModelGuidanceData,
+  validatedEmbeddedModelGuidance,
+  type GtwoData,
   type GtwoFeature,
   type NhcModelGuidanceData,
 } from "./nhcTropicalData";
@@ -136,6 +138,48 @@ describe("official model-guidance artifact validation", () => {
   });
 });
 
+describe("embedded GTWO model-guidance fallback", () => {
+  const guidancePayload = (): NhcModelGuidanceData => ({
+    generated: "2026-07-17T18:10:00Z",
+    source: "NOAA National Hurricane Center ATCF public A-deck",
+    activeStormSourceUrl: "https://www.nhc.noaa.gov/CurrentStorms.json",
+    disclaimer: "Model guidance is not an official NHC forecast.",
+    storms: [{
+      id: "ep052026",
+      name: "Elida",
+      basin: "ep",
+      sourceCycle: "2026071718",
+      sourceUrl: "https://ftp.nhc.noaa.gov/atcf/aid_public/aep052026.dat.gz",
+      models: [{
+        id: "AVNI",
+        label: "GFS",
+        points: [
+          { forecastHour: 0, lat: 15.2, lon: -108.4, windKt: 55, pressureMb: 996 },
+          { forecastHour: 12, lat: 15.8, lon: -109.6, windKt: 60, pressureMb: 990 },
+        ],
+      }],
+    }],
+  });
+
+  it("accepts a fresh validated embedded payload without changing GTWO feature ownership", () => {
+    const payload = gtwoPayload([polygonFeature("Atlantic", "1", [-75, 28])]) as GtwoData;
+    payload.modelGuidance = guidancePayload();
+
+    expect(isValidGtwoData(payload)).toBe(true);
+    expect(validatedEmbeddedModelGuidance(payload, Date.parse("2026-07-17T18:20:00Z"))).toBe(payload.modelGuidance);
+  });
+
+  it("rejects malformed or stale embedded guidance before it can become a fallback", () => {
+    const malformed = gtwoPayload([polygonFeature("Atlantic", "1", [-75, 28])]) as GtwoData;
+    malformed.modelGuidance = { ...guidancePayload(), source: "Copied third-party plot" };
+    expect(isValidGtwoData(malformed)).toBe(false);
+
+    const stale = gtwoPayload([polygonFeature("Atlantic", "1", [-75, 28])]) as GtwoData;
+    stale.modelGuidance = guidancePayload();
+    expect(validatedEmbeddedModelGuidance(stale, Date.parse("2026-07-18T03:00:01Z"))).toBeNull();
+  });
+});
+
 describe("artifact freshness", () => {
   it("treats artifacts older than eight hours and invalid timestamps as stale", () => {
     const now = Date.parse("2026-07-15T16:00:00Z");
@@ -220,6 +264,17 @@ describe("WeatherStream model-guidance interface", () => {
     expect(pageSource).toContain('storm.systemType === "invest" || currentStormIds.has(storm.id)');
     expect(pageSource).toContain('data-model-guidance-no-current-system="WEATHERSTREAM_CURRENT_SYSTEM_GUIDANCE_V2"');
     expect(pageSource).toContain('<ModelGuidancePanel storm={storm} />');
+  });
+
+  it("uses only a fresh validated GTWO payload as a fallback and keeps direct guidance primary", () => {
+    const testDir = fileURLToPath(new URL(".", import.meta.url));
+    const pageSource = readFileSync(new URL("../pages/TropicalAdvisories.tsx", `file://${testDir}`), "utf8");
+
+    expect(pageSource).toContain("validatedEmbeddedModelGuidance(gtwoData)");
+    expect(pageSource).toContain("const activeModelGuidance = directModelGuidance ?? embeddedModelGuidance;");
+    expect(pageSource).toContain("const MODEL_GUIDANCE_REFRESH_MS = 60_000;");
+    expect(pageSource).toContain("setInterval(loadModelGuidance, MODEL_GUIDANCE_REFRESH_MS)");
+    expect(pageSource).toContain("setInterval(loadGtwo, MODEL_GUIDANCE_REFRESH_MS)");
   });
 
   it("renders official cone geometry plus geographic track and threshold-aware intensity guidance", () => {
