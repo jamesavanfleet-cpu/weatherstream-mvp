@@ -9,6 +9,7 @@ import {
   isValidNhcData,
   isValidNhcModelGuidanceData,
   type GtwoFeature,
+  type NhcModelGuidanceData,
 } from "./nhcTropicalData";
 
 const polygonFeature = (
@@ -83,7 +84,7 @@ describe("GTWO basin classification", () => {
 });
 
 describe("official model-guidance artifact validation", () => {
-  const guidancePayload = () => ({
+  const guidancePayload = (): NhcModelGuidanceData => ({
     generated: "2026-07-17T18:10:00Z",
     source: "NOAA National Hurricane Center ATCF public A-deck",
     activeStormSourceUrl: "https://www.nhc.noaa.gov/CurrentStorms.json",
@@ -107,6 +108,21 @@ describe("official model-guidance artifact validation", () => {
 
   it("accepts a current official A-deck payload with usable track and intensity points", () => {
     expect(isValidNhcModelGuidanceData(guidancePayload())).toBe(true);
+  });
+
+  it("accepts a valid six-digit public invest record alongside advisory guidance", () => {
+    const payload = guidancePayload();
+    payload.storms.push({
+      id: "al902026",
+      name: "Invest 90L",
+      basin: "al",
+      systemType: "invest",
+      sourceCycle: "2026071718",
+      sourceUrl: "https://ftp.nhc.noaa.gov/atcf/aid_public/aal902026.dat.gz",
+      models: payload.storms[0].models,
+    });
+
+    expect(isValidNhcModelGuidanceData(payload)).toBe(true);
   });
 
   it("rejects nonofficial sources and non-increasing forecast hours", () => {

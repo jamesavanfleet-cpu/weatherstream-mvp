@@ -61,7 +61,7 @@ class ModelGuidanceParserTests(unittest.TestCase):
         payload = guidance.build_payload(
             {"activeStorms": [{"id": "ep052026", "name": "Elida"}]},
             lambda storm_id: ADECK_FIXTURE if storm_id == "ep052026" else "",
-            generated_at="2026-07-17T23:31:00Z",
+            generated_at="2026-07-17T17:31:00Z",
         )
         guidance.validate_payload(payload)
 
@@ -69,6 +69,14 @@ class ModelGuidanceParserTests(unittest.TestCase):
         self.assertEqual(payload["storms"][0]["models"][0]["points"][0]["forecastHour"], 0)
         self.assertEqual(payload["storms"][0]["models"][0]["points"][0]["windKt"], 54)
         self.assertEqual(payload["storms"][0]["sourceUrl"], "https://ftp.nhc.noaa.gov/atcf/aid_public/aep052026.dat.gz")
+
+    def test_refuses_a_prior_cycle_until_the_current_complete_adeck_is_available(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "awaiting current 2026071718"):
+            guidance.build_payload(
+                {"activeStorms": [{"id": "ep052026", "name": "Elida"}]},
+                lambda storm_id: ADECK_FIXTURE if storm_id == "ep052026" else "",
+                generated_at="2026-07-17T18:31:00Z",
+            )
 
     def test_aborts_instead_of_emitting_partial_guidance_when_an_active_adeck_fails(self) -> None:
         current_storms = {
@@ -84,14 +92,14 @@ class ModelGuidanceParserTests(unittest.TestCase):
             raise OSError("official endpoint unavailable")
 
         with self.assertRaisesRegex(RuntimeError, "al012026"):
-            guidance.build_payload(current_storms, fetcher, generated_at="2026-07-17T23:31:00Z")
+            guidance.build_payload(current_storms, fetcher, generated_at="2026-07-17T17:31:00Z")
 
     def test_adds_a_fresh_complete_official_invest_cycle(self) -> None:
-        directory = '<a href="aal902026.dat.gz">aal902026.dat.gz</a>  2026-07-17 23:00  42K'
+        directory = '<a href="aal902026.dat.gz">aal902026.dat.gz</a>  2026-07-17 17:00  42K'
         payload = guidance.build_payload(
             {"activeStorms": [{"id": "ep052026", "name": "Elida"}]},
             lambda storm_id: ADECK_FIXTURE if storm_id in {"ep052026", "al902026"} else "",
-            generated_at="2026-07-17T23:31:00Z",
+            generated_at="2026-07-17T17:31:00Z",
             directory_fetcher=lambda: directory,
         )
         guidance.validate_payload(payload)
@@ -125,7 +133,7 @@ class ModelGuidanceParserTests(unittest.TestCase):
         payload = guidance.build_payload(
             {"activeStorms": [{"id": "al902026", "name": "Potential Tropical Cyclone One"}]},
             lambda storm_id: ADECK_FIXTURE,
-            generated_at="2026-07-17T23:31:00Z",
+            generated_at="2026-07-17T17:31:00Z",
             directory_fetcher=lambda: directory,
         )
         guidance.validate_payload(payload)

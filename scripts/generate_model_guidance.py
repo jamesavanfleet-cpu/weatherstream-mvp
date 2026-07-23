@@ -83,6 +83,11 @@ MIN_AIDS_PER_CYCLE = 2
 MAX_FORECAST_HOUR = 168
 MAX_INVEST_CYCLE_AGE = timedelta(hours=18)
 MAX_INVEST_DIRECTORY_AGE = timedelta(hours=30)
+MODEL_CYCLE_HOURS = (0, 6, 12, 18)
+
+
+class GuidancePending(RuntimeError):
+    """Signal that the current official A-deck cycle is not complete yet."""
 
 
 def fetch_url(url: str, timeout: int = 30) -> bytes:
@@ -360,6 +365,28 @@ def parse_cycle_timestamp(cycle: str) -> datetime | None:
         return None
 
 
+def expected_model_cycle(generated_at: str) -> str:
+    """Return the current six-hour UTC model cycle expected at generation time."""
+    try:
+        generated = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError("Model-cycle readiness requires a valid generated timestamp") from error
+    if generated.tzinfo is None:
+        raise ValueError("Model-cycle readiness requires a timezone-aware generated timestamp")
+
+    generated = generated.astimezone(timezone.utc)
+    completed_hours = [hour for hour in MODEL_CYCLE_HOURS if hour <= generated.hour]
+    if completed_hours:
+        cycle_at = generated.replace(
+            hour=max(completed_hours), minute=0, second=0, microsecond=0,
+        )
+    else:
+        cycle_at = (generated - timedelta(days=1)).replace(
+            hour=MODEL_CYCLE_HOURS[-1], minute=0, second=0, microsecond=0,
+        )
+    return cycle_at.strftime("%Y%m%d%H")
+
+
 def is_current_invest_cycle(cycle: str, generated_at: str) -> bool:
     """Require an invest guidance cycle to be fresh at artifact generation time."""
     cycle_at = parse_cycle_timestamp(cycle)
@@ -382,6 +409,7 @@ def build_payload(
     """Build the official artifact for all current advisory systems and fresh public invests."""
     active_storms = active_nhc_storms(current_storms)
     generated = generated_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    expected_cycle = expected_model_cycle(generated)
     records: list[dict[str, Any]] = []
 
     # Advisory, potential tropical cyclone, and post-tropical systems present in
@@ -397,7 +425,15 @@ def build_payload(
             raise RuntimeError(f"Could not retrieve public A-deck for active storm {storm_id}") from error
         if not isinstance(adeck_text, str) or not adeck_text.strip():
             raise RuntimeError(f"Public A-deck for active storm {storm_id} was empty")
-        records.append(storm_guidance_from_adeck(storm, adeck_text))
+        record = storm_guidance_from_adeck(storm, adeck_text)
+        source_cycle = str(record.get("sourceCycle") or "")
+        if not record["models"] or source_cycle != expected_cycle:
+            raise GuidancePending(
+                "Newest complete public A-deck cycle for active storm "
+                f"{storm_id} is {source_cycle or 'unavailable'}; "
+                f"awaiting current {expected_cycle}"
+            )
+        records.append(record)
 
     # NHC retains historical invest files in the public directory. Each invest
     # therefore requires both a complete allowed-model cycle and a recent cycle
@@ -562,6 +598,9 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
+    except GuidancePending as error:
+        print(f"NHC model guidance pending: {error}", file=sys.stderr)
+        sys.exit(75)
     except Exception as error:
         print(f"NHC model guidance generation failed: {error}", file=sys.stderr)
         raise

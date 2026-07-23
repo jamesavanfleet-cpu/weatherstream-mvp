@@ -262,7 +262,7 @@ export function isValidNhcModelGuidanceData(value: unknown): value is NhcModelGu
         ["al", "ep", "cp"].includes(storm.basin) &&
         typeof storm.sourceUrl === "string" && storm.sourceUrl.startsWith("https://ftp.nhc.noaa.gov/atcf/aid_public/a") &&
         (storm.systemType === undefined || storm.systemType === "advisory" || storm.systemType === "invest") &&
-        (storm.systemType !== "invest" || /^[a-z]{2}9\d{6}$/.test(storm.id)) &&
+        (storm.systemType !== "invest" || /^[a-z]{2}9\d{5}$/.test(storm.id)) &&
         Array.isArray(storm.models) &&
         storm.models.every(model => {
           if (!isValidGuidanceModel(model) || ids.has(model.id)) return false;
