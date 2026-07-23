@@ -21,6 +21,7 @@ import {
   GeoJSON,
   useMap,
   Popup,
+  Pane,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -182,21 +183,13 @@ function MapInvalidator({ trigger }: { trigger: boolean }) {
 // ── Animated satellite layer (NASA GIBS NRT pre-tiled WMTS approach) ──────────
 // SATELLITE_GIBS_MARKER
 //
-// Architecture: one Leaflet TileLayer per frame, all created upfront.
-// Only one TileLayer is visible at a time (opacity 1 vs 0). Tiles are
-// CDN-cached by NASA GIBS and load in 0.3-0.5 s each, so the first frame
-// appears in ~1-2 s and 12 frames finish loading in ~12-24 s total.
-//
-// GIBS layers used:
-//   GOES-East  (Caribbean/US/Gulf/East Coast): GOES-East_ABI_Band13_Clean_Infrared
-//   GOES-West  (Pacific):                     GOES-West_ABI_Band13_Clean_Infrared
-//   Himawari   (Mediterranean/Asia/global):   Himawari_AHI_Band13_Clean_Infrared
-//
-// WMTS URL pattern:
-//   https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png
-// Time format: YYYY-MM-DDTHH:MM:SSZ (10-minute intervals, last ~2 hours available)
-// TileMatrixSet: GoogleMapsCompatible_Level6 (max zoom 6 -- confirmed from GetCapabilities)
-// Safety margin: subtract 2 intervals from latest to avoid "not yet cached" 404s
+// NASA GIBS satellite-frame integrity policy:
+// 1. The newest frame stays invisible until every required tile has loaded.
+// 2. Older frames preload one at a time in the background.
+// 3. Animation starts only after every candidate is either complete or skipped.
+// 4. A failed frame is retried once, then skipped instead of exposing a partial grid.
+// 5. GIBS Level 6 is the source's native ceiling. Above it Leaflet scales the
+//    last valid level rather than requesting unsupported imagery tiles.
 interface SatelliteLayerProps {
   enabled: boolean;
   isPlaying: boolean;
@@ -204,304 +197,315 @@ interface SatelliteLayerProps {
   onFrameChange: (idx: number, total: number, timestamp: string) => void;
 }
 
+type SatelliteFrameState = "pending" | "ready" | "bad";
+
+type SatelliteSource = {
+  layer: string;
+  intervalMin: number;
+  maxFrames: number;
+  bounds?: L.LatLngBoundsExpression;
+};
+
+const SATELLITE_OPACITY = 0.76;
+const GIBS_MAX_NATIVE_ZOOM = 6;
+const MAX_FRAME_RETRIES = 1;
+const FRAME_TIMEOUT_MS = 15_000;
+
 function SatelliteLayer({ enabled, isPlaying, frameIdx, onFrameChange }: SatelliteLayerProps) {
   const map = useMap();
   const tileLayersRef = useRef<L.TileLayer[]>([]);
   const idxRef = useRef(0);
+  const visibleFrameRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timestampsRef = useRef<string[]>([]);
   const enabledRef = useRef(enabled);
   const isPlayingRef = useRef(isPlaying);
   const onFrameChangeRef = useRef(onFrameChange);
-  onFrameChangeRef.current = onFrameChange;
   const moveListenerRef = useRef<(() => void) | null>(null);
   const currentLayerRef = useRef<string>("");
-  // Per-frame readiness state.
-  // "pending" = tiles still loading or retrying
-  // "ready"   = enough tiles loaded successfully -- safe to display
-  // "bad"     = permanently failed after all retries -- skip in animation
-  const frameStateRef = useRef<Array<"pending" | "ready" | "bad">>([]);
-  // Per-frame tile error counters: how many tiles failed for each frame index
-  const tileErrorCountRef = useRef<number[]>([]);
-  // Per-frame tile load counters: how many tiles loaded successfully for each frame index
-  const tileLoadCountRef = useRef<number[]>([]);
-  // Per-frame total tile counts: how many tiles were requested for each frame index
-  const tileTotalCountRef = useRef<number[]>([]);
-  // Max retries per tile before marking the frame as bad
-  const MAX_TILE_RETRIES = 2;
-  // Per-tile retry counters keyed by tile URL
-  const tileRetriesRef = useRef<Map<string, number>>(new Map());
+  const generationRef = useRef(0);
+  const queueRef = useRef<number[]>([]);
+  const frameStateRef = useRef<SatelliteFrameState[]>([]);
+  const frameErrorRef = useRef<boolean[]>([]);
+  const frameAttemptRef = useRef<number[]>([]);
+  const frameTimeoutRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const playbackEligibleRef = useRef(false);
 
-  // GOES-East coverage bounds (viewport center check)
-  const GOES_EAST_WEST = -179.5;
-  const GOES_EAST_EAST = -52.0;
-  const GOES_EAST_SOUTH = 12.0;
-  const GOES_EAST_NORTH = 50.6;
+  onFrameChangeRef.current = onFrameChange;
 
-  // GOES-West coverage bounds (viewport center check)
-  const GOES_WEST_WEST = -179.5;
-  const GOES_WEST_EAST = -100.0;
-  const GOES_WEST_SOUTH = 10.0;
-  const GOES_WEST_NORTH = 60.0;
+  const GOES_EAST_BOUNDS: L.LatLngBoundsExpression = [[12.0, -179.5], [50.6, -52.0]];
+  const GOES_WEST_BOUNDS: L.LatLngBoundsExpression = [[10.0, -179.5], [60.0, -100.0]];
 
-  // GIBS WMTS URL template builder
-  // TileMatrixSet must be GoogleMapsCompatible_Level6 (not GoogleMapsCompatible) -- confirmed from GetCapabilities
   const gibsUrl = (layer: string, time: string) =>
-    `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${time}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
+    "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/" + layer + "/default/" + time + "/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png";
 
-  // Determine which GIBS layer to use based on viewport center.
-  // GOES_CENTER_MARKER
-  const getActiveLayer = (bounds: L.LatLngBounds): { layer: string; intervalMin: number; maxFrames: number } => {
+  const getActiveSource = (bounds: L.LatLngBounds): SatelliteSource => {
     const center = bounds.getCenter();
-    // Pacific: use GOES-West
-    if (
-      center.lng >= GOES_WEST_WEST && center.lng <= GOES_WEST_EAST &&
-      center.lat >= GOES_WEST_SOUTH && center.lat <= GOES_WEST_NORTH
-    ) {
-      return { layer: "GOES-West_ABI_Band13_Clean_Infrared", intervalMin: 10, maxFrames: 12 };
+    if (center.lng >= -179.5 && center.lng <= -100.0 && center.lat >= 10.0 && center.lat <= 60.0) {
+      return {
+        layer: "GOES-West_ABI_Band13_Clean_Infrared",
+        intervalMin: 10,
+        maxFrames: 12,
+        bounds: GOES_WEST_BOUNDS,
+      };
     }
-    // Caribbean / US / Gulf / East Coast: use GOES-East
-    if (
-      center.lng >= GOES_EAST_WEST && center.lng <= GOES_EAST_EAST &&
-      center.lat >= GOES_EAST_SOUTH && center.lat <= GOES_EAST_NORTH
-    ) {
-      return { layer: "GOES-East_ABI_Band13_Clean_Infrared", intervalMin: 10, maxFrames: 12 };
+    if (center.lng >= -179.5 && center.lng <= -52.0 && center.lat >= 12.0 && center.lat <= 50.6) {
+      return {
+        layer: "GOES-East_ABI_Band13_Clean_Infrared",
+        intervalMin: 10,
+        maxFrames: 12,
+        bounds: GOES_EAST_BOUNDS,
+      };
     }
-    // Mediterranean / Asia / other regions: use Himawari (covers 80E-160W, 60S-60N)
-    return { layer: "Himawari_AHI_Band13_Clean_Infrared", intervalMin: 10, maxFrames: 12 };
+    return {
+      layer: "Himawari_AHI_Band13_Clean_Infrared",
+      intervalMin: 10,
+      maxFrames: 12,
+    };
   };
 
-  // Generate the last N timestamps at 10-minute intervals ending at the most
-  // recent confirmed-available 10-minute mark. GIBS NRT tiles take ~5-15 min
-  // to become available after observation time. Subtract 2 intervals (20 min)
-  // as a safety margin to avoid 404s on the most recent not-yet-cached tiles.
-  const buildTimestamps = (count: number): string[] => {
+  const buildTimestamps = (count: number, intervalMin: number): string[] => {
     const now = new Date();
-    // Round down to the nearest 10-minute mark, then subtract 2 intervals
-    const ms10 = 10 * 60 * 1000;
-    const latest = new Date(Math.floor(now.getTime() / ms10) * ms10 - 2 * ms10);
+    const intervalMs = intervalMin * 60 * 1000;
+    const latest = new Date(Math.floor(now.getTime() / intervalMs) * intervalMs - 2 * intervalMs);
     const stamps: string[] = [];
     for (let i = count - 1; i >= 0; i--) {
-      const t = new Date(latest.getTime() - i * ms10);
+      const t = new Date(latest.getTime() - i * intervalMs);
       const yyyy = t.getUTCFullYear();
       const mm = String(t.getUTCMonth() + 1).padStart(2, "0");
       const dd = String(t.getUTCDate()).padStart(2, "0");
       const hh = String(t.getUTCHours()).padStart(2, "0");
       const min = String(t.getUTCMinutes()).padStart(2, "0");
-      stamps.push(`${yyyy}-${mm}-${dd}T${hh}:${min}:00Z`);
+      stamps.push(yyyy + "-" + mm + "-" + dd + "T" + hh + ":" + min + ":00Z");
     }
     return stamps;
   };
 
-  // Show one frame by index, skipping frames that are permanently bad.
-  // Searches forward (wrapping) from the requested index until it finds a
-  // frame that is not "bad". If ALL frames are bad, shows the requested index
-  // anyway (degenerate case -- better than freezing).
-  const showFrame = useCallback((idx: number) => {
-    const layers = tileLayersRef.current;
-    if (layers.length === 0) return;
-    const states = frameStateRef.current;
-    // Find the nearest non-bad frame starting from idx, searching forward
-    let target = Math.max(0, Math.min(idx, layers.length - 1));
-    if (states.length === layers.length) {
-      let searched = 0;
-      while (states[target] === "bad" && searched < layers.length) {
-        target = (target + 1) % layers.length;
-        searched++;
-      }
-      // If every frame is bad, fall back to the original clamped index
-      if (searched === layers.length) {
-        target = Math.max(0, Math.min(idx, layers.length - 1));
-      }
+  const stopPlayback = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-    layers.forEach((tl, i) => tl.setOpacity(i === target ? 0.85 : 0));
-    idxRef.current = target;
-    // Report position within ready-only frames so the counter shows meaningful numbers
-    const readyIndices = states.length === layers.length
-      ? states.map((s, i) => s !== "bad" ? i : -1).filter(i => i !== -1)
-      : layers.map((_, i) => i);
-    const posInReady = readyIndices.indexOf(target);
-    const displayIdx = posInReady >= 0 ? posInReady : target;
-    const displayTotal = readyIndices.length > 0 ? readyIndices.length : layers.length;
-    const ts = timestampsRef.current[target] ?? "";
-    onFrameChangeRef.current(displayIdx, displayTotal, ts);
   }, []);
 
-  // Remove all tile layers from the map and clear the ref array
+  const clearSatelliteTimers = useCallback(() => {
+    frameTimeoutRef.current.forEach(timeout => clearTimeout(timeout));
+    frameTimeoutRef.current.clear();
+    retryTimeoutRef.current.forEach(timeout => clearTimeout(timeout));
+    retryTimeoutRef.current = [];
+  }, []);
+
+  const readyIndices = useCallback(() =>
+    frameStateRef.current.map((state, index) => state === "ready" ? index : -1).filter(index => index >= 0), []);
+
+  const showFrame = useCallback((requestedIndex: number) => {
+    const layers = tileLayersRef.current;
+    const ready = readyIndices();
+    if (layers.length === 0 || ready.length === 0) {
+      layers.forEach(layer => layer.setOpacity(0));
+      return;
+    }
+
+    const clamped = Math.max(0, Math.min(requestedIndex, layers.length - 1));
+    const target = ready.includes(clamped)
+      ? clamped
+      : (ready.find(index => index >= clamped) ?? ready[0]);
+
+    layers.forEach((layer, index) => layer.setOpacity(index === target ? SATELLITE_OPACITY : 0));
+    visibleFrameRef.current = target;
+    idxRef.current = target;
+    onFrameChangeRef.current(ready.indexOf(target), ready.length, timestampsRef.current[target] ?? "");
+  }, [readyIndices]);
+
+  const startPlayback = useCallback(() => {
+    stopPlayback();
+    if (!enabledRef.current || !isPlayingRef.current || !playbackEligibleRef.current || readyIndices().length < 2) return;
+    timerRef.current = setInterval(() => {
+      const layers = tileLayersRef.current;
+      if (layers.length > 0) showFrame((idxRef.current + 1) % layers.length);
+    }, 900);
+  }, [readyIndices, showFrame, stopPlayback]);
+
   const removeTileLayers = useCallback(() => {
-    tileLayersRef.current.forEach(tl => { try { map.removeLayer(tl); } catch { /* ignore */ } });
+    tileLayersRef.current.forEach(layer => {
+      try { map.removeLayer(layer); } catch { /* Map may already be disposed. */ }
+    });
     tileLayersRef.current = [];
+    queueRef.current = [];
+    frameStateRef.current = [];
+    visibleFrameRef.current = null;
+    playbackEligibleRef.current = false;
   }, [map]);
 
-  // Full teardown: stop timer, remove all tile layers, detach map listeners
   const teardown = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    generationRef.current += 1;
+    stopPlayback();
+    clearSatelliteTimers();
     removeTileLayers();
     if (moveListenerRef.current) {
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
       moveListenerRef.current = null;
     }
-  }, [map, removeTileLayers]);
+  }, [clearSatelliteTimers, map, removeTileLayers, stopPlayback]);
 
-  // Build and add tile layers for all frames, show the most recent one immediately.
-  // Attaches per-tile load/error listeners to track frame readiness and retry failed tiles.
-  const loadFrames = useCallback((layer: string, timestamps: string[]) => {
+  const loadFrames = useCallback((source: SatelliteSource, timestamps: string[]) => {
+    generationRef.current += 1;
+    const generation = generationRef.current;
+    stopPlayback();
+    clearSatelliteTimers();
     removeTileLayers();
-    tileRetriesRef.current = new Map();
     if (timestamps.length === 0) return;
 
-    // Initialise per-frame state arrays
-    frameStateRef.current = timestamps.map(() => "pending" as const);
-    tileErrorCountRef.current = timestamps.map(() => 0);
-    tileLoadCountRef.current = timestamps.map(() => 0);
-    tileTotalCountRef.current = timestamps.map(() => 0);
+    timestampsRef.current = timestamps;
+    frameStateRef.current = timestamps.map(() => "pending" as SatelliteFrameState);
+    frameErrorRef.current = timestamps.map(() => false);
+    frameAttemptRef.current = timestamps.map(() => 0);
+    playbackEligibleRef.current = false;
+    visibleFrameRef.current = null;
 
-    const newLayers = timestamps.map((ts, frameIdx) => {
-      const tl = L.tileLayer(gibsUrl(layer, ts), {
-        opacity: frameIdx === timestamps.length - 1 ? 0.85 : 0,
-        attribution: "NASA GIBS",
-        tileSize: 256,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+    const layers = timestamps.map(time => L.tileLayer(gibsUrl(source.layer, time), {
+      opacity: 0,
+      attribution: "NASA GIBS",
+      tileSize: 256,
+      maxNativeZoom: GIBS_MAX_NATIVE_ZOOM,
+      maxZoom: 19,
+      bounds: source.bounds,
+      updateWhenIdle: true,
+      keepBuffer: 1,
+    }));
 
-      // Track how many tiles Leaflet requests for this frame
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tl.on("tileloadstart", () => {
-        tileTotalCountRef.current[frameIdx] = (tileTotalCountRef.current[frameIdx] ?? 0) + 1;
-      });
+    tileLayersRef.current = layers;
+    queueRef.current = layers.map((_, index) => index).reverse();
 
-      // On successful tile load: increment loaded counter; if all tiles for this
-      // frame are now loaded, mark the frame as ready.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tl.on("tileload", () => {
-        tileLoadCountRef.current[frameIdx] = (tileLoadCountRef.current[frameIdx] ?? 0) + 1;
-        const loaded = tileLoadCountRef.current[frameIdx];
-        const errors = tileErrorCountRef.current[frameIdx];
-        const total = tileTotalCountRef.current[frameIdx];
-        // Mark ready once the loaded tiles account for the non-errored tiles
-        // (i.e. all tiles that could load have loaded)
-        if (total > 0 && loaded + errors >= total && errors < total) {
-          frameStateRef.current[frameIdx] = "ready";
+    let loadNextFrame = () => undefined;
+
+    const armFrameTimeout = (index: number) => {
+      const previous = frameTimeoutRef.current.get(index);
+      if (previous) clearTimeout(previous);
+      const timeout = setTimeout(() => {
+        if (generation !== generationRef.current || frameStateRef.current[index] !== "pending") return;
+        settleFrame(index, "bad");
+      }, FRAME_TIMEOUT_MS);
+      frameTimeoutRef.current.set(index, timeout);
+    };
+
+    const settleFrame = (index: number, state: SatelliteFrameState) => {
+      if (generation !== generationRef.current || frameStateRef.current[index] !== "pending") return;
+      frameStateRef.current[index] = state;
+      const timeout = frameTimeoutRef.current.get(index);
+      if (timeout) clearTimeout(timeout);
+      frameTimeoutRef.current.delete(index);
+
+      const newestReady = readyIndices().at(-1);
+      if (visibleFrameRef.current === null && newestReady !== undefined) showFrame(newestReady);
+
+      loadNextFrame();
+      const allSettled = frameStateRef.current.every(frameState => frameState !== "pending");
+      if (allSettled) {
+        playbackEligibleRef.current = true;
+        if (visibleFrameRef.current === null && newestReady !== undefined) showFrame(newestReady);
+        startPlayback();
+      }
+    };
+
+    layers.forEach((tileLayer, index) => {
+      tileLayer.on("tileerror", () => {
+        if (generation === generationRef.current && frameStateRef.current[index] === "pending") {
+          frameErrorRef.current[index] = true;
         }
       });
 
-      // On tile error: retry up to MAX_TILE_RETRIES times with a 1.5 s delay.
-      // After all retries exhausted, increment the error counter and check
-      // whether the frame should be marked bad.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tl.on("tileerror", (e: any) => {
-        const tileEl: HTMLImageElement | undefined = e.tile;
-        const url: string = tileEl?.src ?? "";
-        const retries = tileRetriesRef.current.get(url) ?? 0;
-        if (retries < MAX_TILE_RETRIES && tileEl) {
-          // Schedule a retry: blank the src briefly then restore it
-          tileRetriesRef.current.set(url, retries + 1);
-          setTimeout(() => {
-            if (tileEl && tileEl.src) {
-              const originalSrc = url;
-              tileEl.src = "";
-              tileEl.src = originalSrc;
-            }
-          }, 1500 * (retries + 1)); // back-off: 1.5 s, 3 s
-        } else {
-          // Retries exhausted for this tile -- count it as a permanent error
-          tileErrorCountRef.current[frameIdx] = (tileErrorCountRef.current[frameIdx] ?? 0) + 1;
-          const loaded = tileLoadCountRef.current[frameIdx];
-          const errors = tileErrorCountRef.current[frameIdx];
-          const total = tileTotalCountRef.current[frameIdx];
-          // Mark the frame bad only if MORE than half the tiles failed.
-          // A few 404s on out-of-coverage edge tiles is normal and acceptable;
-          // we only want to skip frames where the majority of imagery is missing.
-          if (total > 0 && errors > total / 2) {
-            frameStateRef.current[frameIdx] = "bad";
-          } else if (total > 0 && loaded + errors >= total) {
-            // Minority of tiles failed but enough loaded -- still mark ready
-            frameStateRef.current[frameIdx] = "ready";
-          }
+      tileLayer.on("load", () => {
+        if (generation !== generationRef.current || frameStateRef.current[index] !== "pending") return;
+        if (!frameErrorRef.current[index]) {
+          settleFrame(index, "ready");
+          return;
         }
+        if (frameAttemptRef.current[index] < MAX_FRAME_RETRIES) {
+          frameAttemptRef.current[index] += 1;
+          frameErrorRef.current[index] = false;
+          const retry = setTimeout(() => {
+            if (generation !== generationRef.current || frameStateRef.current[index] !== "pending") return;
+            armFrameTimeout(index);
+            tileLayer.redraw();
+          }, 1250 * frameAttemptRef.current[index]);
+          retryTimeoutRef.current.push(retry);
+          return;
+        }
+        settleFrame(index, "bad");
       });
-
-      return tl;
     });
 
-    // Add all layers to the map (invisible ones load in background)
-    newLayers.forEach(tl => tl.addTo(map));
-    tileLayersRef.current = newLayers;
-    // Show the most recent frame immediately
-    const startIdx = newLayers.length - 1;
-    idxRef.current = startIdx;
-    const ts = timestamps[startIdx] ?? "";
-    onFrameChangeRef.current(startIdx, newLayers.length, ts);
-    // Start playback if playing
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    if (isPlayingRef.current && newLayers.length > 1) {
-      timerRef.current = setInterval(() => {
-        showFrame((idxRef.current + 1) % tileLayersRef.current.length);
-      }, 900);
-    }
-  }, [map, removeTileLayers, showFrame]); // eslint-disable-line react-hooks/exhaustive-deps
+    loadNextFrame = () => {
+      if (generation !== generationRef.current) return;
+      const nextIndex = queueRef.current.shift();
+      if (nextIndex === undefined) return;
+      const nextLayer = layers[nextIndex];
+      armFrameTimeout(nextIndex);
+      nextLayer.addTo(map);
+    };
 
-  // Main effect: build tile layers when enabled, tear down when disabled
+    loadNextFrame();
+  }, [clearSatelliteTimers, map, readyIndices, removeTileLayers, showFrame, startPlayback, stopPlayback]);
+
   useEffect(() => {
     if (!enabled) {
       teardown();
       enabledRef.current = false;
       return;
     }
-    enabledRef.current = true;
 
-    const init = () => {
-      const bounds = map.getBounds();
-      const { layer, maxFrames } = getActiveLayer(bounds);
-      // If the active layer changed (e.g. user panned from Caribbean to Pacific),
-      // rebuild all tile layers with the new GIBS layer name.
-      if (layer !== currentLayerRef.current || tileLayersRef.current.length === 0) {
-        currentLayerRef.current = layer;
-        const timestamps = buildTimestamps(maxFrames);
-        timestampsRef.current = timestamps;
-        loadFrames(layer, timestamps);
+    enabledRef.current = true;
+    const initialize = () => {
+      const source = getActiveSource(map.getBounds());
+      if (source.layer !== currentLayerRef.current || tileLayersRef.current.length === 0) {
+        currentLayerRef.current = source.layer;
+        loadFrames(source, buildTimestamps(source.maxFrames, source.intervalMin));
       }
     };
-    init();
 
-    // Detach any previously registered listeners before registering new ones
+    initialize();
     if (moveListenerRef.current) {
       map.off("moveend", moveListenerRef.current);
       map.off("zoomend", moveListenerRef.current);
     }
-    const onMove = () => { if (enabledRef.current) init(); };
+    const onMove = () => { if (enabledRef.current) initialize(); };
     moveListenerRef.current = onMove;
     map.on("moveend", onMove);
     map.on("zoomend", onMove);
+    return () => teardown();
+  }, [enabled, loadFrames, map, teardown]);
 
-    return () => { teardown(); };
-  }, [enabled, map, teardown, loadFrames]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Respond to play/pause toggle
   useEffect(() => {
     isPlayingRef.current = isPlaying;
-    if (!enabled || tileLayersRef.current.length === 0) return;
-    if (isPlaying) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        // Always advance through the full layer array; showFrame will skip bad frames
-        showFrame((idxRef.current + 1) % tileLayersRef.current.length);
-      }, 900);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, [isPlaying, enabled, showFrame]);
+    if (!enabled) return;
+    if (isPlaying) startPlayback();
+    else stopPlayback();
+  }, [enabled, isPlaying, startPlayback, stopPlayback]);
 
-  // Respond to external frame index changes (playback bar scrubbing)
   useEffect(() => {
-    if (!enabled || tileLayersRef.current.length === 0) return;
-    const clamped = Math.max(0, Math.min(frameIdx, tileLayersRef.current.length - 1));
-    if (clamped !== idxRef.current) showFrame(clamped);
-  }, [frameIdx, enabled, showFrame]);
+    if (!enabled || readyIndices().length === 0) return;
+    showFrame(frameIdx);
+  }, [enabled, frameIdx, readyIndices, showFrame]);
 
   return null;
+}
+
+function SatelliteGeographyReference({ enabled }: { enabled: boolean }) {
+  if (!enabled) return null;
+
+  return (
+    <Pane name="satelliteGeographyReferencePane" style={{ zIndex: 350, pointerEvents: "none" }}>
+      <TileLayer
+        url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+        attribution=""
+        maxZoom={19}
+        opacity={0.96}
+      />
+    </Pane>
+  );
 }
 
 // ── Alert zone GeoJSON overlay ────────────────────────────────────────────────
@@ -1686,15 +1690,8 @@ export default function TropicalAdvisories() {
                 maxZoom={19}
               />
             )}
-            {/* Satellite label overlay -- city names, borders, place labels */}
-            {basemap === "satellite" && (
-              <TileLayer
-                url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                attribution=""
-                maxZoom={19}
-                pane="shadowPane"
-              />
-            )}
+            {/* Geographic context remains visible over both imagery basemaps and weather imagery. */}
+            <SatelliteGeographyReference enabled={showSatellite || basemap === "satellite"} />
 
             {/* Zone Forecasts -- NWS marine zone boundaries (pre-baked GeoJSON from marine_zones.json) */}
             {showZoneForecasts && marineZones && marineForecasts && (
