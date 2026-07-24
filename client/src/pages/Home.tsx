@@ -19,6 +19,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import PtzThumb from "@/components/PtzThumb";
 import { hasPtzCamera, getPtzCameras } from "@/lib/ptzCameras";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /**
  * WeatherStream - Next-Gen Weather Platform
@@ -525,6 +526,7 @@ interface PortDetailModalProps {
 }
 
 function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailModalProps) {
+  const { t } = useLanguage();
   const [data, setData] = useState<PortLiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -640,10 +642,10 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
               />
               <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
                 !isMetric ? 'text-slate-800' : 'text-white/70'
-              }`}>US Standard</span>
+              }`}>{t("common.usStandard")}</span>
               <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
                 isMetric ? 'text-slate-800' : 'text-white/70'
-              }`}>Metric</span>
+              }`}>{t("common.metric")}</span>
             </button>
           </div>
         </div>
@@ -1034,6 +1036,7 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
 }
 
 export default function Home() {
+  const { t, formatDate } = useLanguage();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visibleIntel, setVisibleIntel] = useState<Set<number>>(new Set());
@@ -1065,7 +1068,7 @@ export default function Home() {
   const [selectedPort, setSelectedPort] = useState<typeof LIVE_DATA[0] | null>(null);
   type LiveCondEntry = { tempF: number; tempC: number; condition: string; wmo: number; windKt: number; windDir: number };
   const [liveConditionsData, setLiveConditionsData] = useState<Record<string, LiveCondEntry> | null>(null);
-  const [liveConditionsUpdatedAt, setLiveConditionsUpdatedAt] = useState<string | null>(null);
+  const [liveConditionsUpdatedAt, setLiveConditionsUpdatedAt] = useState<Date | null>(null);
   const [briefingVideoOpen, setBriefingVideoOpen] = useState(false);
   const [briefingVideoUrl, setBriefingVideoUrl] = useState<string | null>(null);
   const [briefingVideoOrientation, setBriefingVideoOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
@@ -1110,13 +1113,7 @@ export default function Home() {
         .then((d: { ports: Record<string, LiveCondEntry>; generated_at?: string }) => {
           if (d.ports) setLiveConditionsData(d.ports);
           if (d.generated_at) {
-            const dt = new Date(d.generated_at);
-            const formatted = dt.toLocaleString('en-US', {
-              month: 'short', day: 'numeric', year: 'numeric',
-              hour: 'numeric', minute: '2-digit', hour12: true,
-              timeZone: 'America/New_York', timeZoneName: 'short'
-            });
-            setLiveConditionsUpdatedAt(formatted);
+            setLiveConditionsUpdatedAt(new Date(d.generated_at));
           }
         })
         .catch(() => { /* fall back to static LIVE_DATA values */ });
@@ -1421,22 +1418,22 @@ export default function Home() {
             <div className="glass rounded-xl p-3 text-center">
               <ThermometerSun className="w-5 h-5 mx-auto mb-2 text-orange-400" />
               <p className="text-2xl font-bold text-white">{displayTemp}</p>
-              <p className="text-xs text-white/60">Temperature</p>
+              <p className="text-xs text-white/60">{t("home.temperature")}</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Waves className="w-5 h-5 mx-auto mb-2 text-blue-400" />
               <p className="text-2xl font-bold text-white">{displaySeas}</p>
-              <p className="text-xs text-white/60">Sea State</p>
+              <p className="text-xs text-white/60">{t("home.seaState")}</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Wind className="w-5 h-5 mx-auto mb-2 text-cyan-400" />
               <p className="text-2xl font-bold text-white">{dir ? <span>{dir} </span> : null}{route.wind}</p>
-              <p className="text-xs text-white/60">Wind</p>
+              <p className="text-xs text-white/60">{t("home.wind")}</p>
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Droplets className="w-5 h-5 mx-auto mb-2 text-purple-400" />
               <p className="text-2xl font-bold text-white">{liveRain[route.name] || route.rain}</p>
-              <p className="text-xs text-white/60">Rain Chance</p>
+              <p className="text-xs text-white/60">{t("home.rainChance")}</p>
             </div>
           </div>
         </div>
@@ -1479,19 +1476,18 @@ export default function Home() {
           <div className="space-y-4 lg:space-y-6">
             <Badge className="glass border-white/20 text-white backdrop-blur-xl">
               <TrendingUp className="w-3 h-3 mr-1" />
-              30+ Years | Royal Caribbean Chief Met
+              {t("home.experience")}
             </Badge>
             <div className="space-y-3">
               <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
                 <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
-                  Weather Intelligence
+                  {t("home.title")}
                 </span>
               </h2>
-              <p className="text-xl md:text-2xl text-white/70 font-light">By James Van Fleet</p>
+              <p className="text-xl md:text-2xl text-white/70 font-light">{t("home.byline")}</p>
             </div>
             <p className="text-base md:text-xl text-white/80 leading-relaxed max-w-xl">
-              Forecast Briefings, your cruise forecast at every port call, and breaking storm analysis with the former Chief Meteorologist
-              of Royal Caribbean, with 30+ years of experience. Cruise Forecasts for the Caribbean, Mediterranean, Eastern Pacific, and Alaska.
+              {t("home.description")}
             </p>
             <div className="h-8" />
             <div className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap gap-3">
@@ -1501,7 +1497,7 @@ export default function Home() {
                 onClick={() => setBriefingVideoOpen(true)}
               >
                 <Play className="w-5 h-5 mr-2" />
-                Watch the Latest Briefing
+                {t("home.watchBriefing")}
               </Button>
               <Button
                 size="lg"
@@ -1509,7 +1505,7 @@ export default function Home() {
                 onClick={() => navigate("/advisories")}
               >
                 <AlertTriangle className="w-5 h-5 mr-2" />
-                Tropical Advisories Page
+                {t("home.tropicalAdvisories")}
               </Button>
               <Button
                 size="lg"
@@ -1517,7 +1513,7 @@ export default function Home() {
                 onClick={() => navigate("/from-the-deck")}
               >
                 <Camera className="w-5 h-5 mr-2" />
-                Your Photos From Your Cruise
+                {t("home.cruisePhotos")}
               </Button>
               {/* mobile-rearrange: hide here on mobile, show below Tropical Advisories on mobile only */}
               <Button
@@ -1526,7 +1522,7 @@ export default function Home() {
                 onClick={() => navigate("/james-picks")}
               >
                 <ThermometerSun className="w-5 h-5 mr-2" />
-                James' Picks
+                {t("home.jamesPicks")}
               </Button>
               <Button
                 size="lg"
@@ -1538,7 +1534,7 @@ export default function Home() {
                   href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
                 >
                   <Mail className="w-5 h-5 mr-2" />
-                  Send Us Your Intel
+                  {t("home.sendIntel")}
                 </a>
               </Button>
             </div>
@@ -1549,10 +1545,10 @@ export default function Home() {
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">Live Conditions Now</span>
+                <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">{t("home.liveConditions")}</span>
                 {liveConditionsUpdatedAt && (
                   <span className="text-white/40 text-xs font-normal normal-case tracking-normal">
-                    Updated: {liveConditionsUpdatedAt}
+                    {t("common.updated", { value: formatDate(liveConditionsUpdatedAt, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" }) })}
                   </span>
                 )}
               </div>
@@ -1569,13 +1565,13 @@ export default function Home() {
                 />
                 <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
                   !isMetric ? 'text-white' : 'text-white/50'
-                }`}>US Standard</span>
+                }`}>{t("common.usStandard")}</span>
                 <span className={`relative z-10 flex-1 text-center text-[11px] font-bold transition-colors duration-200 ${
                   isMetric ? 'text-white' : 'text-white/50'
-                }`}>Metric</span>
+                }`}>{t("common.metric")}</span>
               </button>
             </div>
-            <p className="text-white/40 text-xs mb-3">Click on any port below for expanded conditions</p>
+            <p className="text-white/40 text-xs mb-3">{t("home.clickPort")}</p>
             <div
               className="grid grid-cols-3 auto-rows-[204px] sm:auto-rows-[179px] gap-2 overflow-hidden"
               data-live-grid-stable="true"
@@ -1669,7 +1665,7 @@ export default function Home() {
               onClick={() => navigate("/james-picks")}
             >
               <ThermometerSun className="w-5 h-5 mr-2" />
-              James' Picks
+              {t("home.jamesPicks")}
             </Button>
             {/* Send Us Your Intel -- mobile only, shown below James' Picks per James 2026-05-09 */}
             <Button
@@ -1682,7 +1678,7 @@ export default function Home() {
                 href="mailto:jamesavanfleet@gmail.com?subject=Send%20Us%20Your%20Intel&body=Hi%20James%2C%0A%0AI%20have%20some%20intel%20to%20share%3A%0A%0AShip%20Name%3A%0ARegion%2FPort%3A%0AWhat%20I%20Saw%3A%0A%0AFeedback%20or%20other%20notes%3A"
               >
                 <Mail className="w-5 h-5 mr-2" />
-                Send Us Your Intel
+                {t("home.sendIntel")}
               </a>
             </Button>
 
@@ -1721,10 +1717,10 @@ export default function Home() {
               onClick={closeBriefingVideo}
               className="absolute z-10 flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
               style={{ top: '1rem', right: '1rem' }}
-              aria-label="Close video"
+              aria-label={t("common.close")}
             >
               <X className="w-5 h-5" />
-              Close
+              {t("common.close")}
             </button>
 
             {briefingVideoUrl ? (
@@ -1744,8 +1740,8 @@ export default function Home() {
             ) : (
               <div className="bg-black/90 border border-white/10 rounded-2xl p-10 text-center shadow-2xl">
                 <Play className="w-12 h-12 text-cyan-400 mx-auto mb-4 opacity-70" />
-                <h3 className="text-white font-bold text-xl mb-3">Briefing Coming Soon</h3>
-                <p className="text-white/50 text-sm leading-relaxed">The latest weather briefing from James Van Fleet will appear here. Check back shortly.</p>
+                <h3 className="text-white font-bold text-xl mb-3">{t("home.briefingSoonTitle")}</h3>
+                <p className="text-white/50 text-sm leading-relaxed">{t("home.briefingSoonBody")}</p>
               </div>
             )}
           </div>
@@ -1778,18 +1774,18 @@ export default function Home() {
               />
               <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
                 !isMetric ? 'text-white' : 'text-white/50'
-              }`}>US Standard</span>
+              }`}>{t("common.usStandard")}</span>
               <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
                 isMetric ? 'text-white' : 'text-white/50'
-              }`}>Metric</span>
+              }`}>{t("common.metric")}</span>
             </button>
           </div>
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Caribbean Cruise Weather
+              {t("home.caribbeanTitle")}
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              5-day forecasts from the meteorologist who protected Royal Caribbean's fleet for 6+ years
+              {t("home.caribbeanBody")}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
@@ -1818,18 +1814,18 @@ export default function Home() {
               />
               <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
                 !isMetric ? 'text-white' : 'text-white/50'
-              }`}>US Standard</span>
+              }`}>{t("common.usStandard")}</span>
               <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
                 isMetric ? 'text-white' : 'text-white/50'
-              }`}>Metric</span>
+              }`}>{t("common.metric")}</span>
             </button>
           </div>
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Mediterranean Cruise Weather
+              {t("home.mediterraneanTitle")}
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              Western, Central, and Eastern Mediterranean -- complete port and passage forecasts
+              {t("home.mediterraneanBody")}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
@@ -1865,18 +1861,18 @@ export default function Home() {
               />
               <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
                 !isMetric ? 'text-white' : 'text-white/50'
-              }`}>US Standard</span>
+              }`}>{t("common.usStandard")}</span>
               <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
                 isMetric ? 'text-white' : 'text-white/50'
-              }`}>Metric</span>
+              }`}>{t("common.metric")}</span>
             </button>
           </div>
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Eastern Pacific Cruise Weather
+              {t("home.pacificTitle")}
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              From Los Angeles to Cabo San Lucas -- complete Pacific Mexico coastal and offshore forecasts
+              {t("home.pacificBody")}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
@@ -1900,10 +1896,10 @@ export default function Home() {
         <div className="container relative z-10">
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-4 tracking-tight">
-              Alaska Cruise Weather
+              {t("home.alaskaTitle")}
             </h3>
             <p className="text-xl text-white/70 max-w-2xl mx-auto">
-              Inside Passage from Seattle to Skagway -- complete forecasts for Juneau, Ketchikan, Sitka, Tracy Arm, and beyond
+              {t("home.alaskaBody")}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1400px] mx-auto">
@@ -1931,10 +1927,10 @@ export default function Home() {
         <div className="container relative z-10">
           <div className="text-center mb-5">
             <h3 className="text-5xl font-black text-white mb-6 tracking-tight">
-              Schedule a Weather Decision Briefing
+              {t("home.scheduleTitle")}
             </h3>
             <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-              A focused 20-minute one-on-one session with James. You bring the question -- where to go, when to go, whether to stay tied up or move the vessel. James brings 30+ years of professional meteorology and the answers you need before you leave the dock.
+              {t("home.scheduleBody")}
             </p>
           </div>
 
@@ -1970,9 +1966,9 @@ export default function Home() {
                 <AlertTriangle className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h4 className="text-2xl font-black text-white mb-3">Tropical Weather and Hurricane Decisions</h4>
+                <h4 className="text-2xl font-black text-white mb-3">{t("home.hurricaneTitle")}</h4>
                 <p className="text-white/70 leading-relaxed text-base">
-                  When a tropical system is developing or a hurricane is threatening, the decisions get serious fast. Do you stay tied up or move the vessel? If you move, when do you need to leave, and where should you go? James provides clear, direct answers based on the actual forecast data -- not the headlines. This is the same level of decision support he provided for Royal Caribbean's fleet, now available to you directly.
+                  {t("home.hurricaneBody")}
                 </p>
               </div>
             </div>
@@ -1987,7 +1983,7 @@ export default function Home() {
                 onClick={() => navigate("/book-briefing")}
               >
                 <Clock className="w-5 h-5 mr-3" />
-                Book a 20-Minute Briefing
+                {t("home.bookBriefing")}
               </Button>
             </div>
           </div>
@@ -1998,7 +1994,7 @@ export default function Home() {
       <section className="py-10 relative border-t border-white/5">
         <div className="container">
           <div className="flex flex-col items-center gap-4">
-            <p className="text-white/40 text-sm font-medium tracking-widest uppercase">Follow James</p>
+            <p className="text-white/40 text-sm font-medium tracking-widest uppercase">{t("home.followJames")}</p>
             <div className="flex items-center gap-4">
               {/* Instagram */}
               <a
@@ -2067,13 +2063,13 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
                     <p className="text-white font-bold text-lg">James Van Fleet</p>
-                    <p className="text-blue-400 text-sm font-medium">Chief Meteorologist</p>
+                    <p className="text-blue-400 text-sm font-medium">{t("home.chiefMeteorologist")}</p>
                   </div>
                 </div>
               </div>
               
               <div className="w-full md:w-2/3 space-y-6 text-white/80 leading-relaxed">
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-6">About James</h2>
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-6">{t("home.aboutJames")}</h2>
                 
                 <p>
                   With over 30 years of experience as a trailblazing broadcast and operational meteorologist, James Van Fleet has built a career on delivering life-saving, data-driven weather intelligence. He is a trusted media spokesperson with regular appearances on The Weather Channel, FOX Weather, and Weather Nation, as well as Network Broadcast Stations, and a crisis-tested leader credited with protecting lives and multi-billion-dollar assets through precise hurricane routing and real-time decision support.
@@ -2121,7 +2117,7 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-white font-bold text-sm">VanFleet Wx</p>
-                <p className="text-white/60 text-xs">Weather Intelligence by James Van Fleet</p>
+                <p className="text-white/60 text-xs">{t("home.footerTagline")}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -2143,7 +2139,7 @@ export default function Home() {
                 }}
               >
                 <Mail style={{ width: 14, height: 14 }} />
-                Send Us Your Intel
+                {t("home.sendIntel")}
               </a>
               <button
                 onClick={() => navigate("/from-the-deck")}
@@ -2168,7 +2164,7 @@ export default function Home() {
               </button>
             </div>
             <p className="text-white/40 text-xs">
-              © 2026 VanFleet Wx. Weather Intelligence by James Van Fleet.
+              {t("home.copyright")}
             </p>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   Anchor, Plus
 } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
+import { useLanguage } from "@/contexts/LanguageContext";
 // PORT_LIST is now in client/src/data/ports.ts
 // To add a port: edit ports.ts only -- no other file needs to change
 
@@ -343,8 +344,9 @@ function cloudCoverIcon(pct: number): string {
   return "\u2601\ufe0f"; // full cloud
 }
 function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: boolean }) {
+  const { t } = useLanguage();
   if (slots.length === 0) {
-    return <p className="text-white/30 text-xs py-2">Hourly data unavailable for this port.</p>;
+    return <p className="text-white/30 text-xs py-2">{t("portSearch.hourlyUnavailable")}</p>;
   }
   return (
     <div className="w-full overflow-x-auto">
@@ -361,7 +363,7 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
             <span className="text-amber-100/70 text-xs font-bold w-full text-center">{slot.label}</span>
             {/* Cloud cover icon + % at top -- realistic emoji icon reflecting actual cloud amount */}
             <span className="text-[17px] leading-none">{cloudCoverIcon(slot.cloudCover)}</span>
-            <span className="text-white/70 text-xs font-bold flex flex-col items-center leading-none gap-0.5">{slot.cloudCover}%<span className="text-[10px] font-bold opacity-80 leading-tight">cloud</span><span className="text-[10px] font-bold opacity-80 leading-tight">cover</span></span>
+            <span className="text-white/70 text-xs font-bold flex flex-col items-center leading-none gap-0.5">{slot.cloudCover}%<span className="text-[10px] font-bold opacity-80 leading-tight">{t("portSearch.cloudCover")}</span></span>
             {/* SkyIcon removed -- cloud cover emoji already conveys sky condition */}
             {/* Temperature */}
             <span className="text-white font-black text-sm leading-none">
@@ -373,19 +375,19 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
             </span>
             <span className="text-white/50 text-[11px] font-semibold w-full text-center">{slot.windDir}</span>
             {/* Rain chance */}
-            <span className="text-blue-300 text-sm font-bold flex flex-col items-center leading-none gap-0.5">{slot.rainChance}%<span className="text-[11px] font-bold opacity-90 leading-tight">rain chance</span></span>
+            <span className="text-blue-300 text-sm font-bold flex flex-col items-center leading-none gap-0.5">{slot.rainChance}%<span className="text-[11px] font-bold opacity-90 leading-tight">{t("portSearch.rainChance")}</span></span>
             {/* Humidity */}
-            <span className="text-white/60 text-[10px]">{slot.humidity}%<span className="text-[9px] font-normal opacity-70 ml-0.5">hum</span></span>
+            <span className="text-white/60 text-[10px]">{slot.humidity}%<span className="text-[9px] font-normal opacity-70 ml-0.5">{t("portSearch.humidity")}</span></span>
             {/* Sea state (wind-wave height estimate) -- orange to distinguish from swell */}
             <span className="text-orange-300 text-[11px] font-bold">{slot.seaState}</span>
           </div>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
-        <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
-        <span className="text-white/60 text-xs font-bold">hum = humidity</span>
-        <span className="text-white/70 text-xs font-bold">cloud % = cloud cover</span>
-        <span className="text-orange-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
+        <span className="text-blue-300 text-xs font-bold">% = {t("portSearch.rainChance")}</span>
+        <span className="text-white/60 text-xs font-bold">{t("portSearch.humidity")}</span>
+        <span className="text-white/70 text-xs font-bold">{t("portSearch.cloudCover")}</span>
+        <span className="text-orange-300 text-xs font-bold">{t("portSearch.seaStateLegend")}</span>
       </div>
     </div>
   );
@@ -395,23 +397,24 @@ function HourlyForecast({ slots, isMetric }: { slots: HourlySlot[]; isMetric: bo
 // 7-Day Forecast Panel
 // ============================================================
 function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: boolean }) {
+  const { t, formatDate } = useLanguage();
   if (days.length === 0) return null;
   const hasWave = days.some(d => d.swellHeightFt != null);
 
   return (
     <div>
-      <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">7-Day Forecast</p>
+      <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">{t("portSearch.sevenDay")}</p>
       <div className="grid grid-cols-7 gap-2">
         {days.map(day => {
           const d = new Date(day.date + "T12:00:00");
           return (
               <div key={day.date} className="flex flex-col justify-between text-center bg-white/5 border border-white/10 rounded-xl py-6 px-1.5">
               <div>
-                <p className="text-white/70 text-base font-extrabold mb-2">{DAY_NAMES[d.getDay()]}</p>
+                <p className="text-white/70 text-base font-extrabold mb-2">{formatDate(d, { weekday: "short" })}</p>
                 {/* Cloud cover emoji + % -- matches hourly card style, no SVG icon */}
                 <div className="flex flex-col items-center mb-2">
                   <span className="text-2xl leading-none">{cloudCoverIcon(day.cloudCover ?? 0)}</span>
-                  <span className="text-white/70 text-xs font-bold mt-1 flex flex-col items-center leading-none gap-0.5">{day.cloudCover ?? 0}%<span className="text-[10px] font-bold opacity-80 leading-tight">cloud</span><span className="text-[10px] font-bold opacity-80 leading-tight">cover</span></span>
+                  <span className="text-white/70 text-xs font-bold mt-1 flex flex-col items-center leading-none gap-0.5">{day.cloudCover ?? 0}%<span className="text-[10px] font-bold opacity-80 leading-tight">{t("portSearch.cloudCover")}</span></span>
                 </div>
                 <p className="text-white text-xl sm:text-3xl font-extrabold leading-tight">
                   {isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}
@@ -426,7 +429,7 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
                 <p className="text-white/80 font-bold leading-tight">
                   <span className="text-base">{isMetric ? day.windKt : ktToMph(day.windKt)}</span><span className="text-[10px] sm:text-sm font-semibold ml-px">{isMetric ? 'kt' : 'mph'}</span>
                 </p>
-                <p className="text-blue-300 text-lg font-extrabold flex flex-col items-center leading-none gap-1">{day.rainChance}%<span className="text-xs font-bold opacity-90 leading-tight">rain chance</span></p>
+                <p className="text-blue-300 text-lg font-extrabold flex flex-col items-center leading-none gap-1">{day.rainChance}%<span className="text-xs font-bold opacity-90 leading-tight">{t("portSearch.rainChance")}</span></p>
                 {/* Sea state = wind-wave height estimate -- orange to contrast with teal swell */}
                 {day.seaState && <p className="text-orange-300 text-sm font-bold">{day.seaState}</p>}
               </div>
@@ -453,11 +456,11 @@ function FiveDayForecast({ days, isMetric }: { days: DayForecast[]; isMetric: bo
         })}
       </div>
       <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-white/10">
-        <span className="text-blue-300 text-xs font-bold">% = rain chance</span>
-        <span className="text-orange-300 text-xs font-bold">sea state = wind-wave ht estimate</span>
-        {hasWave && <span className="text-teal-300 text-xs font-bold">ft/m = swell ht (marine API)</span>}
-        {hasWave && <span className="text-teal-400/70 text-xs font-bold">dir = swell dir</span>}
-        {hasWave && <span className="text-white/50 text-xs font-bold">s = period</span>}
+        <span className="text-blue-300 text-xs font-bold">% = {t("portSearch.rainChance")}</span>
+        <span className="text-orange-300 text-xs font-bold">{t("portSearch.seaStateLegend")}</span>
+        {hasWave && <span className="text-teal-300 text-xs font-bold">{t("portSearch.swellLegend")}</span>}
+        {hasWave && <span className="text-teal-400/70 text-xs font-bold">{t("portSearch.swellDirection")}</span>}
+        {hasWave && <span className="text-white/50 text-xs font-bold">{t("portSearch.period")}</span>}
       </div>
     </div>
   );
@@ -491,6 +494,7 @@ function PortSlotCard({
   isSeaDay: boolean;
   onToggleSeaDay: () => void;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -498,7 +502,13 @@ function PortSlotCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const labels = ["Departure Port", "Destination 1", "Destination 2", "Destination 3", "Destination 4"];
+  const labels = [
+    t("portSearch.departurePort"),
+    t("portSearch.destination", { number: 1 }),
+    t("portSearch.destination", { number: 2 }),
+    t("portSearch.destination", { number: 3 }),
+    t("portSearch.destination", { number: 4 }),
+  ];
 
   // Auto-expand when new weather data arrives
   useEffect(() => {
@@ -580,7 +590,7 @@ function PortSlotCard({
             }`}
           >
             <Anchor className="w-3 h-3" />
-            Sea Day
+            {t("portSearch.seaDay")}
           </button>
         </div>
 
@@ -591,7 +601,7 @@ function PortSlotCard({
             <input
               ref={inputRef}
               type="text"
-              value={isSeaDay ? "Sea Day" : query}
+              value={isSeaDay ? t("portSearch.seaDay") : query}
               readOnly={isSeaDay}
               onChange={e => {
                 if (isSeaDay) return;
@@ -621,7 +631,7 @@ function PortSlotCard({
                   setActiveIdx(-1);
                 }
               }}
-              placeholder={isSeaDay ? "Sea Day" : "Type a port name..."}
+              placeholder={isSeaDay ? t("portSearch.seaDay") : t("portSearch.portPlaceholder")}
               autoComplete="new-password"
               autoCorrect="off"
               autoCapitalize="off"
@@ -673,7 +683,7 @@ function PortSlotCard({
                   : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10"
               }`}
             >
-              Get Forecast
+              {t("portSearch.getForecast")}
             </button>
           )}
 
@@ -684,13 +694,13 @@ function PortSlotCard({
                 onClick={() => onSetMetric(false)}
                 className={`px-3 py-1.5 transition-colors ${!isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
               >
-                US Standard
+                {t("common.usStandard")}
               </button>
               <button
                 onClick={() => onSetMetric(true)}
                 className={`px-3 py-1.5 transition-colors ${isMetric ? "bg-cyan-500 text-white" : "bg-white/5 text-white/50 hover:text-white"}`}
               >
-                Metric
+                {t("common.metric")}
               </button>
             </div>
           )}
@@ -716,14 +726,14 @@ function PortSlotCard({
       {slot?.loading && (
         <div className="px-4 pb-4 flex items-center gap-2 text-white/40 text-sm">
           <div className="w-4 h-4 border border-cyan-400 border-t-transparent rounded-full animate-spin" />
-          Loading forecast for {slot.portName}...
+          {t("portSearch.loadingForecast", { port: slot.portName })}
         </div>
       )}
 
       {/* Error state */}
       {slot?.error && !slot.loading && (
         <div className="px-4 pb-4 text-white/40 text-sm">
-          Forecast unavailable for {slot.portName}. Please try again.
+          {t("portSearch.forecastUnavailable", { port: slot.portName })} {t("common.tryAgain")}
         </div>
       )}
 
@@ -767,7 +777,7 @@ function PortSlotCard({
               {/* Today's hourly */}
               <div>
                 <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-4">
-                  Today's Forecast -- Hour by Hour (6 AM to 10 PM)
+                  {t("portSearch.todayHourly")}
                 </p>
                 <HourlyForecast slots={slot!.weather!.hourlyToday} isMetric={isMetric} />
               </div>
@@ -787,6 +797,7 @@ function PortSlotCard({
 interface PortSearchProps { isMetric: boolean; }
 
 export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps) {
+  const { t } = useLanguage();
   const [, navigate] = useLocation();
   const [localMetric, setLocalMetric] = useState(parentIsMetric);
   const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null]);
@@ -920,12 +931,12 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       <div>
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-          <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Port Forecast Tool</span>
+          <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">{t("portSearch.label")}</span>
         </div>
-        <h3 className="text-white font-black text-2xl leading-tight">Your Cruise Forecast,</h3>
-        <h3 className="text-cyan-400 font-black text-2xl leading-tight">Port by Port.</h3>
+        <h3 className="text-white font-black text-2xl leading-tight">{t("portSearch.titleFirst")}</h3>
+        <h3 className="text-cyan-400 font-black text-2xl leading-tight">{t("portSearch.titleSecond")}</h3>
         <p className="text-white/50 text-sm mt-2 max-w-md">
-          Enter your ports, plot them on a live map, and get a day-by-day forecast at every stop.
+          {t("portSearch.description")}
         </p>
       </div>
 
@@ -934,22 +945,22 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         onClick={() => navigate("/route-map")}
         className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-bold text-base tracking-wide hover:bg-cyan-400/20 transition-colors cursor-pointer"
       >
-        <span>&#9654;</span> Plot My Cruise Route
+        <span>&#9654;</span> {t("portSearch.plotRoute")}
       </button>
 
       {/* Helper line below Plot My Cruise Route button */}
       <p className="text-white/50 text-sm max-w-md">
-        Click on Plot My Cruise Route to get started, you will enter ports on the next page.
+        {t("portSearch.plotHelp")}
       </p>
 
       {/* Or divider + instruction line above port slots */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-white/10" />
-        <span className="text-amber-200/80 text-lg font-bold tracking-widest uppercase">Or</span>
+        <span className="text-amber-200/80 text-lg font-bold tracking-widest uppercase">{t("portSearch.or")}</span>
         <div className="flex-1 h-px bg-white/10" />
       </div>
       <p className="text-white/50 text-sm max-w-md">
-        Type up to 5 destinations or add Sea Days, then tap <strong className="text-white/70">Get Forecast</strong> to load all at once.
+        {t("portSearch.typeDestinations")}
       </p>
 
       {/* Destination slots -- single column, dynamic */}
@@ -981,7 +992,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
           onClick={addSlot}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors text-sm font-semibold"
         >
-          <Plus className="w-4 h-4" /> Add Another Port / Sea Day
+          <Plus className="w-4 h-4" /> {t("portSearch.addPort")}
         </button>
       )}
 
