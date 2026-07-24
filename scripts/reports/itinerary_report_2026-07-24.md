@@ -2,22 +2,22 @@
 **My Cruising Weather -- www.mycruisingweather.com**
 
 **Report Period:** July 17 -- July 24, 2026
-**Generated:** July 24, 2026 at 11:04 PM UTC
+**Generated:** July 24, 2026 at 11:09 PM UTC
 **Source:** CruiseMapper.com (automated verification)
 
 ---
 
 ## Summary
 
-This report covers **1 verification run(s)** conducted between July 17 and July 24, 2026. A total of **66 ship sailings** were checked against CruiseMapper.com.
+This report covers **2 verification run(s)** conducted between July 17 and July 24, 2026. A total of **97 ship sailings** were checked against CruiseMapper.com.
 
-**16 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
+**21 itinerary change(s) were detected and automatically corrected** before the data reached the live site:
 
 | Category | Count |
 |---|---|
 | Itineraries corrected (wrong ports or dates) | 2 |
-| New sailings added from CruiseMapper | 14 |
-| Errors (CruiseMapper fetch failures) | 0 |
+| New sailings added from CruiseMapper | 19 |
+| Errors (CruiseMapper fetch failures) | 23 |
 
 ---
 
@@ -49,6 +49,7 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Carnival Freedom | 2026-07-27 | 5 days, round-trip Bahamas Carnival Freedom Port Canaveral Orlando Fl |
 | Mardi Gras | 2026-07-18 | 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl |
 | Mardi Gras | 2026-07-25 | 7 days, round-trip Western Caribbean Mardi Gras Port Canaveral Orlando Fl |
+| Mardi Gras | 2026-07-25 | 7 days, round-trip Western Caribbean Mardi Gras Port Canaveral Orlando Fl |
 | Mardi Gras | 2026-08-01 | 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl |
 
 ### Celebrity Cruises
@@ -62,6 +63,7 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 | Ship | Departure Date | Description |
 |---|---|---|
 | Disney Wish | 2026-07-24 | 3 days, round-trip 3 Night Bahamas Cruise |
+| Disney Wish | 2026-07-31 | 3 days, round-trip 3 Night Bahamas Cruise |
 
 ### MSC Cruises
 
@@ -86,9 +88,40 @@ The following sailings were found on CruiseMapper but were not yet in our databa
 
 | Ship | Departure Date | Description |
 |---|---|---|
+| Allure of the Seas | 2026-08-08 | 8 days, round-trip Eastern Caribbean Allure Of The Seas Fort Lauderdale Port Everglades Fl |
+| Freedom of the Seas | 2026-08-03 | 5 days, round-trip Eastern Caribbean Freedom Of The Seas Miami Fl |
 | Harmony of the Seas | 2026-08-18 | 4 days, round-trip Bahamas Harmony Of The Seas Port Canaveral Orlando Fl |
+| Oasis of the Seas | 2026-08-09 | 7 days, round-trip Eastern Caribbean Oasis Of The Seas Cape Liberty Nj |
 | Symphony of the Seas | 2026-08-01 | 8 days, round-trip Caribbean Symphony Of The Seas Galveston Tx |
 | Wonder of the Seas | 2026-07-24 | 3 days, round-trip 3 Night Bahamas and Perfect Day Cruise |
+
+## Fetch Errors
+
+The following ships encountered errors when fetching data from CruiseMapper. Their stored itineraries were not modified. These will be retried on the next run.
+
+- Icon of the Seas: no sailings found on CruiseMapper
+- Symphony of the Seas 2026-07-26: no port data from CruiseMapper
+- Harmony of the Seas 2026-08-08: no port data from CruiseMapper
+- Harmony of the Seas 2026-08-13: no port data from CruiseMapper
+- Mariner of the Seas 2026-07-25: no port data from CruiseMapper
+- Mariner of the Seas 2026-07-30: no port data from CruiseMapper
+- Mariner of the Seas 2026-08-03: no port data from CruiseMapper
+- Navigator of the Seas: no sailings found on CruiseMapper
+- Wonder of the Seas: no sailings found on CruiseMapper
+- Freedom of the Seas 2026-07-30: no port data from CruiseMapper
+- Mardi Gras 2026-08-01: no port data from CruiseMapper
+- Mardi Gras 2026-08-08: no port data from CruiseMapper
+- Carnival Vista 2026-08-08: no port data from CruiseMapper
+- Carnival Breeze 2026-07-23: no port data from CruiseMapper
+- Carnival Freedom 2026-07-23: no port data from CruiseMapper
+- Celebrity Beyond 2026-08-09: no port data from CruiseMapper
+- Disney Wish 2026-07-24: no port data from CruiseMapper
+- Norwegian Encore 2026-08-09: no port data from CruiseMapper
+- Norwegian Getaway 2026-07-24: no port data from CruiseMapper
+- Norwegian Getaway 2026-07-31: no port data from CruiseMapper
+- Caribbean Princess: no sailings found on CruiseMapper
+- MSC Seascape: no sailings found on CruiseMapper
+- Scarlet Lady: no sailings found on CruiseMapper
 
 ---
 
