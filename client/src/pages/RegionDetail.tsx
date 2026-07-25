@@ -1,4 +1,6 @@
 // =============================================================================
+// Style reminder: retain the existing dark, high-contrast maritime forecast layout.
+// Localization updates may change static interface labels only, never live data or accordion mechanics.
 // ACCORDION BEHAVIOR -- DO NOT CHANGE WITHOUT READING THIS
 // =============================================================================
 // Port cards are accordion rows. The expand/collapse rules are:
@@ -19,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import PtzThumb from "@/components/PtzThumb";
 import { getPtzCameras } from "@/lib/ptzCameras";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getRegionDetailText } from "@/lib/translations";
 
 
 // ---- Conversion helpers ----
@@ -271,12 +275,12 @@ async function fetchPortWeather(port: Port): Promise<Omit<PortWeather, "port" | 
 }
 
 // ---- Toggle button component ----
-function UnitsToggle({ isMetric, onToggle }: { isMetric: boolean; onToggle: () => void }) {
+function UnitsToggle({ isMetric, onToggle, localize }: { isMetric: boolean; onToggle: () => void; localize: (text: string) => string }) {
   return (
     <button
       onClick={onToggle}
       className="relative flex items-center gap-0 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm overflow-hidden h-9 w-52 select-none"
-      aria-label="Toggle units"
+      aria-label={localize("Toggle units")}
     >
       <span
         className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow transition-all duration-300 ease-in-out ${
@@ -285,21 +289,22 @@ function UnitsToggle({ isMetric, onToggle }: { isMetric: boolean; onToggle: () =
       />
       <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
         !isMetric ? 'text-white' : 'text-white/50'
-      }`}>US Standard</span>
+      }`}>{localize("US Standard")}</span>
       <span className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-200 ${
         isMetric ? 'text-white' : 'text-white/50'
-      }`}>Metric</span>
+      }`}>{localize("Metric")}</span>
     </button>
   );
 }
 
 // ---- Port Row (click/tap to expand, hover also works on desktop) ----
-function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
+function PortRow({ pw, gradient, expanded, onToggle, isMetric, localize }: {
   pw: PortWeather;
   gradient: string;
   expanded: boolean;
   onToggle: () => void;
   isMetric: boolean;
+  localize: (text: string) => string;
 }) {
   return (
     <div
@@ -347,7 +352,7 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
                   ))}
                 </div>
                 <p className={`text-white/85 leading-tight ${hasMultipleCameras ? "w-[72px] text-[8px]" : "text-[10px]"}`}>
-                  Port Camera via our<br />partners PTZtv
+                  {localize("Port Camera via our")}<br />{localize("partners PTZtv")}
                 </p>
               </div>
             )}
@@ -373,63 +378,63 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
               ))}
             </div>
           ) : pw.error ? (
-            <p className="text-white/40 text-sm text-center py-4">Data temporarily unavailable</p>
+            <p className="text-white/40 text-sm text-center py-4">{localize("Data temporarily unavailable")}</p>
           ) : (
             <>
               {/* ---- CURRENT CONDITIONS section ---- */}
-              <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-3">Current Conditions</p>
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-3">{localize("Current Conditions")}</p>
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {/* Temperature */}
                 <div className="glass rounded-xl p-3 text-center">
                   <ThermometerSun className="w-5 h-5 mx-auto mb-1 text-orange-400" />
                   <p className="text-xl font-bold text-white">{isMetric ? fToCStr(pw.tempF) : `${pw.tempF}\u00b0`}</p>
-                  <p className="text-xs text-white/50">Temperature</p>
+                  <p className="text-xs text-white/50">{localize("Temperature")}</p>
                 </div>
                 {/* Sea State */}
                 <div className="glass rounded-xl p-3 text-center">
                   <Waves className="w-5 h-5 mx-auto mb-1 text-blue-400" />
                   <p className="text-xl font-bold text-white">{isMetric ? seaFtToMStr(pw.seas) : pw.seas}</p>
-                  <p className="text-xs text-white/50">Sea State</p>
+                  <p className="text-xs text-white/50">{localize("Sea State")}</p>
                 </div>
                 {/* Wind */}
                 <div className="glass rounded-xl p-3 text-center">
                   <Wind className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
                   <p className="text-xl font-bold text-white">{pw.windDir} {pw.windKt} kt</p>
-                  <p className="text-xs text-white/50">Wind</p>
+                  <p className="text-xs text-white/50">{localize("Wind")}</p>
                 </div>
                 {/* Rain Chance This Hour */}
                 <div className="glass rounded-xl p-3 text-center">
                   <Droplets className="w-5 h-5 mx-auto mb-1 text-purple-400" />
                   <p className="text-xl font-bold text-white">{pw.rainChance}%</p>
-                  <p className="text-xs text-white/50">Rain Chance This Hour</p>
+                  <p className="text-xs text-white/50">{localize("Rain Chance This Hour")}</p>
                 </div>
                 {/* Peak Rain Chance Today -- spans full width for emphasis */}
                 <div className="glass rounded-xl p-3 text-center col-span-2">
                   <TrendingUp className="w-5 h-5 mx-auto mb-1 text-yellow-400" />
                   <p className="text-xl font-bold text-white">{pw.peakRainChance}%</p>
                   <p className="text-xs text-white/50">
-                    Peak Rain Chance Today
-                    <span className="ml-1 text-yellow-400/80">({pw.peakRainTimeOfDay})</span>
+                    {localize("Peak Rain Chance Today")}
+                    <span className="ml-1 text-yellow-400/80">({localize(pw.peakRainTimeOfDay)})</span>
                   </p>
                 </div>
               </div>
 
               {/* 5-day forecast strip */}
               <div>
-                <p className="text-white/50 text-lg font-bold uppercase tracking-wider mb-4">5-Day Forecast</p>
+                <p className="text-white/50 text-lg font-bold uppercase tracking-wider mb-4">{localize("5-Day Forecast")}</p>
                 <div className="grid grid-cols-5 gap-3">
                   {pw.forecast.slice(0, 5).map((day) => {
                     const d = new Date(day.date + "T12:00:00");
                     const hasWave = day.swellHeightFt != null;
                     return (
                       <div key={day.date} className="text-center">
-                        <p className="text-white/60 text-base mb-1 font-extrabold">{DAY_NAMES[d.getDay()]}</p>
+                        <p className="text-white/60 text-base mb-1 font-extrabold">{localize(DAY_NAMES[d.getDay()])}</p>
                         <p className="text-white text-xl font-extrabold">{isMetric ? fToCStr(day.maxF) : `${day.maxF}\u00b0`}</p>
                         <p className="text-white/60 text-base font-bold">{isMetric ? fToCStr(day.minF) : `${day.minF}\u00b0`}</p>
                         <p className="text-cyan-300 text-base mt-1 font-extrabold">{day.windDir}</p>
                         <p className="text-white/80 text-base font-bold">{day.windKt}kt</p>
                         <p className="text-purple-300 text-base font-extrabold">{day.rainChance}%</p>
-                        <p className="text-yellow-400/80 text-xs font-bold">({day.peakRainTimeOfDay})</p>
+                        <p className="text-yellow-400/80 text-xs font-bold">({localize(day.peakRainTimeOfDay)})</p>
                         {hasWave && (
                           <>
                             <div className="border-t border-white/15 my-2" />
@@ -444,9 +449,9 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
                 </div>
                 {pw.forecast.some(d => d.swellHeightFt != null) && (
                   <div className="flex items-center gap-4 mt-4 pt-3 border-t border-white/10">
-                    <span className="text-blue-300 text-sm font-bold">ft = swell ht</span>
-                    <span className="text-teal-300 text-sm font-bold">dir = swell dir</span>
-                    <span className="text-white/60 text-sm font-bold">s = period</span>
+                    <span className="text-blue-300 text-sm font-bold">{localize("ft = swell ht")}</span>
+                    <span className="text-teal-300 text-sm font-bold">{localize("dir = swell dir")}</span>
+                    <span className="text-white/60 text-sm font-bold">{localize("s = period")}</span>
                   </div>
                 )}
               </div>
@@ -462,6 +467,8 @@ function PortRow({ pw, gradient, expanded, onToggle, isMetric }: {
 export default function RegionDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [, navigate] = useLocation();
+  const { language, t, formatDate } = useLanguage();
+  const localize = (text: string) => getRegionDetailText(language, text);
   const region = REGIONS.find(r => r.slug === slug);
   const [portWeather, setPortWeather] = useState<PortWeather[]>([]);
   const [intel, setIntel] = useState<string>("");
@@ -529,8 +536,7 @@ export default function RegionDetail() {
         setIntel(text || region.intel);
         // Format the generated date as "March 8, 2026" for display
         if (data.generated) {
-          const d = new Date(data.generated + "T12:00:00");
-          setIntelDate(d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+          setIntelDate(data.generated + "T12:00:00");
         }
         setIntelLoading(false);
       })
@@ -546,8 +552,8 @@ export default function RegionDetail() {
       <div className="min-h-screen gradient-animate flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-          <p className="text-white text-xl">Region not found.</p>
-          <Button className="mt-4" onClick={() => navigate("/")}>Go Home</Button>
+          <p className="text-white text-xl">{localize("Region not found.")}</p>
+          <Button className="mt-4" onClick={() => navigate("/")}>{localize("Go Home")}</Button>
         </div>
       </div>
     );
@@ -563,12 +569,12 @@ export default function RegionDetail() {
             className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm font-medium">Back</span>
+            <span className="text-sm font-medium">{localize("Back")}</span>
           </button>
           <div className="h-5 w-px bg-white/20" />
           <div>
             <p className="text-white font-bold text-sm">{region.name}</p>
-            <p className="text-white/40 text-xs">Live Conditions and 5-Day Forecast</p>
+            <p className="text-white/40 text-xs">{localize("Live Conditions and 5-Day Forecast")}</p>
           </div>
         </div>
       </header>
@@ -579,7 +585,7 @@ export default function RegionDetail() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-slate-950" />
         <div className="absolute bottom-6 left-6">
           <h1 className="text-4xl font-black text-white">{region.name}</h1>
-          <p className="text-white/60 text-sm mt-1">Weather Intelligence by James Van Fleet</p>
+          <p className="text-white/60 text-sm mt-1">{localize("Weather Intelligence by James Van Fleet")}</p>
         </div>
       </div>
 
@@ -593,7 +599,9 @@ export default function RegionDetail() {
             </div>
             <div className="flex-1">
               <p className="text-cyan-400 font-bold text-sm mb-2">
-                James's Intel{intelDate ? ` -- ${intelDate}` : " -- Updated Daily"}
+                {t("region.jamesIntel")}{intelDate
+                  ? ` · ${formatDate(intelDate, { month: "long", day: "numeric", year: "numeric" })}`
+                  : ` · ${t("region.updatedDaily")}`}
               </p>
               {intelLoading ? (
                 <div className="space-y-2">
@@ -604,7 +612,7 @@ export default function RegionDetail() {
               ) : intel ? (
                 <p className="text-white/85 text-sm leading-relaxed">{intel}</p>
               ) : (
-                <p className="text-white/40 text-sm italic">Intel briefing temporarily unavailable. Check back shortly.</p>
+                <p className="text-white/40 text-sm italic">{t("region.intelUnavailable")}</p>
               )}
             </div>
           </div>
@@ -613,10 +621,10 @@ export default function RegionDetail() {
         {/* Port list */}
         <div>
           <div className="flex items-end justify-between mb-2">
-            <h2 className="text-2xl font-black text-white">Port Conditions and Forecasts</h2>
-            <UnitsToggle isMetric={isMetric} onToggle={() => setIsMetric(m => !m)} />
+            <h2 className="text-2xl font-black text-white">{localize("Port Conditions and Forecasts")}</h2>
+            <UnitsToggle isMetric={isMetric} onToggle={() => setIsMetric(m => !m)} localize={localize} />
           </div>
-          <p className="text-white/40 text-sm mb-6">Tap any port to view live conditions and 5-day forecast.</p>
+          <p className="text-white/40 text-sm mb-6">{localize("Tap any port to view live conditions and 5-day forecast.")}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {portWeather.map((pw, i) => {
               const rowIdx = Math.floor(i / COLS);
@@ -636,6 +644,7 @@ export default function RegionDetail() {
                     });
                   }}
                   isMetric={isMetric}
+                  localize={localize}
                 />
               );
             })}

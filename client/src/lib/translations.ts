@@ -1376,6 +1376,47 @@ export const translations: Record<LanguageCode, Messages> = {
 },
 };
 
+const REGION_DETAIL_SHARED_KEYS: Record<string, TranslationKey> = {
+  "Back": "common.back",
+  "US Standard": "common.usStandard",
+  "Metric": "common.metric",
+  "Temperature": "home.temperature",
+  "Sea State": "home.seaState",
+  "Wind": "home.wind",
+  "Weather Intelligence by James Van Fleet": "home.footerTagline",
+  "Go Home": "notFound.home",
+};
+
+const REGION_DETAIL_LABEL_VARIANTS: Record<LanguageCode, Record<string, string>> = {
+  en: {},
+  es: {
+    "Toggle units": "Cambiar unidades", "Port Camera via our": "Cámara del puerto a través de nuestros", "partners PTZtv": "socios PTZtv", "Data temporarily unavailable": "Datos temporalmente no disponibles", "Current Conditions": "Condiciones actuales", "Rain Chance This Hour": "Probabilidad de lluvia esta hora", "Peak Rain Chance Today": "Máxima probabilidad de lluvia hoy", "5-Day Forecast": "Pronóstico de 5 días", "ft = swell ht": "ft = altura de oleaje", "dir = swell dir": "dir = dirección del oleaje", "s = period": "s = período", "Live Conditions and 5-Day Forecast": "Condiciones en vivo y pronóstico de 5 días", "Port Conditions and Forecasts": "Condiciones y pronósticos de puertos", "Tap any port to view live conditions and 5-day forecast.": "Toque cualquier puerto para ver las condiciones en vivo y el pronóstico de 5 días.", "Region not found.": "Región no encontrada.", "Sun": "dom", "Mon": "lun", "Tue": "mar", "Wed": "mié", "Thu": "jue", "Fri": "vie", "Sat": "sáb", "Morning": "Mañana", "Afternoon": "Tarde", "Evening": "Noche", "Overnight": "De madrugada",
+  },
+  fr: {
+    "Toggle units": "Basculer les unités", "Port Camera via our": "Caméra du port via nos", "partners PTZtv": "partenaires PTZtv", "Data temporarily unavailable": "Données temporairement indisponibles", "Current Conditions": "Conditions actuelles", "Rain Chance This Hour": "Risque de pluie cette heure", "Peak Rain Chance Today": "Risque maximal de pluie aujourd’hui", "5-Day Forecast": "Prévisions à 5 jours", "ft = swell ht": "ft = hauteur de houle", "dir = swell dir": "dir = direction de la houle", "s = period": "s = période", "Live Conditions and 5-Day Forecast": "Conditions en direct et prévisions à 5 jours", "Port Conditions and Forecasts": "Conditions et prévisions portuaires", "Tap any port to view live conditions and 5-day forecast.": "Touchez un port pour consulter les conditions en direct et les prévisions à 5 jours.", "Region not found.": "Région introuvable.", "Sun": "dim", "Mon": "lun", "Tue": "mar", "Wed": "mer", "Thu": "jeu", "Fri": "ven", "Sat": "sam", "Morning": "Matin", "Afternoon": "Après-midi", "Evening": "Soir", "Overnight": "Nuit",
+  },
+  ar: {
+    "Toggle units": "تبديل الوحدات", "Port Camera via our": "كاميرا الميناء عبر", "partners PTZtv": "شركائنا PTZtv", "Data temporarily unavailable": "البيانات غير متاحة مؤقتًا", "Current Conditions": "الظروف الحالية", "Rain Chance This Hour": "احتمال هطول الأمطار هذه الساعة", "Peak Rain Chance Today": "أعلى احتمال لهطول الأمطار اليوم", "5-Day Forecast": "توقعات خمسة أيام", "ft = swell ht": "قدم = ارتفاع الموج", "dir = swell dir": "الاتجاه = اتجاه الموج", "s = period": "ث = فترة", "Live Conditions and 5-Day Forecast": "الظروف الحالية وتوقعات خمسة أيام", "Port Conditions and Forecasts": "أحوال الموانئ والتوقعات", "Tap any port to view live conditions and 5-day forecast.": "اضغط على أي ميناء لعرض الظروف الحالية وتوقعات خمسة أيام.", "Region not found.": "لم يتم العثور على المنطقة.", "Sun": "الأحد", "Mon": "الاثنين", "Tue": "الثلاثاء", "Wed": "الأربعاء", "Thu": "الخميس", "Fri": "الجمعة", "Sat": "السبت", "Morning": "صباحًا", "Afternoon": "بعد الظهر", "Evening": "مساءً", "Overnight": "ليلًا",
+  },
+  zh: {
+    "Toggle units": "切换单位", "Port Camera via our": "港口摄像头由我们的", "partners PTZtv": "合作伙伴 PTZtv 提供", "Data temporarily unavailable": "数据暂时不可用", "Current Conditions": "当前状况", "Rain Chance This Hour": "本小时降雨概率", "Peak Rain Chance Today": "今日最高降雨概率", "5-Day Forecast": "5天天气预报", "ft = swell ht": "英尺 = 涌浪高度", "dir = swell dir": "方向 = 涌浪方向", "s = period": "秒 = 周期", "Live Conditions and 5-Day Forecast": "实时状况和5天天气预报", "Port Conditions and Forecasts": "港口状况和预报", "Tap any port to view live conditions and 5-day forecast.": "点击任意港口查看实时状况和5天天气预报。", "Region not found.": "未找到区域。", "Sun": "周日", "Mon": "周一", "Tue": "周二", "Wed": "周三", "Thu": "周四", "Fri": "周五", "Sat": "周六", "Morning": "早晨", "Afternoon": "下午", "Evening": "傍晚", "Overnight": "夜间",
+  },
+  it: {
+    "Toggle units": "Cambia unità", "Port Camera via our": "Fotocamera del porto tramite i nostri", "partners PTZtv": "partner PTZtv", "Data temporarily unavailable": "Dati temporaneamente non disponibili", "Current Conditions": "Condizioni attuali", "Rain Chance This Hour": "Probabilità di pioggia in questa ora", "Peak Rain Chance Today": "Massima probabilità di pioggia oggi", "5-Day Forecast": "Previsioni a 5 giorni", "ft = swell ht": "piedi = altezza della mareggiata", "dir = swell dir": "dir = direzione della mareggiata", "s = period": "s = periodo", "Live Conditions and 5-Day Forecast": "Condizioni in tempo reale e previsioni a 5 giorni", "Port Conditions and Forecasts": "Condizioni e previsioni dei porti", "Tap any port to view live conditions and 5-day forecast.": "Tocca un porto per vedere le condizioni in tempo reale e le previsioni a 5 giorni.", "Region not found.": "Regione non trovata.", "Sun": "dom", "Mon": "lun", "Tue": "mar", "Wed": "mer", "Thu": "gio", "Fri": "ven", "Sat": "sab", "Morning": "Mattina", "Afternoon": "Pomeriggio", "Evening": "Sera", "Overnight": "Notte",
+  },
+  de: {
+    "Toggle units": "Einheiten wechseln", "Port Camera via our": "Hafenkamera über unsere", "partners PTZtv": "Partner PTZtv", "Data temporarily unavailable": "Daten vorübergehend nicht verfügbar", "Current Conditions": "Aktuelle Bedingungen", "Rain Chance This Hour": "Regenwahrscheinlichkeit in dieser Stunde", "Peak Rain Chance Today": "Höchste Regenwahrscheinlichkeit heute", "5-Day Forecast": "5-Tage-Vorhersage", "ft = swell ht": "ft = Dünungshöhe", "dir = swell dir": "dir = Dünungsrichtung", "s = period": "s = Periode", "Live Conditions and 5-Day Forecast": "Live-Bedingungen und 5-Tage-Vorhersage", "Port Conditions and Forecasts": "Hafenbedingungen und Vorhersagen", "Tap any port to view live conditions and 5-day forecast.": "Tippen Sie auf einen Hafen, um Live-Bedingungen und die 5-Tage-Vorhersage zu sehen.", "Region not found.": "Region nicht gefunden.", "Sun": "So", "Mon": "Mo", "Tue": "Di", "Wed": "Mi", "Thu": "Do", "Fri": "Fr", "Sat": "Sa", "Morning": "Morgen", "Afternoon": "Nachmittag", "Evening": "Abend", "Overnight": "Nacht",
+  },
+  pt: {
+    "Toggle units": "Alternar unidades", "Port Camera via our": "Câmera do porto por meio de nossos", "partners PTZtv": "parceiros PTZtv", "Data temporarily unavailable": "Dados temporariamente indisponíveis", "Current Conditions": "Condições atuais", "Rain Chance This Hour": "Chance de chuva nesta hora", "Peak Rain Chance Today": "Maior chance de chuva hoje", "5-Day Forecast": "Previsão de 5 dias", "ft = swell ht": "pés = altura da ondulação", "dir = swell dir": "dir = direção da ondulação", "s = period": "s = período", "Live Conditions and 5-Day Forecast": "Condições ao vivo e previsão de 5 dias", "Port Conditions and Forecasts": "Condições e previsões dos portos", "Tap any port to view live conditions and 5-day forecast.": "Toque em qualquer porto para ver as condições ao vivo e a previsão de 5 dias.", "Region not found.": "Região não encontrada.", "Sun": "dom", "Mon": "seg", "Tue": "ter", "Wed": "qua", "Thu": "qui", "Fri": "sex", "Sat": "sáb", "Morning": "Manhã", "Afternoon": "Tarde", "Evening": "Noite", "Overnight": "Durante a noite",
+  },
+};
+
+export function getRegionDetailText(language: LanguageCode, englishText: string): string {
+  const sharedKey = REGION_DETAIL_SHARED_KEYS[englishText];
+  return sharedKey ? translations[language][sharedKey] : REGION_DETAIL_LABEL_VARIANTS[language][englishText] ?? englishText;
+}
+
 export function getLanguageDefinition(code: LanguageCode): LanguageDefinition {
   return LANGUAGES.find((language) => language.code === code) ?? LANGUAGES[0];
 }
