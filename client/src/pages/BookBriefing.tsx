@@ -19,12 +19,14 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { translateStaticText } from "@/lib/translations";
 
 export default function BookBriefing() {
   const [, setLocation] = useLocation();
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { displayText, t } = useLanguage();
+  const { language, t } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
 
   const [form, setForm] = useState({
     name: "",

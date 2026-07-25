@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "../contexts/LanguageContext";
-import { getLanguageDefinition } from "../lib/translations";
+import { getLanguageDefinition, translateStaticText } from "../lib/translations";
 import { MapPin, Calendar, Plus, Trash2, ArrowLeft, Save, Share2, Anchor, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, X, ChevronDown, ChevronUp, Thermometer, Droplets, Wind, Waves } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
 import { maritimeRoute, ensureMaritimeRoutesLoaded } from "../utils/maritimeRouting";
@@ -488,7 +488,8 @@ function PortAutocomplete({
 // Forecast popup card
 // ============================================================
 function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClose: () => void; onSwitchStop?: (stop: PortStop, idx: number) => void }) {
-  const { displayText, language } = useLanguage();
+  const { language } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
   const locale = getLanguageDefinition(language).locale;
   const phase = getMoonPhase(data.date);
   const [showHourly, setShowHourly] = useState(false);
@@ -879,7 +880,8 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
 // Main RouteMap page
 // ============================================================
 export default function RouteMap() {
-  const { displayText, t, language } = useLanguage();
+  const { t, language } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
   const locale = getLanguageDefinition(language).locale;
   const [stops, setStops] = useState<PortStop[]>([
     { id: generateId(), portName: "", lat: null, lon: null, date: "", isSeaDay: false },

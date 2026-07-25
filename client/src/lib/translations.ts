@@ -1387,3 +1387,1125 @@ export function interpolate(message: string, values?: Record<string, string | nu
     message,
   );
 }
+
+
+const ADDITIONAL_STATIC_PAGE_TEXT: Record<string, Partial<Record<LanguageCode, string>>> = {
+  ". James will review your request and reach out to confirm your briefing time within 24 hours.": {
+    "fr": ". James examinera votre demande et vous contactera pour confirmer l'heure de votre briefing dans les 24 heures.",
+    "zh": ". James 将审核您的请求，并在 24 小时内联系您确认简报时间。",
+    "it": ". James esaminerà la tua richiesta e ti contatterà entro 24 ore per confermare l'orario del briefing.",
+    "de": ". James wird Ihre Anfrage prüfen und sich innerhalb von 24 Stunden bei Ihnen melden, um die Uhrzeit Ihres Briefings zu bestätigen.",
+    "pt": ". James analisará sua solicitação e entrará em contato em até 24 horas para confirmar o horário do seu briefing."
+  },
+  "20-Minute Private Briefing": {
+    "fr": "Briefing privé de 20 minutes",
+    "zh": "20 分钟私人简报",
+    "it": "Briefing privato di 20 minuti",
+    "de": "Privates 20-Minuten-Briefing",
+    "pt": "Briefing particular de 20 minutos"
+  },
+  "24-Hour Forecast": {
+    "fr": "Prévisions sur 24 heures",
+    "zh": "24 小时预报",
+    "it": "Previsioni di 24 ore",
+    "de": "24-Stunden-Vorhersage",
+    "pt": "Previsão de 24 horas"
+  },
+  "30 years of NASA POWER reanalysis data (1994-2023) analyzed across every cruise port. Scored on rain probability, wind, cloud cover, and temperature comfort -- so you know exactly when to go where.": {
+    "fr": "30 ans de données de réanalyse NASA POWER (1994-2023) analysées pour chaque port de croisière. Évaluées selon la probabilité de pluie, le vent, la couverture nuageuse et le confort thermique pour vous indiquer précisément quand aller où.",
+    "zh": "对每个邮轮港口的 NASA POWER 再分析数据（1994-2023）进行了 30 年分析。根据降雨概率、风力、云量和温度舒适度评分，帮助您准确判断何时去哪里。",
+    "it": "30 anni di dati di rianalisi NASA POWER (1994-2023) analizzati in ogni porto da crociera. Valutati in base alla probabilità di pioggia, al vento, alla copertura nuvolosa e al comfort termico, così sai esattamente quando andare dove.",
+    "de": "30 Jahre NASA POWER-Reanalysedaten (1994-2023) wurden für jeden Kreuzfahrthafen ausgewertet. Bewertet nach Regenwahrscheinlichkeit, Wind, Bewölkung und Temperaturkomfort, damit Sie genau wissen, wann Sie wohin fahren sollten.",
+    "pt": "30 anos de dados de reanálise NASA POWER (1994-2023) analisados em cada porto de cruzeiro. Pontuados com base na probabilidade de chuva, vento, cobertura de nuvens e conforto térmico, para que você saiba exatamente quando ir aonde."
+  },
+  "5-Day Forecast": {
+    "fr": "Prévisions sur 5 jours",
+    "zh": "5 天预报",
+    "it": "Previsioni di 5 giorni",
+    "de": "5-Tage-Vorhersage",
+    "pt": "Previsão de 5 dias"
+  },
+  "A confirmation will be sent to": {
+    "fr": "Une confirmation sera envoyée à",
+    "zh": "确认信息将发送至",
+    "it": "Una conferma sarà inviata a",
+    "de": "Eine Bestätigung wird gesendet an",
+    "pt": "Uma confirmação será enviada para"
+  },
+  "Afternoon": {
+    "fr": "Après-midi",
+    "zh": "下午",
+    "it": "Pomeriggio",
+    "de": "Nachmittag",
+    "pt": "Tarde"
+  },
+  "All Regions": {
+    "fr": "Toutes les régions",
+    "zh": "所有区域",
+    "it": "Tutte le regioni",
+    "de": "Alle Regionen",
+    "pt": "Todas as regiões"
+  },
+  "Atmosphere": {
+    "fr": "Atmosphère",
+    "zh": "大气",
+    "it": "Atmosfera",
+    "de": "Atmosphäre",
+    "pt": "Atmosfera"
+  },
+  "Avg High / Low": {
+    "fr": "Moy. max. / min.",
+    "zh": "平均最高 / 最低",
+    "it": "Max / min medie",
+    "de": "Durchschn. Höchst / Tiefst",
+    "pt": "Máx. / mín. médias"
+  },
+  "Avg High": {
+    "fr": "Moy. max.",
+    "zh": "平均最高",
+    "it": "Max media",
+    "de": "Durchschn. Höchst",
+    "pt": "Máx. média"
+  },
+  "Avg Low": {
+    "fr": "Moy. min.",
+    "zh": "平均最低",
+    "it": "Min media",
+    "de": "Durchschn. Tiefst",
+    "pt": "Mín. média"
+  },
+  "Avg Seas": {
+    "fr": "Mer moyenne",
+    "zh": "平均海况",
+    "it": "Mari medi",
+    "de": "Durchschn. Seegang",
+    "pt": "Mares médios"
+  },
+  "Back to Home": {
+    "fr": "Retour à l'accueil",
+    "zh": "返回首页",
+    "it": "Torna alla home",
+    "de": "Zurück zur Startseite",
+    "pt": "Voltar ao início"
+  },
+  "Based on NASA POWER reanalysis -- 30 years of observed climate data": {
+    "fr": "Basé sur la réanalyse NASA POWER -- 30 ans de données climatiques observées",
+    "zh": "基于 NASA POWER 再分析 -- 30 年观测气候数据",
+    "it": "Basato sulla rianalisi NASA POWER -- 30 anni di dati climatici osservati",
+    "de": "Basierend auf NASA POWER-Reanalyse -- 30 Jahre beobachtete Klimadaten",
+    "pt": "Baseado na reanálise NASA POWER -- 30 anos de dados climáticos observados"
+  },
+  "Best Month": {
+    "fr": "Meilleur mois",
+    "zh": "最佳月份",
+    "it": "Mese migliore",
+    "de": "Bester Monat",
+    "pt": "Melhor mês"
+  },
+  "Best Weather": {
+    "fr": "Meilleure météo",
+    "zh": "最佳天气",
+    "it": "Meteo migliore",
+    "de": "Bestes Wetter",
+    "pt": "Melhor tempo"
+  },
+  "Best month:": {
+    "fr": "Meilleur mois :",
+    "zh": "最佳月份：",
+    "it": "Mese migliore:",
+    "de": "Bester Monat:",
+    "pt": "Melhor mês:"
+  },
+  "Book Your Weather Briefing": {
+    "fr": "Réservez votre briefing météo",
+    "zh": "预约您的天气简报",
+    "it": "Prenota il tuo briefing meteorologico",
+    "de": "Ihr Wetterbriefing buchen",
+    "pt": "Reserve seu briefing meteorológico"
+  },
+  "Briefings are available for tropical weather, hurricane decisions, passage planning, and general marine weather concerns.": {
+    "fr": "Des briefings sont disponibles pour la météo tropicale, les décisions liées aux ouragans, la planification de traversées et les questions générales de météo marine.",
+    "zh": "可提供热带天气、飓风决策、航程规划和一般海洋天气问题的简报服务。",
+    "it": "I briefing sono disponibili per meteo tropicale, decisioni sugli uragani, pianificazione delle traversate e questioni generali di meteorologia marina.",
+    "de": "Briefings sind für tropisches Wetter, Hurrikanentscheidungen, Passagenplanung und allgemeine Fragen zur Seewetterlage verfügbar.",
+    "pt": "Os briefings estão disponíveis para tempo tropical, decisões sobre furacões, planejamento de travessias e dúvidas gerais sobre meteorologia marítima."
+  },
+  "By submitting this form you agree to be contacted by James Van Fleet to confirm your briefing. Payment details will be provided upon confirmation.": {
+    "fr": "En envoyant ce formulaire, vous acceptez d'être contacté par James Van Fleet pour confirmer votre briefing. Les détails de paiement seront fournis lors de la confirmation.",
+    "zh": "提交此表格即表示您同意 James Van Fleet 联系您确认简报。付款详情将在确认时提供。",
+    "it": "Inviando questo modulo accetti di essere contattato da James Van Fleet per confermare il briefing. I dettagli di pagamento saranno forniti alla conferma.",
+    "de": "Mit dem Absenden dieses Formulars stimmen Sie zu, dass James Van Fleet Sie zur Bestätigung Ihres Briefings kontaktiert. Zahlungsdetails erhalten Sie bei der Bestätigung.",
+    "pt": "Ao enviar este formulário, você concorda em ser contatado por James Van Fleet para confirmar seu briefing. Os detalhes de pagamento serão fornecidos na confirmação."
+  },
+  "Captain, Owner, First Mate...": {
+    "fr": "Capitaine, propriétaire, premier officier...",
+    "zh": "船长、船东、大副...",
+    "it": "Comandante, proprietario, primo ufficiale...",
+    "de": "Kapitän, Eigentümer, Erster Offizier...",
+    "pt": "Capitão, proprietário, primeiro oficial..."
+  },
+  "Caribbean": {
+    "fr": "Caraïbes",
+    "zh": "加勒比海",
+    "it": "Caraibi",
+    "de": "Karibik",
+    "pt": "Caribe"
+  },
+  "Clear go/no-go guidance based on actual forecast data": {
+    "fr": "Des conseils clairs pour décider d'appareiller ou non, fondés sur des données de prévision réelles",
+    "zh": "基于实际预报数据提供清晰的出发或不出发决策建议",
+    "it": "Indicazioni chiare per decidere se partire o meno, basate su dati previsionali reali",
+    "de": "Klare Go/No-Go-Empfehlungen auf Grundlage tatsächlicher Vorhersagedaten",
+    "pt": "Orientação clara para decidir ir ou não, com base em dados reais de previsão"
+  },
+  "Click any port for full monthly breakdown": {
+    "fr": "Cliquez sur un port pour voir le détail mensuel complet",
+    "zh": "点击任一港口查看完整月度明细",
+    "it": "Fai clic su un porto per il dettaglio mensile completo",
+    "de": "Klicken Sie auf einen Hafen für die vollständige Monatsübersicht",
+    "pt": "Clique em qualquer porto para ver o detalhamento mensal completo"
+  },
+  "Cloud %": {
+    "fr": "Nuages %",
+    "zh": "云量 %",
+    "it": "Nuvole %",
+    "de": "Bewölkung %",
+    "pt": "Nuvens %"
+  },
+  "Cloud Cover": {
+    "fr": "Couverture nuageuse",
+    "zh": "云量",
+    "it": "Copertura nuvolosa",
+    "de": "Bewölkung",
+    "pt": "Cobertura de nuvens"
+  },
+  "Climate Averages (beyond 16-day window)": {
+    "fr": "Moyennes climatiques (au-delà de la fenêtre de 16 jours)",
+    "zh": "气候平均值（超出 16 天窗口）",
+    "it": "Medie climatiche (oltre la finestra di 16 giorni)",
+    "de": "Klimamittelwerte (außerhalb des 16-Tage-Fensters)",
+    "pt": "Médias climáticas (além da janela de 16 dias)"
+  },
+  "Copy this link to share your route:": {
+    "fr": "Copiez ce lien pour partager votre itinéraire :",
+    "zh": "复制此链接以分享您的航线：",
+    "it": "Copia questo link per condividere la tua rotta:",
+    "de": "Kopieren Sie diesen Link, um Ihre Route zu teilen:",
+    "pt": "Copie este link para compartilhar sua rota:"
+  },
+  "Cruise Route Map": {
+    "fr": "Carte de l'itinéraire de croisière",
+    "zh": "邮轮航线地图",
+    "it": "Mappa dell'itinerario di crociera",
+    "de": "Kreuzfahrtroutenkarte",
+    "pt": "Mapa de rota de cruzeiro"
+  },
+  "Describe the weather situation or decision you need help with. For example: planning a passage from Miami to the Bahamas next week, concerned about a developing tropical system...": {
+    "fr": "Décrivez la situation météorologique ou la décision pour laquelle vous avez besoin d'aide. Par exemple : planifier une traversée de Miami aux Bahamas la semaine prochaine ou s'inquiéter d'un système tropical en développement...",
+    "zh": "请描述您需要帮助处理的天气情况或决策。例如：计划下周从迈阿密前往巴哈马的航程，或担心正在发展的热带系统...",
+    "it": "Descrivi la situazione meteorologica o la decisione per cui hai bisogno di aiuto. Per esempio: pianificare una traversata da Miami alle Bahamas la prossima settimana o essere preoccupato per un sistema tropicale in sviluppo...",
+    "de": "Beschreiben Sie die Wettersituation oder Entscheidung, bei der Sie Hilfe benötigen. Beispiel: Planung einer Passage von Miami auf die Bahamas nächste Woche oder Sorge wegen eines sich entwickelnden tropischen Systems...",
+    "pt": "Descreva a situação meteorológica ou decisão para a qual você precisa de ajuda. Por exemplo: planejar uma travessia de Miami para as Bahamas na próxima semana ou preocupar-se com um sistema tropical em desenvolvimento..."
+  },
+  "Dew Point": {
+    "fr": "Point de rosée",
+    "zh": "露点",
+    "it": "Punto di rugiada",
+    "de": "Taupunkt",
+    "pt": "Ponto de orvalho"
+  },
+  "Direct, one-on-one weather decision support from James Van Fleet, former Chief Meteorologist of Royal Caribbean with 30+ years of experience.": {
+    "fr": "Un accompagnement météorologique direct et individuel de James Van Fleet, ancien chef météorologue de Royal Caribbean, avec plus de 30 ans d'expérience.",
+    "zh": "由 James Van Fleet 提供直接、一对一的天气决策支持。他曾任皇家加勒比首席气象学家，拥有 30 多年经验。",
+    "it": "Supporto meteorologico diretto e individuale da James Van Fleet, ex capo meteorologo di Royal Caribbean con oltre 30 anni di esperienza.",
+    "de": "Direkte, persönliche Unterstützung bei Wetterentscheidungen von James Van Fleet, ehemaligem Chefmeteorologen von Royal Caribbean mit über 30 Jahren Erfahrung.",
+    "pt": "Suporte direto e individual para decisões meteorológicas de James Van Fleet, ex-chefe de meteorologia da Royal Caribbean com mais de 30 anos de experiência."
+  },
+  "Direction": {
+    "fr": "Direction",
+    "zh": "风向",
+    "it": "Direzione",
+    "de": "Richtung",
+    "pt": "Direção"
+  },
+  "Edit Route": {
+    "fr": "Modifier l'itinéraire",
+    "zh": "编辑航线",
+    "it": "Modifica rotta",
+    "de": "Route bearbeiten",
+    "pt": "Editar rota"
+  },
+  "Email Address": {
+    "fr": "Adresse e-mail",
+    "zh": "电子邮箱",
+    "it": "Indirizzo email",
+    "de": "E-Mail-Adresse",
+    "pt": "Endereço de e-mail"
+  },
+  "Evening": {
+    "fr": "Soirée",
+    "zh": "傍晚",
+    "it": "Sera",
+    "de": "Abend",
+    "pt": "Noite"
+  },
+  "Family and friends get the same forecast on their device": {
+    "fr": "La famille et les amis reçoivent les mêmes prévisions sur leur appareil",
+    "zh": "家人和朋友可在他们的设备上获得相同预报",
+    "it": "Familiari e amici ricevono le stesse previsioni sul loro dispositivo",
+    "de": "Familie und Freunde erhalten dieselbe Vorhersage auf ihrem Gerät",
+    "pt": "A família e os amigos recebem a mesma previsão em seus dispositivos"
+  },
+  "Filter:": {
+    "fr": "Filtre :",
+    "zh": "筛选：",
+    "it": "Filtro:",
+    "de": "Filter:",
+    "pt": "Filtro:"
+  },
+  "First Briefing": {
+    "fr": "Premier briefing",
+    "zh": "首次简报",
+    "it": "Primo briefing",
+    "de": "Erstes Briefing",
+    "pt": "Primeiro briefing"
+  },
+  "For planning what time of year and where to go on your next Cruise": {
+    "fr": "Pour planifier la période et la destination de votre prochaine croisière",
+    "zh": "用于规划下一次邮轮旅行的时间和目的地",
+    "it": "Per pianificare in che periodo dell'anno e dove andare nella tua prossima crociera",
+    "de": "Zur Planung, zu welcher Jahreszeit und wohin Sie auf Ihrer nächsten Kreuzfahrt fahren möchten",
+    "pt": "Para planejar em que época do ano e para onde ir no seu próximo cruzeiro"
+  },
+  "Full Name": {
+    "fr": "Nom complet",
+    "zh": "全名",
+    "it": "Nome completo",
+    "de": "Vollständiger Name",
+    "pt": "Nome completo"
+  },
+  "Gusts": {
+    "fr": "Rafales",
+    "zh": "阵风",
+    "it": "Raffiche",
+    "de": "Böen",
+    "pt": "Rajadas"
+  },
+  "High": {
+    "fr": "Élevée",
+    "zh": "高",
+    "it": "Alto",
+    "de": "Hoch",
+    "pt": "Alto"
+  },
+  "Humidity": {
+    "fr": "Humidité",
+    "zh": "湿度",
+    "it": "Umidità",
+    "de": "Luftfeuchtigkeit",
+    "pt": "Umidade"
+  },
+  "James will confirm your booking by email within 24 hours and send a meeting link for your chosen platform.": {
+    "fr": "James confirmera votre réservation par e-mail dans les 24 heures et enverra un lien de réunion pour la plateforme choisie.",
+    "zh": "James 将在 24 小时内通过电子邮件确认您的预约，并发送您所选平台的会议链接。",
+    "it": "James confermerà la prenotazione via email entro 24 ore e invierà un link alla riunione per la piattaforma scelta.",
+    "de": "James wird Ihre Buchung innerhalb von 24 Stunden per E-Mail bestätigen und einen Besprechungslink für Ihre gewählte Plattform senden.",
+    "pt": "James confirmará sua reserva por e-mail em até 24 horas e enviará um link da reunião para a plataforma escolhida."
+  },
+  "James' Picks for": {
+    "fr": "Les choix de James pour",
+    "zh": "James 的精选",
+    "it": "Le scelte di James per",
+    "de": "James' Empfehlungen für",
+    "pt": "Escolhas de James para"
+  },
+  "Limited Offer": {
+    "fr": "Offre limitée",
+    "zh": "限时优惠",
+    "it": "Offerta limitata",
+    "de": "Begrenztes Angebot",
+    "pt": "Oferta limitada"
+  },
+  "Limited availability. Slots are filled on a first-come, first-served basis.": {
+    "fr": "Disponibilité limitée. Les créneaux sont attribués par ordre d'arrivée.",
+    "zh": "名额有限，按先到先得原则安排。",
+    "it": "Disponibilità limitata. Gli slot vengono assegnati in ordine di arrivo.",
+    "de": "Begrenzte Verfügbarkeit. Termine werden nach dem Prinzip Wer zuerst kommt, mahlt zuerst vergeben.",
+    "pt": "Disponibilidade limitada. As vagas são preenchidas por ordem de chegada."
+  },
+  "Link copied!": {
+    "fr": "Lien copié !",
+    "zh": "链接已复制！",
+    "it": "Link copiato!",
+    "de": "Link kopiert!",
+    "pt": "Link copiado!"
+  },
+  "Live 16-Day Forecast": {
+    "fr": "Prévisions en direct sur 16 jours",
+    "zh": "实时 16 天预报",
+    "it": "Previsioni in tempo reale di 16 giorni",
+    "de": "Live-16-Tage-Vorhersage",
+    "pt": "Previsão ao vivo de 16 dias"
+  },
+  "Live Zoom, WebEx, Google Meet, or other platform -- your choice": {
+    "fr": "Zoom, WebEx, Google Meet ou autre plateforme en direct -- à votre choix",
+    "zh": "Zoom、WebEx、Google Meet 或其他在线平台 -- 由您选择",
+    "it": "Zoom, WebEx, Google Meet o un'altra piattaforma dal vivo -- a tua scelta",
+    "de": "Zoom, WebEx, Google Meet oder eine andere Live-Plattform -- Sie haben die Wahl",
+    "pt": "Zoom, WebEx, Google Meet ou outra plataforma ao vivo -- você escolhe"
+  },
+  "Load Saved Route": {
+    "fr": "Charger l'itinéraire enregistré",
+    "zh": "加载已保存航线",
+    "it": "Carica la rotta salvata",
+    "de": "Gespeicherte Route laden",
+    "pt": "Carregar rota salva"
+  },
+  "Loading climate data...": {
+    "fr": "Chargement des données climatiques...",
+    "zh": "正在加载气候数据...",
+    "it": "Caricamento dati climatici...",
+    "de": "Klimadaten werden geladen...",
+    "pt": "Carregando dados climáticos..."
+  },
+  "Loading forecast...": {
+    "fr": "Chargement des prévisions...",
+    "zh": "正在加载预报...",
+    "it": "Caricamento previsioni...",
+    "de": "Vorhersage wird geladen...",
+    "pt": "Carregando previsão..."
+  },
+  "Loading sun & moon times...": {
+    "fr": "Chargement des heures de soleil et de lune...",
+    "zh": "正在加载日月时间...",
+    "it": "Caricamento orari di sole e luna...",
+    "de": "Sonnen- und Mondzeiten werden geladen...",
+    "pt": "Carregando horários do sol e da lua..."
+  },
+  "Low": {
+    "fr": "Basse",
+    "zh": "低",
+    "it": "Basso",
+    "de": "Niedrig",
+    "pt": "Baixo"
+  },
+  "Marina / Current Location": {
+    "fr": "Marina / emplacement actuel",
+    "zh": "码头 / 当前所在地",
+    "it": "Marina / posizione attuale",
+    "de": "Marina / aktueller Standort",
+    "pt": "Marina / localização atual"
+  },
+  "Marine": {
+    "fr": "Marine",
+    "zh": "海洋",
+    "it": "Marino",
+    "de": "Marine",
+    "pt": "Marítimo"
+  },
+  "Monthly Weather Score": {
+    "fr": "Score météo mensuel",
+    "zh": "月度天气评分",
+    "it": "Punteggio meteo mensile",
+    "de": "Monatlicher Wetterwert",
+    "pt": "Pontuação meteorológica mensal"
+  },
+  "Moonrise": {
+    "fr": "Lever de lune",
+    "zh": "月升",
+    "it": "Sorgere della luna",
+    "de": "Mondaufgang",
+    "pt": "Nascer da lua"
+  },
+  "Moonset": {
+    "fr": "Coucher de lune",
+    "zh": "月落",
+    "it": "Tramonto della luna",
+    "de": "Monduntergang",
+    "pt": "Pôr da lua"
+  },
+  "Morning": {
+    "fr": "Matin",
+    "zh": "上午",
+    "it": "Mattina",
+    "de": "Morgen",
+    "pt": "Manhã"
+  },
+  "Network error. Please check your connection and try again.": {
+    "fr": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+    "zh": "网络错误。请检查您的连接后重试。",
+    "it": "Errore di rete. Controlla la connessione e riprova.",
+    "de": "Netzwerkfehler. Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "pt": "Erro de rede. Verifique sua conexão e tente novamente."
+  },
+  "No forecast data available for this location.": {
+    "fr": "Aucune donnée de prévision disponible pour ce lieu.",
+    "zh": "此地点没有可用的预报数据。",
+    "it": "Nessun dato previsionale disponibile per questa località.",
+    "de": "Für diesen Ort sind keine Vorhersagedaten verfügbar.",
+    "pt": "Não há dados de previsão disponíveis para este local."
+  },
+  "Other": {
+    "fr": "Autre",
+    "zh": "其他",
+    "it": "Altro",
+    "de": "Sonstiges",
+    "pt": "Outro"
+  },
+  "Overnight": {
+    "fr": "Nuit",
+    "zh": "夜间",
+    "it": "Notte",
+    "de": "Nacht",
+    "pt": "Durante a noite"
+  },
+  "Phone Number": {
+    "fr": "Numéro de téléphone",
+    "zh": "电话号码",
+    "it": "Numero di telefono",
+    "de": "Telefonnummer",
+    "pt": "Número de telefone"
+  },
+  "Platform": {
+    "fr": "Plateforme",
+    "zh": "平台",
+    "it": "Piattaforma",
+    "de": "Plattform",
+    "pt": "Plataforma"
+  },
+  "Port": {
+    "fr": "Port",
+    "zh": "港口",
+    "it": "Porto",
+    "de": "Hafen",
+    "pt": "Porto"
+  },
+  "Preferred Date": {
+    "fr": "Date souhaitée",
+    "zh": "首选日期",
+    "it": "Data preferita",
+    "de": "Bevorzugtes Datum",
+    "pt": "Data preferida"
+  },
+  "Preferred Time (EST)": {
+    "fr": "Heure souhaitée (EST)",
+    "zh": "首选时间（EST）",
+    "it": "Ora preferita (EST)",
+    "de": "Bevorzugte Zeit (EST)",
+    "pt": "Horário preferido (EST)"
+  },
+  "Rain": {
+    "fr": "Pluie",
+    "zh": "降雨",
+    "it": "Pioggia",
+    "de": "Regen",
+    "pt": "Chuva"
+  },
+  "Rain %": {
+    "fr": "Pluie %",
+    "zh": "降雨 %",
+    "it": "Pioggia %",
+    "de": "Regen %",
+    "pt": "Chuva %"
+  },
+  "Rain Chance by Period": {
+    "fr": "Risque de pluie par période",
+    "zh": "分时段降雨概率",
+    "it": "Probabilità di pioggia per periodo",
+    "de": "Regenwahrscheinlichkeit nach Zeitraum",
+    "pt": "Probabilidade de chuva por período"
+  },
+  "Rain Days": {
+    "fr": "Jours de pluie",
+    "zh": "降雨天数",
+    "it": "Giorni di pioggia",
+    "de": "Regentage",
+    "pt": "Dias de chuva"
+  },
+  "Region": {
+    "fr": "Région",
+    "zh": "区域",
+    "it": "Regione",
+    "de": "Region",
+    "pt": "Região"
+  },
+  "Reload anytime for the latest forecast": {
+    "fr": "Rechargez à tout moment pour obtenir les dernières prévisions",
+    "zh": "随时刷新以获取最新预报",
+    "it": "Ricarica in qualsiasi momento per le ultime previsioni",
+    "de": "Jederzeit neu laden für die neuesten Vorhersagen",
+    "pt": "Atualize a qualquer momento para obter a previsão mais recente"
+  },
+  "Request My Briefing": {
+    "fr": "Demander mon briefing",
+    "zh": "请求我的简报",
+    "it": "Richiedi il mio briefing",
+    "de": "Mein Briefing anfordern",
+    "pt": "Solicitar meu briefing"
+  },
+  "Request Received": {
+    "fr": "Demande reçue",
+    "zh": "请求已收到",
+    "it": "Richiesta ricevuta",
+    "de": "Anfrage erhalten",
+    "pt": "Solicitação recebida"
+  },
+  "Save Route": {
+    "fr": "Enregistrer l'itinéraire",
+    "zh": "保存航线",
+    "it": "Salva rotta",
+    "de": "Route speichern",
+    "pt": "Salvar rota"
+  },
+  "Saved!": {
+    "fr": "Enregistré !",
+    "zh": "已保存！",
+    "it": "Salvato!",
+    "de": "Gespeichert!",
+    "pt": "Salvo!"
+  },
+  "Score": {
+    "fr": "Score",
+    "zh": "评分",
+    "it": "Punteggio",
+    "de": "Bewertung",
+    "pt": "Pontuação"
+  },
+  "Score Key:": {
+    "fr": "Légende du score :",
+    "zh": "评分说明：",
+    "it": "Legenda punteggio:",
+    "de": "Bewertungsschlüssel:",
+    "pt": "Legenda da pontuação:"
+  },
+  "Scored on rain, wind, cloud cover & temperature comfort": {
+    "fr": "Évalué selon la pluie, le vent, la couverture nuageuse et le confort thermique",
+    "zh": "根据降雨、风力、云量和温度舒适度评分",
+    "it": "Valutato su pioggia, vento, copertura nuvolosa e comfort termico",
+    "de": "Bewertet nach Regen, Wind, Bewölkung und Temperaturkomfort",
+    "pt": "Pontuado por chuva, vento, cobertura de nuvens e conforto térmico"
+  },
+  "Search port...": {
+    "fr": "Rechercher un port...",
+    "zh": "搜索港口...",
+    "it": "Cerca un porto...",
+    "de": "Hafen suchen...",
+    "pt": "Pesquisar porto..."
+  },
+  "Select a time...": {
+    "fr": "Sélectionnez une heure...",
+    "zh": "选择时间...",
+    "it": "Seleziona un orario...",
+    "de": "Uhrzeit auswählen...",
+    "pt": "Selecione um horário..."
+  },
+  "Share Route": {
+    "fr": "Partager l'itinéraire",
+    "zh": "分享航线",
+    "it": "Condividi rotta",
+    "de": "Route teilen",
+    "pt": "Compartilhar rota"
+  },
+  "Show": {
+    "fr": "Afficher",
+    "zh": "显示",
+    "it": "Mostra",
+    "de": "Anzeigen",
+    "pt": "Mostrar"
+  },
+  "Showing": {
+    "fr": "Affichage de",
+    "zh": "正在显示",
+    "it": "Visualizzazione di",
+    "de": "Anzeige von",
+    "pt": "Mostrando"
+  },
+  "Speed": {
+    "fr": "Vitesse",
+    "zh": "风速",
+    "it": "Velocità",
+    "de": "Geschwindigkeit",
+    "pt": "Velocidade"
+  },
+  "Submission failed. Please try again.": {
+    "fr": "Échec de l'envoi. Veuillez réessayer.",
+    "zh": "提交失败。请重试。",
+    "it": "Invio non riuscito. Riprova.",
+    "de": "Übermittlung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "pt": "Falha no envio. Tente novamente."
+  },
+  "Sunrise": {
+    "fr": "Lever du soleil",
+    "zh": "日出",
+    "it": "Alba",
+    "de": "Sonnenaufgang",
+    "pt": "Nascer do sol"
+  },
+  "Sunset": {
+    "fr": "Coucher du soleil",
+    "zh": "日落",
+    "it": "Tramonto",
+    "de": "Sonnenuntergang",
+    "pt": "Pôr do sol"
+  },
+  "Swell": {
+    "fr": "Houle",
+    "zh": "涌浪",
+    "it": "Moto ondoso",
+    "de": "Dünung",
+    "pt": "Ondulação"
+  },
+  "Tap a marker to see the forecast": {
+    "fr": "Touchez un repère pour voir les prévisions",
+    "zh": "点击标记查看预报",
+    "it": "Tocca un indicatore per vedere le previsioni",
+    "de": "Tippen Sie auf eine Markierung, um die Vorhersage zu sehen",
+    "pt": "Toque em um marcador para ver a previsão"
+  },
+  "Temp High": {
+    "fr": "Temp. max.",
+    "zh": "最高温",
+    "it": "Temp. max",
+    "de": "Höchsttemp.",
+    "pt": "Temp. máxima"
+  },
+  "Thank you,": {
+    "fr": "Merci,",
+    "zh": "谢谢，",
+    "it": "Grazie,",
+    "de": "Danke,",
+    "pt": "Obrigado,"
+  },
+  "The same decision support James provided for Royal Caribbean's fleet of captains and bridge officers, as well as the CEO, Chairman, and the entire C-suite of Royal Caribbean Group": {
+    "fr": "Le même soutien à la décision que James a fourni à la flotte de capitaines et d'officiers de passerelle de Royal Caribbean, ainsi qu'au directeur général, au président et à toute l'équipe de direction de Royal Caribbean Group",
+    "zh": "James 为皇家加勒比的船长和驾驶台官员，以及首席执行官、董事长和整个高管团队提供同样的决策支持",
+    "it": "Lo stesso supporto decisionale che James ha fornito alla flotta di comandanti e ufficiali di plancia di Royal Caribbean, nonché al CEO, al presidente e a tutto il team dirigenziale di Royal Caribbean Group",
+    "de": "Dieselbe Entscheidungsunterstützung, die James der Flotte von Kapitänen und Brückenoffizieren von Royal Caribbean sowie dem CEO, dem Vorsitzenden und dem gesamten Führungsteam der Royal Caribbean Group geboten hat",
+    "pt": "O mesmo suporte à decisão que James forneceu à frota de capitães e oficiais de ponte da Royal Caribbean, bem como ao CEO, ao presidente e a toda a equipe executiva do Royal Caribbean Group"
+  },
+  "Then": {
+    "fr": "Puis",
+    "zh": "然后",
+    "it": "Poi",
+    "de": "Dann",
+    "pt": "Depois"
+  },
+  "This day has already occurred. No weather forecast available.": {
+    "fr": "Cette journée est déjà passée. Aucune prévision météorologique n'est disponible.",
+    "zh": "这一天已经过去。没有可用的天气预报。",
+    "it": "Questo giorno è già trascorso. Nessuna previsione meteorologica disponibile.",
+    "de": "Dieser Tag ist bereits vergangen. Keine Wettervorhersage verfügbar.",
+    "pt": "Este dia já passou. Nenhuma previsão do tempo disponível."
+  },
+  "Title / Role": {
+    "fr": "Titre / fonction",
+    "zh": "职务 / 角色",
+    "it": "Titolo / ruolo",
+    "de": "Titel / Funktion",
+    "pt": "Título / função"
+  },
+  "Vessel Name": {
+    "fr": "Nom du navire",
+    "zh": "船只名称",
+    "it": "Nome dell'imbarcazione",
+    "de": "Schiffsname",
+    "pt": "Nome da embarcação"
+  },
+  "Vessel-specific forecast analysis for your route and marina": {
+    "fr": "Analyse des prévisions spécifique au navire pour votre itinéraire et votre marina",
+    "zh": "针对您的航线和码头的船舶专属预报分析",
+    "it": "Analisi previsionale specifica per l'imbarcazione, la tua rotta e la marina",
+    "de": "Schiffsspezifische Vorhersageanalyse für Ihre Route und Marina",
+    "pt": "Análise de previsão específica da embarcação para sua rota e marina"
+  },
+  "Wave Height": {
+    "fr": "Hauteur des vagues",
+    "zh": "浪高",
+    "it": "Altezza onde",
+    "de": "Wellenhöhe",
+    "pt": "Altura das ondas"
+  },
+  "Weather Concern or Question": {
+    "fr": "Question ou préoccupation météo",
+    "zh": "天气问题或疑问",
+    "it": "Domanda o preoccupazione meteo",
+    "de": "Wetterfrage oder Anliegen",
+    "pt": "Dúvida ou preocupação meteorológica"
+  },
+  "Weather Score by Month": {
+    "fr": "Score météo par mois",
+    "zh": "按月天气评分",
+    "it": "Punteggio meteo per mese",
+    "de": "Wetterbewertung nach Monat",
+    "pt": "Pontuação do tempo por mês"
+  },
+  "What to Expect": {
+    "fr": "À quoi s'attendre",
+    "zh": "预期内容",
+    "it": "Cosa aspettarsi",
+    "de": "Was Sie erwartet",
+    "pt": "O que esperar"
+  },
+  "Wind (kt)": {
+    "fr": "Vent (kt)",
+    "zh": "风（节）",
+    "it": "Vento (kt)",
+    "de": "Wind (kt)",
+    "pt": "Vento (kt)"
+  },
+  "Your Details": {
+    "fr": "Vos informations",
+    "zh": "您的信息",
+    "it": "I tuoi dati",
+    "de": "Ihre Angaben",
+    "pt": "Seus dados"
+  },
+  "from": {
+    "fr": "de",
+    "zh": "来自",
+    "it": "da",
+    "de": "aus",
+    "pt": "de"
+  },
+  "per 20-minute briefing": {
+    "fr": "par briefing de 20 minutes",
+    "zh": "每次 20 分钟简报",
+    "it": "per briefing di 20 minuti",
+    "de": "pro 20-Minuten-Briefing",
+    "pt": "por briefing de 20 minutos"
+  },
+  "stops": {
+    "fr": "escales",
+    "zh": "停靠港",
+    "it": "scali",
+    "de": "Stopps",
+    "pt": "paradas"
+  },
+  "70-100 Excellent": {
+    "fr": "70-100 Excellent",
+    "zh": "70-100 极佳",
+    "it": "70-100 Eccellente",
+    "de": "70-100 Ausgezeichnet",
+    "pt": "70-100 Excelente"
+  },
+  "50-69 Good": {
+    "fr": "50-69 Bon",
+    "zh": "50-69 良好",
+    "it": "50-69 Buono",
+    "de": "50-69 Gut",
+    "pt": "50-69 Bom"
+  },
+  "30-49 Fair": {
+    "fr": "30-49 Moyen",
+    "zh": "30-49 一般",
+    "it": "30-49 Discreto",
+    "de": "30-49 Mäßig",
+    "pt": "30-49 Regular"
+  },
+  "0-29 Poor": {
+    "fr": "0-29 Faible",
+    "zh": "0-29 较差",
+    "it": "0-29 Scarso",
+    "de": "0-29 Schlecht",
+    "pt": "0-29 Ruim"
+  },
+  "Bahamas": {
+    "fr": "Bahamas",
+    "zh": "巴哈马",
+    "it": "Bahamas",
+    "de": "Bahamas",
+    "pt": "Bahamas"
+  },
+  "Mediterranean": {
+    "fr": "Méditerranée",
+    "zh": "地中海",
+    "it": "Mediterraneo",
+    "de": "Mittelmeer",
+    "pt": "Mediterrâneo"
+  },
+  "Alaska": {
+    "fr": "Alaska",
+    "zh": "阿拉斯加",
+    "it": "Alaska",
+    "de": "Alaska",
+    "pt": "Alasca"
+  },
+  "Bermuda": {
+    "fr": "Bermudes",
+    "zh": "百慕大",
+    "it": "Bermuda",
+    "de": "Bermuda",
+    "pt": "Bermudas"
+  }
+};
+
+// Static visitor-interface labels used by pages that predate the keyed catalog.
+// Operational feed text, port and ship names, numerical values, and third-party brand names intentionally fall back to their source form.
+const STATIC_PAGE_TEXT: Partial<Record<LanguageCode, Record<string, string>>> = {
+  es: {
+    ". James will review your request and reach out to confirm your briefing time within 24 hours.": ". James revisará su solicitud y se pondrá en contacto para confirmar la hora de su sesión en un plazo de 24 horas.",
+    "20-Minute Private Briefing": "Sesión privada de 20 minutos",
+    "24-Hour Forecast": "Pronóstico de 24 horas",
+    "30 years of NASA POWER reanalysis data (1994-2023) analyzed across every cruise port. Scored on rain probability, wind, cloud cover, and temperature comfort -- so you know exactly when to go where.": "30 años de datos de reanálisis de NASA POWER (1994-2023) analizados en cada puerto de cruceros. Se evalúan la probabilidad de lluvia, el viento, la nubosidad y el confort térmico para que sepa cuándo ir y adónde.",
+    "5-Day Forecast": "Pronóstico de 5 días",
+    "A confirmation will be sent to": "Se enviará una confirmación a",
+    "Afternoon": "Tarde",
+    "All Regions": "Todas las regiones",
+    "Atmosphere": "Atmósfera",
+    "Avg High / Low": "Máx./Mín. promedio",
+    "Avg High": "Máxima promedio",
+    "Avg Low": "Mínima promedio",
+    "Avg Seas": "Mar promedio",
+    "Back to Home": "Volver al inicio",
+    "Based on NASA POWER reanalysis -- 30 years of observed climate data": "Basado en el reanálisis de NASA POWER: 30 años de datos climáticos observados",
+    "Best Month": "Mejor mes",
+    "Best Weather": "Mejor clima",
+    "Best month:": "Mejor mes:",
+    "Book Your Weather Briefing": "Reserve su sesión meteorológica",
+    "Briefings are available for tropical weather, hurricane decisions, passage planning, and general marine weather concerns.": "Hay sesiones disponibles para clima tropical, decisiones sobre huracanes, planificación de travesías e inquietudes generales de meteorología marina.",
+    "By submitting this form you agree to be contacted by James Van Fleet to confirm your briefing. Payment details will be provided upon confirmation.": "Al enviar este formulario, acepta que James Van Fleet se comunique con usted para confirmar su sesión. Los detalles de pago se proporcionarán al confirmarla.",
+    "Captain, Owner, First Mate...": "Capitán, propietario, primer oficial...",
+    "Cards": "Tarjetas",
+    "Caribbean": "Caribe",
+    "Clear go/no-go guidance based on actual forecast data": "Orientación clara para decidir avanzar o no, basada en datos reales del pronóstico",
+    "Click any port for full monthly breakdown": "Seleccione cualquier puerto para ver el desglose mensual completo",
+    "Cloud %": "Nubes %",
+    "Cloud Cover": "Nubosidad",
+    "Climate Averages (beyond 16-day window)": "Promedios climáticos (más allá de la ventana de 16 días)",
+    "Copy this link to share your route:": "Copie este enlace para compartir su ruta:",
+    "Cruise Route Map": "Mapa de ruta de crucero",
+    "Describe the weather situation or decision you need help with. For example: planning a passage from Miami to the Bahamas next week, concerned about a developing tropical system...": "Describa la situación meteorológica o decisión con la que necesita ayuda. Por ejemplo: planificar una travesía de Miami a las Bahamas la próxima semana o preocuparse por un sistema tropical en desarrollo...",
+    "Dew Point": "Punto de rocío",
+    "Direct, one-on-one weather decision support from James Van Fleet, former Chief Meteorologist of Royal Caribbean with 30+ years of experience.": "Apoyo individual para decisiones meteorológicas de James Van Fleet, exmeteorólogo jefe de Royal Caribbean con más de 30 años de experiencia.",
+    "Direction": "Dirección",
+    "Edit Route": "Editar ruta",
+    "Email Address": "Correo electrónico",
+    "Evening": "Noche",
+    "Family and friends get the same forecast on their device": "Familiares y amigos reciben el mismo pronóstico en su dispositivo",
+    "Filter:": "Filtro:",
+    "First Briefing": "Primera sesión",
+    "For planning what time of year and where to go on your next Cruise": "Para planificar cuándo y adónde ir en su próximo crucero",
+    "Full Name": "Nombre completo",
+    "Gusts": "Ráfagas",
+    "Heatmap": "Mapa de calor",
+    "Hide": "Ocultar",
+    "High": "Máxima",
+    "Humidity": "Humedad",
+    "James will confirm your booking by email within 24 hours and send a meeting link for your chosen platform.": "James confirmará su reserva por correo electrónico en un plazo de 24 horas y enviará un enlace de reunión para la plataforma que elija.",
+    "James' Picks for": "Selecciones de James para el",
+    "Limited Offer": "Oferta limitada",
+    "Limited availability. Slots are filled on a first-come, first-served basis.": "Disponibilidad limitada. Los espacios se asignan por orden de llegada.",
+    "Link copied!": "¡Enlace copiado!",
+    "Live 16-Day Forecast": "Pronóstico en vivo de 16 días",
+    "Live Zoom, WebEx, Google Meet, or other platform -- your choice": "Zoom, WebEx, Google Meet u otra plataforma en vivo, usted elige",
+    "Load Saved Route": "Cargar ruta guardada",
+    "Loading climate data...": "Cargando datos climáticos...",
+    "Loading forecast...": "Cargando pronóstico...",
+    "Loading sun & moon times...": "Cargando horas de sol y luna...",
+    "Low": "Mínima",
+    "Marina / Current Location": "Marina / ubicación actual",
+    "Marine": "Marítimo",
+    "Monthly Weather Score": "Puntuación meteorológica mensual",
+    "Moonrise": "Salida de la luna",
+    "Moonset": "Puesta de la luna",
+    "Morning": "Mañana",
+    "Network error. Please check your connection and try again.": "Error de red. Revise su conexión e inténtelo de nuevo.",
+    "No forecast data available for this location.": "No hay datos de pronóstico disponibles para esta ubicación.",
+    "Other": "Otro",
+    "Overnight": "Madrugada",
+    "Phone Number": "Número de teléfono",
+    "Platform": "Plataforma",
+    "Port": "Puerto",
+    "Preferred Date": "Fecha preferida",
+    "Preferred Time (EST)": "Hora preferida (EST)",
+    "Rain": "Lluvia",
+    "Rain %": "Lluvia %",
+    "Rain Chance by Period": "Probabilidad de lluvia por período",
+    "Rain Days": "Días de lluvia",
+    "Region": "Región",
+    "Reload anytime for the latest forecast": "Vuelva a cargar en cualquier momento para obtener el pronóstico más reciente",
+    "Request My Briefing": "Solicitar mi sesión",
+    "Request Received": "Solicitud recibida",
+    "Save Route": "Guardar ruta",
+    "Saved!": "¡Guardado!",
+    "Score": "Puntuación",
+    "Score Key:": "Escala de puntuación:",
+    "Scored on rain, wind, cloud cover & temperature comfort": "Evaluado según lluvia, viento, nubosidad y confort térmico",
+    "Search port...": "Buscar puerto...",
+    "Select a time...": "Seleccione una hora...",
+    "Share Route": "Compartir ruta",
+    "Show": "Mostrar",
+    "Showing": "Mostrando",
+    "Speed": "Velocidad",
+    "Submission failed. Please try again.": "No se pudo enviar la solicitud. Inténtelo de nuevo.",
+    "Sunrise": "Amanecer",
+    "Sunset": "Atardecer",
+    "Swell": "Mar de fondo",
+    "Table": "Tabla",
+    "Tap a marker to see the forecast": "Seleccione un marcador para ver el pronóstico",
+    "Temp High": "Temperatura máxima",
+    "Thank you,": "Gracias,",
+    "The same decision support James provided for Royal Caribbean's fleet of captains and bridge officers, as well as the CEO, Chairman, and the entire C-suite of Royal Caribbean Group": "El mismo apoyo para decisiones que James brindó a la flota de capitanes y oficiales de puente de Royal Caribbean, así como al CEO, al presidente y a todo el equipo directivo de Royal Caribbean Group",
+    "Then": "Después",
+    "This day has already occurred. No weather forecast available.": "Este día ya ha pasado. No hay pronóstico meteorológico disponible.",
+    "Title / Role": "Cargo / función",
+    "US Homeport": "Puerto base de EE. UU.",
+    "US Homeports": "Puertos base de EE. UU.",
+    "Vessel Name": "Nombre de la embarcación",
+    "Vessel-specific forecast analysis for your route and marina": "Análisis del pronóstico específico de la embarcación para su ruta y marina",
+    "Wave Height": "Altura de ola",
+    "Weather Concern or Question": "Consulta o inquietud meteorológica",
+    "Weather Score by Month": "Puntuación meteorológica por mes",
+    "What to Expect": "Qué esperar",
+    "Wind (kt)": "Viento (kt)",
+    "Your Details": "Sus datos",
+    "from": "del",
+    "per 20-minute briefing": "por sesión de 20 minutos",
+    "stops": "paradas",
+    "70-100 Excellent": "70-100 Excelente",
+    "50-69 Good": "50-69 Bueno",
+    "30-49 Fair": "30-49 Aceptable",
+    "0-29 Poor": "0-29 Deficiente",
+    "Bahamas": "Bahamas",
+    "Mediterranean": "Mediterráneo",
+    "Pacific": "Pacífico",
+    "Alaska": "Alaska",
+    "Bermuda": "Bermudas",
+  },
+  ar: {
+    ". James will review your request and reach out to confirm your briefing time within 24 hours.": ". سيراجع James طلبك ويتواصل معك لتأكيد موعد الإحاطة خلال 24 ساعة.",
+    "20-Minute Private Briefing": "إحاطة خاصة لمدة 20 دقيقة",
+    "24-Hour Forecast": "توقعات 24 ساعة",
+    "30 years of NASA POWER reanalysis data (1994-2023) analyzed across every cruise port. Scored on rain probability, wind, cloud cover, and temperature comfort -- so you know exactly when to go where.": "تم تحليل 30 عامًا من بيانات إعادة التحليل NASA POWER (1994-2023) في كل ميناء للرحلات البحرية. يعتمد التقييم على احتمال المطر والرياح والغطاء السحابي والراحة الحرارية لتعرف بالضبط متى تذهب وإلى أين.",
+    "5-Day Forecast": "توقعات 5 أيام",
+    "A confirmation will be sent to": "سيتم إرسال التأكيد إلى",
+    "Afternoon": "بعد الظهر",
+    "All Regions": "كل المناطق",
+    "Atmosphere": "الغلاف الجوي",
+    "Avg High / Low": "متوسط العظمى / الصغرى",
+    "Avg High": "متوسط العظمى",
+    "Avg Low": "متوسط الصغرى",
+    "Avg Seas": "متوسط حالة البحر",
+    "Back to Home": "العودة إلى الرئيسية",
+    "Based on NASA POWER reanalysis -- 30 years of observed climate data": "استنادًا إلى إعادة تحليل NASA POWER: 30 عامًا من بيانات المناخ المرصودة",
+    "Best Month": "أفضل شهر",
+    "Best Weather": "أفضل طقس",
+    "Best month:": "أفضل شهر:",
+    "Book Your Weather Briefing": "احجز إحاطتك الجوية",
+    "Briefings are available for tropical weather, hurricane decisions, passage planning, and general marine weather concerns.": "تتوفر الإحاطات للطقس المداري وقرارات الأعاصير وتخطيط الرحلات والمخاوف العامة بشأن الطقس البحري.",
+    "By submitting this form you agree to be contacted by James Van Fleet to confirm your briefing. Payment details will be provided upon confirmation.": "بإرسال هذا النموذج، توافق على أن يتصل بك James Van Fleet لتأكيد إحاطتك. ستُقدَّم تفاصيل الدفع عند التأكيد.",
+    "Captain, Owner, First Mate...": "قبطان، مالك، ضابط أول...",
+    "Cards": "بطاقات",
+    "Caribbean": "الكاريبي",
+    "Clear go/no-go guidance based on actual forecast data": "إرشاد واضح لاتخاذ قرار الانطلاق أو الإلغاء استنادًا إلى بيانات التوقعات الفعلية",
+    "Click any port for full monthly breakdown": "اختر أي ميناء لعرض التفاصيل الشهرية الكاملة",
+    "Cloud %": "السحب %",
+    "Cloud Cover": "الغطاء السحابي",
+    "Climate Averages (beyond 16-day window)": "المتوسطات المناخية (بعد نافذة 16 يومًا)",
+    "Copy this link to share your route:": "انسخ هذا الرابط لمشاركة مسارك:",
+    "Cruise Route Map": "خريطة مسار الرحلة البحرية",
+    "Describe the weather situation or decision you need help with. For example: planning a passage from Miami to the Bahamas next week, concerned about a developing tropical system...": "صف الحالة الجوية أو القرار الذي تحتاج إلى مساعدة بشأنه. مثال: التخطيط لرحلة من ميامي إلى البهاما الأسبوع المقبل أو القلق من نظام مداري آخذ في التطور...",
+    "Dew Point": "نقطة الندى",
+    "Direct, one-on-one weather decision support from James Van Fleet, former Chief Meteorologist of Royal Caribbean with 30+ years of experience.": "دعم فردي لاتخاذ القرارات الجوية من James Van Fleet، كبير خبراء الأرصاد السابق في Royal Caribbean، بخبرة تزيد على 30 عامًا.",
+    "Direction": "الاتجاه",
+    "Edit Route": "تعديل المسار",
+    "Email Address": "البريد الإلكتروني",
+    "Evening": "المساء",
+    "Family and friends get the same forecast on their device": "يحصل الأهل والأصدقاء على التوقعات نفسها على أجهزتهم",
+    "Filter:": "تصفية:",
+    "First Briefing": "الإحاطة الأولى",
+    "For planning what time of year and where to go on your next Cruise": "لتخطيط وقت ومكان رحلتك البحرية القادمة",
+    "Full Name": "الاسم الكامل",
+    "Gusts": "هبّات الرياح",
+    "Heatmap": "خريطة حرارية",
+    "Hide": "إخفاء",
+    "High": "العظمى",
+    "Humidity": "الرطوبة",
+    "James will confirm your booking by email within 24 hours and send a meeting link for your chosen platform.": "سيؤكد James حجزك عبر البريد الإلكتروني خلال 24 ساعة ويرسل رابط اجتماع للمنصة التي اخترتها.",
+    "James' Picks for": "اختيارات James لـ",
+    "Limited Offer": "عرض محدود",
+    "Limited availability. Slots are filled on a first-come, first-served basis.": "التوافر محدود. تُملأ المواعيد حسب أسبقية الوصول.",
+    "Link copied!": "تم نسخ الرابط!",
+    "Live 16-Day Forecast": "توقعات مباشرة لمدة 16 يومًا",
+    "Live Zoom, WebEx, Google Meet, or other platform -- your choice": "Zoom أو WebEx أو Google Meet أو منصة مباشرة أخرى، حسب اختيارك",
+    "Load Saved Route": "تحميل المسار المحفوظ",
+    "Loading climate data...": "جارٍ تحميل بيانات المناخ...",
+    "Loading forecast...": "جارٍ تحميل التوقعات...",
+    "Loading sun & moon times...": "جارٍ تحميل أوقات الشمس والقمر...",
+    "Low": "الصغرى",
+    "Marina / Current Location": "المرسى / الموقع الحالي",
+    "Marine": "بحري",
+    "Monthly Weather Score": "تقييم الطقس الشهري",
+    "Moonrise": "شروق القمر",
+    "Moonset": "غروب القمر",
+    "Morning": "الصباح",
+    "Network error. Please check your connection and try again.": "خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+    "No forecast data available for this location.": "لا تتوفر بيانات توقعات لهذا الموقع.",
+    "Other": "أخرى",
+    "Overnight": "ليلًا",
+    "Phone Number": "رقم الهاتف",
+    "Platform": "المنصة",
+    "Port": "الميناء",
+    "Preferred Date": "التاريخ المفضل",
+    "Preferred Time (EST)": "الوقت المفضل (EST)",
+    "Rain": "مطر",
+    "Rain %": "مطر %",
+    "Rain Chance by Period": "احتمال المطر حسب الفترة",
+    "Rain Days": "أيام ممطرة",
+    "Region": "المنطقة",
+    "Reload anytime for the latest forecast": "أعد التحميل في أي وقت للحصول على أحدث التوقعات",
+    "Request My Briefing": "اطلب إحاطتي",
+    "Request Received": "تم استلام الطلب",
+    "Save Route": "حفظ المسار",
+    "Saved!": "تم الحفظ!",
+    "Score": "التقييم",
+    "Score Key:": "مفتاح التقييم:",
+    "Scored on rain, wind, cloud cover & temperature comfort": "يُقيَّم حسب المطر والرياح والغطاء السحابي والراحة الحرارية",
+    "Search port...": "ابحث عن ميناء...",
+    "Select a time...": "اختر وقتًا...",
+    "Share Route": "مشاركة المسار",
+    "Show": "إظهار",
+    "Showing": "عرض",
+    "Speed": "السرعة",
+    "Submission failed. Please try again.": "تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.",
+    "Sunrise": "شروق الشمس",
+    "Sunset": "غروب الشمس",
+    "Swell": "موجة طويلة",
+    "Table": "جدول",
+    "Tap a marker to see the forecast": "اختر علامة لعرض التوقعات",
+    "Temp High": "الحرارة العظمى",
+    "Thank you,": "شكرًا،",
+    "The same decision support James provided for Royal Caribbean's fleet of captains and bridge officers, as well as the CEO, Chairman, and the entire C-suite of Royal Caribbean Group": "نفس دعم اتخاذ القرار الذي قدمه James لأسطول قادة وضباط الجسر في Royal Caribbean، وكذلك للرئيس التنفيذي والرئيس ومجمل الإدارة التنفيذية في Royal Caribbean Group",
+    "Then": "ثم",
+    "This day has already occurred. No weather forecast available.": "هذا اليوم قد مضى بالفعل. لا تتوفر توقعات جوية.",
+    "Title / Role": "المسمى / الدور",
+    "US Homeport": "ميناء أمريكي رئيسي",
+    "US Homeports": "الموانئ الأمريكية الرئيسية",
+    "Vessel Name": "اسم السفينة",
+    "Vessel-specific forecast analysis for your route and marina": "تحليل توقعات خاص بالسفينة لمسارك والمرسى",
+    "Wave Height": "ارتفاع الموج",
+    "Weather Concern or Question": "استفسار أو قلق بشأن الطقس",
+    "Weather Score by Month": "تقييم الطقس حسب الشهر",
+    "What to Expect": "ما الذي تتوقعه",
+    "Wind (kt)": "الرياح (عقدة)",
+    "Your Details": "بياناتك",
+    "from": "من",
+    "per 20-minute briefing": "لكل إحاطة مدتها 20 دقيقة",
+    "stops": "محطات",
+    "70-100 Excellent": "70-100 ممتاز",
+    "50-69 Good": "50-69 جيد",
+    "30-49 Fair": "30-49 مقبول",
+    "0-29 Poor": "0-29 ضعيف",
+    "Bahamas": "البهاما",
+    "Mediterranean": "البحر المتوسط",
+    "Pacific": "المحيط الهادئ",
+    "Alaska": "ألاسكا",
+    "Bermuda": "برمودا",
+  },
+};
+
+export function translateStaticText(language: LanguageCode, source: string): string {
+  const fixedKey = (Object.keys(en) as TranslationKey[]).find((key) => en[key] === source);
+  if (fixedKey) return translations[language][fixedKey];
+  return ADDITIONAL_STATIC_PAGE_TEXT[source]?.[language] ?? STATIC_PAGE_TEXT[language]?.[source] ?? source;
+}

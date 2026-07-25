@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { translateStaticText } from "@/lib/translations";
 
 // ---- Types ----
 interface MonthData {
@@ -92,7 +93,8 @@ function MonthStrip({ months, selectedMonth, onSelect, portName }: {
   onSelect: (i: number) => void;
   portName: string;
 }) {
-  const { displayText } = useLanguage();
+  const { language } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(12,1fr)", gap: 3 }}>
@@ -130,7 +132,8 @@ function PortCard({ port, selectedMonth, onOpen, onSelectMonth }: {
   onOpen: (name: string) => void;
   onSelectMonth: (i: number) => void;
 }) {
-  const { displayText } = useLanguage();
+  const { language } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
   const displayMonth = selectedMonth !== null ? port.months[selectedMonth] : port.months.reduce((a, b) => b.score > a.score ? b : a);
   const best = port.months.reduce((a, b) => b.score > a.score ? b : a);
   const sc = ALASKA_PORTS.has(port.name) ? akScoreClass(displayMonth.score) : scoreClass(displayMonth.score);
@@ -206,7 +209,8 @@ function PortCard({ port, selectedMonth, onOpen, onSelectMonth }: {
 }
 
 function PortModal({ port, onClose }: { port: PortData; onClose: () => void }) {
-  const { displayText } = useLanguage();
+  const { language } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
   const best = port.months.reduce((a, b) => b.score > a.score ? b : a);
 
   return (
@@ -292,7 +296,8 @@ function PortModal({ port, onClose }: { port: PortData; onClose: () => void }) {
 // ---- Main Page ----
 export default function JamesPicks() {
   const [, navigate] = useLocation();
-  const { displayText } = useLanguage();
+  const { language } = useLanguage();
+  const displayText = (source: string) => translateStaticText(language, source);
   const [ports, setPorts] = useState<PortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
