@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
+import { getLanguageDefinition } from "../lib/translations";
 import { MapPin, Calendar, Plus, Trash2, ArrowLeft, Save, Share2, Anchor, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, X, ChevronDown, ChevronUp, Thermometer, Droplets, Wind, Waves } from "lucide-react";
 import { PORT_LIST } from "../data/ports";
 import { maritimeRoute, ensureMaritimeRoutesLoaded } from "../utils/maritimeRouting";
@@ -101,11 +103,11 @@ function generateId(): string {
   return Math.random().toString(36).slice(2, 9);
 }
 
-function formatDateDisplay(dateStr: string): string {
+function formatDateDisplay(dateStr: string, locale = "en-US"): string {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return dt.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" });
 }
 
 function getMoonPhase(dateStr: string): string {
@@ -486,6 +488,8 @@ function PortAutocomplete({
 // Forecast popup card
 // ============================================================
 function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClose: () => void; onSwitchStop?: (stop: PortStop, idx: number) => void }) {
+  const { displayText, language } = useLanguage();
+  const locale = getLanguageDefinition(language).locale;
   const phase = getMoonPhase(data.date);
   const [showHourly, setShowHourly] = useState(false);
   const [showFiveDay, setShowFiveDay] = useState(false);
@@ -504,7 +508,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
         const r = json.results;
         function fmtUtc(iso: string): string {
           const d = new Date(iso);
-          return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" });
+          return d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" });
         }
         setSunMoon({
           sunrise: fmtUtc(r.sunrise),
@@ -514,7 +518,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
         });
       })
       .catch(() => {});
-  }, [data.lat, data.lon, data.date]);
+  }, [data.lat, data.lon, data.date, locale]);
 
   const live = data.liveData;
 
@@ -530,7 +534,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-2 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div data-no-localize="true" className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-2 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         className="w-full max-w-2xl bg-slate-900 border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
         onClick={e => e.stopPropagation()}
@@ -544,7 +548,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 : <MapPin className="w-4 h-4 text-cyan-400" />}
               <span className="text-white font-bold text-lg">{data.portName}</span>
             </div>
-            <div className="text-white/50 text-sm mt-0.5">{formatDateDisplay(data.date)}</div>
+            <div className="text-white/50 text-sm mt-0.5">{formatDateDisplay(data.date, locale)}</div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex rounded-lg overflow-hidden border border-white/20 text-xs font-semibold">
@@ -558,7 +562,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 onClick={() => setIsMetric(true)}
                 className={`px-2.5 py-1.5 transition-colors ${isMetric ? "bg-cyan-500 text-slate-900" : "bg-white/5 text-white/50 hover:text-white/80"}`}
               >
-                Metric
+                {displayText("Metric")}
               </button>
             </div>
             <button onClick={onClose} className="text-white/40 hover:text-white p-1">
@@ -602,34 +606,34 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 {sunMoon.sunrise && (
                   <div className="flex items-center gap-2 text-amber-300">
                     <Sun className="w-5 h-5 flex-shrink-0" />
-                    <span className="text-white/50 w-16">Sunrise</span>
+                    <span className="text-white/50 w-16">{displayText("Sunrise")}</span>
                     <span className="font-bold">{sunMoon.sunrise}</span>
                   </div>
                 )}
                 {sunMoon.sunset && (
                   <div className="flex items-center gap-2 text-orange-300">
                     <Sun className="w-5 h-5 flex-shrink-0 opacity-60" />
-                    <span className="text-white/50 w-14">Sunset</span>
+                    <span className="text-white/50 w-14">{displayText("Sunset")}</span>
                     <span className="font-bold">{sunMoon.sunset}</span>
                   </div>
                 )}
                 {sunMoon.moonrise && (
                   <div className="flex items-center gap-2 text-slate-300">
                     <span className="text-xl leading-none flex-shrink-0">{moonEmoji(phase)}</span>
-                    <span className="text-white/50 w-16">Moonrise</span>
+                    <span className="text-white/50 w-16">{displayText("Moonrise")}</span>
                     <span className="font-bold">{sunMoon.moonrise}</span>
                   </div>
                 )}
                 {sunMoon.moonset && (
                   <div className="flex items-center gap-2 text-slate-400">
                     <span className="text-xl leading-none flex-shrink-0 opacity-60">{moonEmoji(phase)}</span>
-                    <span className="text-white/50 w-14">Moonset</span>
+                    <span className="text-white/50 w-14">{displayText("Moonset")}</span>
                     <span className="font-bold">{sunMoon.moonset}</span>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-white/30 text-xs">Loading sun &amp; moon times...</div>
+              <div className="text-white/30 text-xs">{displayText("Loading sun & moon times...")}</div>
             )}
           </div>
 
@@ -637,12 +641,12 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
           <div className="px-5 py-4 space-y-4">
 
             {data.loading && (
-              <div className="text-white/50 text-sm text-center py-4">Loading forecast...</div>
+              <div className="text-white/50 text-sm text-center py-4">{displayText("Loading forecast...")}</div>
             )}
 
             {!data.loading && isPastDate(data.date) && (
               <div className="text-white/50 text-sm text-center py-4 italic">
-                This day has already occurred. No weather forecast available.
+                {displayText("This day has already occurred. No weather forecast available.")}
               </div>
             )}
 
@@ -651,7 +655,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                  Live 16-Day Forecast
+                  {displayText("Live 16-Day Forecast")}
                 </div>
 
                 {/* Condition + temp */}
@@ -659,41 +663,43 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                   <SkyIcon condition={live.condition} className="w-12 h-12 text-amber-300" />
                   <div>
                     <div className="text-white font-black text-3xl">{dispTemp(live.maxF)} / {dispTemp(live.minF)}</div>
-                    <div className="text-white/60 text-base">{live.condition}</div>
+                    <div className="text-white/60 text-base">{displayText(live.condition)}</div>
                   </div>
                 </div>
 
                 {/* Atmosphere */}
-                <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Atmosphere</div>
+                <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">{displayText("Atmosphere")}</div>
                 <div className="grid grid-cols-2 gap-3 text-base">
                   {live.dewF != null && (
                     <div className="bg-white/5 rounded-xl px-4 py-3">
-                      <div className="text-white/50 text-xs">Dew Point</div>
+                      <div className="text-white/50 text-xs">{displayText("Dew Point")}</div>
                       <div className="text-white font-bold text-lg">{dispTemp(live.dewF!)}</div>
                     </div>
                   )}
                   {live.humidity != null && (
                     <div className="bg-white/5 rounded-xl px-4 py-3">
-                      <div className="text-white/50 text-xs">Humidity</div>
+                      <div className="text-white/50 text-xs">{displayText("Humidity")}</div>
                       <div className="text-white font-bold text-lg">{live.humidity}%</div>
                     </div>
                   )}
                 </div>
 
                 {/* Wind */}
-                <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Wind</div>
+                <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">{displayText("Wind")}</div>
                 <div className="grid grid-cols-3 gap-3 text-base">
                   <div className="bg-white/5 rounded-xl px-4 py-3">
-                    <div className="text-white/50 text-xs">Direction</div>
+                                          <div className="text-white/50 text-xs">{displayText("Direction")}</div>
+
                     <div className="text-cyan-300 font-bold text-lg">{live.windDir}</div>
                   </div>
                   <div className="bg-white/5 rounded-xl px-4 py-3">
-                    <div className="text-white/50 text-xs">Speed</div>
+                                          <div className="text-white/50 text-xs">{displayText("Speed")}</div>
+
                     <div className="text-cyan-300 font-bold text-lg">{dispWind(live.windKt)}</div>
                   </div>
                   {live.gustKt != null && (
                     <div className="bg-white/5 rounded-xl px-4 py-3">
-                      <div className="text-white/50 text-xs">Gusts</div>
+                      <div className="text-white/50 text-xs">{displayText("Gusts")}</div>
                       <div className="text-cyan-300 font-bold text-lg">{dispWind(live.gustKt!)}</div>
                     </div>
                   )}
@@ -702,18 +708,18 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 {/* Marine */}
                 {(live.waveHeightFt != null || live.swellFt != null) && (
                   <>
-                    <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Marine</div>
+                    <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">{displayText("Marine")}</div>
                     <div className="grid grid-cols-2 gap-3 text-base">
                       {live.waveHeightFt != null && (
                         <div className="bg-white/5 rounded-xl px-4 py-3">
-                          <div className="text-white/50 text-xs">Wave Height</div>
+                          <div className="text-white/50 text-xs">{displayText("Wave Height")}</div>
                           <div className="text-orange-300 font-bold text-lg">{dispHeight(live.waveHeightFt!)}</div>
                         </div>
                       )}
                       {live.swellFt != null && (
                         <div className="bg-white/5 rounded-xl px-4 py-3">
-                          <div className="text-white/50 text-xs">Swell</div>
-                          <div className="text-orange-300 font-bold text-lg">{dispHeight(live.swellFt!)}{live.swellDir ? ` from ${live.swellDir}` : ""}</div>
+                          <div className="text-white/50 text-xs">{displayText("Swell")}</div>
+                          <div className="text-orange-300 font-bold text-lg">{dispHeight(live.swellFt!)}{live.swellDir ? ` ${displayText("from")} ${live.swellDir}` : ""}</div>
                         </div>
                       )}
                     </div>
@@ -723,29 +729,29 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                 {/* Rain by time of day */}
                 {(live.rainMorning != null || live.rainAfternoon != null) && (
                   <>
-                    <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">Rain Chance by Period</div>
+                    <div className="text-white/50 text-sm font-semibold uppercase tracking-wider pt-1">{displayText("Rain Chance by Period")}</div>
                     <div className="grid grid-cols-2 gap-3 text-base">
                       {live.rainMorning != null && (
                         <div className="bg-white/5 rounded-xl px-4 py-3">
-                          <div className="text-white/50 text-xs">Morning</div>
+                          <div className="text-white/50 text-xs">{displayText("Morning")}</div>
                           <div className="text-blue-300 font-bold text-lg">{live.rainMorning}%</div>
                         </div>
                       )}
                       {live.rainAfternoon != null && (
                         <div className="bg-white/5 rounded-xl px-4 py-3">
-                          <div className="text-white/50 text-xs">Afternoon</div>
+                          <div className="text-white/50 text-xs">{displayText("Afternoon")}</div>
                           <div className="text-blue-300 font-bold text-lg">{live.rainAfternoon}%</div>
                         </div>
                       )}
                       {live.rainEvening != null && (
                         <div className="bg-white/5 rounded-xl px-4 py-3">
-                          <div className="text-white/50 text-xs">Evening</div>
+                          <div className="text-white/50 text-xs">{displayText("Evening")}</div>
                           <div className="text-blue-300 font-bold text-lg">{live.rainEvening}%</div>
                         </div>
                       )}
                       {live.rainOvernight != null && (
                         <div className="bg-white/5 rounded-xl px-4 py-3">
-                          <div className="text-white/50 text-xs">Overnight</div>
+                          <div className="text-white/50 text-xs">{displayText("Overnight")}</div>
                           <div className="text-blue-300 font-bold text-lg">{live.rainOvernight}%</div>
                         </div>
                       )}
@@ -760,8 +766,8 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                       className="w-full flex items-center justify-between px-4 py-3 text-cyan-300 font-semibold text-sm hover:bg-white/5 transition-colors"
                       onClick={() => setShowHourly(h => !h)}
                     >
-                      <span>24-Hour Forecast</span>
-                      <span className="text-white/40 text-xs">{showHourly ? "Hide" : "Show"}</span>
+                      <span>{displayText("24-Hour Forecast")}</span>
+                      <span className="text-white/40 text-xs">{displayText(showHourly ? "Hide" : "Show")}</span>
                     </button>
                     {showHourly && (
                       <div className="border-t border-white/10 divide-y divide-white/5">
@@ -771,7 +777,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                             <span className="text-white font-semibold">{dispTemp(hr.tempF)}</span>
                             <span className="text-cyan-300">{dispWind(hr.windKt)}</span>
                             <span className="text-blue-300">{hr.rainChance}%</span>
-                            <span className="text-white/60 text-right">{hr.condition}</span>
+                            <span className="text-white/60 text-right">{displayText(hr.condition)}</span>
                           </div>
                         ))}
                       </div>
@@ -786,20 +792,20 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
                       className="w-full flex items-center justify-between px-4 py-3 text-cyan-300 font-semibold text-sm hover:bg-white/5 transition-colors"
                       onClick={() => setShowFiveDay(f => !f)}
                     >
-                      <span>5-Day Forecast</span>
-                      <span className="text-white/40 text-xs">{showFiveDay ? "Hide" : "Show"}</span>
+                      <span>{displayText("5-Day Forecast")}</span>
+                      <span className="text-white/40 text-xs">{displayText(showFiveDay ? "Hide" : "Show")}</span>
                     </button>
                     {showFiveDay && (
                       <div className="border-t border-white/10 divide-y divide-white/5">
                         {live.sevenDay.map((day, i) => (
                           <div key={i} className={`flex items-center justify-between px-4 py-2 text-xs ${day.date === data.date ? "bg-cyan-400/10" : ""}`}>
                             <span className={`w-20 font-semibold ${day.date === data.date ? "text-cyan-300" : "text-white/70"}`}>
-                              {formatDateDisplay(day.date)}
+                              {formatDateDisplay(day.date, locale)}
                             </span>
                             <span className="text-white">{dispTemp(day.maxF)} / {dispTemp(day.minF)}</span>
                             <span className="text-cyan-300">{dispWind(day.windKt)} {day.windDir}</span>
                             <span className="text-blue-300">{day.rainChance}%</span>
-                            <span className="text-yellow-400/80 text-xs">({day.peakRainTimeOfDay})</span>
+                            <span className="text-yellow-400/80 text-xs">({displayText(day.peakRainTimeOfDay)})</span>
                           </div>
                         ))}
                       </div>
@@ -814,41 +820,41 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-white/70 text-xs font-semibold uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                  Climate Averages (beyond 16-day window)
+                  {displayText("Climate Averages (beyond 16-day window)")}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
                     <Thermometer className="w-6 h-6 text-amber-300 flex-shrink-0" />
                     <div>
-                      <div className="text-white/50 text-xs">Avg High / Low</div>
+                      <div className="text-white/50 text-xs">{displayText("Avg High / Low")}</div>
                       <div className="text-white font-bold text-lg">{dispTemp(data.climateData.hiF)} / {dispTemp(data.climateData.loF)}</div>
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
                     <Droplets className="w-6 h-6 text-blue-300 flex-shrink-0" />
                     <div>
-                      <div className="text-white/50 text-xs">Humidity</div>
+                      <div className="text-white/50 text-xs">{displayText("Humidity")}</div>
                       <div className="text-white font-bold text-lg">{data.climateData.hum}%</div>
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
                     <Wind className="w-6 h-6 text-cyan-300 flex-shrink-0" />
                     <div>
-                      <div className="text-white/50 text-xs">Wind</div>
+                      <div className="text-white/50 text-xs">{displayText("Wind")}</div>
                       <div className="text-cyan-300 font-bold text-lg">{dispWind(parseInt(data.climateData.windKt))} {data.climateData.windDir}</div>
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-xl px-4 py-3 flex items-center gap-3">
                     <CloudRain className="w-6 h-6 text-blue-300 flex-shrink-0" />
                     <div>
-                      <div className="text-white/50 text-xs">Rain Chance</div>
+                      <div className="text-white/50 text-xs">{displayText("Rain Chance")}</div>
                       <div className="text-blue-300 font-bold text-lg">{data.climateData.rain}%</div>
                     </div>
                   </div>
                   <div className="bg-white/5 rounded-xl px-4 py-3 col-span-2 flex items-center gap-3">
                     <Waves className="w-6 h-6 text-orange-300 flex-shrink-0" />
                     <div>
-                      <div className="text-white/50 text-xs">Avg Seas</div>
+                      <div className="text-white/50 text-xs">{displayText("Avg Seas")}</div>
                       <div className="text-orange-300 font-bold text-lg">{dispHeight(data.climateData.seaFt)}</div>
                     </div>
                   </div>
@@ -858,7 +864,7 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
 
             {!data.loading && !isPastDate(data.date) && !live && !data.climateData && (
               <div className="text-white/50 text-sm text-center py-4 italic">
-                No forecast data available for this location.
+                {displayText("No forecast data available for this location.")}
               </div>
             )}
 
@@ -873,6 +879,8 @@ function ForecastPopup({ data, onClose, onSwitchStop }: { data: PopupData; onClo
 // Main RouteMap page
 // ============================================================
 export default function RouteMap() {
+  const { displayText, t, language } = useLanguage();
+  const locale = getLanguageDefinition(language).locale;
   const [stops, setStops] = useState<PortStop[]>([
     { id: generateId(), portName: "", lat: null, lon: null, date: "", isSeaDay: false },
     { id: generateId(), portName: "", lat: null, lon: null, date: "", isSeaDay: false },
@@ -1238,7 +1246,7 @@ export default function RouteMap() {
     localStorage.setItem("routeMapItinerary", JSON.stringify(stops));
     // Write the explicit-save flag so the form reloads this itinerary on next visit
     localStorage.setItem("routeMapSaved", "true");
-    setSaveMsg("Saved!");
+    setSaveMsg(displayText("Saved!"));
     setTimeout(() => setSaveMsg(""), 2000);
   };
 
@@ -1251,14 +1259,14 @@ export default function RouteMap() {
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(stops))));
     const url = `${window.location.origin}/route-map?itinerary=${encoded}`;
     if (navigator.share) {
-      navigator.share({ title: "My Cruise Route -- My Cruising Weather", url }).catch(() => {});
+      navigator.share({ title: t("portSearch.plotRoute"), url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(url).then(() => {
-        setShareMsg("Link copied!");
+        setShareMsg(displayText("Link copied!"));
         setTimeout(() => setShareMsg(""), 2500);
       }).catch(() => {
         // Fallback: prompt with the URL if clipboard is not available
-        window.prompt("Copy this link to share your route:", url);
+        window.prompt(displayText("Copy this link to share your route:"), url);
       });
     }
   };
@@ -1266,23 +1274,20 @@ export default function RouteMap() {
   // ---- Render: input form ----
   if (!plotted) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white">
+      <div data-no-localize="true" className="min-h-screen bg-slate-950 text-white">
         <div className="max-w-xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
             <a href="/" className="flex items-center gap-2 text-white/50 hover:text-white text-sm mb-6 no-underline">
-              <ArrowLeft className="w-4 h-4" /> Back to Home
+              <ArrowLeft className="w-4 h-4" /> {displayText("Back to Home")}
             </a>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block" />
-              <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">Cruise Route Map</span>
+              <span className="text-white/50 text-xs tracking-widest uppercase font-semibold">{displayText("Cruise Route Map")}</span>
             </div>
-            <h1 className="text-white font-black text-3xl leading-tight">Plot Your</h1>
-            <h1 className="text-cyan-400 font-black text-3xl leading-tight">Cruise Route</h1>
-            <p className="text-white/50 text-sm mt-3 max-w-md">
-              Enter each port in your itinerary with its date. Dates will sort chronologically automatically.
-              Tap a port marker on the map to see the forecast.
-            </p>
+            <h1 className="text-white font-black text-3xl leading-tight">{t("portSearch.titleFirst")}</h1>
+            <h1 className="text-cyan-400 font-black text-3xl leading-tight">{t("portSearch.titleSecond")}</h1>
+            <p className="text-white/50 text-sm mt-3 max-w-md">{t("portSearch.description")}</p>
           </div>
 
           {/* Stops */}
@@ -1296,7 +1301,7 @@ export default function RouteMap() {
                       {idx + 1}
                     </span>
                     <span className="text-white/70 text-sm font-semibold">
-                      {idx === 0 ? "Departure Port" : `Destination ${idx}`}
+                      {idx === 0 ? t("portSearch.departurePort") : t("portSearch.destination", { number: idx })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1310,7 +1315,7 @@ export default function RouteMap() {
                       }`}
                     >
                       <Anchor className="w-3 h-3" />
-                      Sea Day
+                      {t("portSearch.seaDay")}
                     </button>
                     {stops.length > 1 && (
                       <button onClick={() => removeStop(stop.id)} className="text-white/30 hover:text-red-400 p-1">
@@ -1322,11 +1327,11 @@ export default function RouteMap() {
 
                 {/* Port input -- always editable; typing while Sea Day is active clears it */}
                 <PortAutocomplete
-                  value={stop.isSeaDay ? "Sea Day" : stop.portName}
+                  value={stop.isSeaDay ? t("portSearch.seaDay") : stop.portName}
                   onChange={val => {
                     // If Sea Day is active and user starts typing something other than "Sea Day", clear it
                     if (stop.isSeaDay) {
-                      const typed = val.replace(/^Sea Day/i, "").trim();
+                      const typed = val.replace(t("portSearch.seaDay"), "").trim();
                       if (typed.length > 0) {
                         updateStop(stop.id, { isSeaDay: false, portName: typed, lat: null, lon: null });
                       } else if (val === "") {
@@ -1337,7 +1342,7 @@ export default function RouteMap() {
                       handlePortChange(stop.id, val);
                     }
                   }}
-                  placeholder={stop.isSeaDay ? "Sea Day -- type to override" : "Type a port name..."}
+                  placeholder={stop.isSeaDay ? t("portSearch.seaDay") : t("portSearch.portPlaceholder")}
                   isSeaDay={stop.isSeaDay}
                 />
 
@@ -1364,7 +1369,7 @@ export default function RouteMap() {
             onClick={addStop}
             className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 transition-colors text-sm font-semibold"
           >
-            <Plus className="w-4 h-4" /> Add Another Port / Sea Day
+            <Plus className="w-4 h-4" /> {t("portSearch.addPort")}
           </button>
 
           {/* Load Saved Route button -- only shown when a previously saved route exists */}
@@ -1373,7 +1378,7 @@ export default function RouteMap() {
               onClick={handleLoadSaved}
               className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/20 transition-colors text-sm font-semibold"
             >
-              <Save className="w-4 h-4" /> Load Saved Route
+              <Save className="w-4 h-4" /> {displayText("Load Saved Route")}
             </button>
           )}
 
@@ -1383,7 +1388,7 @@ export default function RouteMap() {
             disabled={!stops.some(s => s.portName.trim() && s.date)}
             className="mt-6 w-full py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-900 font-black text-lg tracking-wide transition-colors shadow-lg shadow-cyan-500/20"
           >
-            Plot My Cruise Route
+            {t("portSearch.plotRoute")}
           </button>
         </div>
       </div>
@@ -1392,17 +1397,17 @@ export default function RouteMap() {
 
   // ---- Render: map view ----
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div data-no-localize="true" className="min-h-screen bg-slate-950 text-white flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-white/10 backdrop-blur-sm z-10 flex-shrink-0">
         <button
           onClick={handleBack}
           className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-semibold"
         >
-          <ArrowLeft className="w-4 h-4" /> Edit Route
+          <ArrowLeft className="w-4 h-4" /> {displayText("Edit Route")}
         </button>
         <span className="text-white font-bold text-sm">
-          {stops.filter(s => s.portName).length} stops
+          {stops.filter(s => s.portName).length} {displayText("stops")}
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -1413,8 +1418,8 @@ export default function RouteMap() {
             {saveMsg
               ? <span className="text-[#e8d5b0] text-sm font-bold">{saveMsg}</span>
               : <span className="flex items-baseline gap-1">
-                  <span className="text-[#e8d5b0] text-base font-bold">Save Route</span>
-                  <span className="text-[#a08860] text-xs font-medium">(Reload anytime for the latest forecast)</span>
+                  <span className="text-[#e8d5b0] text-base font-bold">{displayText("Save Route")}</span>
+                  <span className="text-[#a08860] text-xs font-medium">({displayText("Reload anytime for the latest forecast")})</span>
                 </span>
             }
           </button>
@@ -1426,8 +1431,8 @@ export default function RouteMap() {
             {shareMsg
               ? <span className="text-[#e8d5b0] text-sm font-bold">{shareMsg}</span>
               : <span className="flex items-baseline gap-1">
-                  <span className="text-[#e8d5b0] text-base font-bold">Share Route</span>
-                  <span className="text-[#a08860] text-xs font-medium">(Family and friends get the same forecast on their device)</span>
+                  <span className="text-[#e8d5b0] text-base font-bold">{displayText("Share Route")}</span>
+                  <span className="text-[#a08860] text-xs font-medium">({displayText("Family and friends get the same forecast on their device")})</span>
                 </span>
             }
           </button>
@@ -1439,7 +1444,7 @@ export default function RouteMap() {
 
       {/* Itinerary strip below map */}
       <div className="bg-slate-900/95 border-t border-white/10 px-4 py-3 flex-shrink-0">
-        <div className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Tap a marker to see the forecast</div>
+        <div className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">{displayText("Tap a marker to see the forecast")}</div>
         <div className="flex gap-3 overflow-x-auto pb-1">
           {stops.filter(s => s.portName).map((stop, idx) => (
             <button
@@ -1456,7 +1461,7 @@ export default function RouteMap() {
               <span className="text-white text-xs font-semibold text-center leading-tight max-w-[80px] truncate">{stop.portName}</span>
               {stop.date && (
                 <span className="text-white/40 text-[10px] text-center">
-                  {formatDateDisplay(stop.date)}
+                  {formatDateDisplay(stop.date, locale)}
                 </span>
               )}
             </button>

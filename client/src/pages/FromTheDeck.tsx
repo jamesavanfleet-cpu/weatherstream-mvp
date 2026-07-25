@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Camera, X, ChevronLeft, ChevronRight, Mail } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const SUBMIT_EMAIL = "jamesavanfleet@gmail.com";
 
@@ -82,9 +83,11 @@ const PHOTOS: GalleryPhoto[] = [
 ];
 
 function SubmitBanner({ compact = false }: { compact?: boolean }) {
+  const { t } = useLanguage();
   const mailtoHref = `mailto:${SUBMIT_EMAIL}?subject=${encodeURIComponent(SUBMIT_SUBJECT)}&body=${SUBMIT_BODY}`;
   return (
     <div
+      data-no-localize="true"
       style={{
         background: compact ? "rgba(13,21,32,0.7)" : "rgba(13,21,32,0.9)",
         border: "1px solid rgba(245,158,11,0.3)",
@@ -99,10 +102,10 @@ function SubmitBanner({ compact = false }: { compact?: boolean }) {
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: compact ? "1rem" : "1.15rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.04em" }}>
-          Submit Your Photo
+          {t("fromDeck.submitTitle")}
         </div>
         <div style={{ fontSize: "0.85rem", color: "#7B9BB5", marginTop: 3 }}>
-          Your weather photos at sea, in port, and around the ship
+          {t("fromDeck.submitBody")}
         </div>
       </div>
       <a
@@ -128,13 +131,14 @@ function SubmitBanner({ compact = false }: { compact?: boolean }) {
         onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
       >
         <Mail size={15} />
-        Send Us Your Photo
+        {t("fromDeck.submitAction")}
       </a>
     </div>
   );
 }
 
 export default function FromTheDeck() {
+  const { t } = useLanguage();
   const [, navigate] = useLocation();
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
@@ -177,6 +181,7 @@ export default function FromTheDeck() {
         zIndex: 40,
       }}>
         <button
+          data-no-localize="true"
           onClick={() => navigate("/")}
           style={{
             background: "none",
@@ -196,11 +201,11 @@ export default function FromTheDeck() {
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path d="M7 1L3 5l4 4" stroke="#7B9BB5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          HOME
+          {t("fromDeck.home")}
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.08em" }}>
-            FROM THE DECK
+          <div data-no-localize="true" style={{ fontSize: "1.2rem", fontWeight: 700, color: "#E8F4FF", letterSpacing: "0.08em" }}>
+            {t("fromDeck.title")}
           </div>
         </div>
       </div>
@@ -259,7 +264,7 @@ export default function FromTheDeck() {
                 <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#E8F4FF", lineHeight: 1.3, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                   <span>{photo.ship}</span>
                   {photo.photographer && (
-                    <span style={{ fontSize: "0.68rem", fontWeight: 400, color: "#a0b4c8" }}>Photo: {photo.photographer}</span>
+                    <span data-no-localize="true" style={{ fontSize: "0.68rem", fontWeight: 400, color: "#a0b4c8" }}>{t("fromDeck.photoBy", { name: photo.photographer })}</span>
                   )}
                 </div>
                 {photo.line && (
@@ -296,6 +301,7 @@ export default function FromTheDeck() {
         >
           {/* Close */}
           <button
+            data-no-localize="true"
             onClick={closeLightbox}
             style={{
               position: "absolute",
@@ -313,12 +319,15 @@ export default function FromTheDeck() {
               color: "#E8F4FF",
               zIndex: 10,
             }}
+            aria-label={t("fromDeck.closeViewer")}
+            title={t("fromDeck.closeViewer")}
           >
             <X size={20} />
           </button>
 
           {/* Prev */}
           <button
+            data-no-localize="true"
             onClick={e => { e.stopPropagation(); goPrev(); }}
             style={{
               position: "absolute",
@@ -337,12 +346,15 @@ export default function FromTheDeck() {
               color: "#E8F4FF",
               zIndex: 10,
             }}
+            aria-label={t("fromDeck.previousPhoto")}
+            title={t("fromDeck.previousPhoto")}
           >
             <ChevronLeft size={24} />
           </button>
 
           {/* Next */}
           <button
+            data-no-localize="true"
             onClick={e => { e.stopPropagation(); goNext(); }}
             style={{
               position: "absolute",
@@ -361,6 +373,8 @@ export default function FromTheDeck() {
               color: "#E8F4FF",
               zIndex: 10,
             }}
+            aria-label={t("fromDeck.nextPhoto")}
+            title={t("fromDeck.nextPhoto")}
           >
             <ChevronRight size={24} />
           </button>
@@ -401,7 +415,7 @@ export default function FromTheDeck() {
               <div style={{ fontSize: "1rem", fontWeight: 700, color: "#E8F4FF", display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                 <span>{activePh.ship}</span>
                 {activePh.photographer && (
-                  <span style={{ fontSize: "0.78rem", fontWeight: 400, color: "#a0b4c8" }}>Photo: {activePh.photographer}</span>
+                  <span data-no-localize="true" style={{ fontSize: "0.78rem", fontWeight: 400, color: "#a0b4c8" }}>{t("fromDeck.photoBy", { name: activePh.photographer })}</span>
                 )}
               </div>
               <div style={{ display: "flex", gap: 16, marginTop: 3, flexWrap: "wrap" }}>
@@ -413,8 +427,8 @@ export default function FromTheDeck() {
                   <span style={{ fontSize: "0.82rem", color: "#a0b4c8", fontStyle: "italic" }}>{activePh.caption}</span>
                 )}
               </div>
-              <div style={{ fontSize: "0.75rem", color: "#3a5060", marginTop: 6 }}>
-                {lightboxIdx + 1} of {PHOTOS.length} &nbsp;|&nbsp; Use arrow keys or buttons to navigate &nbsp;|&nbsp; Press Esc to close
+              <div data-no-localize="true" style={{ fontSize: "0.75rem", color: "#3a5060", marginTop: 6 }}>
+                {t("fromDeck.lightboxProgress", { current: lightboxIdx + 1, total: PHOTOS.length })} &nbsp;|&nbsp; {t("fromDeck.lightboxNavigate")} &nbsp;|&nbsp; {t("fromDeck.lightboxClose")}
               </div>
             </div>
           </div>
