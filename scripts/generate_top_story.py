@@ -385,7 +385,7 @@ def write_story(top: dict, runner_up: dict | None, group_label: str) -> tuple[st
     payload = json.dumps({
         "model": GROQ_MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 4000,  # raised -- reasoning models (gpt-5-mini) use ~2600 reasoning tokens before producing output; must be 4000+
+        "max_completion_tokens": 4000,  # raised -- reasoning models (gpt-5-mini) use ~2600 reasoning tokens before producing output; must be 4000+; max_completion_tokens required (not max_tokens) for GPT reasoning model proxy compatibility
         "temperature": 0.6,
     }).encode()
 

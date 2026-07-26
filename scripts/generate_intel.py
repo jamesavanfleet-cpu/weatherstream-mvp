@@ -822,7 +822,7 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ],
-        "max_tokens": 4000,  # raised from 400 -- reasoning models (gpt-5-mini) use ~2600 reasoning tokens before producing output; must be 4000+ to get any visible content
+        "max_completion_tokens": 4000,  # raised from 400 -- reasoning models (gpt-5-mini) use ~2600 reasoning tokens before producing output; must be 4000+ to get any visible content; max_completion_tokens required (not max_tokens) for GPT reasoning model proxy compatibility
         "temperature": 0.7,
     }).encode()
 
