@@ -1,269 +1,6 @@
 {
   "runs": [
     {
-      "run_timestamp": "2026-04-21T23:07:35.435877",
-      "sailings_checked": 66,
-      "changes": [
-        {
-          "type": "FIXED",
-          "ship": "Icon of the Seas",
-          "departure_date": "2026-05-09",
-          "was": "Miami, Perfect Day, Miami",
-          "now": "Miami, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Perfect Day at CocoCay, Miami",
-          "detail": "FIXED Icon of the Seas 2026-05-09: was [Miami, Perfect Day, Miami] -> now [Miami, At Sea, Perfect Day at CocoCay, Roatan, Cozumel, At Sea, Perfect Day at CocoCay, Miami]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Oasis of the Seas",
-          "departure_date": "2026-05-15",
-          "was": "Cape Liberty, Perfect Day Cruise, Cape Liberty",
-          "now": "Cape Liberty Bayonne, At Sea, At Sea, Nassau, Perfect Day at CocoCay, At Sea, At Sea, Cape Liberty Bayonne",
-          "detail": "FIXED Oasis of the Seas 2026-05-15: was [Cape Liberty, Perfect Day Cruise, Cape Liberty] -> now [Cape Liberty Bayonne, At Sea, At Sea, Nassau, Perfect Day at CocoCay, At Sea, At Sea, Cape Liberty Bayonne]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Mariner of the Seas",
-          "departure_date": "2026-05-02",
-          "was": "Galveston, Cruise, Galveston",
-          "now": "Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston",
-          "detail": "FIXED Mariner of the Seas 2026-05-02: was [Galveston, Cruise, Galveston] -> now [Galveston, At Sea, Perfect Day at CocoCay, Cozumel, At Sea, Galveston]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Navigator of the Seas",
-          "departure_date": "2026-05-08",
-          "was": "Los Angeles, Cabo, Vallarta Mazatlan Cruise, Los Angeles",
-          "now": "Los Angeles, At Sea, Cabo San Lucas, Mazatlan, Puerto Vallarta, At Sea, At Sea, Los Angeles",
-          "detail": "FIXED Navigator of the Seas 2026-05-08: was [Los Angeles, Cabo, Vallarta Mazatlan Cruise, Los Angeles] -> now [Los Angeles, At Sea, Cabo San Lucas, Mazatlan, Puerto Vallarta, At Sea, At Sea, Los Angeles]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Wonder of the Seas",
-          "departure_date": "2026-04-27",
-          "was": "Miami, Perfect Day Cruise, Miami",
-          "now": "Miami, Perfect Day at CocoCay, Nassau, At Sea, Miami",
-          "detail": "FIXED Wonder of the Seas 2026-04-27: was [Miami, Perfect Day Cruise, Miami] -> now [Miami, Perfect Day at CocoCay, Nassau, At Sea, Miami]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Adventure of the Seas",
-          "departure_date": "2026-05-09",
-          "was": "Port Canaveral, Perfect Day, Port Canaveral",
-          "now": "Port Canaveral, At Sea, Falmouth, Jamaica, Grand Cayman, At Sea, Perfect Day at CocoCay, Port Canaveral",
-          "detail": "FIXED Adventure of the Seas 2026-05-09: was [Port Canaveral, Perfect Day, Port Canaveral] -> now [Port Canaveral, At Sea, Falmouth, Jamaica, Grand Cayman, At Sea, Perfect Day at CocoCay, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Freedom of the Seas",
-          "departure_date": "2026-05-02",
-          "was": "Miami, Cruise, Miami",
-          "now": "Miami, Nassau, At Sea, Puerto Plata, At Sea, Miami",
-          "detail": "FIXED Freedom of the Seas 2026-05-02: was [Miami, Cruise, Miami] -> now [Miami, Nassau, At Sea, Puerto Plata, At Sea, Miami]"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-04-25",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-04-25: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-05-02",
-          "description": "7 days, round-trip Western Caribbean",
-          "detail": "ADDED Mardi Gras 2026-05-02: 7 days, round-trip Western Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-05-09",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-05-09: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Carnival Vista",
-          "departure_date": "2026-05-10",
-          "was": "Port Canaveral, Port Canaveral",
-          "now": "Port Canaveral, Celebration Key, Half Moon Cay, At Sea, Puerto Plata, At Sea, Port Canaveral",
-          "detail": "FIXED Carnival Vista 2026-05-10: was [Port Canaveral, Port Canaveral] -> now [Port Canaveral, Celebration Key, Half Moon Cay, At Sea, Puerto Plata, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Carnival Breeze",
-          "departure_date": "2026-04-30",
-          "was": "Galveston, Galveston",
-          "now": "Galveston, At Sea, Cozumel, At Sea, Galveston",
-          "detail": "FIXED Carnival Breeze 2026-04-30: was [Galveston, Galveston] -> now [Galveston, At Sea, Cozumel, At Sea, Galveston]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Carnival Freedom",
-          "departure_date": "2026-04-30",
-          "was": "Port Canaveral, Port Canaveral",
-          "now": "Port Canaveral, At Sea, Half Moon Cay, Celebration Key, Port Canaveral",
-          "detail": "FIXED Carnival Freedom 2026-04-30: was [Port Canaveral, Port Canaveral] -> now [Port Canaveral, At Sea, Half Moon Cay, Celebration Key, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Celebrity Apex",
-          "departure_date": "2026-05-16",
-          "was": "Southampton, Best of Scandinavia, Southampton",
-          "now": "Southampton, At Sea, Copenhagen, At Sea, At Sea, Helsinki, Tallinn, Stockholm, Visby, At Sea, Oslo, Kristiansand, At Sea, Southampton",
-          "detail": "FIXED Celebrity Apex 2026-05-16: was [Southampton, Best of Scandinavia, Southampton] -> now [Southampton, At Sea, Copenhagen, At Sea, At Sea, Helsinki, Tallinn, Stockholm, Visby, At Sea, Oslo, Kristiansand, At Sea, Southampton]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Disney Wish",
-          "departure_date": "2026-04-27",
-          "was": "Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral",
-          "now": "Port Canaveral, Castaway Cay, Disney Lookout Cay, At Sea, Port Canaveral",
-          "detail": "FIXED Disney Wish 2026-04-27: was [Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral] -> now [Port Canaveral, Castaway Cay, Disney Lookout Cay, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Norwegian Getaway",
-          "departure_date": "2026-04-27",
-          "was": "Miami, Miami Great Stirrup Cay Nassau, Miami",
-          "now": "Miami, Great Stirrup Cay, At Sea, Nassau, Miami",
-          "detail": "FIXED Norwegian Getaway 2026-04-27: was [Miami, Miami Great Stirrup Cay Nassau, Miami] -> now [Miami, Great Stirrup Cay, At Sea, Nassau, Miami]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Caribbean Princess",
-          "departure_date": "2026-05-17",
-          "was": "Port Canaveral, with Turks Caicos, Port Canaveral",
-          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
-          "detail": "FIXED Caribbean Princess 2026-05-17: was [Port Canaveral, with Turks Caicos, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Scarlet Lady",
-          "departure_date": "2026-05-17",
-          "was": "Piraeus-Athens, Greek Island Glow, Piraeus-Athens",
-          "now": "Piraeus-Athens, Santorini Island, Rhodes Island, Bodrum, At Sea, Mykonos Island, At Sea, Piraeus-Athens",
-          "detail": "FIXED Scarlet Lady 2026-05-17: was [Piraeus-Athens, Greek Island Glow, Piraeus-Athens] -> now [Piraeus-Athens, Santorini Island, Rhodes Island, Bodrum, At Sea, Mykonos Island, At Sea, Piraeus-Athens]"
-        }
-      ],
-      "errors": []
-    },
-    {
-      "run_timestamp": "2026-04-28T23:10:07.850921",
-      "sailings_checked": 66,
-      "changes": [
-        {
-          "type": "FIXED",
-          "ship": "Icon of the Seas",
-          "departure_date": "2026-05-16",
-          "was": "Miami, Perfect Day, Miami",
-          "now": "Miami, At Sea, At Sea, St. Maarten, St. Thomas, At Sea, Perfect Day at CocoCay, Miami",
-          "detail": "FIXED Icon of the Seas 2026-05-16: was [Miami, Perfect Day, Miami] -> now [Miami, At Sea, At Sea, St. Maarten, St. Thomas, At Sea, Perfect Day at CocoCay, Miami]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Mariner of the Seas",
-          "departure_date": "2026-05-07",
-          "was": "Galveston, Cruise, Galveston",
-          "now": "Galveston, At Sea, Cozumel, At Sea, Galveston",
-          "detail": "FIXED Mariner of the Seas 2026-05-07: was [Galveston, Cruise, Galveston] -> now [Galveston, At Sea, Cozumel, At Sea, Galveston]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Navigator of the Seas",
-          "departure_date": "2026-05-15",
-          "was": "Los Angeles, Ensenada, Cabo Mazatlan, Los Angeles",
-          "now": "Los Angeles, Ensenada, At Sea, Cabo San Lucas, Mazatlan, At Sea, At Sea, Los Angeles",
-          "detail": "FIXED Navigator of the Seas 2026-05-15: was [Los Angeles, Ensenada, Cabo Mazatlan, Los Angeles] -> now [Los Angeles, Ensenada, At Sea, Cabo San Lucas, Mazatlan, At Sea, At Sea, Los Angeles]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Wonder of the Seas",
-          "departure_date": "2026-05-08",
-          "was": "Miami, Perfect Day Cruise, Miami",
-          "now": "Miami, Nassau, Perfect Day at CocoCay, Miami",
-          "detail": "FIXED Wonder of the Seas 2026-05-08: was [Miami, Perfect Day Cruise, Miami] -> now [Miami, Nassau, Perfect Day at CocoCay, Miami]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Adventure of the Seas",
-          "departure_date": "2026-05-15",
-          "was": "Port Canaveral, Perfect Day, Port Canaveral",
-          "now": "Port Canaveral, At Sea, At Sea, Curacao, Aruba, At Sea, At Sea, Perfect Day at CocoCay, Port Canaveral",
-          "detail": "FIXED Adventure of the Seas 2026-05-15: was [Port Canaveral, Perfect Day, Port Canaveral] -> now [Port Canaveral, At Sea, At Sea, Curacao, Aruba, At Sea, At Sea, Perfect Day at CocoCay, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Freedom of the Seas",
-          "departure_date": "2026-05-07",
-          "was": "Miami, Cruise, Miami",
-          "now": "Miami, At Sea, Grand Turk, At Sea, Miami",
-          "detail": "FIXED Freedom of the Seas 2026-05-07: was [Miami, Cruise, Miami] -> now [Miami, At Sea, Grand Turk, At Sea, Miami]"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-05-02",
-          "description": "7 days, round-trip Western Caribbean",
-          "detail": "ADDED Mardi Gras 2026-05-02: 7 days, round-trip Western Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-05-09",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-05-09: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-05-16",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-05-16: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Carnival Breeze",
-          "departure_date": "2026-05-09",
-          "was": "Galveston, Galveston",
-          "now": "Galveston, At Sea, Cozumel, Progreso, At Sea, Galveston",
-          "detail": "FIXED Carnival Breeze 2026-05-09: was [Galveston, Galveston] -> now [Galveston, At Sea, Cozumel, Progreso, At Sea, Galveston]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Carnival Freedom",
-          "departure_date": "2026-05-09",
-          "was": "Port Canaveral, Port Canaveral",
-          "now": "Port Canaveral, Nassau, Half Moon Cay, Celebration Key, At Sea, Port Canaveral",
-          "detail": "FIXED Carnival Freedom 2026-05-09: was [Port Canaveral, Port Canaveral] -> now [Port Canaveral, Nassau, Half Moon Cay, Celebration Key, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Celebrity Apex",
-          "departure_date": "2026-05-29",
-          "description": "8 days, round-trip Spain and Portugal",
-          "detail": "ADDED Celebrity Apex 2026-05-29: 8 days, round-trip Spain and Portugal"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Disney Wish",
-          "departure_date": "2026-05-04",
-          "was": "Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral",
-          "now": "Port Canaveral, Nassau, Castaway Cay, At Sea, Port Canaveral",
-          "detail": "FIXED Disney Wish 2026-05-04: was [Port Canaveral, Bahamian Cruise From Port Canaveral, Port Canaveral] -> now [Port Canaveral, Nassau, Castaway Cay, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Norwegian Getaway",
-          "departure_date": "2026-05-04",
-          "was": "Miami, Miami Great Stirrup Cay Nassau, Miami",
-          "now": "Miami, Great Stirrup Cay, At Sea, Nassau, Miami",
-          "detail": "FIXED Norwegian Getaway 2026-05-04: was [Miami, Miami Great Stirrup Cay Nassau, Miami] -> now [Miami, Great Stirrup Cay, At Sea, Nassau, Miami]"
-        }
-      ],
-      "errors": []
-    },
-    {
       "run_timestamp": "2026-05-01T23:09:14.356648",
       "sailings_checked": 66,
       "changes": [
@@ -2266,6 +2003,189 @@
           "departure_date": "2026-08-09",
           "description": "7 days, round-trip Western Caribbean Msc Seascape Galveston Tx",
           "detail": "ADDED MSC Seascape 2026-08-09: 7 days, round-trip Western Caribbean Msc Seascape Galveston Tx"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "run_timestamp": "2026-07-28T23:09:47.498879",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "ADDED",
+          "ship": "Icon of the Seas",
+          "departure_date": "2026-08-15",
+          "description": "7 days, round-trip Western Caribbean Icon Of The Seas Miami Fl",
+          "detail": "ADDED Icon of the Seas 2026-08-15: 7 days, round-trip Western Caribbean Icon Of The Seas Miami Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Allure of the Seas",
+          "departure_date": "2026-08-16",
+          "description": "6 days, round-trip Eastern Caribbean Allure Of The Seas Fort Lauderdale Port Everglades Fl",
+          "detail": "ADDED Allure of the Seas 2026-08-16: 6 days, round-trip Eastern Caribbean Allure Of The Seas Fort Lauderdale Port Everglades Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-08-03",
+          "description": "5 days, round-trip Western Caribbean Mariner Of The Seas Galveston Tx",
+          "detail": "ADDED Mariner of the Seas 2026-08-03: 5 days, round-trip Western Caribbean Mariner Of The Seas Galveston Tx"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-08-08",
+          "description": "5 days, round-trip Western Caribbean Mariner Of The Seas Galveston Tx",
+          "detail": "ADDED Mariner of the Seas 2026-08-08: 5 days, round-trip Western Caribbean Mariner Of The Seas Galveston Tx"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Navigator of the Seas",
+          "departure_date": "2026-08-14",
+          "description": "7 days, round-trip Mexico Navigator Of The Seas Los Angeles Ca",
+          "detail": "ADDED Navigator of the Seas 2026-08-14: 7 days, round-trip Mexico Navigator Of The Seas Los Angeles Ca"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-07-31",
+          "description": "3 days, round-trip 3 Night Bahamas and Perfect Day Cruise",
+          "detail": "ADDED Wonder of the Seas 2026-07-31: 3 days, round-trip 3 Night Bahamas and Perfect Day Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-08-03",
+          "description": "4 days, round-trip 4 Night Perfect Day at CocoCay and Bahamas Cruise",
+          "detail": "ADDED Wonder of the Seas 2026-08-03: 4 days, round-trip 4 Night Perfect Day at CocoCay and Bahamas Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Adventure of the Seas",
+          "departure_date": "2026-08-15",
+          "description": "6 days, round-trip Eastern Caribbean Adventure Of The Seas Port Canaveral Orlando Fl",
+          "detail": "ADDED Adventure of the Seas 2026-08-15: 6 days, round-trip Eastern Caribbean Adventure Of The Seas Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Freedom of the Seas",
+          "departure_date": "2026-08-08",
+          "description": "5 days, round-trip Eastern Caribbean Freedom Of The Seas Miami Fl",
+          "detail": "ADDED Freedom of the Seas 2026-08-08: 5 days, round-trip Eastern Caribbean Freedom Of The Seas Miami Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-08-01",
+          "description": "7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl",
+          "detail": "ADDED Mardi Gras 2026-08-01: 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-08-08",
+          "description": "7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl",
+          "detail": "ADDED Mardi Gras 2026-08-08: 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-08-15",
+          "description": "7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl",
+          "detail": "ADDED Mardi Gras 2026-08-15: 7 days, round-trip Eastern Caribbean Mardi Gras Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-08-08",
+          "description": "8 days, round-trip Eastern Caribbean Carnival Vista Port Canaveral Orlando Fl",
+          "detail": "ADDED Carnival Vista 2026-08-08: 8 days, round-trip Eastern Caribbean Carnival Vista Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-08-16",
+          "description": "6 days, round-trip Eastern Caribbean Carnival Vista Port Canaveral Orlando Fl",
+          "detail": "ADDED Carnival Vista 2026-08-16: 6 days, round-trip Eastern Caribbean Carnival Vista Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-08-06",
+          "description": "4 days, round-trip Western Caribbean Carnival Breeze Galveston Tx",
+          "detail": "ADDED Carnival Breeze 2026-08-06: 4 days, round-trip Western Caribbean Carnival Breeze Galveston Tx"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Freedom",
+          "departure_date": "2026-08-06",
+          "description": "4 days, round-trip Eastern Caribbean Carnival Freedom Port Canaveral Orlando Fl",
+          "detail": "ADDED Carnival Freedom 2026-08-06: 4 days, round-trip Eastern Caribbean Carnival Freedom Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-08-09",
+          "description": "7 days, round-trip Western Caribbean Celebrity Beyond Miami Fl",
+          "detail": "ADDED Celebrity Beyond 2026-08-09: 7 days, round-trip Western Caribbean Celebrity Beyond Miami Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Apex",
+          "departure_date": "2026-08-22",
+          "description": "7 days, round-trip Norwegian Fjords Celebrity Apex Southampton",
+          "detail": "ADDED Celebrity Apex 2026-08-22: 7 days, round-trip Norwegian Fjords Celebrity Apex Southampton"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-08-03",
+          "description": "4 days, round-trip 4 Night Bahamas Cruise",
+          "detail": "ADDED Disney Wish 2026-08-03: 4 days, round-trip 4 Night Bahamas Cruise"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-08-09",
+          "description": "7 days, round-trip Alaska Norwegian Encore Seattle Wa",
+          "detail": "ADDED Norwegian Encore 2026-08-09: 7 days, round-trip Alaska Norwegian Encore Seattle Wa"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-07-31",
+          "description": "3 days, round-trip Bahamas Norwegian Getaway Miami Fl",
+          "detail": "ADDED Norwegian Getaway 2026-07-31: 3 days, round-trip Bahamas Norwegian Getaway Miami Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-08-03",
+          "description": "4 days, round-trip Bahamas Norwegian Getaway Miami Fl",
+          "detail": "ADDED Norwegian Getaway 2026-08-03: 4 days, round-trip Bahamas Norwegian Getaway Miami Fl"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-08-02",
+          "description": "14 days, round-trip Caribbean Princess Port Canaveral Orlando Fl",
+          "detail": "ADDED Caribbean Princess 2026-08-02: 14 days, round-trip Caribbean Princess Port Canaveral Orlando Fl"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-08-02",
+          "was": "Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-08-02: was [Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Scarlet Lady",
+          "departure_date": "2026-08-22",
+          "description": "9 days, round-trip 9 Night Italy and French Riviera Cruise",
+          "detail": "ADDED Scarlet Lady 2026-08-22: 9 days, round-trip 9 Night Italy and French Riviera Cruise"
         }
       ],
       "errors": []
