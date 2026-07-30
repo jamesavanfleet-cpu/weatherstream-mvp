@@ -8,11 +8,14 @@ Each story starts directly with the weather content -- no opener phrase.
 Outputs: client/public/top_story.json
 """
 
-import asyncio, concurrent.futures, json, math, os, sys, time, urllib.request, urllib.error
+import asyncio, concurrent.futures, json, math, os, subprocess, sys, time, urllib.request, urllib.error
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-import aiohttp
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None
 
 try:
     import httpx as _httpx
@@ -20,9 +23,19 @@ try:
 except ImportError:
     _USE_HTTPX = False
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+# Prefer the established Groq production path. The existing Manus-scheduled job
+# can fall back to its already injected OpenAI-compatible runtime when Groq is
+# unavailable, without introducing a new credential or external scheduler.
+_USING_BUILTIN_RUNTIME = not os.environ.get("GROQ_API_KEY") and bool(os.environ.get("OPENAI_API_KEY"))
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+GROQ_BASE_URL = (
+    os.environ.get("GROQ_BASE_URL")
+    or os.environ.get("OPENAI_API_BASE")
+    or "https://api.groq.com/openai/v1"
+)
+GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
+    "gpt-5-mini" if _USING_BUILTIN_RUNTIME else "llama-3.3-70b-versatile"
+)
 
 
 def _format_rain_prob(value) -> str:
@@ -268,7 +281,29 @@ def impact_score(data: dict) -> float:
     return score
 
 # -- Async fetch ---------------------------------------------------------------
-async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
+def _curl_fetch_json(url: str, timeout: int = 20, retries: int = 2) -> dict:
+    """Use the existing system curl fallback when optional aiohttp is unavailable."""
+    result = subprocess.run(
+        [
+            "curl", "-fsSL", "--max-time", str(timeout),
+            "--retry", str(retries), "--retry-delay", "2", "--retry-all-errors", url,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if not result.stdout.strip():
+        raise RuntimeError(f"curl failed rc={result.returncode}: {result.stderr.strip()[:160]}")
+    return json.loads(result.stdout)
+
+
+async def _fetch_json(session, url: str) -> dict:
+    if session is None:
+        return await asyncio.to_thread(_curl_fetch_json, url)
+    async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as response:
+        return await response.json()
+
+
+async def fetch_port(session, port: dict) -> dict:
     lat, lon = port["lat"], port["lon"]
     weather_url = (
         f"https://api.open-meteo.com/v1/forecast"
@@ -285,12 +320,11 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
     result = {**port, "daily_wind_max": [], "daily_wind_dir": [], "daily_rain": [],
               "daily_wave_max": [], "daily_swell_period": [], "daily_swell_dir": []}
     try:
-        async with session.get(weather_url, timeout=aiohttp.ClientTimeout(total=15)) as r:
-            w = await r.json()
-            d = w.get("daily", {})
-            result["daily_wind_max"] = d.get("wind_speed_10m_max", [])
-            result["daily_wind_dir"] = d.get("wind_direction_10m_dominant", [])
-            result["daily_dates"]    = d.get("time", [])
+        w = await _fetch_json(session, weather_url)
+        d = w.get("daily", {})
+        result["daily_wind_max"] = d.get("wind_speed_10m_max", [])
+        result["daily_wind_dir"] = d.get("wind_direction_10m_dominant", [])
+        result["daily_dates"]    = d.get("time", [])
     except Exception as e:
         print(f"  Weather fetch failed for {port['name']}: {e}", file=sys.stderr)
 
@@ -319,20 +353,21 @@ async def fetch_port(session: aiohttp.ClientSession, port: dict) -> dict:
         print(f"  PoP fetch failed for {port['name']}: {e}", file=sys.stderr)
 
     try:
-        async with session.get(marine_url, timeout=aiohttp.ClientTimeout(total=15)) as r:
-            m = await r.json()
-            md = m.get("daily", {})
-            result["daily_wave_max"]     = md.get("wave_height_max", [])
-            result["daily_swell_period"] = md.get("swell_wave_period_max", [])
-            result["daily_swell_dir"]    = md.get("swell_wave_direction_dominant", [])
+        m = await _fetch_json(session, marine_url)
+        md = m.get("daily", {})
+        result["daily_wave_max"]     = md.get("wave_height_max", [])
+        result["daily_swell_period"] = md.get("swell_wave_period_max", [])
+        result["daily_swell_dir"]    = md.get("swell_wave_direction_dominant", [])
     except Exception as e:
         print(f"  Marine fetch failed for {port['name']}: {e}", file=sys.stderr)
 
     return result
 
 async def fetch_all() -> list[dict]:
+    if aiohttp is None:
+        return await asyncio.gather(*(fetch_port(None, port) for port in PORTS))
     async with aiohttp.ClientSession() as session:
-        tasks = [fetch_port(session, p) for p in PORTS]
+        tasks = [fetch_port(session, port) for port in PORTS]
         return await asyncio.gather(*tasks)
 
 # -- Groq story writer ---------------------------------------------------------

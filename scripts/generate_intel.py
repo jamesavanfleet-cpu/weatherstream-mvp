@@ -40,9 +40,19 @@ try:
 except ImportError:
     _USE_HTTPX = False
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+# Prefer the established Groq production path. The existing Manus-scheduled job
+# can fall back to its already injected OpenAI-compatible runtime when Groq is
+# unavailable, without introducing a new credential or external scheduler.
+_USING_BUILTIN_RUNTIME = not os.environ.get("GROQ_API_KEY") and bool(os.environ.get("OPENAI_API_KEY"))
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+GROQ_BASE_URL = (
+    os.environ.get("GROQ_BASE_URL")
+    or os.environ.get("OPENAI_API_BASE")
+    or "https://api.groq.com/openai/v1"
+)
+GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
+    "gpt-5-mini" if _USING_BUILTIN_RUNTIME else "llama-3.3-70b-versatile"
+)
 
 REGIONS = [
     {
