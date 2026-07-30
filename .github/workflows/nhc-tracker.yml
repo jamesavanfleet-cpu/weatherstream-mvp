@@ -34,34 +34,63 @@ jobs:
       - name: Install dependencies
         run: pip install pyshp
 
-      - name: Generate validated official NHC data artifacts
+      - name: Generate current official NHC storm data
         run: |
           set -euo pipefail
           python3 scripts/generate_nhc_data.py
-          python3 scripts/generate_model_guidance.py
           echo "nhc_data.json generated: $(wc -c < client/public/nhc_data.json) bytes"
-          echo "nhc_model_guidance.json generated: $(wc -c < client/public/nhc_model_guidance.json) bytes"
 
-      - name: Atomically publish updated NHC data artifacts to gh-pages
+      - name: Publish current official NHC storm data to gh-pages
         run: |
           set -euo pipefail
           git config user.email "deploy@mycruisingweather.com"
           git config user.name "WeatherStream Deploy"
 
-          # Both temporary copies must exist before gh-pages is checked out. If
-          # either generator failed, this step never runs and the last verified
-          # live artifacts remain untouched.
+          # Official storm tracks and cones are the primary credibility data.
+          # Once their generator succeeds, publish them independently of the
+          # optional model-guidance artifact.
           cp client/public/nhc_data.json /tmp/nhc_data.json
-          cp client/public/nhc_model_guidance.json /tmp/nhc_model_guidance.json
 
           git fetch origin gh-pages
           git checkout -f gh-pages
           git pull --ff-only origin gh-pages
 
           cp /tmp/nhc_data.json nhc_data.json
-          cp /tmp/nhc_model_guidance.json nhc_model_guidance.json
+          git add nhc_data.json
+          git diff --cached --quiet && echo "No official NHC storm-data changes, skipping push." && exit 0
+          git commit -m "NHC tracker update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
 
-          git add nhc_data.json nhc_model_guidance.json
-          git diff --cached --quiet && echo "No NHC artifact changes, skipping push." && exit 0
-          git commit -m "NHC tracker and model guidance update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+      - name: Generate and publish validated NHC model guidance when available
+        run: |
+          set -uo pipefail
+          git checkout -f main
+
+          # Exit 75 means the current public A-deck cycle is pending. That is
+          # expected source latency, not a reason to withhold verified storm
+          # tracks that were already published by the preceding step.
+          if python3 scripts/generate_model_guidance.py; then
+            echo "nhc_model_guidance.json generated: $(wc -c < client/public/nhc_model_guidance.json) bytes"
+          else
+            status=$?
+            if [ "$status" -eq 75 ]; then
+              echo "NHC model guidance is pending; preserving the published official storm data."
+              exit 0
+            fi
+            exit "$status"
+          fi
+
+          set -e
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+          cp client/public/nhc_model_guidance.json /tmp/nhc_model_guidance.json
+
+          git fetch origin gh-pages
+          git checkout -f gh-pages
+          git pull --ff-only origin gh-pages
+
+          cp /tmp/nhc_model_guidance.json nhc_model_guidance.json
+          git add nhc_model_guidance.json
+          git diff --cached --quiet && echo "No NHC model-guidance changes, skipping push." && exit 0
+          git commit -m "NHC model guidance update: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
           git push origin gh-pages
