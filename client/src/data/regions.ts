@@ -16,14 +16,12 @@ export interface Region {
   image: string;
   gradient: string;
   ports: Port[];
-  intel: string;
 }
 
 export const REGIONS: Region[] = [
   {
     slug: "us-ports",
     name: "US Ports",
-    intel: "US homeports span the East Coast from Boston to Miami, the Gulf Coast from New Orleans to Houston, and the West Coast from San Diego to Seattle. East Coast ports from Boston south to the Carolinas see variable winds and seas driven by passing frontal systems and nor'easters in winter. Florida ports are influenced by the Bermuda High and afternoon sea breezes. Gulf Coast ports from Tampa Bay west to Galveston and Houston are sheltered from Atlantic swell but can see strong NE winds during winter cold front passages. West Coast ports from San Diego to San Francisco are dominated by the California High and persistent NW winds and swell.",
     image: "/locations/us-ports.jpg",
     gradient: "from-blue-600/20 to-slate-500/20",
     ports: [
@@ -53,7 +51,6 @@ export const REGIONS: Region[] = [
   {
     slug: "bahamas-central-caribbean",
     name: "Bahamas, Bermuda and Central Caribbean",
-    intel: "Nassau and Freeport conditions depend heavily on the current synoptic pattern. Western Bahamas anchorages well-protected from the prevailing E-SE trades. Bimini and the Berry Islands offer excellent protected waters on their western sides. Atlantic-facing eastern shores can see 4-6 ft swells during active trade wind periods. Cold front passages in winter can bring brief NW winds 20-30 kt followed by crystal-clear visibility. The Florida Straits between Miami and Cuba see strong current and can funnel NE winds 20-30 kt during winter cold fronts. Grand Cayman sits exposed to swells from multiple directions -- check carefully for any active weather to the north or east. Jamaica's north coast ports at Ocho Rios and Falmouth occasionally see northerly swell wrap around the island during winter cold front passages. The Dominican Republic's north coast at Puerto Plata is exposed to Atlantic swell; the south coast at La Romana and Santo Domingo is more protected.",
     image: "/locations/bahamas.jpg",
     gradient: "from-blue-500/20 to-cyan-500/20",
     ports: [
@@ -77,7 +74,6 @@ export const REGIONS: Region[] = [
   {
     slug: "eastern-caribbean",
     name: "Eastern Caribbean",
-    intel: "ENE trade winds 15-20 kt with 3-5 ft seas across the eastern chain. San Juan and St. Thomas seeing typical trade wind conditions with good visibility. St. Maarten and Antigua well-positioned for leeward anchorages on the western sides. Turks and Caicos exposed to open Atlantic swell on the north shore; Providenciales south coast calm. Barbados windward east coast fully exposed; Carlisle Bay and Bridgetown on the leeward west coast are calm and well-protected. St. Lucia, Martinique, and Dominica seeing afternoon squalls on the windward volcanic peaks  --  plan arrivals before morning hours. St. Vincent and the Grenadines offer excellent leeward anchorages. Visibility outstanding at 80+ ft throughout.",
     image: "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7uKRTFIx5OB/sandbox/KmIDdlWnVqsNKICKmf9H1h-img-4_1771041481000_na1fn_dHJvcGljYWwtYmVhY2gtd2VhdGhlcg.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWE9MRWRnOXlabGc3dUtSVEZJeDVPQi9zYW5kYm94L0ttSURkbFduVnFzTktJQ0ttZjlIMWgtaW1nLTRfMTc3MTA0MTQ4MTAwMF9uYTFmbl9kSEp2Y0dsallXd3RZbVZoWTJndGQyVmhkR2hsY2cucG5nP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=gc3iC93INNkqrzR5EnGIKflyv9FZdTH2fcgfdAbMjhXxoCZjknQ5xd9PeoZfZIuPgpkgSKejVD--ZpA7V17td1MzXUUjYzjxXZntB4pNkCjJYyWtpcW1PhtJoRFqVtUCsUAyhpxkxIbNWc8pWg2Lb7hCro~xzqd7PmRe2J2nO21MUlSzZmuIG1ogNLRm7UeSmtlxqvuQozC~DnA8ux49xns-BKzSBXIfPHW6FZKDKdqcQSP2nYkS9FZCLwtX2dyf~cwa78K5P0KYg3twSHu5t9UQGasE4Brn8NEIVTsP2ECZxrNdoc7urtkzPyCZlM3ZfeeOoA9iZ6bI5mvbgSD3bA__",
     gradient: "from-emerald-500/20 to-cyan-500/20",
     ports: [
@@ -98,7 +94,6 @@ export const REGIONS: Region[] = [
   {
     slug: "western-caribbean",
     name: "Western Caribbean",
-    intel: "Light to moderate E-SE winds 10-15 kt across the western Caribbean with seas 2-4 ft. Cozumel and Costa Maya seeing calm conditions on the leeward western shores. Roatan and the Bay Islands benefiting from the Honduran mountains blocking the prevailing trades. The Bay of Honduras around Roatan and Belize is generally calmer than the open Caribbean.",
     image: "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7uKRTFIx5OB/sandbox/KmIDdlWnVqsNKICKmf9H1h-img-2_1771041480000_na1fn_Y2FyaWJiZWFuLWNydWlzZS1zdW5zZXQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWE9MRWRnOXlabGc3dUtSVEZJeDVPQi9zYW5kYm94L0ttSURkbFduVnFzTktJQ0ttZjlIMWgtaW1nLTJfMTc3MTA0MTQ4MDAwMF9uYTFmbl9ZMkZ5YVdKaVpXRnVMV055ZFdselpTMXpkVzV6WlhRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=q7HRCQyQ~-w~C5w33nY2ql2sG3uXJCzYOhBWvxdtDbze05vqRtYbS1MyRLwFD-TcVNJiFFpZJHcV2VwV~1q2R3cALqcMsvdGRwHnu21~weD8Sbi-uWiSdqPpU9WlWn2TKGKSeggtUFRQyfGACZXSWEN8fFARTbR6zzad3L~CHbe4XhsMPFnsc3p-wyMqi~d0BXyI285CVEa7MEblcdb65PW9fdjkfHT~qRlFn6r07oCoZ0-QNyv5bieV7Uc3tjnaZPINOxgUEUae~nkcYOMaSW3rbEpaeOPirXqd8MTpAakVSef6F4V~VkghbCiPu~VmHDnSaWoQ6uLrTOXc4UCehA__",
     gradient: "from-orange-500/20 to-pink-500/20",
     ports: [
@@ -111,7 +106,6 @@ export const REGIONS: Region[] = [
   {
     slug: "southern-caribbean",
     name: "Southern Caribbean",
-    intel: "The ABC islands sit outside the hurricane belt and enjoy consistent ENE trades 15-20 kt year-round. Aruba is the windiest of the three with open Atlantic exposure. Curacao and Bonaire offer excellent leeward anchorages on their southern and western shores. Cartagena benefits from the South American landmass blocking the trade swell, keeping the harbor calm. Seas in the open Venezuelan Basin typically 3-5 ft ENE with good visibility throughout.",
     image: "https://files.manuscdn.com/user_upload_by_module/session_file/110462184/INhsBOFIHROpOBep.jpg",
     gradient: "from-teal-500/20 to-emerald-500/20",
     ports: [
@@ -124,7 +118,6 @@ export const REGIONS: Region[] = [
   {
     slug: "western-mediterranean",
     name: "Western Mediterranean",
-    intel: "The Western Mediterranean is dominated by the Mistral wind pattern out of the NW, funneling down the Rhone Valley and accelerating across the Gulf of Lion. Barcelona and the Costa Brava see afternoon sea breezes 10-15 kt from the E-SE in summer. Palma de Mallorca and Ibiza are well-positioned on the leeward side of the Balearics. Lisbon and Cadiz on the Atlantic approach are influenced by the Azores High  --  expect NW 15-25 kt on the Portuguese coast. Malaga and the Strait of Gibraltar see strong Levante winds from the E when Atlantic lows deepen  --  can gust 30-40 kt through the Strait. Valencia anchorage exposed to E-SE swell during Levante events.",
     image: "/locations/western-mediterranean.jpg",
     gradient: "from-blue-500/20 to-indigo-500/20",
     ports: [
@@ -140,7 +133,6 @@ export const REGIONS: Region[] = [
   {
     slug: "central-mediterranean",
     name: "Central Mediterranean",
-    intel: "The Central Mediterranean is one of the most complex weather environments in the world. The Mistral accelerates through the Gulf of Lion and can reach 40-50 kt with little warning  --  always check the Marseille forecast before departing. The Ligurian Sea between Genoa, La Spezia, and Corsica is sheltered but can see strong Tramontane winds in winter. The Tyrrhenian Sea along the Italian coast is generally calmer, with the Pontine Islands and Capri offering excellent anchorages. Venice and the northern Adriatic are subject to the Bora  --  a violent NE katabatic wind that can gust 60+ kt in winter. The Adriatic coast from Split to Dubrovnik is beautiful but exposed to Bora and Jugo (SE) winds seasonally.",
     image: "/locations/central-mediterranean.jpg",
     gradient: "from-cyan-500/20 to-teal-500/20",
     ports: [
@@ -162,7 +154,6 @@ export const REGIONS: Region[] = [
   {
     slug: "eastern-mediterranean",
     name: "Eastern Mediterranean",
-    intel: "The Eastern Mediterranean is dominated by the Etesian winds (Meltemi) from the N-NW, blowing 20-35 kt across the Aegean from June through September  --  one of the most reliable and powerful summer wind regimes in the world. Santorini and Mykonos are fully exposed to Meltemi conditions; anchorages on the southern and eastern sides of islands offer the best protection. Corfu and the Ionian Islands are sheltered from the Meltemi but see their own local wind patterns. The Turkish coast near Izmir and the Bodrum peninsula can see strong afternoon thermal winds. Istanbul and the Bosphorus have strong current and variable winds year-round. The Levantine coast from Cyprus to Haifa and Tel Aviv is generally calmer with light NW sea breezes in summer. The Suez Canal approach at Port Said and Alexandria requires careful monitoring of Red Sea weather patterns.",
     image: "/locations/eastern-mediterranean.jpg",
     gradient: "from-indigo-500/20 to-violet-500/20",
     ports: [
@@ -182,7 +173,6 @@ export const REGIONS: Region[] = [
   {
     slug: "eastern-pacific",
     name: "Eastern Pacific",
-    intel: "The Eastern Pacific coast from Los Angeles to Cabo San Lucas is dominated by the California High pressure system, which drives persistent NW winds and swell down the coast. Morning marine layer burns off by mid-morning along the Southern California coast. The Baja California coast sees strong afternoon thermal winds 20-30 kt  --  plan passages for early morning. Cabo San Lucas sits at the tip of the Baja peninsula where the Pacific and Sea of Cortez meet  --  conditions can change rapidly. Mazatlan and Puerto Vallarta in the Sea of Cortez see calmer conditions with afternoon sea breezes. The Mexican Riviera from Manzanillo to Huatulco sees NW swell wrapping around the Baja tip, typically 3-6 ft with 12-16 second periods.",
     image: "/locations/eastern-pacific.jpg",
     gradient: "from-amber-500/20 to-orange-500/20",
     ports: [
@@ -197,7 +187,6 @@ export const REGIONS: Region[] = [
   {
     slug: "southeast-alaska",
     name: "Alaska",
-    intel: "The Inside Passage from Seattle to Skagway is one of the most spectacular and weather-sensitive cruising routes in the world. Southeast Alaska sees frequent low pressure systems tracking in from the Gulf of Alaska, bringing SE winds 15-25 kt and persistent overcast with light rain. Juneau and Ketchikan are among the rainiest cities in North America -- plan for rain gear regardless of forecast. Tracy Arm Fjord requires careful navigation for ice conditions and bergy bits. Skagway at the head of Lynn Canal can see strong gap winds funneling through the mountains. Seattle departures are influenced by Pacific systems tracking through the Strait of Juan de Fuca. Sitka on the outer coast has full Pacific exposure -- check swell forecasts carefully. Summer season (June-August) offers the best conditions with long daylight hours.",
     image: "/locations/southeast-alaska.jpg",
     gradient: "from-slate-500/20 to-cyan-600/20",
     ports: [

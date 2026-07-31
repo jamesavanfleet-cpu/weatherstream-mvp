@@ -6,6 +6,7 @@ then calls Groq to write a fresh James Van Fleet-style intel briefing.
 Outputs intel.json to stdout (captured by GitHub Actions and committed to gh-pages).
 """
 
+import argparse
 import json
 import os
 import subprocess as _subprocess
@@ -53,6 +54,11 @@ GROQ_BASE_URL = (
 GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
     "gpt-5-mini" if _USING_BUILTIN_RUNTIME else "llama-3.3-70b-versatile"
 )
+
+# Keep serial model requests apart. July 31 showed the provider rejecting back-to-back
+# requests with HTTP 429, so the rate limiter applies before every request and retry.
+MODEL_REQUEST_MIN_INTERVAL_SECONDS = int(os.environ.get("INTEL_MODEL_REQUEST_INTERVAL_SECONDS", "15"))
+_LAST_GROQ_REQUEST_AT = 0.0
 
 REGIONS = [
     {
@@ -842,8 +848,16 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "User-Agent": "WeatherStream/1.0",
     }
-    # Retry with exponential backoff to handle 429 rate limit responses
+    # Pace every request and retry. The provider returned repeated 429 errors when
+    # regional calls were launched back-to-back on July 31.
+    global _LAST_GROQ_REQUEST_AT
     for attempt in range(4):
+        elapsed = time.monotonic() - _LAST_GROQ_REQUEST_AT
+        wait_for_slot = MODEL_REQUEST_MIN_INTERVAL_SECONDS - elapsed
+        if wait_for_slot > 0:
+            print(f"  Waiting {wait_for_slot:.1f}s for the model request slot...", file=sys.stderr)
+            time.sleep(wait_for_slot)
+        _LAST_GROQ_REQUEST_AT = time.monotonic()
         try:
             if _USE_HTTPX:
                 resp = _httpx.post(url, content=payload, headers=headers, timeout=120)
@@ -1364,7 +1378,212 @@ def _validate_and_repair_brevity(region: dict, intel: str, weather_data: dict, m
     return repaired
 
 
-def main():
+_CLIMATE_OR_STATIC_PATTERNS = (
+    r"\btypically\b",
+    r"\busually\b",
+    r"\byear[- ]round\b",
+    r"\bseasonal(?:ly)?\b",
+    r"\bclimat(?:e|ological)\b",
+    r"\bon average\b",
+    r"\bhistorically\b",
+    r"\bthe most spectacular\b",
+    r"\bweather-sensitive cruising route\b",
+    r"\bplan for rain regardless of forecast\b",
+    r"\bbest conditions\b",
+    r"\bfrequent low pressure systems\b",
+    r"\bexact forecast\b",
+)
+
+
+def _forecast_only_violations(text: str) -> list[str]:
+    """Return deterministic reasons a briefing cannot be published as a live forecast."""
+    import re
+
+    normalized = _clean_model_formatting(text)
+    lower = normalized.lower()
+    violations: list[str] = []
+    if len(normalized) < 80:
+        violations.append("briefing is shorter than the minimum forecast length")
+    if not _briefing_format_ok(normalized):
+        violations.append("briefing is not a plain Today-led forecast paragraph")
+    if normalized == "No briefing available at this time.":
+        violations.append("briefing is an unavailable placeholder")
+    for pattern in _CLIMATE_OR_STATIC_PATTERNS:
+        if re.search(pattern, lower, re.IGNORECASE):
+            violations.append(f"contains prohibited climate/static language matching {pattern!r}")
+            break
+    # Each published sentence must carry a quantitative or official live forecast signal.
+    # Current temperatures are deliberately excluded by the product contract. This rejects
+    # otherwise plausible climate or route prose that happens to contain one weather detail.
+    forecast_marker = re.compile(
+        r"(?:\b\d{1,3}\s*kt\b|\b(?:less than )?\d{1,3}%\s+rain probability\b|"
+        r"\b(?:heat|wind chill|freeze|gale|storm|small craft)\s+(?:advisory|warning|watch)\b)",
+        re.IGNORECASE,
+    )
+    sentences_without_live_signal = [
+        sentence
+        for sentence in _briefing_sentence_parts(normalized)
+        if not forecast_marker.search(sentence)
+    ]
+    if sentences_without_live_signal:
+        violations.append(
+            "one or more sentences lack a quantitative or official forecast signal: "
+            + " | ".join(sentences_without_live_signal)
+        )
+    return violations
+
+
+def _validate_and_repair_forecast_only(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
+    """Regenerate any climate, route-description, placeholder, or non-forecast prose."""
+    violations = _forecast_only_violations(intel)
+    if not violations:
+        return intel
+
+    for attempt in range(max_retries):
+        print(f"  [FORECAST-ONLY VALIDATOR] Rejected output: {'; '.join(violations)}", file=sys.stderr)
+        retry_prefix = (
+            "REGENERATION REQUIRED. The previous output was rejected because it contained "
+            "non-forecast, climate, route-description, placeholder, or insufficiently data-grounded text. "
+            "Write a new briefing using only the supplied live forecast data. Every sentence must describe "
+            "current or next-three-day conditions and an appropriate cruise operational impact. "
+            "Do not make any statement about typical, seasonal, historical, geographic, or route conditions. "
+        )
+        try:
+            candidate = call_groq(region, weather_data, retry_prefix=retry_prefix)
+            candidate = _clean_model_formatting(candidate)
+            candidate = strip_temperatures(candidate)
+            candidate = _normalize_low_rain_phrasing(candidate)
+            candidate = _validate_and_repair_lead(region, candidate, weather_data)
+            candidate = _validate_and_repair_rule_leaks(region, candidate, weather_data)
+            candidate = _validate_and_repair_brevity(region, candidate, weather_data)
+            candidate = _deduplicate_heat_product_labels(candidate)
+        except Exception as exc:
+            print(f"  [FORECAST-ONLY VALIDATOR] Retry {attempt + 1} failed: {exc}", file=sys.stderr)
+            continue
+        violations = _forecast_only_violations(candidate)
+        if not violations:
+            print(f"  [FORECAST-ONLY VALIDATOR] Retry {attempt + 1} passed.", file=sys.stderr)
+            return candidate
+        intel = candidate
+
+    raise ValueError("Forecast-only validation failed: " + "; ".join(violations))
+
+
+def _generate_region_forecast(region: dict) -> str:
+    """Generate one fully validated regional forecast without any static fallback."""
+    wx = fetch_weather(region["lat"], region["lon"])
+    pop_means = fetch_precip_probability(region["lat"], region["lon"])
+    advisory_lead = ""
+    if region["slug"] == "us-ports":
+        us_port_alerts = fetch_us_port_heat_advisories(region)
+        advisory_lead = render_us_port_heat_advisory_lead(us_port_alerts)
+        advisories = [
+            advisory for advisory in fetch_nws_advisories(region)
+            if "heat" not in advisory.lower()
+        ]
+    else:
+        advisories = fetch_nws_advisories(region)
+
+    weather_data = build_weather_summary(
+        wx,
+        pop_means=pop_means,
+        advisories=advisories,
+        include_apparent_heat=region["slug"] != "us-ports",
+    )
+    intel = call_groq(region, weather_data)
+    intel = _clean_model_formatting(intel)
+    if not intel or len(intel.strip()) < 20:
+        raise ValueError(f"Model returned suspiciously short response: {intel!r}")
+    intel = strip_temperatures(intel.strip())
+    intel = _normalize_low_rain_phrasing(intel)
+    intel = _validate_and_repair_lead(region, intel, weather_data)
+    intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
+    intel = _validate_and_repair_brevity(region, intel, weather_data)
+    intel = _deduplicate_heat_product_labels(intel)
+    if region["slug"] == "us-ports":
+        intel = strip_us_port_heat_claims(intel)
+        intel = prepend_us_port_advisory_lead(intel, advisory_lead)
+    return _validate_and_repair_forecast_only(region, intel, weather_data)
+
+
+def _batch_regions(batch: str) -> list[dict]:
+    midpoint = len(REGIONS) // 2
+    if batch == "first":
+        return REGIONS[:midpoint]
+    if batch == "second":
+        return REGIONS[midpoint:]
+    if batch == "all":
+        return REGIONS
+    raise ValueError(f"Unknown generation batch: {batch}")
+
+
+def _generate_batch(regions: list[dict]) -> tuple[dict[str, str], list[str]]:
+    values: dict[str, str] = {}
+    failures: list[str] = []
+    for region in regions:
+        print(f"Processing {region['name']}...", file=sys.stderr)
+        try:
+            intel = _generate_region_forecast(region)
+            values[region["slug"]] = intel
+            print(f"  OK: {intel[:80]}...", file=sys.stderr)
+        except Exception as exc:
+            failures.append(f"{region['slug']}: {exc}")
+            print(f"  ERROR: {region['slug']}: {exc}", file=sys.stderr)
+    return values, failures
+
+
+def _validate_complete_regions(values: dict[str, str], expected_regions: list[dict]) -> None:
+    expected_slugs = {region["slug"] for region in expected_regions}
+    present_slugs = set(values)
+    missing = sorted(expected_slugs - present_slugs)
+    unexpected = sorted(present_slugs - expected_slugs)
+    invalid = {
+        slug: _forecast_only_violations(text)
+        for slug, text in values.items()
+        if _forecast_only_violations(text)
+    }
+    problems: list[str] = []
+    if missing:
+        problems.append("missing regions: " + ", ".join(missing))
+    if unexpected:
+        problems.append("unexpected regions: " + ", ".join(unexpected))
+    if invalid:
+        problems.append(
+            "invalid regional forecasts: " + "; ".join(
+                f"{slug} ({', '.join(reasons)})" for slug, reasons in sorted(invalid.items())
+            )
+        )
+    if problems:
+        raise RuntimeError("Publication gate rejected intel artifact: " + " | ".join(problems))
+
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate forecast-only regional briefing data")
+    parser.add_argument(
+        "--batch",
+        choices=("all", "first", "second"),
+        default="all",
+        help="Generate all regions, or one deterministic half for isolated testing.",
+    )
+    parser.add_argument(
+        "--stagger-seconds",
+        type=int,
+        default=int(os.environ.get("INTEL_BATCH_STAGGER_SECONDS", "300")),
+        help="Delay between the two production batches. Defaults to five minutes.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Optional output path. Defaults to client/public/intel.json.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None):
+    args = _parse_args(argv)
+    if args.stagger_seconds < 0:
+        raise ValueError("--stagger-seconds must be zero or greater")
     if not GROQ_API_KEY:
         print("ERROR: GROQ_API_KEY not set", file=sys.stderr)
         sys.exit(1)
@@ -1373,84 +1592,58 @@ def main():
     output = {
         "generated": date.today().isoformat(),
         "generated_utc": now_utc.strftime("%Y-%m-%dT%H:%M UTC"),
-        "regions": {}
+        "regions": {},
     }
 
-    for i, region in enumerate(REGIONS):
-        print(f"Processing {region['name']}...", file=sys.stderr)
-        # Add inter-region delay after every 3 regions to avoid Groq rate limits
-        if i > 0 and i % 3 == 0:
-            print("  Pausing 5s to avoid Groq rate limit...", file=sys.stderr)
-            time.sleep(5)
-        try:
-            wx = fetch_weather(region["lat"], region["lon"])
-            pop_means = fetch_precip_probability(region["lat"], region["lon"])
-            advisory_lead = ""
-            if region["slug"] == "us-ports":
-                us_port_alerts = fetch_us_port_heat_advisories(region)
-                advisory_lead = render_us_port_heat_advisory_lead(us_port_alerts)
-                advisories = [
-                    advisory for advisory in fetch_nws_advisories(region)
-                    if "heat" not in advisory.lower()
-                ]
-            else:
-                advisories = fetch_nws_advisories(region)
-            weather_data = build_weather_summary(
-                wx,
-                pop_means=pop_means,
-                advisories=advisories,
-                include_apparent_heat=region["slug"] != "us-ports",
+    if args.batch == "all":
+        first_regions = _batch_regions("first")
+        second_regions = _batch_regions("second")
+        first_batch_started_at = time.monotonic()
+        first_values, first_failures = _generate_batch(first_regions)
+        if first_failures:
+            raise RuntimeError("First generation batch failed: " + " | ".join(first_failures))
+        _validate_complete_regions(first_values, first_regions)
+        remaining_stagger = max(0.0, args.stagger_seconds - (time.monotonic() - first_batch_started_at))
+        if remaining_stagger:
+            print(
+                f"First batch passed. Waiting {remaining_stagger:.1f}s so the second regional pull starts "
+                f"{args.stagger_seconds}s after the first batch trigger.",
+                file=sys.stderr,
             )
-            intel = call_groq(region, weather_data)
-            intel = _clean_model_formatting(intel)
-            # Validate: must be a non-empty string of at least 20 characters
-            if not intel or len(intel.strip()) < 20:
-                raise ValueError(f"Groq returned suspiciously short response: {repr(intel)}")
-            # --- LAYER 2: Post-generation temperature filter ---
-            # Hard mechanical backstop: remove any sentence that contains a temperature
-            # value regardless of what the AI produced. This catches any slip-through
-            # that the prompt rules did not prevent.
-            intel = strip_temperatures(intel.strip())
-            # --- LAYER B for Bug 2: rewrite any sub-10% rain phrasing ---
-            # Hard mechanical backstop: convert any '0% rain', '4% chance of drizzle',
-            # 'zero percent rain probability' etc. to 'less than 10% rain probability'.
-            intel = _normalize_low_rain_phrasing(intel)
-            # --- LEAD-PORT VALIDATOR (Layer B for required_lead_port regions) ---
-            # If the region declares a required_lead_port and the model failed to lead
-            # with it, regenerate with a corrective prefix; if still failing, hard-repair.
-            intel = _validate_and_repair_lead(region, intel, weather_data)
-            # --- RULE-LEAK VALIDATOR (Layer B against prompt-text echo) ---
-            # If the model echoed any directive phrase into the output (e.g. "the primary
-            # US cruise homeport"), regenerate; after max retries, mechanically strip.
-            # Applies to ALL regions automatically.
-            intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
-            # --- BREVITY VALIDATOR ---
-            # Enforce the approved short daily format after every path that can regenerate text.
-            intel = _validate_and_repair_brevity(region, intel, weather_data)
-            intel = _deduplicate_heat_product_labels(intel)
-            if region["slug"] == "us-ports":
-                intel = strip_us_port_heat_claims(intel)
-                intel = prepend_us_port_advisory_lead(intel, advisory_lead)
-            output["regions"][region["slug"]] = intel
-            print(f"  OK: {intel[:80]}...", file=sys.stderr)
-        except Exception as e:
-            print(f"  ERROR: {e}", file=sys.stderr)
-            # Keep any previously generated value; fall back to empty string
-            output["regions"].setdefault(region["slug"], "")
+            time.sleep(remaining_stagger)
+        else:
+            print(
+                "First batch exceeded the requested stagger window; starting the second regional pull now.",
+                file=sys.stderr,
+            )
+        second_values, second_failures = _generate_batch(second_regions)
+        if second_failures:
+            raise RuntimeError("Second generation batch failed: " + " | ".join(second_failures))
+        _validate_complete_regions(second_values, second_regions)
+        output["regions"] = {**first_values, **second_values}
+        _validate_complete_regions(output["regions"], REGIONS)
+    else:
+        selected_regions = _batch_regions(args.batch)
+        values, failures = _generate_batch(selected_regions)
+        if failures:
+            raise RuntimeError(f"{args.batch.title()} generation batch failed: " + " | ".join(failures))
+        _validate_complete_regions(values, selected_regions)
+        output["regions"] = values
 
-    # Write directly to file (not stdout) to avoid truncation on crash
-    repo = Path(__file__).parent.parent
-    target = repo / "client" / "public" / "intel.json"
+    target = args.output or (Path(__file__).parent.parent / "client" / "public" / "intel.json")
     target.parent.mkdir(parents=True, exist_ok=True)
-
-    # Validate: ensure at least half the regions have non-empty intel
-    non_empty = sum(1 for v in output["regions"].values() if v)
-    total = len(output["regions"])
-    if non_empty < total // 2:
-        print(f"WARNING: Only {non_empty}/{total} regions have intel -- output may be degraded", file=sys.stderr)
-
-    target.write_text(json.dumps(output, indent=2))
-    print(f"intel.json written: {target.stat().st_size} bytes, {non_empty}/{total} regions populated", file=sys.stderr)
+    temporary_target = target.with_name(f".{target.name}.tmp")
+    try:
+        temporary_target.write_text(json.dumps(output, indent=2), encoding="utf-8")
+        os.replace(temporary_target, target)
+    finally:
+        if temporary_target.exists():
+            temporary_target.unlink()
+    print(
+        f"intel.json written: {target.stat().st_size} bytes, "
+        f"{len(output['regions'])}/{len(_batch_regions(args.batch)) if args.batch != 'all' else len(REGIONS)} regions populated",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

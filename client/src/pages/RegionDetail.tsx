@@ -533,7 +533,7 @@ export default function RegionDetail() {
       })
       .then((data: { regions?: Record<string, string>; generated?: string }) => {
         const text = data.regions?.[region.slug] ?? "";
-        setIntel(text || region.intel);
+        setIntel(text);
         // Format the generated date as "March 8, 2026" for display
         if (data.generated) {
           setIntelDate(data.generated + "T12:00:00");
@@ -541,7 +541,7 @@ export default function RegionDetail() {
         setIntelLoading(false);
       })
       .catch(() => {
-        setIntel(region.intel);
+        setIntel("");
         setIntelLoading(false);
       });
   }, [region]);
