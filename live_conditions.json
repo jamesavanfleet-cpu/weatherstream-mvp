@@ -1,549 +1,549 @@
 {
-  "generated_at": "2026-08-03T21:16:37.696951+00:00",
+  "generated_at": "2026-08-03T23:15:57.930822+00:00",
   "ports": {
     "Miami": {
       "tempF": 76,
       "tempC": 24.6,
-      "condition": "Drizzle",
-      "wmo": 53,
-      "windKt": 8,
-      "windDir": 62
-    },
-    "Key West": {
-      "tempF": 89,
-      "tempC": 31.8,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 5,
-      "windDir": 307
-    },
-    "Nassau": {
-      "tempF": 88,
-      "tempC": 31.3,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 7,
-      "windDir": 145
-    },
-    "Bimini": {
-      "tempF": 85,
-      "tempC": 29.4,
       "condition": "Overcast",
       "wmo": 3,
-      "windKt": 7,
-      "windDir": 230
+      "windKt": 5,
+      "windDir": 45
     },
-    "Freeport": {
+    "Key West": {
       "tempF": 87,
-      "tempC": 30.4,
+      "tempC": 30.8,
+      "condition": "Overcast",
+      "wmo": 3,
+      "windKt": 2,
+      "windDir": 333
+    },
+    "Nassau": {
+      "tempF": 85,
+      "tempC": 29.4,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 4,
+      "windDir": 113
+    },
+    "Bimini": {
+      "tempF": 83,
+      "tempC": 28.6,
       "condition": "Overcast",
       "wmo": 3,
       "windKt": 6,
-      "windDir": 180
+      "windDir": 295
+    },
+    "Freeport": {
+      "tempF": 85,
+      "tempC": 29.4,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 7,
+      "windDir": 241
     },
     "Berry Islands": {
       "tempF": 84,
       "tempC": 29.0,
       "condition": "Sunny",
       "wmo": 0,
-      "windKt": 6,
-      "windDir": 159
+      "windKt": 8,
+      "windDir": 186
     },
     "San Juan": {
-      "tempF": 85,
-      "tempC": 29.4,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
-      "windKt": 14,
-      "windDir": 73
+      "tempF": 84,
+      "tempC": 28.9,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 11,
+      "windDir": 100
     },
     "St. Thomas": {
-      "tempF": 84,
-      "tempC": 28.8,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 14,
-      "windDir": 93
-    },
-    "St. Croix": {
-      "tempF": 85,
-      "tempC": 29.4,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 11,
-      "windDir": 81
-    },
-    "St. Kitts": {
-      "tempF": 85,
-      "tempC": 29.2,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 11,
-      "windDir": 81
-    },
-    "Antigua": {
-      "tempF": 85,
-      "tempC": 29.3,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 10,
-      "windDir": 81
-    },
-    "Barbados": {
-      "tempF": 84,
-      "tempC": 28.8,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
-      "windKt": 10,
-      "windDir": 73
-    },
-    "St. Lucia": {
-      "tempF": 81,
-      "tempC": 27.1,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
-      "windKt": 8,
-      "windDir": 71
-    },
-    "Martinique": {
-      "tempF": 81,
-      "tempC": 27.1,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 8,
-      "windDir": 54
-    },
-    "St. Maarten": {
-      "tempF": 83,
-      "tempC": 28.3,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 12,
-      "windDir": 80
-    },
-    "Turks & Caicos": {
       "tempF": 84,
       "tempC": 29.0,
       "condition": "Sunny",
       "wmo": 0,
-      "windKt": 18,
-      "windDir": 105
+      "windKt": 13,
+      "windDir": 100
     },
-    "Cozumel": {
-      "tempF": 89,
-      "tempC": 31.7,
-      "condition": "Thunderstorm",
-      "wmo": 95,
-      "windKt": 8,
-      "windDir": 93
-    },
-    "Costa Maya": {
-      "tempF": 87,
-      "tempC": 30.6,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
+    "St. Croix": {
+      "tempF": 83,
+      "tempC": 28.1,
+      "condition": "Mostly Clear",
+      "wmo": 1,
       "windKt": 10,
-      "windDir": 107
+      "windDir": 85
     },
-    "Roatan": {
-      "tempF": 83,
-      "tempC": 28.6,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 16,
-      "windDir": 67
-    },
-    "Belize City": {
-      "tempF": 90,
-      "tempC": 32.2,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 9,
-      "windDir": 86
-    },
-    "Grand Cayman": {
-      "tempF": 88,
-      "tempC": 31.3,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 8,
-      "windDir": 114
-    },
-    "Ocho Rios": {
-      "tempF": 88,
-      "tempC": 30.9,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 9,
-      "windDir": 77
-    },
-    "Aruba": {
-      "tempF": 85,
-      "tempC": 29.4,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 20,
-      "windDir": 87
-    },
-    "Curacao": {
-      "tempF": 87,
-      "tempC": 30.4,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 16,
-      "windDir": 93
-    },
-    "Cartagena": {
-      "tempF": 89,
-      "tempC": 31.5,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
-      "windKt": 5,
-      "windDir": 313
-    },
-    "Barcelona": {
-      "tempF": 82,
-      "tempC": 27.5,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 1,
-      "windDir": 149
-    },
-    "Valencia": {
-      "tempF": 80,
-      "tempC": 26.6,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 2,
-      "windDir": 32
-    },
-    "Palma": {
-      "tempF": 83,
-      "tempC": 28.2,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 3,
-      "windDir": 237
-    },
-    "Ibiza": {
-      "tempF": 80,
-      "tempC": 26.6,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 1,
-      "windDir": 292
-    },
-    "Malaga": {
-      "tempF": 89,
-      "tempC": 31.4,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 5,
-      "windDir": 329
-    },
-    "Cadiz": {
-      "tempF": 75,
-      "tempC": 23.7,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 9,
-      "windDir": 277
-    },
-    "Lisbon": {
-      "tempF": 70,
-      "tempC": 21.3,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 4,
-      "windDir": 298
-    },
-    "Marseille": {
-      "tempF": 83,
-      "tempC": 28.5,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 4,
-      "windDir": 137
-    },
-    "Nice": {
-      "tempF": 81,
-      "tempC": 27.1,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 1,
-      "windDir": 11
-    },
-    "Monaco": {
-      "tempF": 82,
-      "tempC": 27.6,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 3,
-      "windDir": 30
-    },
-    "Genoa": {
-      "tempF": 80,
-      "tempC": 26.5,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 5,
-      "windDir": 19
-    },
-    "La Spezia": {
-      "tempF": 83,
-      "tempC": 28.3,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 1,
-      "windDir": 360
-    },
-    "Livorno": {
-      "tempF": 79,
-      "tempC": 26.1,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 2,
-      "windDir": 148
-    },
-    "Civitavecchia": {
-      "tempF": 79,
-      "tempC": 25.9,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 3,
-      "windDir": 74
-    },
-    "Naples": {
-      "tempF": 83,
-      "tempC": 28.2,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 1,
-      "windDir": 304
-    },
-    "Sardinia": {
-      "tempF": 81,
-      "tempC": 27.0,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 3,
-      "windDir": 184
-    },
-    "Corsica": {
-      "tempF": 72,
-      "tempC": 22.2,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 4,
-      "windDir": 79
-    },
-    "Split": {
-      "tempF": 81,
-      "tempC": 27.2,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 1,
-      "windDir": 27
-    },
-    "Dubrovnik": {
-      "tempF": 81,
-      "tempC": 27.4,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 4,
-      "windDir": 39
-    },
-    "Venice": {
+    "St. Kitts": {
       "tempF": 82,
       "tempC": 27.7,
       "condition": "Sunny",
       "wmo": 0,
-      "windKt": 3,
-      "windDir": 160
+      "windKt": 10,
+      "windDir": 88
     },
-    "Athens": {
+    "Antigua": {
+      "tempF": 82,
+      "tempC": 28.0,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 9,
+      "windDir": 79
+    },
+    "Barbados": {
+      "tempF": 81,
+      "tempC": 27.4,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 8,
+      "windDir": 71
+    },
+    "St. Lucia": {
+      "tempF": 77,
+      "tempC": 25.0,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 4,
+      "windDir": 57
+    },
+    "Martinique": {
+      "tempF": 78,
+      "tempC": 25.8,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 7,
+      "windDir": 44
+    },
+    "St. Maarten": {
+      "tempF": 82,
+      "tempC": 27.9,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 12,
+      "windDir": 81
+    },
+    "Turks & Caicos": {
+      "tempF": 84,
+      "tempC": 29.0,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 18,
+      "windDir": 104
+    },
+    "Cozumel": {
+      "tempF": 86,
+      "tempC": 29.9,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 6,
+      "windDir": 104
+    },
+    "Costa Maya": {
+      "tempF": 85,
+      "tempC": 29.7,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 8,
+      "windDir": 91
+    },
+    "Roatan": {
+      "tempF": 84,
+      "tempC": 28.7,
+      "condition": "Thunderstorm",
+      "wmo": 95,
+      "windKt": 17,
+      "windDir": 72
+    },
+    "Belize City": {
+      "tempF": 86,
+      "tempC": 29.8,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 7,
+      "windDir": 84
+    },
+    "Grand Cayman": {
+      "tempF": 84,
+      "tempC": 28.9,
+      "condition": "Overcast",
+      "wmo": 3,
+      "windKt": 8,
+      "windDir": 81
+    },
+    "Ocho Rios": {
+      "tempF": 85,
+      "tempC": 29.3,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 8,
+      "windDir": 87
+    },
+    "Aruba": {
+      "tempF": 83,
+      "tempC": 28.3,
+      "condition": "Overcast",
+      "wmo": 3,
+      "windKt": 18,
+      "windDir": 92
+    },
+    "Curacao": {
+      "tempF": 84,
+      "tempC": 28.8,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 13,
+      "windDir": 98
+    },
+    "Cartagena": {
+      "tempF": 86,
+      "tempC": 30.1,
+      "condition": "Overcast",
+      "wmo": 3,
+      "windKt": 6,
+      "windDir": 355
+    },
+    "Barcelona": {
+      "tempF": 80,
+      "tempC": 26.7,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 1,
+      "windDir": 37
+    },
+    "Valencia": {
+      "tempF": 78,
+      "tempC": 25.8,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 2,
+      "windDir": 293
+    },
+    "Palma": {
+      "tempF": 82,
+      "tempC": 27.6,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 1,
+      "windDir": 321
+    },
+    "Ibiza": {
+      "tempF": 78,
+      "tempC": 25.4,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 1,
+      "windDir": 326
+    },
+    "Malaga": {
+      "tempF": 85,
+      "tempC": 29.4,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 4,
+      "windDir": 321
+    },
+    "Cadiz": {
+      "tempF": 76,
+      "tempC": 24.2,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 10,
+      "windDir": 296
+    },
+    "Lisbon": {
+      "tempF": 70,
+      "tempC": 20.9,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 2,
+      "windDir": 276
+    },
+    "Marseille": {
+      "tempF": 82,
+      "tempC": 27.8,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 2,
+      "windDir": 180
+    },
+    "Nice": {
+      "tempF": 78,
+      "tempC": 25.3,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 3,
+      "windDir": 351
+    },
+    "Monaco": {
+      "tempF": 81,
+      "tempC": 27.4,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 2,
+      "windDir": 23
+    },
+    "Genoa": {
+      "tempF": 73,
+      "tempC": 23.0,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 5,
+      "windDir": 21
+    },
+    "La Spezia": {
+      "tempF": 79,
+      "tempC": 26.0,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 2,
+      "windDir": 328
+    },
+    "Livorno": {
       "tempF": 77,
       "tempC": 24.9,
       "condition": "Sunny",
       "wmo": 0,
+      "windKt": 3,
+      "windDir": 163
+    },
+    "Civitavecchia": {
+      "tempF": 78,
+      "tempC": 25.6,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 3,
+      "windDir": 83
+    },
+    "Naples": {
+      "tempF": 80,
+      "tempC": 26.8,
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 1,
+      "windDir": 360
+    },
+    "Sardinia": {
+      "tempF": 80,
+      "tempC": 26.7,
+      "condition": "Foggy",
+      "wmo": 45,
       "windKt": 2,
-      "windDir": 14
+      "windDir": 158
+    },
+    "Corsica": {
+      "tempF": 73,
+      "tempC": 22.7,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 4,
+      "windDir": 76
+    },
+    "Split": {
+      "tempF": 81,
+      "tempC": 27.1,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 2,
+      "windDir": 7
+    },
+    "Dubrovnik": {
+      "tempF": 81,
+      "tempC": 27.2,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 4,
+      "windDir": 41
+    },
+    "Venice": {
+      "tempF": 80,
+      "tempC": 26.4,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 0,
+      "windDir": 45
+    },
+    "Athens": {
+      "tempF": 75,
+      "tempC": 23.9,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 2,
+      "windDir": 354
     },
     "Santorini": {
       "tempF": 76,
       "tempC": 24.2,
       "condition": "Sunny",
       "wmo": 0,
-      "windKt": 6,
-      "windDir": 293
+      "windKt": 7,
+      "windDir": 294
     },
     "Mykonos": {
       "tempF": 78,
-      "tempC": 25.8,
+      "tempC": 25.6,
       "condition": "Sunny",
       "wmo": 0,
-      "windKt": 7,
-      "windDir": 348
+      "windKt": 9,
+      "windDir": 354
     },
     "Rhodes": {
-      "tempF": 80,
-      "tempC": 26.4,
+      "tempF": 79,
+      "tempC": 26.1,
       "condition": "Mostly Clear",
       "wmo": 1,
       "windKt": 12,
-      "windDir": 285
+      "windDir": 284
     },
     "Corfu": {
-      "tempF": 78,
-      "tempC": 25.3,
+      "tempF": 77,
+      "tempC": 24.8,
       "condition": "Partly Cloudy",
       "wmo": 2,
-      "windKt": 2,
-      "windDir": 288
+      "windKt": 1,
+      "windDir": 307
     },
     "Istanbul": {
       "tempF": 74,
       "tempC": 23.2,
       "condition": "Mostly Clear",
       "wmo": 1,
-      "windKt": 2,
-      "windDir": 5
+      "windKt": 3,
+      "windDir": 12
     },
     "Izmir": {
-      "tempF": 80,
-      "tempC": 26.5,
+      "tempF": 78,
+      "tempC": 25.4,
       "condition": "Sunny",
       "wmo": 0,
       "windKt": 1,
       "windDir": 90
     },
     "Cyprus": {
-      "tempF": 80,
-      "tempC": 26.8,
+      "tempF": 76,
+      "tempC": 24.7,
       "condition": "Sunny",
       "wmo": 0,
       "windKt": 2,
-      "windDir": 291
+      "windDir": 292
     },
     "Haifa": {
-      "tempF": 82,
-      "tempC": 27.5,
+      "tempF": 81,
+      "tempC": 27.3,
       "condition": "Partly Cloudy",
       "wmo": 2,
-      "windKt": 7,
-      "windDir": 328
+      "windKt": 6,
+      "windDir": 326
     },
     "Alexandria": {
       "tempF": 78,
-      "tempC": 25.7,
+      "tempC": 25.6,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 6,
-      "windDir": 329
+      "windDir": 325
     },
     "Bonaire": {
-      "tempF": 85,
-      "tempC": 29.2,
+      "tempF": 83,
+      "tempC": 28.1,
       "condition": "Mostly Clear",
       "wmo": 1,
-      "windKt": 16,
-      "windDir": 87
+      "windKt": 14,
+      "windDir": 88
     },
     "Dominica": {
-      "tempF": 82,
-      "tempC": 27.9,
-      "condition": "Mostly Clear",
-      "wmo": 1,
+      "tempF": 80,
+      "tempC": 26.4,
+      "condition": "Sunny",
+      "wmo": 0,
       "windKt": 9,
-      "windDir": 68
+      "windDir": 58
     },
     "Falmouth": {
-      "tempF": 87,
-      "tempC": 30.6,
+      "tempF": 84,
+      "tempC": 28.9,
+      "condition": "Overcast",
+      "wmo": 3,
+      "windKt": 10,
+      "windDir": 72
+    },
+    "La Romana": {
+      "tempF": 84,
+      "tempC": 28.7,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 9,
+      "windDir": 87
+    },
+    "Puerto Plata": {
+      "tempF": 84,
+      "tempC": 28.9,
       "condition": "Overcast",
       "wmo": 3,
       "windKt": 11,
-      "windDir": 62
-    },
-    "La Romana": {
-      "tempF": 89,
-      "tempC": 31.9,
-      "condition": "Partly Cloudy",
-      "wmo": 2,
-      "windKt": 8,
-      "windDir": 83
-    },
-    "Puerto Plata": {
-      "tempF": 87,
-      "tempC": 30.3,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 12,
-      "windDir": 92
+      "windDir": 104
     },
     "Samana": {
-      "tempF": 83,
-      "tempC": 28.2,
-      "condition": "Overcast",
-      "wmo": 3,
-      "windKt": 8,
-      "windDir": 101
-    },
-    "Santo Domingo": {
-      "tempF": 85,
-      "tempC": 29.4,
-      "condition": "Mostly Clear",
-      "wmo": 1,
-      "windKt": 5,
-      "windDir": 37
-    },
-    "Ensenada": {
-      "tempF": 73,
-      "tempC": 23.0,
-      "condition": "Sunny",
-      "wmo": 0,
-      "windKt": 8,
-      "windDir": 254
-    },
-    "Cabo San Lucas": {
-      "tempF": 81,
-      "tempC": 27.4,
-      "condition": "Rain Showers",
-      "wmo": 81,
-      "windKt": 3,
-      "windDir": 358
-    },
-    "Mazatlan": {
-      "tempF": 87,
-      "tempC": 30.4,
+      "tempF": 80,
+      "tempC": 26.8,
       "condition": "Partly Cloudy",
       "wmo": 2,
       "windKt": 6,
-      "windDir": 269
+      "windDir": 88
     },
-    "Puerto Vallarta": {
+    "Santo Domingo": {
+      "tempF": 81,
+      "tempC": 27.0,
+      "condition": "Sunny",
+      "wmo": 0,
+      "windKt": 4,
+      "windDir": 342
+    },
+    "Ensenada": {
+      "tempF": 72,
+      "tempC": 22.1,
+      "condition": "Mostly Clear",
+      "wmo": 1,
+      "windKt": 6,
+      "windDir": 247
+    },
+    "Cabo San Lucas": {
+      "tempF": 82,
+      "tempC": 27.5,
+      "condition": "Overcast",
+      "wmo": 3,
+      "windKt": 5,
+      "windDir": 259
+    },
+    "Mazatlan": {
       "tempF": 85,
       "tempC": 29.5,
-      "condition": "Thunderstorm",
-      "wmo": 95,
-      "windKt": 8,
-      "windDir": 236
+      "condition": "Partly Cloudy",
+      "wmo": 2,
+      "windKt": 6,
+      "windDir": 289
+    },
+    "Puerto Vallarta": {
+      "tempF": 82,
+      "tempC": 27.5,
+      "condition": "Light Drizzle",
+      "wmo": 51,
+      "windKt": 4,
+      "windDir": 161
     },
     "Manzanillo": {
-      "tempF": 82,
-      "tempC": 27.8,
+      "tempF": 84,
+      "tempC": 28.8,
       "condition": "Overcast",
       "wmo": 3,
-      "windKt": 5,
-      "windDir": 151
+      "windKt": 4,
+      "windDir": 174
     },
     "Huatulco": {
-      "tempF": 90,
-      "tempC": 32.3,
+      "tempF": 88,
+      "tempC": 30.9,
       "condition": "Overcast",
       "wmo": 3,
-      "windKt": 5,
-      "windDir": 202
+      "windKt": 4,
+      "windDir": 231
     }
   }
 }
