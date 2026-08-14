@@ -36,6 +36,9 @@ const HERO_BG = "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7
 const CRUISE_SUNSET = "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7uKRTFIx5OB/sandbox/KmIDdlWnVqsNKICKmf9H1h-img-2_1771041480000_na1fn_Y2FyaWJiZWFuLWNydWlzZS1zdW5zZXQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWE9MRWRnOXlabGc3dUtSVEZJeDVPQi9zYW5kYm94L0ttSURkbFduVnFzTktJQ0ttZjlIMWgtaW1nLTJfMTc3MTA0MTQ4MDAwMF9uYTFmbl9ZMkZ5YVdKaVpXRnVMV055ZFdselpTMXpkVzV6WlhRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=q7HRCQyQ~-w~C5w33nY2ql2sG3uXJCzYOhBWvxdtDbze05vqRtYbS1MyRLwFD-TcVNJiFFpZJHcV2VwV~1q2R3cALqcMsvdGRwHnu21~weD8Sbi-uWiSdqPpU9WlWn2TKGKSeggtUFRQyfGACZXSWEN8fFARTbR6zzad3L~CHbe4XhsMPFnsc3p-wyMqi~d0BXyI285CVEa7MEblcdb65PW9fdjkfHT~qRlFn6r07oCoZ0-QNyv5bieV7Uc3tjnaZPINOxgUEUae~nkcYOMaSW3rbEpaeOPirXqd8MTpAakVSef6F4V~VkghbCiPu~VmHDnSaWoQ6uLrTOXc4UCehA__";
 const TROPICAL_BEACH = "https://private-us-east-1.manuscdn.com/sessionFile/XOLEdg9yZlg7uKRTFIx5OB/sandbox/KmIDdlWnVqsNKICKmf9H1h-img-4_1771041481000_na1fn_dHJvcGljYWwtYmVhY2gtd2VhdGhlcg.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWE9MRWRnOXlabGc3dUtSVEZJeDVPQi9zYW5kYm94L0ttSURkbFduVnFzTktJQ0ttZjlIMWgtaW1nLTRfMTc3MTA0MTQ4MTAwMF9uYTFmbl9kSEp2Y0dsallXd3RZbVZoWTJndGQyVmhkR2hsY2cucG5nP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=gc3iC93INNkqrzR5EnGIKflyv9FZdTH2fcgfdAbMjhXxoCZjknQ5xd9PeoZfZIuPgpkgSKejVD--ZpA7V17td1MzXUUjYzjxXZntB4pNkCjJYyWtpcW1PhtJoRFqVtUCsUAyhpxkxIbNWc8pWg2Lb7hCro~xzqd7PmRe2J2nO21MUlSzZmuIG1ogNLRm7UeSmtlxqvuQozC~DnA8ux49xns-BKzSBXIfPHW6FZKDKdqcQSP2nYkS9FZCLwtX2dyf~cwa78K5P0KYg3twSHu5t9UQGasE4Brn8NEIVTsP2ECZxrNdoc7urtkzPyCZlM3ZfeeOoA9iZ6bI5mvbgSD3bA__";
 
+// Temporary public visibility setting. Preserve the video configuration and modal for quick restoration.
+const SHOW_VIDEO_BRIEFING = false;
+
 // --- Live Conditions Data ---
 const LIVE_DATA = [
   { location: "Alexandria", sublabel: "Egypt", lat: 31.20, lon: 29.92, temp: 68, condition: "Sunny", icon: ThermometerSun, color: "from-orange-500 to-amber-500" },
@@ -1491,14 +1494,16 @@ export default function Home() {
             </p>
             <div className="h-8" />
             <div className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap gap-3">
-              <Button
-                size="lg"
-                className="w-full md:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
-                onClick={() => setBriefingVideoOpen(true)}
-              >
-                <Play className="w-5 h-5 mr-2" />
-                {t("home.watchBriefing")}
-              </Button>
+              {SHOW_VIDEO_BRIEFING && (
+                <Button
+                  size="lg"
+                  className="w-full md:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white border-0 shadow-2xl glow-accent"
+                  onClick={() => setBriefingVideoOpen(true)}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  {t("home.watchBriefing")}
+                </Button>
+              )}
               <Button
                 size="lg"
                 className="hidden md:flex md:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-gray-900 border-0 shadow-lg"
@@ -1698,7 +1703,7 @@ export default function Home() {
       )}
 
       {/* Briefing Video Modal: portrait briefing fills the mobile viewport; desktop retains the focused 380px frame. */}
-      {briefingVideoOpen && (
+      {SHOW_VIDEO_BRIEFING && briefingVideoOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.95)' }}
