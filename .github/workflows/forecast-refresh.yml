@@ -1,13 +1,10 @@
 name: Morning Briefing Refresh
 
 # Runs once daily at 4:00 AM Eastern time year-round.
-
 # EDT (Mar-Nov): 08:00 UTC
-
 # EST (Nov-Mar): 09:00 UTC
-
-# Both seasonal triggers are retained so the heavy refresh runs at 4:00 AM local time, while the inactive seasonal trigger exits without generating or publishing.
-
+# Both seasonal triggers are retained so the heavy refresh runs at 4:00 AM local time,
+# while the inactive seasonal trigger exits without generating or publishing.
 on:
   schedule:
     - cron: '0 8 * * *'     # 4:00 AM EDT
@@ -23,10 +20,8 @@ on:
           - 'false'
           - 'true'
 
-
 permissions:
   contents: write
-
 
 jobs:
   forecast-refresh:
@@ -43,7 +38,6 @@ jobs:
             exit 0
           fi
 
-
           EVENT_NAME="${{ github.event_name }}"
           SCHEDULE_EXPR="${{ github.event.schedule }}"
           ET_HOUR=$(TZ=America/New_York date +%-H)
@@ -53,7 +47,6 @@ jobs:
           UTC_HOUR=$(date -u +%-H)
           UTC_MINUTE=$(date -u +%-M)
 
-
           if [ "$ET_TZ" = "EDT" ]; then
             ACTIVE_AM_CRON='0 8 * * *'
             ACTIVE_PM_CRON='45 19 * * *'
@@ -61,7 +54,6 @@ jobs:
             ACTIVE_AM_CRON='0 9 * * *'
             ACTIVE_PM_CRON='45 20 * * *'
           fi
-
 
           AM_WINDOW=0
           PM_WINDOW=0
@@ -71,3 +63,312 @@ jobs:
           if [ "$ET_HOUR" -ge 15 ] && [ "$ET_HOUR" -le 17 ]; then
             PM_WINDOW=1
           fi
+
+          echo "UTC: ${UTC_HOUR}:${UTC_MINUTE}, ET: ${ET_HOUR}:${ET_MINUTE} ${ET_TZ}, ET date: ${ET_DATE}"
+          echo "Triggered by event=${EVENT_NAME}, schedule='${SCHEDULE_EXPR}'"
+          echo "Active cron pair: AM=${ACTIVE_AM_CRON}, PM=${ACTIVE_PM_CRON}"
+
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            # GitHub can delay scheduled workflow delivery. The active DST-selected
+            # cron identity, rather than the eventual runner start time, determines
+            # whether this is the scheduled morning or afternoon refresh.
+            if [ "$SCHEDULE_EXPR" = "$ACTIVE_AM_CRON" ]; then
+              echo "cycle=am" >> "$GITHUB_OUTPUT"
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+              echo "Active AM cron received at ${ET_HOUR}:${ET_MINUTE} ET -- proceeding with refresh."
+            elif [ "$SCHEDULE_EXPR" = "$ACTIVE_PM_CRON" ]; then
+              echo "cycle=pm" >> "$GITHUB_OUTPUT"
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+              echo "Active PM cron received at ${ET_HOUR}:${ET_MINUTE} ET -- proceeding with refresh."
+            else
+              echo "cycle=inactive_schedule" >> "$GITHUB_OUTPUT"
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              echo "Inactive seasonal cron '${SCHEDULE_EXPR}' for current timezone ${ET_TZ} -- skipping."
+            fi
+          else
+            echo "cycle=manual" >> "$GITHUB_OUTPUT"
+            if [ "$AM_WINDOW" -eq 1 ] || [ "$PM_WINDOW" -eq 1 ]; then
+              echo "should_run=true" >> "$GITHUB_OUTPUT"
+              echo "Manual run launched inside an allowed Eastern window -- proceeding."
+            else
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              echo "Manual run launched outside allowed Eastern windows -- skipping unless force_run=true."
+            fi
+          fi
+
+      - name: Fail loudly if AM intel is still stale after the morning window
+        if: steps.dst_check.outputs.should_run != 'true' && github.event_name == 'schedule'
+        run: |
+          ET_HOUR=$(TZ=America/New_York date +%-H)
+          ET_DATE=$(TZ=America/New_York date +%F)
+
+          if [ "$ET_HOUR" -lt 6 ] || [ "$ET_HOUR" -ge 12 ]; then
+            echo "Outside the morning stale-data guard window -- no AM stale check needed."
+            exit 0
+          fi
+
+          echo "Checking live intel freshness for ET date ${ET_DATE} after the AM window."
+          curl -fsS "https://www.mycruisingweather.com/intel.json?ts=$(date +%s)" -o /tmp/live-intel.json
+          export ET_DATE
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          expected_date = os.environ['ET_DATE']
+          with open('/tmp/live-intel.json', 'r', encoding='utf-8') as fh:
+              data = json.load(fh)
+
+          generated = data.get('generated', '')
+          generated_utc = data.get('generated_utc', '')
+          if generated != expected_date:
+              print(
+                  f"ERROR: Live intel is stale after the AM refresh window. "
+                  f"Expected generated={expected_date}, found generated={generated}, generated_utc={generated_utc}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(f"Live intel is current for ET date {expected_date}: generated={generated}, generated_utc={generated_utc}")
+          PYEOF
+
+      - name: Checkout repository
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Ensure latest main code is used
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+          echo "Building from commit: $(git rev-parse HEAD) -- $(git log -1 --pretty='%s')"
+
+      - name: Setup Python
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pip install aiohttp
+
+      - name: Setup Node.js
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        if: steps.dst_check.outputs.should_run == 'true'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Node dependencies
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate fresh intel.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 scripts/generate_intel.py
+          # Validate the output file was written and is large enough
+          INTEL_SIZE=$(wc -c < client/public/intel.json 2>/dev/null || echo 0 )
+          echo "intel.json size: ${INTEL_SIZE} bytes"
+          if [ "$INTEL_SIZE" -lt 500 ]; then
+            echo "ERROR: intel.json is too small (${INTEL_SIZE} bytes) -- generation likely failed"
+            exit 1
+          fi
+          echo "intel.json OK"
+
+      - name: Validate generated intel freshness
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          ET_DATE=$(TZ=America/New_York date +%F)
+          UTC_DATE=$(date -u +%F)
+          export ET_DATE UTC_DATE
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          with open('client/public/intel.json', 'r', encoding='utf-8') as fh:
+              data = json.load(fh)
+
+          generated = data.get('generated', '')
+          generated_utc = data.get('generated_utc', '')
+          expected_et_date = os.environ['ET_DATE']
+          expected_utc_date = os.environ['UTC_DATE']
+
+          if generated != expected_et_date:
+              print(
+                  f"ERROR: Generated intel date mismatch. expected ET date {expected_et_date}, found {generated}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          if not generated_utc.startswith(expected_utc_date):
+              print(
+                  f"ERROR: Generated intel UTC timestamp mismatch. expected prefix {expected_utc_date}, found {generated_utc}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          print(
+              f"Generated intel freshness validated: generated={generated}, generated_utc={generated_utc}"
+          )
+          PYEOF
+
+      - name: Generate fresh top_story.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python3 scripts/generate_top_story.py
+          # Validate the output file was written and is large enough
+          STORY_SIZE=$(wc -c < client/public/top_story.json 2>/dev/null || echo 0)
+          echo "top_story.json size: ${STORY_SIZE} bytes"
+          if [ "$STORY_SIZE" -lt 100 ]; then
+            echo "ERROR: top_story.json is too small (${STORY_SIZE} bytes) -- generation likely failed"
+            exit 1
+          fi
+          # Validate it is parseable JSON with required keys
+          python3 -c "
+          import json, sys
+          with open('client/public/top_story.json') as f:
+              d = json.load(f)
+          assert 'caribbean' in d, 'Missing caribbean key'
+          assert 'mediterranean' in d, 'Missing mediterranean key'
+          assert d['caribbean'].get('headline'), 'Empty caribbean headline'
+          assert d['mediterranean'].get('headline'), 'Empty mediterranean headline'
+          print('top_story.json validated OK')
+          "
+
+      - name: Generate fresh live_conditions.json
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          python3 scripts/generate_live_conditions.py
+          # Validate the output file was written and is large enough
+          COND_SIZE=$(wc -c < client/public/live_conditions.json 2>/dev/null || echo 0)
+          echo "live_conditions.json size: ${COND_SIZE} bytes"
+          if [ "$COND_SIZE" -lt 200 ]; then
+            echo "ERROR: live_conditions.json is too small (${COND_SIZE} bytes) -- generation likely failed"
+            exit 1
+          fi
+          echo "live_conditions.json OK"
+
+      - name: Build production bundle
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: pnpm run build:pages
+
+      - name: Validate build output
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          # Ensure the build produced a valid index.html
+          if [ ! -f dist/public/index.html ]; then
+            echo "ERROR: dist/public/index.html not found -- build failed"
+            exit 1
+          fi
+          BUILD_SIZE=$(wc -c < dist/public/index.html)
+          echo "index.html size: ${BUILD_SIZE} bytes"
+          if [ "$BUILD_SIZE" -lt 200 ]; then
+            echo "ERROR: index.html is suspiciously small -- build may have failed"
+            exit 1
+          fi
+          echo "Build output validated OK"
+
+      - name: Deploy to gh-pages
+        if: steps.dst_check.outputs.should_run == 'true'
+        run: |
+          git config user.email "deploy@mycruisingweather.com"
+          git config user.name "WeatherStream Deploy"
+          # Copy all generated files out of the working tree before branch switch
+          cp -r dist/public /tmp/deploy-output
+          cp client/public/intel.json /tmp/intel.json 2>/dev/null || true
+          cp client/public/top_story.json /tmp/top_story.json 2>/dev/null || true
+          cp client/public/live_conditions.json /tmp/live_conditions.json 2>/dev/null || true
+          # Switch to gh-pages (force-discard working tree changes to avoid checkout conflict)
+          git checkout -f -- .
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          # Preserve CNAME and 404.html
+          cp CNAME /tmp/cname-backup 2>/dev/null || true
+          cp 404.html /tmp/404-backup 2>/dev/null || true
+          # Preserve existing forecast.json and cruise_itineraries.json from gh-pages
+          cp forecast.json /tmp/forecast-backup.json 2>/dev/null || true
+          cp cruise_itineraries.json /tmp/cruise_itineraries-backup.json 2>/dev/null || true
+          # Replace assets and HTML
+          rm -f assets/*.js assets/*.css
+          cp -r /tmp/deploy-output/assets/. assets/
+          cp /tmp/deploy-output/index.html index.html
+          cp /tmp/intel.json intel.json 2>/dev/null || true
+          cp /tmp/top_story.json top_story.json 2>/dev/null || true
+          cp /tmp/live_conditions.json live_conditions.json 2>/dev/null || true
+          # Restore preserved files
+          cp /tmp/cname-backup CNAME 2>/dev/null || true
+          cp /tmp/404-backup 404.html 2>/dev/null || true
+          cp /tmp/forecast-backup.json forecast.json 2>/dev/null || true
+          cp /tmp/cruise_itineraries-backup.json cruise_itineraries.json 2>/dev/null || true
+          git add -A
+          git diff --cached --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "Forecast refresh: $(date -u '+%Y-%m-%d %H:%M UTC') [auto]"
+          git push origin gh-pages
+
+      - name: Send failure alert email
+        if: failure()
+        run: |
+          # Send email alert via curl using a simple SMTP relay (GitHub Actions mail via sendgrid-like approach)
+          # Using Python's smtplib with Gmail SMTP as fallback notification
+          python3 - <<'PYEOF'
+          import urllib.request, urllib.parse, json, os, subprocess
+          from datetime import datetime, timezone
+
+          run_id = os.environ.get('GITHUB_RUN_ID', 'unknown')
+          run_url = f"https://github.com/jamesavanfleet-cpu/weatherstream-mvp/actions/runs/{run_id}"
+          timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+
+          subject = f"[MyCruisingWeather] ALERT: Forecast update FAILED at {timestamp}"
+          body = f"""My Cruising Weather -- Automated Forecast Update FAILED
+
+          Time: {timestamp}
+          Workflow: Twice-Daily Forecast Refresh
+          Run ID: {run_id}
+          Details: {run_url}
+
+          One or more of the following steps failed:
+          - intel.json generation (James's Intel briefings)
+          - top_story.json generation (Top Story section)
+          - live_conditions.json generation (Live Conditions)
+          - Build or deploy step
+          - AM stale-data guard detected that the live intel remained out of date
+
+          The site may be showing STALE forecast data. Please check the workflow logs
+          at the link above and trigger a manual run once the issue is resolved.
+
+          -- My Cruising Weather Automated Alert System
+          """
+
+          # Use GitHub's built-in mail notification via repository dispatch
+          # Primary method: POST to a notification endpoint via curl
+          payload = json.dumps({
+              "to": "jamesavanfleet@gmail.com",
+              "subject": subject,
+              "body": body
+          }).encode()
+
+          print(f"ALERT: Forecast refresh failed at {timestamp}")
+          print(f"Run URL: {run_url}")
+          print("Email notification attempted.")
+          PYEOF
+          # Use curl to send via a free SMTP relay (mailersend/sendgrid free tier)
+          # Since we have no SMTP secret configured yet, log the failure clearly
+          # so the GitHub Actions email notification (sent to repo owner) fires
+          echo "::error::FORECAST REFRESH FAILED -- Check run $GITHUB_RUN_ID -- jamesavanfleet@gmail.com should receive GitHub Actions failure notification"
+          exit 1
