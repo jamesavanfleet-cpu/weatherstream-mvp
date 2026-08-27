@@ -10,6 +10,7 @@ Outputs: client/public/top_story.json
 
 import asyncio, concurrent.futures, json, math, os, subprocess, sys, time, urllib.request, urllib.error
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 try:
@@ -568,7 +569,7 @@ async def main():
     print(f"Med headline: {med_headline}")
 
     out = {
-        "date": date.today().isoformat(),
+        "date": datetime.now(ZoneInfo("America/New_York")).date().isoformat(),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "caribbean": {
             "headline": carib_headline,

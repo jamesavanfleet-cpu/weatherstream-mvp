@@ -16,6 +16,7 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 # Sandbox TLS workaround: api.open-meteo.com (188.40.99.226) drops TLS connections
@@ -1619,8 +1620,9 @@ def main(argv: list[str] | None = None):
         sys.exit(1)
 
     now_utc = datetime.now(timezone.utc)
+    now_eastern = datetime.now(ZoneInfo("America/New_York"))
     output = {
-        "generated": date.today().isoformat(),
+        "generated": now_eastern.date().isoformat(),
         "generated_utc": now_utc.strftime("%Y-%m-%dT%H:%M UTC"),
         "regions": {},
     }
