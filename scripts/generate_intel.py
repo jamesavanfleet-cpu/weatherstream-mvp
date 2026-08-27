@@ -1490,7 +1490,21 @@ def _validate_and_repair_forecast_only(region: dict, intel: str, weather_data: d
             return candidate
         intel = candidate
 
-    raise ValueError("Forecast-only validation failed: " + "; ".join(violations))
+    fallback = _normalize_low_rain_phrasing(_build_rate_limit_fallback(region, weather_data))
+    fallback = _deduplicate_heat_product_labels(fallback)
+    fallback_violations = _forecast_only_violations(fallback)
+    if not fallback_violations:
+        print(
+            "  FORECAST_ONLY_DETERMINISTIC_FALLBACK: Model repair retries exhausted; "
+            "publishing the validated live-data forecast.",
+            file=sys.stderr,
+        )
+        return fallback
+
+    raise ValueError(
+        "Forecast-only validation failed after deterministic fallback: "
+        + "; ".join(fallback_violations)
+    )
 
 
 def _generate_region_forecast(region: dict) -> str:
