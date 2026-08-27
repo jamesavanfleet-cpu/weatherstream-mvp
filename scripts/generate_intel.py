@@ -1308,6 +1308,29 @@ def _today_fallback_sentence(region: dict, weather_data: dict) -> str:
     return f"Today, {region['rep_port']} reports {current}."
 
 
+def _build_rate_limit_fallback(region: dict, weather_data: dict) -> str:
+    """Return a concise, data-backed regional forecast when the model is unavailable."""
+    summary = weather_data.get("summary", "").strip()
+    current_block, _, outlook_block = summary.partition("3-day outlook:")
+    current = current_block.replace("Current conditions:", "", 1).strip().rstrip(".")
+    outlooks = [part.strip().rstrip(".") for part in outlook_block.split(";") if part.strip()]
+    day_one = outlooks[0] if outlooks else current
+    day_two = outlooks[1] if len(outlooks) > 1 else day_one
+    day_three = outlooks[2] if len(outlooks) > 2 else day_two
+    lead_port = region.get("required_lead_port") or region["rep_port"]
+
+    if region["slug"] == "us-ports":
+        return (
+            f"Today, {lead_port} reports {current}. "
+            f"Over the next 48 hours, {day_two}; beyond 48 hours, {day_three}."
+        )
+    return (
+        f"Today, {lead_port} reports {current}. "
+        f"Over the next 24 to 48 hours, {day_two}. "
+        f"Beyond 48 hours, {day_three}."
+    )
+
+
 def _validate_and_repair_brevity(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
     """Regenerate output that is overlong or not a plain Today-led paragraph."""
     import re as _re
@@ -1470,7 +1493,7 @@ def _validate_and_repair_forecast_only(region: dict, intel: str, weather_data: d
 
 
 def _generate_region_forecast(region: dict) -> str:
-    """Generate one fully validated regional forecast without any static fallback."""
+    """Generate one fully validated regional forecast with a factual rate-limit fallback."""
     wx = fetch_weather(region["lat"], region["lon"])
     pop_means = fetch_precip_probability(region["lat"], region["lon"])
     advisory_lead = ""
@@ -1490,11 +1513,18 @@ def _generate_region_forecast(region: dict) -> str:
         advisories=advisories,
         include_apparent_heat=region["slug"] != "us-ports",
     )
-    intel = call_groq(region, weather_data)
-    intel = _clean_model_formatting(intel)
-    if not intel or len(intel.strip()) < 20:
-        raise ValueError(f"Model returned suspiciously short response: {intel!r}")
-    intel = strip_temperatures(intel.strip())
+    try:
+        intel = call_groq(region, weather_data)
+        intel = _clean_model_formatting(intel)
+        if not intel or len(intel.strip()) < 20:
+            raise ValueError(f"Model returned suspiciously short response: {intel!r}")
+        intel = strip_temperatures(intel.strip())
+    except Exception as exc:
+        print(
+            f"  MODEL FALLBACK: {region['slug']} using deterministic live-data forecast after provider failure: {exc}",
+            file=sys.stderr,
+        )
+        intel = _build_rate_limit_fallback(region, weather_data)
     intel = _normalize_low_rain_phrasing(intel)
     intel = _validate_and_repair_lead(region, intel, weather_data)
     intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
