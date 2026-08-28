@@ -1,11 +1,11 @@
 name: Hourly Live Conditions Update
 
-# Runs at :10 past every hour to fetch fresh current conditions for all ports.
+# Runs at :17 past every hour to fetch fresh current conditions for all ports.
 # Uses only Open-Meteo (free, no API key required).
 # Does NOT rebuild the full site -- just updates live_conditions.json on gh-pages.
 on:
   schedule:
-    - cron: '10 * * * *'   # :10 past every hour
+    - cron: '17 * * * *'   # :17 past every hour; re-registers cron after the August 2026 Actions trigger outage
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 permissions:
