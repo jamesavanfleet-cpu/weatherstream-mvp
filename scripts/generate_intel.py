@@ -509,6 +509,112 @@ def fetch_precip_probability(lat: float, lon: float) -> list:
     return daily_means
 
 
+def _parse_nws_afd_pop_row(product_text: str, aliases: tuple[str, ...]) -> list[int]:
+    """Return alternating day/night PoPs from one explicit AFD point-table row."""
+    import re
+
+    marker = ".PRELIMINARY POINT TEMPS/POPS"
+    marker_index = product_text.upper().find(marker)
+    if marker_index < 0:
+        return []
+
+    section = product_text[marker_index:].split("&&", 1)[0]
+    for line in section.splitlines()[1:]:
+        if "/" not in line:
+            continue
+        for alias in aliases:
+            if not re.match(rf"^\s*{re.escape(alias)}\s+", line, re.IGNORECASE):
+                continue
+            pop_values = [int(value) for value in re.findall(r"\d{1,3}", line.split("/", 1)[1])]
+            if pop_values and all(0 <= value <= 100 for value in pop_values):
+                return pop_values
+    return []
+
+
+def _latest_same_day_afd_pop(office: str, aliases: tuple[str, ...], local_timezone: str) -> list[int]:
+    """Fetch the latest same-local-day AFD and return one validated city-row PoP sequence."""
+    index = _fetch_nws_json(f"https://api.weather.gov/products/types/AFD/locations/{office}")
+    products = index.get("@graph", [])
+    if not products:
+        return []
+
+    latest = max(products, key=lambda item: item.get("issuanceTime", ""))
+    issuance = latest.get("issuanceTime")
+    if not issuance:
+        return []
+    issued_local = datetime.fromisoformat(issuance.replace("Z", "+00:00")).astimezone(
+        ZoneInfo(local_timezone)
+    )
+    if issued_local.date() != datetime.now(ZoneInfo(local_timezone)).date():
+        return []
+
+    product_id = latest.get("id") or str(latest.get("@id", "")).rstrip("/").split("/")[-1]
+    if not product_id:
+        return []
+    product = _fetch_nws_json(f"https://api.weather.gov/products/{product_id}")
+    return _parse_nws_afd_pop_row(product.get("productText", ""), aliases)
+
+
+def _nws_daytime_point_pops(forecast_url: str, limit: int = 3) -> list[int]:
+    """Return official daytime PoPs from the exact NWS point forecast."""
+    forecast = _fetch_nws_json(forecast_url)
+    values = []
+    for period in forecast.get("properties", {}).get("periods", []):
+        if not period.get("isDaytime"):
+            continue
+        value = period.get("probabilityOfPrecipitation", {}).get("value")
+        if value is None:
+            continue
+        numeric = int(round(float(value)))
+        if 0 <= numeric <= 100:
+            values.append(numeric)
+        if len(values) >= limit:
+            break
+    return values
+
+
+def fetch_us_port_daily_pop(region: dict) -> list[int]:
+    """Fetch Miami's official NWS day PoPs for the US Ports regional briefing."""
+    point = _fetch_nws_json(
+        f"https://api.weather.gov/points/{region['lat']},{region['lon']}"
+    )
+    properties = point.get("properties", {})
+    office = properties.get("gridId")
+    forecast_url = properties.get("forecast")
+    local_timezone = properties.get("timeZone") or "America/New_York"
+    if not office or not forecast_url:
+        raise RuntimeError("NWS point metadata is missing the forecast office or point forecast URL")
+
+    point_pops = _nws_daytime_point_pops(forecast_url, limit=3)
+    afd_pops = _latest_same_day_afd_pop(office, ("Miami",), local_timezone)
+    afd_daytime = afd_pops[0::2]
+
+    daily_pops = []
+    for day_index in range(3):
+        if day_index < len(afd_daytime):
+            daily_pops.append(afd_daytime[day_index])
+        elif day_index < len(point_pops):
+            daily_pops.append(point_pops[day_index])
+
+    if len(daily_pops) < 3:
+        raise RuntimeError(
+            f"NWS US Ports PoP chain returned only {len(daily_pops)}/3 daytime periods"
+        )
+    print(
+        f"  US Ports NWS PoP: office={office}, AFD day values={afd_daytime}, "
+        f"point fallback values={point_pops}, selected={daily_pops}",
+        file=sys.stderr,
+    )
+    return daily_pops
+
+
+def fetch_region_precip_probability(region: dict) -> list:
+    """Route only US Ports to NWS while preserving every other region's current source."""
+    if region.get("slug") == "us-ports":
+        return fetch_us_port_daily_pop(region)
+    return fetch_precip_probability(region["lat"], region["lon"])
+
+
 def ms_to_kt(ms: float) -> int:
     return round(ms * 1.94384)
 
@@ -1332,6 +1438,46 @@ def _build_rate_limit_fallback(region: dict, weather_data: dict) -> str:
     )
 
 
+def _enforce_us_ports_today_pop(region: dict, intel: str, weather_data: dict) -> str:
+    """Guarantee that the Miami lead carries the exact NWS daytime PoP phrase."""
+    import re
+
+    if region.get("slug") != "us-ports":
+        return intel
+
+    current_summary = weather_data.get("summary", "").split("3-day outlook:", 1)[0]
+    expected_match = re.search(
+        r"(?:less than \d{1,3}|\d{1,3})% rain probability",
+        current_summary,
+        re.IGNORECASE,
+    )
+    if not expected_match:
+        raise ValueError("US Ports weather summary is missing the authoritative NWS PoP phrase")
+    expected_phrase = expected_match.group(0)
+
+    parts = _briefing_sentence_parts(intel, maxsplit=1)
+    first_sentence = parts[0] if parts else ""
+    if expected_phrase.lower() in first_sentence.lower():
+        return intel
+
+    rain_pattern = re.compile(
+        r"(?:less than \d{1,3}|\d{1,3})%\s+(?:rain probability|chance of rain|rain chance)",
+        re.IGNORECASE,
+    )
+    if rain_pattern.search(first_sentence):
+        repaired_first = rain_pattern.sub(expected_phrase, first_sentence, count=1)
+    else:
+        repaired_first = _today_fallback_sentence(region, weather_data)
+
+    body = parts[1] if len(parts) > 1 else ""
+    repaired = " ".join(part for part in (repaired_first, body) if part).strip()
+    print(
+        f"  [US PORTS POP GUARD] Repaired Miami lead to authoritative phrase: {expected_phrase}",
+        file=sys.stderr,
+    )
+    return repaired
+
+
 def _validate_and_repair_brevity(region: dict, intel: str, weather_data: dict, max_retries: int = 2) -> str:
     """Regenerate output that is overlong or not a plain Today-led paragraph."""
     import re as _re
@@ -1510,7 +1656,7 @@ def _validate_and_repair_forecast_only(region: dict, intel: str, weather_data: d
 def _generate_region_forecast(region: dict) -> str:
     """Generate one fully validated regional forecast with a factual rate-limit fallback."""
     wx = fetch_weather(region["lat"], region["lon"])
-    pop_means = fetch_precip_probability(region["lat"], region["lon"])
+    pop_means = fetch_region_precip_probability(region)
     advisory_lead = ""
     if region["slug"] == "us-ports":
         us_port_alerts = fetch_us_port_heat_advisories(region)
@@ -1544,6 +1690,7 @@ def _generate_region_forecast(region: dict) -> str:
     intel = _validate_and_repair_lead(region, intel, weather_data)
     intel = _validate_and_repair_rule_leaks(region, intel, weather_data)
     intel = _validate_and_repair_brevity(region, intel, weather_data)
+    intel = _enforce_us_ports_today_pop(region, intel, weather_data)
     intel = _deduplicate_heat_product_labels(intel)
     if region["slug"] == "us-ports":
         intel = strip_us_port_heat_claims(intel)
