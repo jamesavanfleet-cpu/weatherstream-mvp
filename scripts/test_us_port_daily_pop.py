@@ -52,6 +52,16 @@ class UsPortsNwsDailyPopTests(unittest.TestCase):
         )
         self.assertEqual(MODULE._parse_nws_afd_pop_row(AFD_TEXT, ("Bayonne",)), [])
 
+    def test_afternoon_afd_sequence_skips_leading_nighttime_pop(self):
+        self.assertEqual(
+            MODULE._align_afd_pop_sequence_to_daytime([30, 60, 20, 70], 13),
+            [60, 20, 70],
+        )
+        self.assertEqual(
+            MODULE._align_afd_pop_sequence_to_daytime([60, 30, 70, 30], 7),
+            [60, 30, 70, 30],
+        )
+
     def test_us_ports_prefers_afd_day_values_and_uses_point_fallback(self):
         payload = point_payload([55, 65, 50])
         with patch.object(

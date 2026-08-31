@@ -531,6 +531,13 @@ def _parse_nws_afd_pop_row(product_text: str, aliases: tuple[str, ...]) -> list[
     return []
 
 
+def _align_afd_pop_sequence_to_daytime(pop_values: list[int], issued_local_hour: int) -> list[int]:
+    """Remove an afternoon discussion's leading nighttime PoP before day/night slicing."""
+    if issued_local_hour >= 12:
+        return pop_values[1:]
+    return pop_values
+
+
 def _latest_same_day_afd_pop(office: str, aliases: tuple[str, ...], local_timezone: str) -> list[int]:
     """Fetch the latest same-local-day AFD and return one validated city-row PoP sequence."""
     index = _fetch_nws_json(f"https://api.weather.gov/products/types/AFD/locations/{office}")
@@ -552,7 +559,8 @@ def _latest_same_day_afd_pop(office: str, aliases: tuple[str, ...], local_timezo
     if not product_id:
         return []
     product = _fetch_nws_json(f"https://api.weather.gov/products/{product_id}")
-    return _parse_nws_afd_pop_row(product.get("productText", ""), aliases)
+    pop_values = _parse_nws_afd_pop_row(product.get("productText", ""), aliases)
+    return _align_afd_pop_sequence_to_daytime(pop_values, issued_local.hour)
 
 
 def _nws_daytime_point_pops(forecast_url: str, limit: int = 3) -> list[int]:
