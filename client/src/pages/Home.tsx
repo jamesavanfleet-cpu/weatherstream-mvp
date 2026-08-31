@@ -21,6 +21,17 @@ import PtzThumb from "@/components/PtzThumb";
 import { hasPtzCamera, getPtzCameras } from "@/lib/ptzCameras";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+const BRIEFING_RAIN_PATTERN = /\b(less than )?(\d{1,3})% rain probability\b/i;
+
+export function briefingRainLabel(intel: string | undefined): string | null {
+  const match = intel?.match(BRIEFING_RAIN_PATTERN);
+  if (!match) return null;
+
+  const value = Number.parseInt(match[2], 10);
+  if (value < 0 || value > 100) return null;
+  return match[1] ? `<${value}%` : `${value}%`;
+}
+
 /**
  * WeatherStream - Next-Gen Weather Platform
  * 
@@ -1351,6 +1362,9 @@ export default function Home() {
     const liveIntel = regionIntel[slug];
     const displayTemp = isMetric ? fToC(route.temp) : `${route.temp}°`;
     const displaySeas = isMetric ? seaFtToM(route.seas) : route.seas;
+    const displayRain = slug === "us-ports"
+      ? briefingRainLabel(liveIntel) || liveRain[route.name] || route.rain
+      : liveRain[route.name] || route.rain;
     return (
     <div
       key={route.name}
@@ -1435,7 +1449,7 @@ export default function Home() {
             </div>
             <div className="glass rounded-xl p-3 text-center">
               <Droplets className="w-5 h-5 mx-auto mb-2 text-purple-400" />
-              <p className="text-2xl font-bold text-white">{liveRain[route.name] || route.rain}</p>
+              <p className="text-2xl font-bold text-white">{displayRain}</p>
               <p className="text-xs text-white/60">{t("home.rainChance")}</p>
             </div>
           </div>
