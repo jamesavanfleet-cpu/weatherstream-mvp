@@ -581,6 +581,39 @@ def _nws_daytime_point_pops(forecast_url: str, limit: int = 3) -> list[int]:
     return values
 
 
+def _nws_daytime_grid_pops(
+    grid_url: str,
+    local_timezone: str,
+    limit: int = 3,
+) -> list[int]:
+    """Return daily maximum daytime PoPs from the exact NWS grid point."""
+    grid = _fetch_nws_json(grid_url)
+    timezone = ZoneInfo(local_timezone)
+    today = datetime.now(timezone).date()
+    daily_values: dict = {}
+
+    for interval in (
+        grid.get("properties", {})
+        .get("probabilityOfPrecipitation", {})
+        .get("values", [])
+    ):
+        valid_time = interval.get("validTime", "")
+        value = interval.get("value")
+        if not valid_time or value is None:
+            continue
+        start = datetime.fromisoformat(
+            valid_time.split("/", 1)[0].replace("Z", "+00:00")
+        ).astimezone(timezone)
+        if start.date() < today or not 6 <= start.hour < 18:
+            continue
+        numeric = int(round(float(value)))
+        if not 0 <= numeric <= 100:
+            continue
+        daily_values[start.date()] = max(daily_values.get(start.date(), 0), numeric)
+
+    return [daily_values[day] for day in sorted(daily_values)[:limit]]
+
+
 def fetch_us_port_daily_pop(region: dict) -> list[int]:
     """Fetch Miami's official NWS day PoPs for the US Ports regional briefing."""
     point = _fetch_nws_json(
@@ -589,11 +622,25 @@ def fetch_us_port_daily_pop(region: dict) -> list[int]:
     properties = point.get("properties", {})
     office = properties.get("gridId")
     forecast_url = properties.get("forecast")
+    grid_url = properties.get("forecastGridData")
     local_timezone = properties.get("timeZone") or "America/New_York"
     if not office or not forecast_url:
         raise RuntimeError("NWS point metadata is missing the forecast office or point forecast URL")
 
-    point_pops = _nws_daytime_point_pops(forecast_url, limit=3)
+    try:
+        point_pops = _nws_daytime_point_pops(forecast_url, limit=3)
+    except Exception as error:
+        if not grid_url:
+            raise
+        print(
+            f"  NWS point forecast unavailable; using exact grid fallback: {error}",
+            file=sys.stderr,
+        )
+        point_pops = _nws_daytime_grid_pops(
+            grid_url,
+            local_timezone,
+            limit=3,
+        )
     afd_pops = _latest_same_day_afd_pop(office, ("Miami",), local_timezone)
     afd_daytime = afd_pops[0::2]
 

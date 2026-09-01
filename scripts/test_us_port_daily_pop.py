@@ -3,8 +3,10 @@
 
 import importlib.util
 import unittest
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 
 MODULE_PATH = Path(__file__).with_name("generate_intel.py")
@@ -34,10 +36,25 @@ def point_payload(daytime_values):
         "properties": {
             "gridId": "MFL",
             "forecast": "https://api.weather.gov/gridpoints/MFL/110,50/forecast",
+            "forecastGridData": "https://api.weather.gov/gridpoints/MFL/110,50",
             "timeZone": "America/New_York",
             "periods": periods,
         }
     }
+
+
+def grid_payload(daytime_values):
+    timezone = ZoneInfo("America/New_York")
+    today = datetime.now(timezone).date()
+    values = []
+    for day_index, value in enumerate(daytime_values):
+        start = datetime.combine(
+            today + timedelta(days=day_index),
+            datetime.min.time(),
+            timezone,
+        ).replace(hour=12)
+        values.append({"validTime": f"{start.isoformat()}/PT1H", "value": value})
+    return {"properties": {"probabilityOfPrecipitation": {"values": values}}}
 
 
 class UsPortsNwsDailyPopTests(unittest.TestCase):
@@ -79,6 +96,27 @@ class UsPortsNwsDailyPopTests(unittest.TestCase):
         ):
             region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
             self.assertEqual(MODULE.fetch_us_port_daily_pop(region), [55, 65, 50])
+
+    def test_us_ports_uses_exact_grid_fallback_when_point_forecast_is_unavailable(self):
+        point = point_payload([])
+        grid = grid_payload([45, 50, 55])
+
+        def fetch(url):
+            if url.endswith("/points/25.76,-80.19"):
+                return point
+            if url.endswith("/forecast"):
+                raise RuntimeError("HTTP 404: point forecast unavailable")
+            if url.endswith("/gridpoints/MFL/110,50"):
+                return grid
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        with patch.object(
+            MODULE,
+            "_latest_same_day_afd_pop",
+            return_value=[60, 30, 60, 30],
+        ), patch.object(MODULE, "_fetch_nws_json", side_effect=fetch):
+            region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
+            self.assertEqual(MODULE.fetch_us_port_daily_pop(region), [60, 60, 55])
 
     def test_non_us_region_keeps_existing_open_meteo_path(self):
         with patch.object(
