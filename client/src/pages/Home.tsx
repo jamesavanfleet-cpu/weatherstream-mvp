@@ -141,6 +141,20 @@ const LIVE_DATA = [
   { location: "Venice", sublabel: "Italy", lat: 45.44, lon: 12.33, temp: 55, condition: "Partly Cloudy", icon: Cloud, color: "from-blue-400 to-indigo-400" },
 ];
 
+const LIVE_WMO_CONDITIONS: Record<number, string> = {
+  0: "Sunny", 1: "Mostly Clear", 2: "Partly Cloudy", 3: "Overcast",
+  45: "Foggy", 48: "Foggy",
+  51: "Light Drizzle", 53: "Drizzle", 55: "Heavy Drizzle",
+  61: "Light Rain", 63: "Rain", 65: "Heavy Rain",
+  71: "Light Snow", 73: "Snow", 75: "Heavy Snow",
+  80: "Rain Showers", 81: "Rain Showers", 82: "Heavy Showers",
+  95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm",
+};
+
+function liveConditionForWmo(code: number): string {
+  return LIVE_WMO_CONDITIONS[code] ?? "Partly Cloudy";
+}
+
 // --- Port Detail Live Data Cache ---
 interface HourlyForecastSlot {
   time: string;       // ISO datetime string
@@ -1111,30 +1125,117 @@ export default function Home() {
     setBriefingVideoOpen(false);
   }, []);
 
-  // Fetch live_conditions.json -- refreshed hourly at :10 past the hour
+  // Current conditions are read directly from Open-Meteo on page load, whenever the
+  // page regains focus, and every ten minutes. The published JSON remains a fallback
+  // so the strip still has data if the weather source is temporarily unavailable.
   useEffect(() => {
-    const loadLiveConditions = () => {
-      const base = import.meta.env.BASE_URL || "/";
-      const hourKey = new Date().toISOString().slice(0, 13);
-      fetch(`${base}live_conditions.json?h=${hourKey}`)
-        .then(r => {
-          // Guard: if the server returns HTML (e.g. a 404 redirect page) instead of
-          // JSON, parsing it would throw and crash the app. Check content-type first.
-          const ct = r.headers.get("content-type") || "";
-          if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
-          return r.json();
-        })
-        .then((d: { ports: Record<string, LiveCondEntry>; generated_at?: string }) => {
-          if (d.ports) setLiveConditionsData(d.ports);
-          if (d.generated_at) {
-            setLiveConditionsUpdatedAt(new Date(d.generated_at));
-          }
-        })
-        .catch(() => { /* fall back to static LIVE_DATA values */ });
+    type OpenMeteoCurrent = {
+      temperature_2m?: number;
+      weather_code?: number;
+      weathercode?: number;
+      wind_speed_10m?: number;
+      wind_direction_10m?: number;
+      time?: string;
     };
-    loadLiveConditions();
-    const id = setInterval(loadLiveConditions, 60 * 60 * 1000);
-    return () => clearInterval(id);
+    type OpenMeteoReport = { current?: OpenMeteoCurrent };
+
+    const loadPublishedFallback = async () => {
+      const base = import.meta.env.BASE_URL || "/";
+      const response = await fetch(base + "live_conditions.json?v=" + Date.now());
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || (!contentType.includes("json") && !contentType.includes("text/plain"))) {
+        throw new Error("Live conditions fallback is unavailable");
+      }
+      const data = await response.json() as { ports?: Record<string, LiveCondEntry>; generated_at?: string };
+      if (data.ports) setLiveConditionsData(data.ports);
+      if (data.generated_at) setLiveConditionsUpdatedAt(new Date(data.generated_at));
+    };
+
+    const refreshFromWeatherSource = async () => {
+      const batches = Array.from(
+        { length: Math.ceil(LIVE_DATA.length / 50) },
+        (_, index) => LIVE_DATA.slice(index * 50, (index + 1) * 50),
+      );
+      const settled = await Promise.allSettled(batches.map(async (batch) => {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 10000);
+        const lats = batch.map((port) => port.lat).join(",");
+        const lons = batch.map((port) => port.lon).join(",");
+        const url = "https://api.open-meteo.com/v1/forecast" +
+          "?latitude=" + lats + "&longitude=" + lons +
+          "&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m" +
+          "&temperature_unit=celsius&wind_speed_unit=kn&timezone=GMT";
+        try {
+          const response = await fetch(url, { signal: controller.signal });
+          if (!response.ok) throw new Error("Weather source returned HTTP " + response.status);
+          const data = await response.json();
+          return (Array.isArray(data) ? data : [data]) as OpenMeteoReport[];
+        } finally {
+          window.clearTimeout(timeout);
+        }
+      }));
+
+      const freshConditions: Record<string, LiveCondEntry> = {};
+      let newestObservationTime = "";
+      settled.forEach((result, batchIndex) => {
+        if (result.status !== "fulfilled") return;
+        result.value.forEach((report, portIndex) => {
+          const port = batches[batchIndex][portIndex];
+          const current = report.current;
+          if (!port || !current) return;
+          const tempC = Number(current.temperature_2m);
+          const windKt = Number(current.wind_speed_10m);
+          const windDir = Number(current.wind_direction_10m);
+          if (!Number.isFinite(tempC) || !Number.isFinite(windKt) || !Number.isFinite(windDir)) return;
+          const wmo = Number(current.weather_code ?? current.weathercode ?? 2);
+          freshConditions[port.location] = {
+            tempF: Math.round(tempC * 9 / 5 + 32),
+            tempC: Math.round(tempC * 10) / 10,
+            condition: liveConditionForWmo(wmo),
+            wmo,
+            windKt: Math.round(windKt),
+            windDir: Math.round(windDir),
+          };
+          const observationTime = typeof current.time === "string" ? current.time : "";
+          if (observationTime.length === 16 && observationTime > newestObservationTime) {
+            newestObservationTime = observationTime;
+          }
+        });
+      });
+
+      if (Object.keys(freshConditions).length === 0) {
+        throw new Error("Weather source returned no usable current conditions");
+      }
+      setLiveConditionsData((existing) => ({ ...(existing ?? {}), ...freshConditions }));
+      setLiveConditionsUpdatedAt(
+        newestObservationTime ? new Date(newestObservationTime + "Z") : new Date(),
+      );
+    };
+
+    const loadInitialConditions = async () => {
+      try {
+        await loadPublishedFallback();
+      } catch {
+        // The direct weather refresh below can still populate the strip.
+      }
+      try {
+        await refreshFromWeatherSource();
+      } catch {
+        // Retain the latest published data or static values until the next refresh.
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshFromWeatherSource().catch(() => undefined);
+    };
+
+    void loadInitialConditions();
+    const id = window.setInterval(() => void refreshFromWeatherSource().catch(() => undefined), 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   // Fetch daily top story from top_story.json
@@ -1667,7 +1768,7 @@ export default function Home() {
                 );
               })}
             </div>
-            <p className="text-white/25 text-[10px] mt-2 text-right">Updated hourly -- tap any port for full conditions</p>
+            <p className="text-white/25 text-[10px] mt-2 text-right">Updates every 10 minutes -- tap any port for full conditions</p>
             {/* Tropical Advisories button -- mobile only, shown below live conditions */}
             <Button
               size="lg"
