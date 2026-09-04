@@ -23,18 +23,24 @@ from pathlib import Path
 # in this environment. subprocess curl with --retry-all-errors is the only reliable
 # transport. All Open-Meteo fetches use this helper instead of urllib.
 def _curl_fetch_json(url: str, timeout: int = 60, retries: int = 15, retry_delay: int = 2) -> dict:
-    """Fetch a URL via subprocess curl and return parsed JSON.
-    Uses --retry-all-errors so intermittent SSL_ERROR_SYSCALL failures are retried.
+    """Fetch a URL via curl and return exactly one successful JSON response.
+
+    ``--fail`` suppresses a failed HTTP response body before curl retries. Without it,
+    a temporary API error payload can be appended to the successful retry payload on
+    stdout, causing ``json.loads`` to fail with an ``Extra data`` error.
     """
     result = _subprocess.run(
-        ['curl', '-s', '--max-time', str(timeout),
+        ['curl', '--fail', '--silent', '--show-error', '--max-time', str(timeout),
          '--retry', str(retries), '--retry-delay', str(retry_delay),
          '--retry-all-errors', url],
         capture_output=True, text=True
     )
-    if not result.stdout.strip():
-        raise RuntimeError(f"curl failed rc={result.returncode}: {result.stderr.strip()[:120]}")
-    return json.loads(result.stdout)
+    if result.returncode != 0:
+        raise RuntimeError(f"curl failed rc={result.returncode}: {result.stderr.strip()[:240]}")
+    payload = result.stdout.strip()
+    if not payload:
+        raise RuntimeError("curl returned an empty response")
+    return json.loads(payload)
 
 try:
     import httpx as _httpx
