@@ -383,7 +383,14 @@ def fetch_us_port_heat_advisories(region: dict) -> list:
             event = props.get("event", "")
             if event not in US_PORT_HEAT_EVENTS:
                 continue
-            value_f, value_label = _extract_heat_value(event, props.get("description", ""))
+            try:
+                value_f, value_label = _extract_heat_value(event, props.get("description", ""))
+            except ValueError as exc:
+                # The briefing rules require a verified numerical value whenever a
+                # heat product is mentioned. Some NWS products omit one, so omit
+                # only that incomplete alert rather than blocking every region.
+                print(f"  WARNING: Skipping incomplete {event} for {port['name']}: {exc}", file=sys.stderr)
+                continue
             alert_id = feature.get("id") or props.get("id") or f"{event}:{value_label}:{value_f}"
             key = (alert_id, event, value_label, value_f)
             group = alert_groups.setdefault(
