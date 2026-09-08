@@ -57,7 +57,7 @@ def grid_payload(daytime_values):
     return {"properties": {"probabilityOfPrecipitation": {"values": values}}}
 
 
-class UsPortsNwsDailyPopTests(unittest.TestCase):
+class FloridaCruisePortAfdTests(unittest.TestCase):
     def test_parse_explicit_city_rows_only(self):
         self.assertEqual(
             MODULE._parse_nws_afd_pop_row(AFD_TEXT, ("Miami",)),
@@ -79,44 +79,80 @@ class UsPortsNwsDailyPopTests(unittest.TestCase):
             [60, 30, 70, 30],
         )
 
-    def test_us_ports_prefers_afd_day_values_and_uses_point_fallback(self):
-        payload = point_payload([55, 65, 50])
-        with patch.object(
-            MODULE,
-            "_latest_same_day_afd_pop",
-            return_value=[60, 40, 70, 30],
-        ), patch.object(MODULE, "_fetch_nws_json", return_value=payload):
-            region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
-            self.assertEqual(MODULE.fetch_us_port_daily_pop(region), [60, 70, 50])
+    def test_all_six_florida_ports_require_same_day_afd_rows(self):
+        rows = {
+            "Miami": [40, 40, 50, 30],
+            "Fort Lauderdale": [40, 40, 60, 30],
+            "MLB": [40, 20, 50, 10],
+            "TPA": [60, 30, 60, 30],
+            "Key West": [30, 30, 30, 30],
+            "JAX": [40, 30, 50, 10],
+        }
 
-    def test_us_ports_uses_point_values_when_afd_row_is_missing(self):
-        payload = point_payload([55, 65, 50])
-        with patch.object(MODULE, "_latest_same_day_afd_pop", return_value=[]), patch.object(
-            MODULE, "_fetch_nws_json", return_value=payload
-        ):
-            region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
-            self.assertEqual(MODULE.fetch_us_port_daily_pop(region), [55, 65, 50])
+        def latest(office, aliases, timezone):
+            del office, timezone
+            return rows[aliases[0]]
 
-    def test_us_ports_uses_exact_grid_fallback_when_point_forecast_is_unavailable(self):
+        with patch.object(MODULE, "_latest_same_day_afd_pop", side_effect=latest):
+            values = MODULE.fetch_florida_cruise_port_afd_pops()
+
+        self.assertEqual(values["Miami"], [40, 50])
+        self.assertEqual(values["Port Everglades"], [40, 60])
+        self.assertEqual(values["Port Canaveral"], [40, 50])
+        self.assertEqual(values["Tampa Bay"], [60, 60])
+        self.assertEqual(values["Key West"], [30, 30])
+        self.assertEqual(values["Jacksonville"], [40, 50])
+
+    def test_missing_one_florida_afd_row_blocks_publication(self):
+        def latest(office, aliases, timezone):
+            del office, timezone
+            return [] if aliases[0] == "JAX" else [40, 30, 50, 10]
+
+        with patch.object(MODULE, "_latest_same_day_afd_pop", side_effect=latest):
+            with self.assertRaisesRegex(RuntimeError, "Jacksonville"):
+                MODULE.fetch_florida_cruise_port_afd_pops()
+
+    def test_us_ports_uses_miami_afd_values_before_any_point_fallback(self):
+        florida_values = {
+            "Miami": [40, 50, 60],
+            "Port Everglades": [40, 60],
+            "Port Canaveral": [40, 50],
+            "Tampa Bay": [60, 60],
+            "Key West": [30, 30],
+            "Jacksonville": [40, 50],
+        }
+        with patch.object(MODULE, "_fetch_nws_json") as fetch:
+            region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
+            self.assertEqual(MODULE.fetch_us_port_daily_pop(region, florida_values), [40, 50, 60])
+            fetch.assert_not_called()
+
+    def test_us_ports_rejects_missing_miami_afd_value(self):
+        region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
+        with self.assertRaisesRegex(RuntimeError, "Miami NWS forecast-discussion"):
+            MODULE.fetch_us_port_daily_pop(region, {})
+
+    def test_us_ports_point_fallback_only_completes_missing_later_afd_days(self):
         point = point_payload([])
-        grid = grid_payload([45, 50, 55])
+        forecast = point_payload([41, 51, 61])
+        florida_values = {
+            "Miami": [40, 50],
+            "Port Everglades": [40, 60],
+            "Port Canaveral": [40, 50],
+            "Tampa Bay": [60, 60],
+            "Key West": [30, 30],
+            "Jacksonville": [40, 50],
+        }
 
         def fetch(url):
             if url.endswith("/points/25.76,-80.19"):
                 return point
             if url.endswith("/forecast"):
-                raise RuntimeError("HTTP 404: point forecast unavailable")
-            if url.endswith("/gridpoints/MFL/110,50"):
-                return grid
+                return forecast
             raise AssertionError(f"Unexpected URL: {url}")
 
-        with patch.object(
-            MODULE,
-            "_latest_same_day_afd_pop",
-            return_value=[60, 30, 60, 30],
-        ), patch.object(MODULE, "_fetch_nws_json", side_effect=fetch):
+        with patch.object(MODULE, "_fetch_nws_json", side_effect=fetch):
             region = {"slug": "us-ports", "lat": 25.76, "lon": -80.19}
-            self.assertEqual(MODULE.fetch_us_port_daily_pop(region), [60, 60, 55])
+            self.assertEqual(MODULE.fetch_us_port_daily_pop(region, florida_values), [40, 50, 61])
 
     def test_non_us_region_keeps_existing_open_meteo_path(self):
         with patch.object(
@@ -129,51 +165,46 @@ class UsPortsNwsDailyPopTests(unittest.TestCase):
                 "lat": 25.04,
                 "lon": -77.35,
             }
-            self.assertEqual(MODULE.fetch_region_precip_probability(region), [11, 22, 33])
+            self.assertEqual(MODULE.fetch_region_precip_probability(region), ([11, 22, 33], {}))
             legacy_fetch.assert_called_once_with(25.04, -77.35)
 
-    def test_us_ports_lead_replaces_wrong_probability_with_authoritative_value(self):
-        region = {
-            "slug": "us-ports",
-            "required_lead_port": "Miami",
-            "rep_port": "Miami, Florida",
-        }
+    def test_us_ports_lead_replaces_model_rain_values_with_all_six_afd_values(self):
         weather_data = {
-            "summary": (
-                "Current conditions: E 8kt, thunderstorms, 60% rain probability. "
-                "3-day outlook: Day 1: E 10kt, thunderstorms, 60% rain probability."
-            )
+            "florida_afd_pops": {
+                "Miami": [40, 50],
+                "Port Everglades": [40, 60],
+                "Port Canaveral": [40, 50],
+                "Tampa Bay": [60, 60],
+                "Key West": [30, 30],
+                "Jacksonville": [40, 50],
+            }
         }
-        intel = (
+        model_text = (
             "Today, Miami has partly cloudy skies with 10% rain probability. "
             "Tomorrow, conditions improve with E 8kt winds."
         )
-        repaired = MODULE._enforce_us_ports_today_pop(region, intel, weather_data)
-        self.assertIn("60% rain probability", repaired.split(".", 1)[0])
-        self.assertNotIn("10% rain probability", repaired.split(".", 1)[0])
+        repaired = MODULE._enforce_us_ports_today_pop(
+            {"slug": "us-ports"}, model_text, weather_data
+        )
+        first_sentence = repaired.split(".", 1)[0]
+        self.assertIn("Miami, Port Everglades, Port Canaveral, and Jacksonville have 40% rain probability", first_sentence)
+        self.assertIn("Tampa Bay has 60% rain probability", first_sentence)
+        self.assertIn("Key West has 30% rain probability", first_sentence)
+        self.assertNotIn("10% rain probability", first_sentence)
 
-    def test_us_ports_lead_falls_back_to_deterministic_sentence_when_pop_missing(self):
-        region = {
-            "slug": "us-ports",
-            "required_lead_port": "Miami",
-            "rep_port": "Miami, Florida",
-        }
-        weather_data = {
-            "summary": (
-                "Current conditions: E 8kt, thunderstorms, 60% rain probability. "
-                "3-day outlook: Day 1: E 10kt, thunderstorms, 60% rain probability."
+    def test_missing_florida_dataset_blocks_us_ports_briefing(self):
+        with self.assertRaisesRegex(ValueError, "six-port Florida AFD dataset"):
+            MODULE._enforce_us_ports_today_pop(
+                {"slug": "us-ports"},
+                "Today, Miami has 40% rain probability.",
+                {"summary": "Current conditions: E 8kt, 40% rain probability."},
             )
-        }
-        intel = "Today, Miami has partly cloudy skies. Tomorrow, E winds continue."
-        repaired = MODULE._enforce_us_ports_today_pop(region, intel, weather_data)
-        self.assertTrue(repaired.startswith("Today, Miami, Florida reports"))
-        self.assertIn("60% rain probability", repaired.split(".", 1)[0])
 
     def test_pop_guard_does_not_change_non_us_briefings(self):
         region = {"slug": "bahamas-central-caribbean"}
         intel = "Today, Nassau has 10% rain probability."
         self.assertEqual(
-            MODULE._enforce_us_ports_today_pop(region, intel, {"summary": ""}),
+            MODULE._enforce_us_ports_today_pop(region, intel, {"florida_afd_pops": {}}),
             intel,
         )
 
