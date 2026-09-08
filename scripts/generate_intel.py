@@ -67,6 +67,18 @@ GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
 MODEL_REQUEST_MIN_INTERVAL_SECONDS = int(os.environ.get("INTEL_MODEL_REQUEST_INTERVAL_SECONDS", "15"))
 _LAST_GROQ_REQUEST_AT = 0.0
 
+# Florida cruise homeports must use their own same-day NWS Area Forecast
+# Discussion point-table values. Do not infer one Florida port from another
+# and do not substitute model precipitation probabilities for these ports.
+FLORIDA_CRUISE_AFD_PORTS = (
+    {"name": "Miami", "office": "MFL", "aliases": ("Miami",)},
+    {"name": "Port Everglades", "office": "MFL", "aliases": ("Fort Lauderdale", "N Ft Lauderdale")},
+    {"name": "Port Canaveral", "office": "MLB", "aliases": ("MLB", "Melbourne", "Cape Canaveral")},
+    {"name": "Tampa Bay", "office": "TBW", "aliases": ("TPA", "Tampa")},
+    {"name": "Key West", "office": "KEY", "aliases": ("Key West",)},
+    {"name": "Jacksonville", "office": "JAX", "aliases": ("JAX", "Jacksonville")},
+)
+
 REGIONS = [
     {
         "slug": "us-ports",
@@ -74,7 +86,7 @@ REGIONS = [
         "rep_port": "Miami, Florida",
         "lat": 25.76,
         "lon": -80.19,
-        "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Philadelphia", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
+        "ports": ["Miami", "Port Everglades", "Port Canaveral", "Tampa Bay", "Key West", "Jacksonville", "Galveston", "New Orleans", "Houston", "Bayonne", "Brooklyn", "Manhattan", "Baltimore", "Boston", "Norfolk", "Charleston", "Savannah", "Philadelphia", "Long Beach", "Los Angeles", "San Diego", "San Francisco"],
         "alert_points": [
             {"name": "Miami", "lat": 25.7753, "lon": -80.1698},
             {"name": "Port Everglades", "lat": 26.0833, "lon": -80.1167},
@@ -108,7 +120,7 @@ REGIONS = [
         "rep_port": "Nassau, Bahamas",
         "lat": 25.04,
         "lon": -77.35,
-        "ports": ["Nassau", "Freeport", "Bimini", "Berry Islands", "Key West", "Grand Cayman", "Ocho Rios", "Falmouth", "Puerto Plata", "La Romana", "Santo Domingo", "Samaná"],
+        "ports": ["Nassau", "Freeport", "Bimini", "Berry Islands", "Grand Cayman", "Ocho Rios", "Falmouth", "Puerto Plata", "La Romana", "Santo Domingo", "Samaná"],
     },
     {
         "slug": "eastern-caribbean",
@@ -627,60 +639,95 @@ def _nws_daytime_grid_pops(
     return [daily_values[day] for day in sorted(daily_values)[:limit]]
 
 
-def fetch_us_port_daily_pop(region: dict) -> list[int]:
-    """Fetch Miami's official NWS day PoPs for the US Ports regional briefing."""
-    point = _fetch_nws_json(
-        f"https://api.weather.gov/points/{region['lat']},{region['lon']}"
-    )
-    properties = point.get("properties", {})
-    office = properties.get("gridId")
-    forecast_url = properties.get("forecast")
-    grid_url = properties.get("forecastGridData")
-    local_timezone = properties.get("timeZone") or "America/New_York"
-    if not office or not forecast_url:
-        raise RuntimeError("NWS point metadata is missing the forecast office or point forecast URL")
+def fetch_florida_cruise_port_afd_pops() -> dict[str, list[int]]:
+    """Require a current human-authored NWS AFD PoP row for every Florida cruise port."""
+    florida_pops: dict[str, list[int]] = {}
+    missing: list[str] = []
+    for port in FLORIDA_CRUISE_AFD_PORTS:
+        afd_pops = _latest_same_day_afd_pop(
+            port["office"],
+            port["aliases"],
+            "America/New_York",
+        )
+        daytime = afd_pops[0::2]
+        if not daytime:
+            missing.append(f"{port['name']} ({port['office']})")
+            continue
+        florida_pops[port["name"]] = daytime
 
-    try:
-        point_pops = _nws_daytime_point_pops(forecast_url, limit=3)
-    except Exception as error:
-        if not grid_url:
-            raise
-        print(
-            f"  NWS point forecast unavailable; using exact grid fallback: {error}",
-            file=sys.stderr,
+    if missing:
+        raise RuntimeError(
+            "Required same-day NWS forecast-discussion PoP rows are unavailable for: "
+            + ", ".join(missing)
         )
-        point_pops = _nws_daytime_grid_pops(
-            grid_url,
-            local_timezone,
-            limit=3,
+
+    print(
+        "  Florida NWS AFD daytime PoPs: "
+        + "; ".join(
+            f"{name}={values}" for name, values in florida_pops.items()
+        ),
+        file=sys.stderr,
+    )
+    return florida_pops
+
+
+def fetch_us_port_daily_pop(region: dict, florida_afd_pops: dict[str, list[int]]) -> list[int]:
+    """Use Miami's AFD values for the regional outlook after all Florida AFD rows validate."""
+    miami_afd_daytime = florida_afd_pops.get("Miami", [])
+    if not miami_afd_daytime:
+        raise RuntimeError("Required Miami NWS forecast-discussion PoP row is unavailable")
+
+    point_pops: list[int] = []
+    if len(miami_afd_daytime) < 3:
+        point = _fetch_nws_json(
+            f"https://api.weather.gov/points/{region['lat']},{region['lon']}"
         )
-    afd_pops = _latest_same_day_afd_pop(office, ("Miami",), local_timezone)
-    afd_daytime = afd_pops[0::2]
+        properties = point.get("properties", {})
+        forecast_url = properties.get("forecast")
+        grid_url = properties.get("forecastGridData")
+        local_timezone = properties.get("timeZone") or "America/New_York"
+        if not forecast_url:
+            raise RuntimeError("NWS Miami point metadata is missing its forecast URL")
+        try:
+            point_pops = _nws_daytime_point_pops(forecast_url, limit=3)
+        except Exception as error:
+            if not grid_url:
+                raise
+            print(
+                f"  NWS Miami point forecast unavailable; using exact grid fallback: {error}",
+                file=sys.stderr,
+            )
+            point_pops = _nws_daytime_grid_pops(
+                grid_url,
+                local_timezone,
+                limit=3,
+            )
 
     daily_pops = []
     for day_index in range(3):
-        if day_index < len(afd_daytime):
-            daily_pops.append(afd_daytime[day_index])
+        if day_index < len(miami_afd_daytime):
+            daily_pops.append(miami_afd_daytime[day_index])
         elif day_index < len(point_pops):
             daily_pops.append(point_pops[day_index])
 
     if len(daily_pops) < 3:
         raise RuntimeError(
-            f"NWS US Ports PoP chain returned only {len(daily_pops)}/3 daytime periods"
+            f"NWS Miami PoP chain returned only {len(daily_pops)}/3 daytime periods"
         )
     print(
-        f"  US Ports NWS PoP: office={office}, AFD day values={afd_daytime}, "
+        f"  US Ports Miami NWS PoP: AFD day values={miami_afd_daytime}, "
         f"point fallback values={point_pops}, selected={daily_pops}",
         file=sys.stderr,
     )
     return daily_pops
 
 
-def fetch_region_precip_probability(region: dict) -> list:
-    """Route only US Ports to NWS while preserving every other region's current source."""
+def fetch_region_precip_probability(region: dict) -> tuple[list[int], dict[str, list[int]]]:
+    """Route US Ports to all required Florida AFDs and leave every other region unchanged."""
     if region.get("slug") == "us-ports":
-        return fetch_us_port_daily_pop(region)
-    return fetch_precip_probability(region["lat"], region["lon"])
+        florida_afd_pops = fetch_florida_cruise_port_afd_pops()
+        return fetch_us_port_daily_pop(region, florida_afd_pops), florida_afd_pops
+    return fetch_precip_probability(region["lat"], region["lon"]), {}
 
 
 def ms_to_kt(ms: float) -> int:
@@ -902,6 +949,21 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     else:
         lead_header = ""
 
+    florida_afd_pops = weather_data.get("florida_afd_pops", {})
+    if region["slug"] == "us-ports":
+        florida_afd_block = (
+            "FLORIDA HOMEPORT FORECAST-DISCUSSION DATA (do not name the source): "
+            + "; ".join(
+                f"{name}: today {_format_rain_prob(values[0])}"
+                + (f", next daytime {_format_rain_prob(values[1])}" if len(values) > 1 else "")
+                for name, values in florida_afd_pops.items()
+                if values
+            )
+            + ". Use these Florida homeport values rather than any other precipitation estimate. "
+        )
+    else:
+        florida_afd_block = ""
+
     prompt = (
         f"{retry_prefix}"
         f"{lead_header}"
@@ -911,6 +973,7 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
         f"{region.get('priority_note', '') + ' ' if region.get('priority_note') else ''}"
         f"{('LEAD SENTENCE DIRECTIVE (do not quote any of this in your output): open with conditions at Miami. Do not open with Charleston, Savannah, Baltimore, Boston, Norfolk, Brooklyn, Bayonne, Manhattan, Houston, Galveston, New Orleans, Jacksonville, Long Beach, Los Angeles, San Diego, or San Francisco. ') if region['slug'] == 'us-ports' else ''}"
         f"{sig_block}"
+        f"{florida_afd_block}"
         f"Base every sentence on this live forecast data for {region['rep_port']}: {weather_summary} "
         f"STRUCTURE REQUIREMENT: The briefing must address three time periods in order -- "
         f"(1) what is happening today and its impact on port operations and shore excursions, "
@@ -1506,41 +1569,57 @@ def _build_rate_limit_fallback(region: dict, weather_data: dict) -> str:
     )
 
 
-def _enforce_us_ports_today_pop(region: dict, intel: str, weather_data: dict) -> str:
-    """Guarantee that the Miami lead carries the exact NWS daytime PoP phrase."""
-    import re
+def _natural_join(items: list[str]) -> str:
+    """Join short port-name lists for deterministic briefing prose."""
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return f"{', '.join(items[:-1])}, and {items[-1]}"
 
+
+def _florida_afd_today_sentence(florida_afd_pops: dict[str, list[int]]) -> str:
+    """Build the mandatory Florida source-of-truth lead from all six AFD rows."""
+    grouped: dict[int, list[str]] = {}
+    missing: list[str] = []
+    for port in FLORIDA_CRUISE_AFD_PORTS:
+        name = port["name"]
+        values = florida_afd_pops.get(name, [])
+        if not values:
+            missing.append(name)
+            continue
+        value = int(values[0])
+        if not 0 <= value <= 100:
+            raise ValueError(f"Invalid NWS AFD PoP for {name}: {value}")
+        grouped.setdefault(value, []).append(name)
+
+    if missing:
+        raise ValueError(
+            "US Ports briefing is missing required Florida AFD values for: "
+            + ", ".join(missing)
+        )
+
+    clauses = [
+        f"{_natural_join(names)} {'has' if len(names) == 1 else 'have'} {_format_rain_prob(value)}"
+        for value, names in grouped.items()
+    ]
+    return "Today, " + "; ".join(clauses) + "."
+
+
+def _enforce_us_ports_today_pop(region: dict, intel: str, weather_data: dict) -> str:
+    """Replace the US Ports lead with all six official Florida AFD rain values."""
     if region.get("slug") != "us-ports":
         return intel
 
-    current_summary = weather_data.get("summary", "").split("3-day outlook:", 1)[0]
-    expected_match = re.search(
-        r"(?:less than \d{1,3}|\d{1,3})% rain probability",
-        current_summary,
-        re.IGNORECASE,
-    )
-    if not expected_match:
-        raise ValueError("US Ports weather summary is missing the authoritative NWS PoP phrase")
-    expected_phrase = expected_match.group(0)
+    florida_afd_pops = weather_data.get("florida_afd_pops", {})
+    if not florida_afd_pops:
+        raise ValueError("US Ports briefing is missing the required six-port Florida AFD dataset")
 
-    parts = _briefing_sentence_parts(intel, maxsplit=1)
-    first_sentence = parts[0] if parts else ""
-    if expected_phrase.lower() in first_sentence.lower():
-        return intel
-
-    rain_pattern = re.compile(
-        r"(?:less than \d{1,3}|\d{1,3})%\s+(?:rain probability|chance of rain|rain chance)",
-        re.IGNORECASE,
-    )
-    if rain_pattern.search(first_sentence):
-        repaired_first = rain_pattern.sub(expected_phrase, first_sentence, count=1)
-    else:
-        repaired_first = _today_fallback_sentence(region, weather_data)
-
-    body = parts[1] if len(parts) > 1 else ""
-    repaired = " ".join(part for part in (repaired_first, body) if part).strip()
+    repaired_first = _florida_afd_today_sentence(florida_afd_pops)
+    body = _briefing_sentence_parts(intel, maxsplit=1)[1:]
+    repaired = " ".join([repaired_first] + body).strip()
     print(
-        f"  [US PORTS POP GUARD] Repaired Miami lead to authoritative phrase: {expected_phrase}",
+        f"  [FLORIDA AFD GUARD] Replaced US Ports lead with six official AFD values: {repaired_first}",
         file=sys.stderr,
     )
     return repaired
@@ -1724,7 +1803,7 @@ def _validate_and_repair_forecast_only(region: dict, intel: str, weather_data: d
 def _generate_region_forecast(region: dict) -> str:
     """Generate one fully validated regional forecast with a factual rate-limit fallback."""
     wx = fetch_weather(region["lat"], region["lon"])
-    pop_means = fetch_region_precip_probability(region)
+    pop_means, florida_afd_pops = fetch_region_precip_probability(region)
     advisory_lead = ""
     if region["slug"] == "us-ports":
         us_port_alerts = fetch_us_port_heat_advisories(region)
@@ -1742,6 +1821,8 @@ def _generate_region_forecast(region: dict) -> str:
         advisories=advisories,
         include_apparent_heat=region["slug"] != "us-ports",
     )
+    if region["slug"] == "us-ports":
+        weather_data["florida_afd_pops"] = florida_afd_pops
     try:
         intel = call_groq(region, weather_data)
         intel = _clean_model_formatting(intel)
