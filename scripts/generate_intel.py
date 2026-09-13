@@ -89,8 +89,84 @@ UNTRANSLATED_BRIEFING_OPERATIONAL_PHRASES = (
     "may affect", "will affect", "expected to affect", "forecast shows", "the forecast",
     "winds with", "rain showers", "thunderstorms", "drizzle", "day 2", "day 3",
     "tomorrow", "day after tomorrow", "heat index", "heat advisory", "excessive heat warning",
+    "elevated heat day", "high heat day",
 )
-BRIEFING_TRANSLATION_BATCH_COOLDOWN_SECONDS = 90
+
+# The model can retain these fixed NWS product labels in English even when the
+# surrounding weather narrative is translated. They are deterministic labels,
+# not forecast values, and are localized before the language-quality gate runs.
+OFFICIAL_HEAT_PRODUCT_TRANSLATIONS = {
+    "es": {
+        "Excessive Heat Warning": "Advertencia de Calor Excesivo",
+        "Extreme Heat Warning": "Advertencia de Calor Extremo",
+        "Excessive Heat Watch": "Vigilancia de Calor Excesivo",
+        "Extreme Heat Watch": "Vigilancia de Calor Extremo",
+        "Heat Advisory": "Aviso de Calor",
+        "Elevated Heat Day": "Día de calor elevado",
+        "High Heat Day": "Día de calor intenso",
+    },
+    "fr": {
+        "Excessive Heat Warning": "Alerte de chaleur excessive",
+        "Extreme Heat Warning": "Alerte de chaleur extrême",
+        "Excessive Heat Watch": "Veille de chaleur excessive",
+        "Extreme Heat Watch": "Veille de chaleur extrême",
+        "Heat Advisory": "Avis de chaleur",
+        "Elevated Heat Day": "Journée de chaleur élevée",
+        "High Heat Day": "Journée de forte chaleur",
+    },
+    "ar": {
+        "Excessive Heat Warning": "تحذير من الحرارة المفرطة",
+        "Extreme Heat Warning": "تحذير من الحرارة الشديدة",
+        "Excessive Heat Watch": "مراقبة الحرارة المفرطة",
+        "Extreme Heat Watch": "مراقبة الحرارة الشديدة",
+        "Heat Advisory": "تنبيه بشأن الحرارة",
+        "Elevated Heat Day": "ارتفاع الحرارة خلال النهار",
+        "High Heat Day": "يوم شديد الحرارة",
+    },
+    "zh": {
+        "Excessive Heat Warning": "高温警报",
+        "Extreme Heat Warning": "极端高温警报",
+        "Excessive Heat Watch": "高温监视",
+        "Extreme Heat Watch": "极端高温监视",
+        "Heat Advisory": "高温提示",
+        "Elevated Heat Day": "高温日",
+        "High Heat Day": "酷热日",
+    },
+    "it": {
+        "Excessive Heat Warning": "Allerta per caldo eccessivo",
+        "Extreme Heat Warning": "Allerta per caldo estremo",
+        "Excessive Heat Watch": "Sorveglianza per caldo eccessivo",
+        "Extreme Heat Watch": "Sorveglianza per caldo estremo",
+        "Heat Advisory": "Avviso di calore",
+        "Elevated Heat Day": "Giornata di caldo elevato",
+        "High Heat Day": "Giornata di caldo intenso",
+    },
+    "de": {
+        "Excessive Heat Warning": "Warnung vor extremer Hitze",
+        "Extreme Heat Warning": "Warnung vor extremer Hitze",
+        "Excessive Heat Watch": "Beobachtung extremer Hitze",
+        "Extreme Heat Watch": "Beobachtung extremer Hitze",
+        "Heat Advisory": "Hitzehinweis",
+        "Elevated Heat Day": "Tag mit erhöhter Hitze",
+        "High Heat Day": "Tag mit starker Hitze",
+    },
+    "pt": {
+        "Excessive Heat Warning": "Alerta de Calor Excessivo",
+        "Extreme Heat Warning": "Alerta de Calor Extremo",
+        "Excessive Heat Watch": "Observação de Calor Excessivo",
+        "Extreme Heat Watch": "Observação de Calor Extremo",
+        "Heat Advisory": "Aviso de Calor",
+        "Elevated Heat Day": "Dia de calor elevado",
+        "High Heat Day": "Dia de calor intenso",
+    },
+}
+
+# Each provider response translates two regions, preventing long outputs from being cut off.
+# The shared model-request interval remains the primary rate limiter; a short pause
+# between groups allows the provider token window to recover without delaying the site.
+BRIEFING_TRANSLATION_REGION_GROUP_SIZE = 2
+BRIEFING_TRANSLATION_GROUP_COOLDOWN_SECONDS = 20
+BRIEFING_TRANSLATION_LANGUAGE_COOLDOWN_SECONDS = 30
 BRIEFING_TRANSLATION_429_BACKOFF_SECONDS = (90, 180, 300)
 
 # Florida cruise homeports must use their own same-day NWS Area Forecast
@@ -1147,6 +1223,14 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     raise RuntimeError("API failed after 4 attempts")
 
 
+def _localize_official_heat_product_names(text: str, language_code: str) -> str:
+    """Localize only fixed official NWS heat-product names retained by the model."""
+    localized = text
+    for english_name, translated_name in OFFICIAL_HEAT_PRODUCT_TRANSLATIONS.get(language_code, {}).items():
+        localized = localized.replace(english_name, translated_name)
+    return localized
+
+
 def _reject_untranslated_operational_phrases(translations: dict[str, str], language_code: str) -> None:
     """Reject non-English dynamic briefing text that retains English operational prose."""
     for slug, text in translations.items():
@@ -1161,7 +1245,15 @@ def _reject_untranslated_operational_phrases(translations: dict[str, str], langu
             )
 
 
-def _extract_translation_map(content: str, expected_slugs: set[str], language_code: str) -> dict[str, str]:
+def _extract_translation_map(
+    content: str,
+    expected_slugs: set[str],
+    language_code: str,
+    english_regions: dict[str, str],
+) -> dict[str, str]:
+    """Parse and validate a sentence-preserving translation response."""
+    import re
+
     cleaned = content.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else ""
@@ -1175,10 +1267,29 @@ def _extract_translation_map(content: str, expected_slugs: set[str], language_co
         missing = sorted(expected_slugs - set(value)) if isinstance(value, dict) else sorted(expected_slugs)
         unexpected = sorted(set(value) - expected_slugs) if isinstance(value, dict) else []
         raise ValueError(f"{language_code} translation response has an invalid region set: missing={missing}, unexpected={unexpected}")
-    translations = {slug: text.strip() for slug, text in value.items() if isinstance(text, str)}
-    if set(translations) != expected_slugs or any(len(text) < 20 for text in translations.values()):
-        raise ValueError(f"{language_code} translation response contains an empty or invalid briefing")
+
+    translations: dict[str, str] = {}
+    for slug, translated_sentences in value.items():
+        source_sentences = _briefing_sentence_parts(english_regions[slug])
+        if not isinstance(translated_sentences, list) or not all(isinstance(sentence, str) for sentence in translated_sentences):
+            raise ValueError(f"{language_code}/{slug} must return a JSON array of translated sentences")
+        if len(translated_sentences) != len(source_sentences):
+            raise ValueError(
+                f"{language_code}/{slug} sentence count changed: expected {len(source_sentences)}, got {len(translated_sentences)}"
+            )
+        normalized_sentences = []
+        for sentence in translated_sentences:
+            sentence = _localize_official_heat_product_names(sentence.strip(), language_code)
+            if len(sentence) < 10 or not re.search(r'[.!?…。！？][\"\'”’）)]*$', sentence):
+                raise ValueError(f"{language_code}/{slug} contains an incomplete translated sentence")
+            normalized_sentences.append(sentence)
+        translations[slug] = " ".join(normalized_sentences)
+
     _reject_untranslated_operational_phrases(translations, language_code)
+    for slug, text in translations.items():
+        minimum_length = max(50, int(len(english_regions[slug]) * 0.38))
+        if len(text) < minimum_length:
+            raise ValueError(f"{language_code}/{slug} translation is too short for source coverage")
     return translations
 
 
@@ -1192,13 +1303,19 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
         "Do not leave English narrative words or phrases in the result. Preserve only proper place names, wind-direction "
         "abbreviations, units such as kt and F, percentages, numbers, and established code names exactly. "
         "Do not add, omit, summarize, reinterpret, or update any forecast information. "
-        "Return only one valid JSON object whose keys exactly match the supplied region slugs and whose values are the translated prose."
+        "For each region key, return a JSON array with exactly one fully translated sentence for each source sentence, "
+        "in the same order. Do not combine, split, omit, summarize, or leave any sentence unfinished. "
+        "Every translated sentence must end with appropriate sentence punctuation. Return only one valid JSON object "
+        "whose keys exactly match the supplied region slugs and whose values are those sentence arrays."
     )
     payload = json.dumps({
         "model": GROQ_MODEL,
         "messages": [{"role": "system", "content": system_message}, {"role": "user", "content": json.dumps(english_regions, ensure_ascii=False)}],
-        "max_completion_tokens": 10000,
+        "max_completion_tokens": 4000,
         "temperature": 0,
+        # Translation does not benefit from reasoning. Minimal reasoning preserves
+        # the response budget for complete localized prose in the built-in runtime.
+        **({"reasoning": {"effort": "minimal"}} if _USING_BUILTIN_RUNTIME else {}),
     }).encode()
     url = f"{GROQ_BASE_URL}/chat/completions"
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_API_KEY}", "User-Agent": "WeatherStream/1.0"}
@@ -1220,7 +1337,12 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
                 request = urllib.request.Request(url, data=payload, headers=headers, method="POST")
                 with urllib.request.urlopen(request, timeout=180) as response:
                     result = json.loads(response.read())
-            return _extract_translation_map(result["choices"][0]["message"]["content"], expected_slugs, language_code)
+            return _extract_translation_map(
+                result["choices"][0]["message"]["content"],
+                expected_slugs,
+                language_code,
+                english_regions,
+            )
         except Exception as exc:
             last_error = exc
             if attempt < 3:
@@ -1261,18 +1383,37 @@ def _validate_region_translations(english_regions: dict[str, str], translations_
 
 
 def _translate_all_regions(english_regions: dict[str, str]) -> dict[str, dict[str, str]]:
+    """Translate briefings in small complete groups to avoid provider output truncation."""
     translations: dict[str, dict[str, str]] = {}
     language_batches = list(BRIEFING_TRANSLATION_LANGUAGES.items())
-    for index, (language_code, language_name) in enumerate(language_batches):
-        print(f"Translating {len(english_regions)} regional briefings into {language_name}...", file=sys.stderr)
-        translations[language_code] = _translate_region_batch(english_regions, language_code, language_name)
-        if index < len(language_batches) - 1:
+    region_items = list(english_regions.items())
+    groups = [
+        dict(region_items[index:index + BRIEFING_TRANSLATION_REGION_GROUP_SIZE])
+        for index in range(0, len(region_items), BRIEFING_TRANSLATION_REGION_GROUP_SIZE)
+    ]
+
+    for language_index, (language_code, language_name) in enumerate(language_batches):
+        translated_regions: dict[str, str] = {}
+        for group_index, region_group in enumerate(groups):
             print(
-                f"  Translation batch complete; cooling down "
-                f"{BRIEFING_TRANSLATION_BATCH_COOLDOWN_SECONDS}s before the next language...",
+                f"Translating group {group_index + 1}/{len(groups)} "
+                f"({len(region_group)} regions) into {language_name}...",
                 file=sys.stderr,
             )
-            time.sleep(BRIEFING_TRANSLATION_BATCH_COOLDOWN_SECONDS)
+            translated_regions.update(
+                _translate_region_batch(region_group, language_code, language_name)
+            )
+            if group_index < len(groups) - 1:
+                time.sleep(BRIEFING_TRANSLATION_GROUP_COOLDOWN_SECONDS)
+        translations[language_code] = translated_regions
+        if language_index < len(language_batches) - 1:
+            print(
+                f"  {language_name} groups complete; cooling down "
+                f"{BRIEFING_TRANSLATION_LANGUAGE_COOLDOWN_SECONDS}s before the next language...",
+                file=sys.stderr,
+            )
+            time.sleep(BRIEFING_TRANSLATION_LANGUAGE_COOLDOWN_SECONDS)
+
     _validate_region_translations(english_regions, translations)
     return translations
 
