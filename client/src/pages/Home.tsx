@@ -1517,7 +1517,7 @@ export default function Home() {
                   </div>
                   <p className={`text-white/90 text-xs leading-snug transition-all duration-300 line-clamp-6 ${
                     hovered === i ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 overflow-hidden'
-}>{liveIntel || t("region.intelUnavailable")}</p>
+                  }`}>{liveIntel || t("region.intelUnavailable")}</p>
                 </div>
               </div>
             </div>
