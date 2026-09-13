@@ -22,7 +22,12 @@ import { Button } from "@/components/ui/button";
 import PtzThumb from "@/components/PtzThumb";
 import { getPtzCameras } from "@/lib/ptzCameras";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { getRegionDetailText } from "@/lib/translations";
+import {
+  getRegionDetailText,
+  selectRegionBriefing,
+  translateRegionName,
+  type RegionBriefingTranslations,
+} from "@/lib/translations";
 
 
 // ---- Conversion helpers ----
@@ -470,8 +475,10 @@ export default function RegionDetail() {
   const { language, t, formatDate } = useLanguage();
   const localize = (text: string) => getRegionDetailText(language, text);
   const region = REGIONS.find(r => r.slug === slug);
+  const displayRegionName = region ? translateRegionName(language, region.name) : "";
   const [portWeather, setPortWeather] = useState<PortWeather[]>([]);
   const [intel, setIntel] = useState<string>("");
+  const [intelTranslations, setIntelTranslations] = useState<RegionBriefingTranslations>({});
   const [intelDate, setIntelDate] = useState<string>("");
   const [intelLoading, setIntelLoading] = useState(true);
   const [isMetric, setIsMetric] = useState(false);
@@ -531,9 +538,10 @@ export default function RegionDetail() {
         if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
         return r.json();
       })
-      .then((data: { regions?: Record<string, string>; generated?: string }) => {
+      .then((data: { regions?: Record<string, string>; translations?: RegionBriefingTranslations; generated?: string }) => {
         const text = data.regions?.[region.slug] ?? "";
         setIntel(text);
+        setIntelTranslations(data.translations ?? {});
         // Format the generated date as "March 8, 2026" for display
         if (data.generated) {
           setIntelDate(data.generated + "T12:00:00");
@@ -546,6 +554,9 @@ export default function RegionDetail() {
       });
   }, [region]);
 
+  const displayIntel = region
+    ? selectRegionBriefing(language, region.slug, intel, intelTranslations)
+    : intel;
 
   if (!region) {
     return (
@@ -573,7 +584,7 @@ export default function RegionDetail() {
           </button>
           <div className="h-5 w-px bg-white/20" />
           <div>
-            <p className="text-white font-bold text-sm">{region.name}</p>
+            <p className="text-white font-bold text-sm">{displayRegionName}</p>
             <p className="text-white/40 text-xs">{localize("Live Conditions and 5-Day Forecast")}</p>
           </div>
         </div>
@@ -581,10 +592,10 @@ export default function RegionDetail() {
 
       {/* Hero banner */}
       <div className="relative h-48 overflow-hidden">
-        <img src={region.image} alt={region.name} className="w-full h-full object-cover" />
+        <img src={region.image} alt={displayRegionName} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-slate-950" />
         <div className="absolute bottom-6 left-6">
-          <h1 className="text-4xl font-black text-white">{region.name}</h1>
+          <h1 className="text-4xl font-black text-white">{displayRegionName}</h1>
           <p className="text-white/60 text-sm mt-1">{localize("Weather Intelligence by James Van Fleet")}</p>
         </div>
       </div>
@@ -609,8 +620,8 @@ export default function RegionDetail() {
                   <div className="h-3 bg-white/10 rounded animate-pulse w-5/6" />
                   <div className="h-3 bg-white/10 rounded animate-pulse w-4/6" />
                 </div>
-              ) : intel ? (
-                <p className="text-white/85 text-sm leading-relaxed">{intel}</p>
+              ) : displayIntel ? (
+                <p className="text-white/85 text-sm leading-relaxed">{displayIntel}</p>
               ) : (
                 <p className="text-white/40 text-sm italic">{t("region.intelUnavailable")}</p>
               )}
