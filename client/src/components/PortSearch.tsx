@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "wouter";
 import {
   MapPin, Search, X, Calendar,
   Sun, Cloud, CloudRain, CloudLightning, Snowflake, Eye, ChevronDown,
@@ -21,6 +20,21 @@ function msToKt(ms: number): number { return Math.round(ms * 1.94384); }
 function cToF(c: number): number { return Math.round(c * 9 / 5 + 32); }
 function ktToMph(kt: number): number { return Math.round(kt * 1.15078); }
 function fToCStr(f: number): string { return Math.round((f - 32) * 5 / 9) + "\u00b0C"; }
+
+// Date inputs use local calendar dates, not UTC timestamps, to avoid off-by-one
+// changes around midnight. Each later selected stop is one calendar day after the
+// preceding stop unless the visitor deliberately changes that date.
+function todayCalendarDate(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+function addCalendarDays(date: string, days: number): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const calendarDate = new Date(Date.UTC(year, month - 1, day));
+  calendarDate.setUTCDate(calendarDate.getUTCDate() + days);
+  return calendarDate.toISOString().slice(0, 10);
+}
+
 function swellFtToM(ft: number | null): string | null {
   if (ft == null) return null;
   return (ft * 0.3048).toFixed(1) + "m";
@@ -481,6 +495,8 @@ function PortSlotCard({
   onGetForecast,
   isSeaDay,
   onToggleSeaDay,
+  date,
+  onDateChange,
 }: {
   slotIndex: number;
   slot: PortSlot | null;
@@ -493,12 +509,13 @@ function PortSlotCard({
   onGetForecast: () => void;
   isSeaDay: boolean;
   onToggleSeaDay: () => void;
+  date: string;
+  onDateChange: (date: string) => void;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [activeIdx, setActiveIdx] = useState(-1);
-  const [date, setDate] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -713,7 +730,7 @@ function PortSlotCard({
             type="date"
             value={date}
             onChange={e => {
-              setDate(e.target.value);
+              onDateChange(e.target.value);
               (e.target as HTMLInputElement).blur();
             }}
             className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400/60"
@@ -798,13 +815,13 @@ interface PortSearchProps { isMetric: boolean; }
 
 export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps) {
   const { t } = useLanguage();
-  const [, navigate] = useLocation();
   const [localMetric, setLocalMetric] = useState(parentIsMetric);
   const [slots, setSlots] = useState<(PortSlot | null)[]>([null, null, null]);
   // Lifted query state so the shared Get Forecast button can read all inputs
   const [queries, setQueries] = useState<string[]>(["" , "", ""]);
   const [selectedPorts, setSelectedPorts] = useState<(typeof PORT_LIST[0] | null)[]>([null, null, null]);
   const [seaDays, setSeaDays] = useState<boolean[]>([false, false, false]);
+  const [dates, setDates] = useState<string[]>(["", "", ""]);
   // Whether any forecast has been loaded -- controls Back button visibility
   const [forecastsLoaded, setForecastsLoaded] = useState(false);
 
@@ -886,6 +903,38 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
     if (fired) setForecastsLoaded(true);
   };
 
+  // Fill the selected stop's date from the preceding stop and keep any already
+  // selected later stops in sequence. The first selected stop defaults to today.
+  const assignSequentialDate = useCallback((slotIndex: number) => {
+    setDates(prev => {
+      const next = [...prev];
+      const priorDate = slotIndex === 0
+        ? next[0] || todayCalendarDate()
+        : next[slotIndex - 1] || todayCalendarDate();
+      next[slotIndex] = slotIndex === 0 ? priorDate : addCalendarDays(priorDate, 1);
+
+      for (let index = slotIndex + 1; index < next.length; index += 1) {
+        if (!selectedPorts[index] && !seaDays[index]) break;
+        next[index] = addCalendarDays(next[index - 1] || todayCalendarDate(), 1);
+      }
+      return next;
+    });
+  }, [seaDays, selectedPorts]);
+
+  const handleDateChange = useCallback((slotIndex: number, date: string) => {
+    setDates(prev => {
+      const next = [...prev];
+      next[slotIndex] = date;
+      if (!date) return next;
+
+      for (let index = slotIndex + 1; index < next.length; index += 1) {
+        if (!selectedPorts[index] && !seaDays[index]) break;
+        next[index] = addCalendarDays(next[index - 1], 1);
+      }
+      return next;
+    });
+  }, [seaDays, selectedPorts]);
+
   // Back button: clear all forecasts and queries, return to input view
   const handleBack = () => {
     const len = slots.length;
@@ -893,6 +942,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
     setQueries(Array(len).fill(""));
     setSelectedPorts(Array(len).fill(null));
     setSeaDays(Array(len).fill(false));
+    setDates(Array(len).fill(""));
     setForecastsLoaded(false);
   };
 
@@ -901,6 +951,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
     setQueries(prev => { const n = [...prev]; n[slotIndex] = ""; return n; });
     setSelectedPorts(prev => { const n = [...prev]; n[slotIndex] = null; return n; });
     setSeaDays(prev => { const n = [...prev]; n[slotIndex] = false; return n; });
+    setDates(prev => { const n = [...prev]; n[slotIndex] = ""; return n; });
   }, []);
 
   // Add a new slot (up to 5 total)
@@ -910,6 +961,7 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
     setQueries(prev => [...prev, ""]);
     setSelectedPorts(prev => [...prev, null]);
     setSeaDays(prev => [...prev, false]);
+    setDates(prev => [...prev, ""]);
   };
 
   // Toggle Sea Day for a specific slot
@@ -920,6 +972,9 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
       setQueries(prev => { const n = [...prev]; n[i] = ""; return n; });
       setSelectedPorts(prev => { const n = [...prev]; n[i] = null; return n; });
       setSlots(prev => { const n = [...prev]; n[i] = null; return n; });
+      assignSequentialDate(i);
+    } else {
+      setDates(prev => { const n = [...prev]; n[i] = ""; return n; });
     }
   };
 
@@ -940,25 +995,6 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
         </p>
       </div>
 
-      {/* Plot My Cruise Route button -- top of destination section */}
-      <button
-        onClick={() => navigate("/route-map")}
-        className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-bold text-base tracking-wide hover:bg-cyan-400/20 transition-colors cursor-pointer"
-      >
-        <span>&#9654;</span> {t("portSearch.plotRoute")}
-      </button>
-
-      {/* Helper line below Plot My Cruise Route button */}
-      <p className="text-white/50 text-sm max-w-md">
-        {t("portSearch.plotHelp")}
-      </p>
-
-      {/* Or divider + instruction line above port slots */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-white/10" />
-        <span className="text-amber-200/80 text-lg font-bold tracking-widest uppercase">{t("portSearch.or")}</span>
-        <div className="flex-1 h-px bg-white/10" />
-      </div>
       <p className="text-white/50 text-sm max-w-md">
         {t("portSearch.typeDestinations")}
       </p>
@@ -979,8 +1015,11 @@ export default function PortSearch({ isMetric: parentIsMetric }: PortSearchProps
             onQueryChange={(q, port) => {
               setQueries(prev => { const n = [...prev]; n[i] = q; return n; });
               setSelectedPorts(prev => { const n = [...prev]; n[i] = port; return n; });
+              if (q.trim()) assignSequentialDate(i);
             }}
             onClear={() => handleClear(i)}
+            date={dates[i]}
+            onDateChange={date => handleDateChange(i, date)}
             onGetForecast={handleGetAllForecasts}
           />
         ))}
