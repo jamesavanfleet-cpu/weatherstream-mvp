@@ -69,6 +69,7 @@ _LAST_GROQ_REQUEST_AT = 0.0
 
 
 # Every regional briefing is translated from the completed English source before publication.
+# Translation payloads are required before publication.
 BRIEFING_TRANSLATION_LANGUAGES = {
     "es": "Spanish",
     "fr": "French",
