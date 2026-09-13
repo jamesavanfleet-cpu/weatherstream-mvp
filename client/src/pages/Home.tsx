@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import PtzThumb from "@/components/PtzThumb";
 import { hasPtzCamera, getPtzCameras } from "@/lib/ptzCameras";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { selectRegionBriefing, translateRegionName, type RegionBriefingTranslations } from "@/lib/translations";
 
 const BRIEFING_RAIN_PATTERN = /\b(less than )?(\d{1,3})% rain probability\b/i;
 
@@ -1064,7 +1065,7 @@ function PortDetailModal({ port, onClose, isMetric: isMetricProp }: PortDetailMo
 }
 
 export default function Home() {
-  const { t, formatDate } = useLanguage();
+  const { language, t, formatDate } = useLanguage();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [visibleIntel, setVisibleIntel] = useState<Set<number>>(new Set());
@@ -1089,6 +1090,7 @@ export default function Home() {
   const [liveExiting, setLiveExiting] = useState(false);
   const [liveEntering, setLiveEntering] = useState(false);
   const [regionIntel, setRegionIntel] = useState<Record<string, string>>({});
+  const [regionIntelTranslations, setRegionIntelTranslations] = useState<RegionBriefingTranslations>({});
   const [intelUpdatedAt, setIntelUpdatedAt] = useState<string>('');
   const [, navigate] = useLocation();
   const [topStory, setTopStory] = useState<{ caribbean: { headline: string; paragraph: string; top_region: string }; mediterranean: { headline: string; paragraph: string; top_region: string } } | null>(null);
@@ -1259,8 +1261,9 @@ export default function Home() {
         if (!ct.includes("json") && !ct.includes("text/plain")) throw new Error("Not JSON");
         return r.json();
       })
-      .then((data: { regions?: Record<string, string>; generated?: string; generated_utc?: string }) => {
+      .then((data: { regions?: Record<string, string>; translations?: RegionBriefingTranslations; generated?: string; generated_utc?: string }) => {
         if (data.regions) setRegionIntel(data.regions);
+        if (data.translations) setRegionIntelTranslations(data.translations);
         if (data.generated_utc) setIntelUpdatedAt(data.generated_utc);
         else if (data.generated) setIntelUpdatedAt(data.generated);
       })
@@ -1460,7 +1463,8 @@ export default function Home() {
     const dir = windDirs[route.name];
     // Use explicit slug if provided, otherwise derive from region name
     const slug = (route as any).slug ?? route.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const liveIntel = regionIntel[slug];
+    const liveIntel = selectRegionBriefing(language, slug, regionIntel[slug] ?? "", regionIntelTranslations);
+    const displayRegionName = translateRegionName(language, route.name);
     const displayTemp = isMetric ? fToC(route.temp) : `${route.temp}°`;
     const displaySeas = isMetric ? seaFtToM(route.seas) : route.seas;
     const displayRain = slug === "us-ports"
@@ -1482,7 +1486,7 @@ export default function Home() {
         >
           <img
             src={route.image}
-            alt={route.name}
+            alt={displayRegionName}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
           <div className={`absolute inset-0 bg-gradient-to-t ${route.gradient} to-transparent`} />
@@ -1504,16 +1508,16 @@ export default function Home() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <p className="text-cyan-400 font-bold text-sm">James's Intel</p>
+                    <p className="text-cyan-400 font-bold text-sm">{t("home.jamesIntel")}</p>
                     {intelUpdatedAt && (
                       <span className="text-white/40 text-xs bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
-                        Updated: {intelUpdatedAt}
+                        {t("common.updated", { value: intelUpdatedAt })}
                       </span>
                     )}
                   </div>
                   <p className={`text-white/90 text-xs leading-snug transition-all duration-300 line-clamp-6 ${
                     hovered === i ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 overflow-hidden'
-                  }`}>{liveIntel || 'Current forecast briefing is being refreshed.'}</p>
+}>{liveIntel || t("region.intelUnavailable")}</p>
                 </div>
               </div>
             </div>
@@ -1526,7 +1530,7 @@ export default function Home() {
 
           {/* Route Name */}
           <div className="absolute bottom-4 left-4 right-4">
-            <h4 className="text-2xl font-black text-white mb-2">{route.name}</h4>
+            <h4 className="text-2xl font-black text-white mb-2">{displayRegionName}</h4>
           </div>
         </div>
 
