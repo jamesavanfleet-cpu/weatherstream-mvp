@@ -80,6 +80,19 @@ BRIEFING_TRANSLATION_LANGUAGES = {
     "pt": "Brazilian Portuguese",
 }
 
+# These narrative phrases are never proper names, wind-direction abbreviations, or units.
+# Their presence means a dynamic briefing has not fully followed the visitor's language.
+UNTRANSLATED_BRIEFING_OPERATIONAL_PHRASES = (
+    "rain probability", "rain probabilities", "less than", "next 24", "beyond 48",
+    "clear skies", "partly cloudy", "overcast", "port operations", "shore excursions",
+    "embarkation", "disembarkation", "weather-related delays", "normal operations",
+    "may affect", "will affect", "expected to affect", "forecast shows", "the forecast",
+    "winds with", "rain showers", "thunderstorms", "drizzle", "day 2", "day 3",
+    "tomorrow", "day after tomorrow", "heat index", "heat advisory", "excessive heat warning",
+)
+BRIEFING_TRANSLATION_BATCH_COOLDOWN_SECONDS = 90
+BRIEFING_TRANSLATION_429_BACKOFF_SECONDS = (90, 180, 300)
+
 # Florida cruise homeports must use their own same-day NWS Area Forecast
 # Discussion point-table values. Do not infer one Florida port from another
 # and do not substitute model precipitation probabilities for these ports.
@@ -1134,6 +1147,20 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     raise RuntimeError("API failed after 4 attempts")
 
 
+def _reject_untranslated_operational_phrases(translations: dict[str, str], language_code: str) -> None:
+    """Reject non-English dynamic briefing text that retains English operational prose."""
+    for slug, text in translations.items():
+        remaining = [
+            phrase for phrase in UNTRANSLATED_BRIEFING_OPERATIONAL_PHRASES
+            if phrase in text.casefold()
+        ]
+        if remaining:
+            raise ValueError(
+                f"{language_code}/{slug} translation retains English operational language: "
+                f"{', '.join(remaining)}"
+            )
+
+
 def _extract_translation_map(content: str, expected_slugs: set[str], language_code: str) -> dict[str, str]:
     cleaned = content.strip()
     if cleaned.startswith("```"):
@@ -1151,6 +1178,7 @@ def _extract_translation_map(content: str, expected_slugs: set[str], language_co
     translations = {slug: text.strip() for slug, text in value.items() if isinstance(text, str)}
     if set(translations) != expected_slugs or any(len(text) < 20 for text in translations.values()):
         raise ValueError(f"{language_code} translation response contains an empty or invalid briefing")
+    _reject_untranslated_operational_phrases(translations, language_code)
     return translations
 
 
@@ -1159,7 +1187,10 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
     system_message = (
         "You are a precise professional meteorological translator for a cruise weather website. "
         f"Translate every briefing value from English into {language_name}. "
-        "Preserve every place name, percentage, number, weather hazard, time range, and operational meaning exactly. "
+        "Translate all human-readable operational and weather narrative, including rain probability, weather conditions, "
+        "hazards, time phrases, port operations, embarkation, and shore excursions. "
+        "Do not leave English narrative words or phrases in the result. Preserve only proper place names, wind-direction "
+        "abbreviations, units such as kt and F, percentages, numbers, and established code names exactly. "
         "Do not add, omit, summarize, reinterpret, or update any forecast information. "
         "Return only one valid JSON object whose keys exactly match the supplied region slugs and whose values are the translated prose."
     )
@@ -1181,6 +1212,8 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
         try:
             if _USE_HTTPX:
                 response = _httpx.post(url, content=payload, headers=headers, timeout=180)
+                if response.status_code == 429:
+                    raise RuntimeError("translation provider returned HTTP 429")
                 response.raise_for_status()
                 result = response.json()
             else:
@@ -1191,7 +1224,21 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
         except Exception as exc:
             last_error = exc
             if attempt < 3:
-                time.sleep(5 * (attempt + 1))
+                if "429" in str(exc):
+                    cooldown = BRIEFING_TRANSLATION_429_BACKOFF_SECONDS[attempt]
+                    print(
+                        f"  Translation provider rate limit for {language_code}; "
+                        f"waiting {cooldown}s before retry {attempt + 1}/3...",
+                        file=sys.stderr,
+                    )
+                else:
+                    cooldown = 15 * (attempt + 1)
+                    print(
+                        f"  Translation request for {language_code} failed ({exc}); "
+                        f"waiting {cooldown}s before retry {attempt + 1}/3...",
+                        file=sys.stderr,
+                    )
+                time.sleep(cooldown)
     raise RuntimeError(f"{language_code} briefing translation failed after retries: {last_error}")
 
 
@@ -1215,9 +1262,17 @@ def _validate_region_translations(english_regions: dict[str, str], translations_
 
 def _translate_all_regions(english_regions: dict[str, str]) -> dict[str, dict[str, str]]:
     translations: dict[str, dict[str, str]] = {}
-    for language_code, language_name in BRIEFING_TRANSLATION_LANGUAGES.items():
+    language_batches = list(BRIEFING_TRANSLATION_LANGUAGES.items())
+    for index, (language_code, language_name) in enumerate(language_batches):
         print(f"Translating {len(english_regions)} regional briefings into {language_name}...", file=sys.stderr)
         translations[language_code] = _translate_region_batch(english_regions, language_code, language_name)
+        if index < len(language_batches) - 1:
+            print(
+                f"  Translation batch complete; cooling down "
+                f"{BRIEFING_TRANSLATION_BATCH_COOLDOWN_SECONDS}s before the next language...",
+                file=sys.stderr,
+            )
+            time.sleep(BRIEFING_TRANSLATION_BATCH_COOLDOWN_SECONDS)
     _validate_region_translations(english_regions, translations)
     return translations
 
