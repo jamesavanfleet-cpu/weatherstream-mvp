@@ -67,6 +67,18 @@ GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
 MODEL_REQUEST_MIN_INTERVAL_SECONDS = int(os.environ.get("INTEL_MODEL_REQUEST_INTERVAL_SECONDS", "15"))
 _LAST_GROQ_REQUEST_AT = 0.0
 
+
+# Every regional briefing is translated from the completed English source before publication.
+BRIEFING_TRANSLATION_LANGUAGES = {
+    "es": "Spanish",
+    "fr": "French",
+    "ar": "Arabic",
+    "zh": "Simplified Chinese",
+    "it": "Italian",
+    "de": "German",
+    "pt": "Brazilian Portuguese",
+}
+
 # Florida cruise homeports must use their own same-day NWS Area Forecast
 # Discussion point-table values. Do not infer one Florida port from another
 # and do not substitute model precipitation probabilities for these ports.
@@ -1121,6 +1133,94 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     raise RuntimeError("API failed after 4 attempts")
 
 
+def _extract_translation_map(content: str, expected_slugs: set[str], language_code: str) -> dict[str, str]:
+    cleaned = content.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else ""
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[:-3].rstrip()
+    try:
+        value = json.loads(cleaned)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{language_code} translation response is not valid JSON") from exc
+    if not isinstance(value, dict) or set(value) != expected_slugs:
+        missing = sorted(expected_slugs - set(value)) if isinstance(value, dict) else sorted(expected_slugs)
+        unexpected = sorted(set(value) - expected_slugs) if isinstance(value, dict) else []
+        raise ValueError(f"{language_code} translation response has an invalid region set: missing={missing}, unexpected={unexpected}")
+    translations = {slug: text.strip() for slug, text in value.items() if isinstance(text, str)}
+    if set(translations) != expected_slugs or any(len(text) < 20 for text in translations.values()):
+        raise ValueError(f"{language_code} translation response contains an empty or invalid briefing")
+    return translations
+
+
+def _translate_region_batch(english_regions: dict[str, str], language_code: str, language_name: str) -> dict[str, str]:
+    expected_slugs = set(english_regions)
+    system_message = (
+        "You are a precise professional meteorological translator for a cruise weather website. "
+        f"Translate every briefing value from English into {language_name}. "
+        "Preserve every place name, percentage, number, weather hazard, time range, and operational meaning exactly. "
+        "Do not add, omit, summarize, reinterpret, or update any forecast information. "
+        "Return only one valid JSON object whose keys exactly match the supplied region slugs and whose values are the translated prose."
+    )
+    payload = json.dumps({
+        "model": GROQ_MODEL,
+        "messages": [{"role": "system", "content": system_message}, {"role": "user", "content": json.dumps(english_regions, ensure_ascii=False)}],
+        "max_completion_tokens": 10000,
+        "temperature": 0,
+    }).encode()
+    url = f"{GROQ_BASE_URL}/chat/completions"
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_API_KEY}", "User-Agent": "WeatherStream/1.0"}
+    global _LAST_GROQ_REQUEST_AT
+    last_error: Exception | None = None
+    for attempt in range(4):
+        wait_for_slot = MODEL_REQUEST_MIN_INTERVAL_SECONDS - (time.monotonic() - _LAST_GROQ_REQUEST_AT)
+        if wait_for_slot > 0:
+            time.sleep(wait_for_slot)
+        _LAST_GROQ_REQUEST_AT = time.monotonic()
+        try:
+            if _USE_HTTPX:
+                response = _httpx.post(url, content=payload, headers=headers, timeout=180)
+                response.raise_for_status()
+                result = response.json()
+            else:
+                request = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+                with urllib.request.urlopen(request, timeout=180) as response:
+                    result = json.loads(response.read())
+            return _extract_translation_map(result["choices"][0]["message"]["content"], expected_slugs, language_code)
+        except Exception as exc:
+            last_error = exc
+            if attempt < 3:
+                time.sleep(5 * (attempt + 1))
+    raise RuntimeError(f"{language_code} briefing translation failed after retries: {last_error}")
+
+
+def _validate_region_translations(english_regions: dict[str, str], translations_by_language: dict[str, dict[str, str]]) -> None:
+    import re
+    if set(translations_by_language) != set(BRIEFING_TRANSLATION_LANGUAGES):
+        raise RuntimeError("Publication gate rejected briefing translations: language set is incomplete")
+    expected_slugs = set(english_regions)
+    for language_code, translated_regions in translations_by_language.items():
+        if set(translated_regions) != expected_slugs:
+            raise RuntimeError(f"Publication gate rejected {language_code} briefing translations: region set is incomplete")
+        for slug, english_text in english_regions.items():
+            translated_text = translated_regions[slug]
+            if translated_text == english_text:
+                raise RuntimeError(f"Publication gate rejected {language_code}/{slug}: briefing was not translated")
+            english_percentages = re.findall(r"(\d{1,3})\s*[%％]", english_text)
+            translated_percentages = re.findall(r"(\d{1,3})\s*[%％]", translated_text)
+            if english_percentages != translated_percentages:
+                raise RuntimeError(f"Publication gate rejected {language_code}/{slug}: precipitation values changed during translation")
+
+
+def _translate_all_regions(english_regions: dict[str, str]) -> dict[str, dict[str, str]]:
+    translations: dict[str, dict[str, str]] = {}
+    for language_code, language_name in BRIEFING_TRANSLATION_LANGUAGES.items():
+        print(f"Translating {len(english_regions)} regional briefings into {language_name}...", file=sys.stderr)
+        translations[language_code] = _translate_region_batch(english_regions, language_code, language_name)
+    _validate_region_translations(english_regions, translations)
+    return translations
+
+
 def _clean_model_formatting(text: str) -> str:
     """Remove model-added headings and markdown while preserving briefing prose."""
     import re
@@ -1971,6 +2071,8 @@ def main(argv: list[str] | None = None):
             raise RuntimeError(f"{args.batch.title()} generation batch failed: " + " | ".join(failures))
         _validate_complete_regions(values, selected_regions)
         output["regions"] = values
+
+    output["translations"] = _translate_all_regions(output["regions"])
 
     target = args.output or (Path(__file__).parent.parent / "client" / "public" / "intel.json")
     target.parent.mkdir(parents=True, exist_ok=True)
