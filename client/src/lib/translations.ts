@@ -1417,6 +1417,27 @@ export function getRegionDetailText(language: LanguageCode, englishText: string)
   return sharedKey ? translations[language][sharedKey] : REGION_DETAIL_LABEL_VARIANTS[language][englishText] ?? englishText;
 }
 
+const LOCALIZED_REGION_NAMES: Record<LanguageCode, Record<string, string>> = {
+  en: {"Bahamas, Bermuda and Central Caribbean":"Bahamas, Bermuda and Central Caribbean","Bahamas and Central Caribbean":"Bahamas and Central Caribbean","Eastern Caribbean":"Eastern Caribbean","Southern Caribbean":"Southern Caribbean","Western Caribbean":"Western Caribbean","US Ports":"US Ports","Western Mediterranean":"Western Mediterranean","Central Mediterranean":"Central Mediterranean","Eastern Mediterranean":"Eastern Mediterranean","Eastern Pacific":"Eastern Pacific","Alaska":"Alaska"},
+  es: {"Bahamas, Bermuda and Central Caribbean":"Bahamas, Bermudas y Caribe central","Bahamas and Central Caribbean":"Bahamas y Caribe central","Eastern Caribbean":"Caribe oriental","Southern Caribbean":"Caribe meridional","Western Caribbean":"Caribe occidental","US Ports":"Puertos de Estados Unidos","Western Mediterranean":"Mediterráneo occidental","Central Mediterranean":"Mediterráneo central","Eastern Mediterranean":"Mediterráneo oriental","Eastern Pacific":"Pacífico oriental","Alaska":"Alaska"},
+  fr: {"Bahamas, Bermuda and Central Caribbean":"Bahamas, Bermudes et Caraïbes centrales","Bahamas and Central Caribbean":"Bahamas et Caraïbes centrales","Eastern Caribbean":"Caraïbes orientales","Southern Caribbean":"Caraïbes méridionales","Western Caribbean":"Caraïbes occidentales","US Ports":"Ports des États-Unis","Western Mediterranean":"Méditerranée occidentale","Central Mediterranean":"Méditerranée centrale","Eastern Mediterranean":"Méditerranée orientale","Eastern Pacific":"Pacifique oriental","Alaska":"Alaska"},
+  ar: {"Bahamas, Bermuda and Central Caribbean":"جزر البهاما وبرمودا ومنطقة الكاريبي الوسطى","Bahamas and Central Caribbean":"جزر البهاما ومنطقة الكاريبي الوسطى","Eastern Caribbean":"منطقة الكاريبي الشرقية","Southern Caribbean":"منطقة الكاريبي الجنوبية","Western Caribbean":"منطقة الكاريبي الغربية","US Ports":"موانئ الولايات المتحدة","Western Mediterranean":"البحر المتوسط الغربي","Central Mediterranean":"البحر المتوسط الأوسط","Eastern Mediterranean":"البحر المتوسط الشرقي","Eastern Pacific":"المحيط الهادئ الشرقي","Alaska":"ألاسكا"},
+  zh: {"Bahamas, Bermuda and Central Caribbean":"巴哈马、百慕大和中加勒比地区","Bahamas and Central Caribbean":"巴哈马和中加勒比地区","Eastern Caribbean":"东加勒比地区","Southern Caribbean":"南加勒比地区","Western Caribbean":"西加勒比地区","US Ports":"美国港口","Western Mediterranean":"西地中海","Central Mediterranean":"中地中海","Eastern Mediterranean":"东地中海","Eastern Pacific":"东太平洋","Alaska":"阿拉斯加"},
+  it: {"Bahamas, Bermuda and Central Caribbean":"Bahamas, Bermuda e Caraibi centrali","Bahamas and Central Caribbean":"Bahamas e Caraibi centrali","Eastern Caribbean":"Caraibi orientali","Southern Caribbean":"Caraibi meridionali","Western Caribbean":"Caraibi occidentali","US Ports":"Porti degli Stati Uniti","Western Mediterranean":"Mediterraneo occidentale","Central Mediterranean":"Mediterraneo centrale","Eastern Mediterranean":"Mediterraneo orientale","Eastern Pacific":"Pacifico orientale","Alaska":"Alaska"},
+  de: {"Bahamas, Bermuda and Central Caribbean":"Bahamas, Bermuda und Zentralkaribik","Bahamas and Central Caribbean":"Bahamas und Zentralkaribik","Eastern Caribbean":"Östliche Karibik","Southern Caribbean":"Südliche Karibik","Western Caribbean":"Westliche Karibik","US Ports":"US-Häfen","Western Mediterranean":"Westliches Mittelmeer","Central Mediterranean":"Zentrales Mittelmeer","Eastern Mediterranean":"Östliches Mittelmeer","Eastern Pacific":"Östlicher Pazifik","Alaska":"Alaska"},
+  pt: {"Bahamas, Bermuda and Central Caribbean":"Bahamas, Bermudas e Caribe Central","Bahamas and Central Caribbean":"Bahamas e Caribe Central","Eastern Caribbean":"Caribe Oriental","Southern Caribbean":"Caribe Meridional","Western Caribbean":"Caribe Ocidental","US Ports":"Portos dos Estados Unidos","Western Mediterranean":"Mediterrâneo Ocidental","Central Mediterranean":"Mediterrâneo Central","Eastern Mediterranean":"Mediterrâneo Oriental","Eastern Pacific":"Pacífico Oriental","Alaska":"Alasca"},
+};
+
+export function translateRegionName(language: LanguageCode, englishName: string): string {
+  return LOCALIZED_REGION_NAMES[language][englishName] ?? englishName;
+}
+
+export type RegionBriefingTranslations = Partial<Record<LanguageCode, Record<string, string>>>;
+
+export function selectRegionBriefing(language: LanguageCode, slug: string, englishBriefing: string, translationsByLanguage?: RegionBriefingTranslations): string {
+  return translationsByLanguage?.[language]?.[slug] ?? englishBriefing;
+}
+
 export function getLanguageDefinition(code: LanguageCode): LanguageDefinition {
   return LANGUAGES.find((language) => language.code === code) ?? LANGUAGES[0];
 }
