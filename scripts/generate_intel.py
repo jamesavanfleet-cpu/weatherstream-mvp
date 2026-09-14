@@ -1338,6 +1338,10 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
         "messages": [{"role": "system", "content": system_message}, {"role": "user", "content": json.dumps(english_regions, ensure_ascii=False)}],
         "max_completion_tokens": 4000,
         "temperature": 0,
+        # JSON mode prevents provider prose or Markdown fences from bypassing the
+        # sentence-preserving translation completeness gate. The existing parser and
+        # all forecast-value validation remain mandatory after decoding.
+        "response_format": {"type": "json_object"},
         # Translation does not benefit from reasoning. Minimal reasoning preserves
         # the response budget for complete localized prose in the built-in runtime.
         **({"reasoning": {"effort": "minimal"}} if _USING_BUILTIN_RUNTIME else {}),
