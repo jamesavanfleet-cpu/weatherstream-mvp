@@ -95,6 +95,19 @@ UNTRANSLATED_BRIEFING_OPERATIONAL_PHRASES = (
 # The model can retain these fixed NWS product labels in English even when the
 # surrounding weather narrative is translated. They are deterministic labels,
 # not forecast values, and are localized before the language-quality gate runs.
+# Deterministic ordinal labels are localized after translation, just as official heat
+# product labels are. This prevents otherwise complete prose from retaining the
+# English literal "Day 2" or "Day 3" and failing the no-residual-English gate.
+FIXED_BRIEFING_LABEL_TRANSLATIONS = {
+    "es": {"Day 2": "Día 2", "Day 3": "Día 3"},
+    "fr": {"Day 2": "Jour 2", "Day 3": "Jour 3"},
+    "ar": {"Day 2": "اليوم الثاني", "Day 3": "اليوم الثالث"},
+    "zh": {"Day 2": "第2天", "Day 3": "第3天"},
+    "it": {"Day 2": "Giorno 2", "Day 3": "Giorno 3"},
+    "de": {"Day 2": "Tag 2", "Day 3": "Tag 3"},
+    "pt": {"Day 2": "Dia 2", "Day 3": "Dia 3"},
+}
+
 OFFICIAL_HEAT_PRODUCT_TRANSLATIONS = {
     "es": {
         "Excessive Heat Warning": "Advertencia de Calor Excesivo",
@@ -1223,6 +1236,16 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
     raise RuntimeError("API failed after 4 attempts")
 
 
+def _localize_fixed_briefing_labels(text: str, language_code: str) -> str:
+    """Localize fixed ordinal day labels when a translation response retains English."""
+    import re
+
+    localized = text
+    for english_label, target_label in FIXED_BRIEFING_LABEL_TRANSLATIONS.get(language_code, {}).items():
+        localized = re.sub(rf"\b{re.escape(english_label)}\b", target_label, localized, flags=re.IGNORECASE)
+    return localized
+
+
 def _localize_official_heat_product_names(text: str, language_code: str) -> str:
     """Localize only fixed official NWS heat-product names retained by the model."""
     localized = text
@@ -1279,7 +1302,8 @@ def _extract_translation_map(
             )
         normalized_sentences = []
         for sentence in translated_sentences:
-            sentence = _localize_official_heat_product_names(sentence.strip(), language_code)
+            sentence = _localize_fixed_briefing_labels(sentence.strip(), language_code)
+            sentence = _localize_official_heat_product_names(sentence, language_code)
             if len(sentence) < 10 or not re.search(r'[.!?…。！？][\"\'”’）)]*$', sentence):
                 raise ValueError(f"{language_code}/{slug} contains an incomplete translated sentence")
             normalized_sentences.append(sentence)
@@ -1299,7 +1323,8 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
         "You are a precise professional meteorological translator for a cruise weather website. "
         f"Translate every briefing value from English into {language_name}. "
         "Translate all human-readable operational and weather narrative, including rain probability, weather conditions, "
-        "hazards, time phrases, port operations, embarkation, and shore excursions. "
+        "hazards, time phrases, port operations, embarkation, and shore excursions. Translate ordinal day labels such as "
+        "Day 2 and Day 3 into the target language, never leaving those English labels in prose. "
         "Do not leave English narrative words or phrases in the result. Preserve only proper place names, wind-direction "
         "abbreviations, units such as kt and F, percentages, numbers, and established code names exactly. "
         "Do not add, omit, summarize, reinterpret, or update any forecast information. "
