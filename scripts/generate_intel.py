@@ -65,6 +65,13 @@ GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
 # Keep serial model requests apart. July 31 showed the provider rejecting back-to-back
 # requests with HTTP 429, so the rate limiter applies before every request and retry.
 MODEL_REQUEST_MIN_INTERVAL_SECONDS = int(os.environ.get("INTEL_MODEL_REQUEST_INTERVAL_SECONDS", "15"))
+# The GitHub production provider reserves requested completion capacity. The 4,000-token
+# built-in-runtime allowance is necessary for GPT-5 reasoning, but it causes repeated
+# HTTP 429 responses on the Groq production path. Briefings and two-region translation
+# groups are far shorter, so these bounded Groq budgets preserve content while allowing
+# the existing completeness gates to reject anything incomplete.
+GROQ_BRIEFING_MAX_COMPLETION_TOKENS = 1000
+GROQ_TRANSLATION_MAX_COMPLETION_TOKENS = 1600
 _LAST_GROQ_REQUEST_AT = 0.0
 
 
@@ -1191,8 +1198,12 @@ def call_groq(region: dict, weather_data: dict, retry_prefix: str = "") -> str:
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ],
-        "max_completion_tokens": 4000,  # raised from 400 -- reasoning models (gpt-5-mini) use ~2600 reasoning tokens before producing output; must be 4000+ to get any visible content; max_completion_tokens required (not max_tokens) for GPT reasoning model proxy compatibility
+        # GPT-5 built-in calls need room for reasoning; the production Groq path is
+        # deliberately bounded to the concise briefing contract to avoid rate-limit
+        # capacity reservations. The brevity and forecast-value gates still run after.
+        "max_completion_tokens": 4000 if _USING_BUILTIN_RUNTIME else GROQ_BRIEFING_MAX_COMPLETION_TOKENS,
         "temperature": 0.7,
+        **({"reasoning": {"effort": "minimal"}} if _USING_BUILTIN_RUNTIME else {"reasoning_effort": "low"}),
     }).encode()
 
     url = f"{GROQ_BASE_URL}/chat/completions"
@@ -1336,8 +1347,11 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
     payload = json.dumps({
         "model": GROQ_MODEL,
         "messages": [{"role": "system", "content": system_message}, {"role": "user", "content": json.dumps(english_regions, ensure_ascii=False)}],
-        "max_completion_tokens": 4000,
+        # Two complete regional translations fit within the bounded Groq response
+        # budget. Built-in GPT calls retain their larger allowance for proxy behavior.
+        "max_completion_tokens": 4000 if _USING_BUILTIN_RUNTIME else GROQ_TRANSLATION_MAX_COMPLETION_TOKENS,
         "temperature": 0,
+        **({} if _USING_BUILTIN_RUNTIME else {"reasoning_effort": "low"}),
         # JSON mode prevents provider prose or Markdown fences from bypassing the
         # sentence-preserving translation completeness gate. The existing parser and
         # all forecast-value validation remain mandatory after decoding.
