@@ -64,7 +64,10 @@ GROQ_MODEL = os.environ.get("GROQ_MODEL") or (
 
 # Keep serial model requests apart. July 31 showed the provider rejecting back-to-back
 # requests with HTTP 429, so the rate limiter applies before every request and retry.
-MODEL_REQUEST_MIN_INTERVAL_SECONDS = int(os.environ.get("INTEL_MODEL_REQUEST_INTERVAL_SECONDS", "15"))
+# The prior 15-second default still produced repeated production 429s. Twenty seconds
+# keeps all calls below the observed shared provider request window while preserving a
+# timely morning publication.
+MODEL_REQUEST_MIN_INTERVAL_SECONDS = int(os.environ.get("INTEL_MODEL_REQUEST_INTERVAL_SECONDS", "20"))
 # The GitHub production provider reserves requested completion capacity. The 4,000-token
 # built-in-runtime allowance is necessary for GPT-5 reasoning, but it causes repeated
 # HTTP 429 responses on the Groq production path. Briefings and two-region translation
