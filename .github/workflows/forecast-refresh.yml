@@ -1,14 +1,14 @@
 name: Morning Briefing Refresh
 
-# Runs once daily at 4:00 AM Eastern time year-round.
-# EDT (Mar-Nov): 08:00 UTC
-# EST (Nov-Mar): 09:00 UTC
-# Both seasonal triggers are retained so the heavy refresh runs at 4:00 AM local time,
+# Runs once daily at 5:00 AM Eastern time year-round.
+# EDT (Mar-Nov): 09:00 UTC
+# EST (Nov-Mar): 10:00 UTC
+# Both seasonal triggers are retained so the heavy refresh runs at 5:00 AM local time,
 # while the inactive seasonal trigger exits without generating or publishing.
 on:
   schedule:
-    - cron: '0 8 * * *'     # 4:00 AM EDT
-    - cron: '0 9 * * *'     # 4:00 AM EST
+    - cron: '0 9 * * *'     # 5:00 AM EDT
+    - cron: '0 10 * * *'    # 5:00 AM EST
   workflow_dispatch:
     inputs:
       force_run:
@@ -48,10 +48,10 @@ jobs:
           UTC_MINUTE=$(date -u +%-M)
 
           if [ "$ET_TZ" = "EDT" ]; then
-            ACTIVE_AM_CRON='0 8 * * *'
+            ACTIVE_AM_CRON='0 9 * * *'
             ACTIVE_PM_CRON='45 19 * * *'
           else
-            ACTIVE_AM_CRON='0 9 * * *'
+            ACTIVE_AM_CRON='0 10 * * *'
             ACTIVE_PM_CRON='45 20 * * *'
           fi
 
