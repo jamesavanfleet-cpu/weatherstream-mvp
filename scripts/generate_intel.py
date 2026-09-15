@@ -1390,6 +1390,27 @@ def _translate_region_batch(english_regions: dict[str, str], language_code: str,
                 english_regions,
             )
         except Exception as exc:
+            # A partial JSON object cannot pass the complete-region publication gate.
+            # Recover only this affected two-region batch as individual requests,
+            # avoiding repeated retries of an output shape already proven incomplete.
+            if (
+                isinstance(exc, ValueError)
+                and len(english_regions) > 1
+                and "translation response has an invalid region set" in str(exc)
+            ):
+                print(
+                    f"  {language_name} returned an incomplete region group; "
+                    "recovering the affected regions individually...",
+                    file=sys.stderr,
+                )
+                recovered_regions: dict[str, str] = {}
+                for slug, english_text in english_regions.items():
+                    recovered_regions.update(
+                        _translate_region_batch(
+                            {slug: english_text}, language_code, language_name
+                        )
+                    )
+                return recovered_regions
             last_error = exc
             if attempt < 3:
                 if "429" in str(exc):
