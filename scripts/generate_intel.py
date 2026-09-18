@@ -192,15 +192,16 @@ BRIEFING_TRANSLATION_GROUP_COOLDOWN_SECONDS = 20
 BRIEFING_TRANSLATION_LANGUAGE_COOLDOWN_SECONDS = 30
 BRIEFING_TRANSLATION_429_BACKOFF_SECONDS = (90, 180, 300)
 
-# Florida cruise homeports must use their own same-day NWS Area Forecast
-# Discussion point-table values. Do not infer one Florida port from another
-# and do not substitute model precipitation probabilities for these ports.
+# The five primary Florida cruise homeports must use their own same-day NWS Area
+# Forecast Discussion point-table values. Do not infer one Florida port from
+# another and do not substitute model precipitation probabilities for these ports.
+# Key West remains in the US Ports regional briefing but is intentionally not a
+# publication gate or required Florida source value.
 FLORIDA_CRUISE_AFD_PORTS = (
     {"name": "Miami", "office": "MFL", "aliases": ("Miami",)},
     {"name": "Port Everglades", "office": "MFL", "aliases": ("Fort Lauderdale", "N Ft Lauderdale")},
     {"name": "Port Canaveral", "office": "MLB", "aliases": ("MLB", "Melbourne", "Cape Canaveral")},
     {"name": "Tampa Bay", "office": "TBW", "aliases": ("TPA", "Tampa")},
-    {"name": "Key West", "office": "KEY", "aliases": ("Key West",)},
     {"name": "Jacksonville", "office": "JAX", "aliases": ("JAX", "Jacksonville")},
 )
 
