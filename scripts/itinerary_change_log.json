@@ -1,254 +1,6 @@
 {
   "runs": [
     {
-      "run_timestamp": "2026-06-23T23:09:31.737895",
-      "sailings_checked": 66,
-      "changes": [
-        {
-          "type": "ADDED",
-          "ship": "Icon of the Seas",
-          "departure_date": "2026-07-11",
-          "description": "7 days, round-trip Eastern Caribbean  Perfect Day",
-          "detail": "ADDED Icon of the Seas 2026-07-11: 7 days, round-trip Eastern Caribbean  Perfect Day"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Oasis of the Seas",
-          "departure_date": "2026-07-12",
-          "description": "7 days, round-trip Perfect Day Bahamas Cruise",
-          "detail": "ADDED Oasis of the Seas 2026-07-12: 7 days, round-trip Perfect Day Bahamas Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mariner of the Seas",
-          "departure_date": "2026-07-02",
-          "description": "4 days, round-trip Western Caribbean Cruise",
-          "detail": "ADDED Mariner of the Seas 2026-07-02: 4 days, round-trip Western Caribbean Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Navigator of the Seas",
-          "departure_date": "2026-07-10",
-          "description": "7 days, round-trip Ensenada, Cabo  Mazatlan",
-          "detail": "ADDED Navigator of the Seas 2026-07-10: 7 days, round-trip Ensenada, Cabo  Mazatlan"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Wonder of the Seas",
-          "departure_date": "2026-06-29",
-          "description": "4 days, round-trip 4 Night Bahamas and Perfect Day Cruise",
-          "detail": "ADDED Wonder of the Seas 2026-06-29: 4 days, round-trip 4 Night Bahamas and Perfect Day Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Adventure of the Seas",
-          "departure_date": "2026-07-10",
-          "description": "8 days, round-trip Southern Caribbean  Perfect Day",
-          "detail": "ADDED Adventure of the Seas 2026-07-10: 8 days, round-trip Southern Caribbean  Perfect Day"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Freedom of the Seas",
-          "departure_date": "2026-07-02",
-          "description": "4 days, round-trip Perfect Day Cococay  Bahamas",
-          "detail": "ADDED Freedom of the Seas 2026-07-02: 4 days, round-trip Perfect Day Cococay  Bahamas"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-06-27",
-          "description": "7 days, round-trip Western Caribbean",
-          "detail": "ADDED Mardi Gras 2026-06-27: 7 days, round-trip Western Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-07-04",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-07-04: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-07-11",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-07-11: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Carnival Breeze",
-          "departure_date": "2026-07-04",
-          "description": "5 days, round-trip Western Caribbean",
-          "detail": "ADDED Carnival Breeze 2026-07-04: 5 days, round-trip Western Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Carnival Freedom",
-          "departure_date": "2026-07-04",
-          "description": "5 days, round-trip The Bahamas",
-          "detail": "ADDED Carnival Freedom 2026-07-04: 5 days, round-trip The Bahamas"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Celebrity Apex",
-          "departure_date": "2026-07-11",
-          "description": "12 days, round-trip Norwegian Fjords  Arctic Circle",
-          "detail": "ADDED Celebrity Apex 2026-07-11: 12 days, round-trip Norwegian Fjords  Arctic Circle"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Disney Wish",
-          "departure_date": "2026-06-29",
-          "description": "4 days, round-trip 4 Night Bahamas Cruise",
-          "detail": "ADDED Disney Wish 2026-06-29: 4 days, round-trip 4 Night Bahamas Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Norwegian Getaway",
-          "departure_date": "2026-06-29",
-          "description": "4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
-          "detail": "ADDED Norwegian Getaway 2026-06-29: 4 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Caribbean Princess",
-          "departure_date": "2026-06-21",
-          "was": "Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
-          "now": "Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
-          "detail": "FIXED Caribbean Princess 2026-06-21: was [Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Caribbean Princess",
-          "departure_date": "2026-06-21",
-          "was": "Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
-          "now": "Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
-          "detail": "FIXED Caribbean Princess 2026-06-21: was [Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral] -> now [Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
-        }
-      ],
-      "errors": []
-    },
-    {
-      "run_timestamp": "2026-06-26T23:08:24.191124",
-      "sailings_checked": 66,
-      "changes": [
-        {
-          "type": "ADDED",
-          "ship": "Symphony of the Seas",
-          "departure_date": "2026-07-12",
-          "description": "6 days, round-trip Western Caribbean Cruise",
-          "detail": "ADDED Symphony of the Seas 2026-07-12: 6 days, round-trip Western Caribbean Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Allure of the Seas",
-          "departure_date": "2026-07-11",
-          "description": "8 days, round-trip Southern Caribbean  Perfect Day",
-          "detail": "ADDED Allure of the Seas 2026-07-11: 8 days, round-trip Southern Caribbean  Perfect Day"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mariner of the Seas",
-          "departure_date": "2026-07-06",
-          "description": "5 days, round-trip Western Caribbean Cruise",
-          "detail": "ADDED Mariner of the Seas 2026-07-06: 5 days, round-trip Western Caribbean Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Wonder of the Seas",
-          "departure_date": "2026-07-03",
-          "description": "3 days, round-trip 3 Night Bahamas and Perfect Day Cruise",
-          "detail": "ADDED Wonder of the Seas 2026-07-03: 3 days, round-trip 3 Night Bahamas and Perfect Day Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Freedom of the Seas",
-          "departure_date": "2026-07-06",
-          "description": "5 days, round-trip Western Caribbean  Perfect Day",
-          "detail": "ADDED Freedom of the Seas 2026-07-06: 5 days, round-trip Western Caribbean  Perfect Day"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-06-27",
-          "description": "7 days, round-trip Western Caribbean",
-          "detail": "ADDED Mardi Gras 2026-06-27: 7 days, round-trip Western Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-07-04",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-07-04: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Mardi Gras",
-          "departure_date": "2026-07-11",
-          "description": "7 days, round-trip Eastern Caribbean",
-          "detail": "ADDED Mardi Gras 2026-07-11: 7 days, round-trip Eastern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Carnival Vista",
-          "departure_date": "2026-07-11",
-          "description": "8 days, round-trip Southern Caribbean",
-          "detail": "ADDED Carnival Vista 2026-07-11: 8 days, round-trip Southern Caribbean"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Celebrity Beyond",
-          "departure_date": "2026-07-12",
-          "description": "7 days, round-trip Grand Cayman, Mexico  Perfect Day",
-          "detail": "ADDED Celebrity Beyond 2026-07-12: 7 days, round-trip Grand Cayman, Mexico  Perfect Day"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Disney Wish",
-          "departure_date": "2026-07-03",
-          "description": "3 days, round-trip 3 Night Bahamas Cruise",
-          "detail": "ADDED Disney Wish 2026-07-03: 3 days, round-trip 3 Night Bahamas Cruise"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Norwegian Encore",
-          "departure_date": "2026-07-12",
-          "description": "7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau",
-          "detail": "ADDED Norwegian Encore 2026-07-12: 7 days, round-trip Alaska Round-Trip Seattle Glacier Bay, Skagway  Juneau"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Norwegian Getaway",
-          "departure_date": "2026-07-03",
-          "description": "3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau",
-          "detail": "ADDED Norwegian Getaway 2026-07-03: 3 days, round-trip Bahamas Round-Trip Miami Great Stirrup Cay  Nassau"
-        },
-        {
-          "type": "FIXED",
-          "ship": "Caribbean Princess",
-          "departure_date": "2026-06-28",
-          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
-          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral",
-          "detail": "FIXED Caribbean Princess 2026-06-28: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, Grand Turk, Puerto Plata, San Juan, At Sea, At Sea, Port Canaveral]"
-        },
-        {
-          "type": "ADDED",
-          "ship": "Caribbean Princess",
-          "departure_date": "2026-07-05",
-          "description": "7 days, round-trip Eastern Caribbean with Puerto Rico",
-          "detail": "ADDED Caribbean Princess 2026-07-05: 7 days, round-trip Eastern Caribbean with Puerto Rico"
-        },
-        {
-          "type": "ADDED",
-          "ship": "MSC Seascape",
-          "departure_date": "2026-07-12",
-          "description": "7 days, round-trip Western Caribbean",
-          "detail": "ADDED MSC Seascape 2026-07-12: 7 days, round-trip Western Caribbean"
-        }
-      ],
-      "errors": []
-    },
-    {
       "run_timestamp": "2026-06-30T23:07:40.650055",
       "sailings_checked": 66,
       "changes": [
@@ -2229,6 +1981,357 @@
           "departure_date": "2026-09-27",
           "description": "7 nights, round-trip from Piraeus-Athens, Greece",
           "detail": "ADDED Scarlet Lady 2026-09-27: 7 nights, round-trip from Piraeus-Athens, Greece"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "run_timestamp": "2026-09-25T23:41:36.724960",
+      "sailings_checked": 66,
+      "changes": [
+        {
+          "type": "ADDED",
+          "ship": "Icon of the Seas",
+          "departure_date": "2026-10-03",
+          "description": "7 nights, round-trip from Miami, USA",
+          "detail": "ADDED Icon of the Seas 2026-10-03: 7 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Icon of the Seas",
+          "departure_date": "2026-10-10",
+          "description": "7 nights, round-trip from Miami, USA",
+          "detail": "ADDED Icon of the Seas 2026-10-10: 7 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Oasis of the Seas",
+          "departure_date": "2026-10-04",
+          "description": "7 nights, round-trip from New York, USA",
+          "detail": "ADDED Oasis of the Seas 2026-10-04: 7 nights, round-trip from New York, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Oasis of the Seas",
+          "departure_date": "2026-10-11",
+          "description": "7 nights, round-trip from New York, USA",
+          "detail": "ADDED Oasis of the Seas 2026-10-11: 7 nights, round-trip from New York, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-10-04",
+          "description": "6 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Symphony of the Seas 2026-10-04: 6 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Symphony of the Seas",
+          "departure_date": "2026-10-10",
+          "description": "8 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Symphony of the Seas 2026-10-10: 8 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Allure of the Seas",
+          "departure_date": "2026-10-03",
+          "description": "8 nights, round-trip from Fort Lauderdale, USA",
+          "detail": "ADDED Allure of the Seas 2026-10-03: 8 nights, round-trip from Fort Lauderdale, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Allure of the Seas",
+          "departure_date": "2026-10-11",
+          "description": "6 nights, round-trip from Fort Lauderdale, USA",
+          "detail": "ADDED Allure of the Seas 2026-10-11: 6 nights, round-trip from Fort Lauderdale, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Harmony of the Seas",
+          "departure_date": "2026-09-26",
+          "description": "5 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Harmony of the Seas 2026-09-26: 5 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Harmony of the Seas",
+          "departure_date": "2026-10-01",
+          "description": "2 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Harmony of the Seas 2026-10-01: 2 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Harmony of the Seas",
+          "departure_date": "2026-10-03",
+          "description": "5 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Harmony of the Seas 2026-10-03: 5 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-09-24",
+          "description": "4 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Mariner of the Seas 2026-09-24: 4 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-09-28",
+          "description": "5 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Mariner of the Seas 2026-09-28: 5 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mariner of the Seas",
+          "departure_date": "2026-10-03",
+          "description": "5 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Mariner of the Seas 2026-10-03: 5 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Navigator of the Seas",
+          "departure_date": "2026-10-02",
+          "description": "16 nights, one-way from Los Angeles to Yokohama",
+          "detail": "ADDED Navigator of the Seas 2026-10-02: 16 nights, one-way from Los Angeles to Yokohama"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Navigator of the Seas",
+          "departure_date": "2026-10-18",
+          "description": "11 nights, one-way from Yokohama to Singapore",
+          "detail": "ADDED Navigator of the Seas 2026-10-18: 11 nights, one-way from Yokohama to Singapore"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-09-25",
+          "description": "3 nights, round-trip from Miami, USA",
+          "detail": "ADDED Wonder of the Seas 2026-09-25: 3 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-09-28",
+          "description": "4 nights, round-trip from Miami, USA",
+          "detail": "ADDED Wonder of the Seas 2026-09-28: 4 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Wonder of the Seas",
+          "departure_date": "2026-10-02",
+          "description": "3 nights, round-trip from Miami, USA",
+          "detail": "ADDED Wonder of the Seas 2026-10-02: 3 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Adventure of the Seas",
+          "departure_date": "2026-10-02",
+          "description": "8 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Adventure of the Seas 2026-10-02: 8 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Adventure of the Seas",
+          "departure_date": "2026-10-10",
+          "description": "6 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Adventure of the Seas 2026-10-10: 6 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Freedom of the Seas",
+          "departure_date": "2026-10-03",
+          "description": "5 nights, round-trip from Miami, USA",
+          "detail": "ADDED Freedom of the Seas 2026-10-03: 5 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Freedom of the Seas",
+          "departure_date": "2026-10-08",
+          "description": "9 nights, round-trip from Miami, USA",
+          "detail": "ADDED Freedom of the Seas 2026-10-08: 9 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-09-26",
+          "description": "7 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Mardi Gras 2026-09-26: 7 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-10-03",
+          "description": "7 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Mardi Gras 2026-10-03: 7 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Mardi Gras",
+          "departure_date": "2026-10-10",
+          "description": "7 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Mardi Gras 2026-10-10: 7 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-10-03",
+          "description": "8 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Carnival Vista 2026-10-03: 8 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Vista",
+          "departure_date": "2026-10-11",
+          "description": "6 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Carnival Vista 2026-10-11: 6 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-09-26",
+          "description": "5 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Carnival Breeze 2026-09-26: 5 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-10-01",
+          "description": "4 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Carnival Breeze 2026-10-01: 4 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Carnival Breeze",
+          "departure_date": "2026-10-05",
+          "description": "5 nights, round-trip from Galveston, USA",
+          "detail": "ADDED Carnival Breeze 2026-10-05: 5 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-10-04",
+          "description": "7 nights, round-trip from Miami, USA",
+          "detail": "ADDED Celebrity Beyond 2026-10-04: 7 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Beyond",
+          "departure_date": "2026-10-11",
+          "description": "7 nights, round-trip from Miami, USA",
+          "detail": "ADDED Celebrity Beyond 2026-10-11: 7 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Celebrity Apex",
+          "departure_date": "2026-10-18",
+          "description": "13 nights, one-way from Southampton to Port Canaveral",
+          "detail": "ADDED Celebrity Apex 2026-10-18: 13 nights, one-way from Southampton to Port Canaveral"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-09-25",
+          "description": "3 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Disney Wish 2026-09-25: 3 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-09-28",
+          "description": "4 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Disney Wish 2026-09-28: 4 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Disney Wish",
+          "departure_date": "2026-10-02",
+          "description": "3 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Disney Wish 2026-10-02: 3 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-10-04",
+          "description": "7 nights, round-trip from Seattle, USA",
+          "detail": "ADDED Norwegian Encore 2026-10-04: 7 nights, round-trip from Seattle, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Encore",
+          "departure_date": "2026-10-13",
+          "description": "5 nights, one-way from Vancouver to Los Angeles",
+          "detail": "ADDED Norwegian Encore 2026-10-13: 5 nights, one-way from Vancouver to Los Angeles"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-09-25",
+          "description": "3 nights, round-trip from Miami, USA",
+          "detail": "ADDED Norwegian Getaway 2026-09-25: 3 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-09-28",
+          "description": "4 nights, round-trip from Miami, USA",
+          "detail": "ADDED Norwegian Getaway 2026-09-28: 4 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Norwegian Getaway",
+          "departure_date": "2026-10-02",
+          "description": "3 nights, round-trip from Miami, USA",
+          "detail": "ADDED Norwegian Getaway 2026-10-02: 3 nights, round-trip from Miami, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-09-27",
+          "description": "7 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Caribbean Princess 2026-09-27: 7 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "FIXED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-09-27",
+          "was": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "now": "Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral",
+          "detail": "FIXED Caribbean Princess 2026-09-27: was [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral] -> now [Port Canaveral, Nassau, Princess Cays, At Sea, Puerto Plata, Grand Turk, At Sea, Port Canaveral, At Sea, At Sea, San Juan, Puerto Plata, Grand Turk, At Sea, Port Canaveral]"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Caribbean Princess",
+          "departure_date": "2026-10-04",
+          "description": "14 nights, round-trip from Port Canaveral, USA",
+          "detail": "ADDED Caribbean Princess 2026-10-04: 14 nights, round-trip from Port Canaveral, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-10-04",
+          "description": "7 nights, round-trip from Galveston, USA",
+          "detail": "ADDED MSC Seascape 2026-10-04: 7 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "MSC Seascape",
+          "departure_date": "2026-10-11",
+          "description": "7 nights, round-trip from Galveston, USA",
+          "detail": "ADDED MSC Seascape 2026-10-11: 7 nights, round-trip from Galveston, USA"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Scarlet Lady",
+          "departure_date": "2026-10-04",
+          "description": "7 nights, one-way from Piraeus-Athens to Barcelona",
+          "detail": "ADDED Scarlet Lady 2026-10-04: 7 nights, one-way from Piraeus-Athens to Barcelona"
+        },
+        {
+          "type": "ADDED",
+          "ship": "Scarlet Lady",
+          "departure_date": "2026-10-11",
+          "description": "14 nights, one-way from Barcelona to Miami",
+          "detail": "ADDED Scarlet Lady 2026-10-11: 14 nights, one-way from Barcelona to Miami"
         }
       ],
       "errors": []
