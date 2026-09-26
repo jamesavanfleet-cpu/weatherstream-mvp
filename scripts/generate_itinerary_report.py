@@ -37,6 +37,7 @@ CRUISE_LINE_MAP = {
     "Adventure of the Seas": "Royal Caribbean",
     "Freedom of the Seas":   "Royal Caribbean",
     "Mardi Gras":            "Carnival",
+    "Carnival Mardi Gras":   "Carnival",
     "Carnival Vista":        "Carnival",
     "Carnival Breeze":       "Carnival",
     "Carnival Freedom":      "Carnival",

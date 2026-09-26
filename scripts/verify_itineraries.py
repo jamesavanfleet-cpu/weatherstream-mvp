@@ -62,7 +62,7 @@ SHIP_URLS = {
     "Adventure of the Seas": "https://www.cruisemapper.com/ships/Adventure-Of-The-Seas-533",
     "Freedom of the Seas":   "https://www.cruisemapper.com/ships/Freedom-Of-The-Seas-654",
     # Carnival
-    "Mardi Gras":            "https://www.cruisemapper.com/ships/Carnival-Mardi-Gras-2105",
+    "Carnival Mardi Gras":   "https://www.cruisemapper.com/ships/Carnival-Mardi-Gras-2105",
     "Carnival Vista":        "https://www.cruisemapper.com/ships/Carnival-Vista-1039",
     "Carnival Breeze":       "https://www.cruisemapper.com/ships/Carnival-Breeze-703",
     "Carnival Freedom":      "https://www.cruisemapper.com/ships/Carnival-Freedom-580",
@@ -473,6 +473,11 @@ def update_itinerary(data: dict, ship_name: str, departure_date: str, new_ports:
                         it["ports"] = new_ports
                         if description and len(description) > 5:
                             it["description"] = description
+                        # Keep the duration fields aligned with the corrected route
+                        # so the site never shows a stale night count.
+                        nights = len(new_ports) - 1
+                        it["duration_days"] = nights
+                        it["duration_nights"] = nights
                         return True
     return False
 
@@ -495,6 +500,7 @@ def add_itinerary(data: dict, ship_name: str, departure_date: str, new_ports: li
                 new_it = {
                     "departure_date": departure_date,
                     "description": description,
+                    "duration_days": duration,
                     "duration_nights": duration,
                     "departure_port": dep_port,
                     "ports": new_ports,
